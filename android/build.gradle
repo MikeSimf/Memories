@@ -1,0 +1,8 @@
+// Корневой build-скрипт: только объявление версий плагинов.
+plugins {
+    id 'com.android.application' version '8.2.2' apply false
+}
+
+tasks.register('clean', Delete) {
+    delete rootProject.buildDir
+}

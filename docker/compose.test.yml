@@ -1,0 +1,68 @@
+# Тестовый контур: порт 8081, свои тома и своя база.
+# Запуск: docker compose -p dnd-test --env-file docker/env.test -f docker/compose.test.yml up -d --build
+name: dnd-test
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: dnd-test-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dnd
+      POSTGRES_USER: dnd
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Задайте DB_PASSWORD в docker/env.test}
+      TZ: UTC
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dnd -d dnd"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.server
+    image: dnd-memory-server:test
+    container_name: dnd-test-server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DND_DB_URL: jdbc:postgresql://db:5432/dnd?stringtype=unspecified
+      DND_DB_USER: dnd
+      DND_DB_PASSWORD: ${DB_PASSWORD}
+      DND_JWT_SECRET: ${JWT_SECRET:?Задайте JWT_SECRET (не короче 32 символов)}
+      DND_PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8081}
+      DND_CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8081}
+      DND_FILES_DIR: /var/lib/dnd-memory/files
+      DND_LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      DND_YANDEX_CLIENT_ID: ${YANDEX_CLIENT_ID:-}
+      DND_YANDEX_CLIENT_SECRET: ${YANDEX_CLIENT_SECRET:-}
+      DND_VK_CLIENT_ID: ${VK_CLIENT_ID:-}
+      DND_VK_CLIENT_SECRET: ${VK_CLIENT_SECRET:-}
+      JAVA_TOOL_OPTIONS: -Xmx512m
+    volumes:
+      - files:/var/lib/dnd-memory/files
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    image: dnd-memory-web:test
+    container_name: dnd-test-web
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      TEST_PORT: ${TEST_PORT:-8081}
+    ports:
+      - "${TEST_PORT:-8081}:80"
+    volumes:
+      - ./nginx/nginx.test.conf.template:/etc/nginx/templates/default.conf.template:ro
+
+volumes:
+  db-data:
+  files:

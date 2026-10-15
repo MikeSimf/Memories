@@ -1,0 +1,27 @@
+# Сборка
+target/
+dist/
+build/
+.gradle/
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# Зависимости
+node_modules/
+.npm/
+
+# Секреты и данные
+docker/env.test
+docker/env.prod
+backups/
+*.local
+
+# Иде и система
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Логи
+*.log

@@ -1,0 +1,37 @@
+{
+  "name": "dnd-memory-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "DnD Memory — веб-версия (PWA) справочника настольной сессии D&D",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "build-only": "vite build",
+    "typecheck": "vue-tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "dompurify": "3.2.4",
+    "idb": "8.0.0",
+    "jsqr": "1.4.0",
+    "markdown-it": "14.1.0",
+    "pinia": "2.3.1",
+    "qrcode": "1.5.4",
+    "vue": "3.5.13",
+    "vue-router": "4.5.0"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "14.1.2",
+    "@types/node": "22.10.2",
+    "@types/qrcode": "1.5.5",
+    "@vitejs/plugin-vue": "5.2.4",
+    "typescript": "5.6.3",
+    "vite": "6.3.5",
+    "vite-plugin-pwa": "0.21.1",
+    "vue-tsc": "2.2.10"
+  }
+}

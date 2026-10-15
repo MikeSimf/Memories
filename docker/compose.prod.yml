@@ -1,0 +1,71 @@
+# Рабочий контур: 80/443, TLS-сертификаты Let's Encrypt с хоста, свой том и своя база.
+# Запуск: docker compose -p dnd-prod --env-file docker/env.prod -f docker/compose.prod.yml up -d --build
+name: dnd-prod
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: dnd-prod-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dnd
+      POSTGRES_USER: dnd
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Задайте DB_PASSWORD в docker/env.prod}
+      TZ: UTC
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dnd -d dnd"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.server
+    image: dnd-memory-server:prod
+    container_name: dnd-prod-server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DND_DB_URL: jdbc:postgresql://db:5432/dnd?stringtype=unspecified
+      DND_DB_USER: dnd
+      DND_DB_PASSWORD: ${DB_PASSWORD}
+      DND_JWT_SECRET: ${JWT_SECRET:?Задайте JWT_SECRET (не короче 32 символов)}
+      DND_PUBLIC_URL: https://${DOMAIN:?Задайте DOMAIN в docker/env.prod}
+      DND_CORS_ORIGINS: ${CORS_ORIGINS:?Задайте CORS_ORIGINS в docker/env.prod}
+      DND_FILES_DIR: /var/lib/dnd-memory/files
+      DND_LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      DND_YANDEX_CLIENT_ID: ${YANDEX_CLIENT_ID:-}
+      DND_YANDEX_CLIENT_SECRET: ${YANDEX_CLIENT_SECRET:-}
+      DND_VK_CLIENT_ID: ${VK_CLIENT_ID:-}
+      DND_VK_CLIENT_SECRET: ${VK_CLIENT_SECRET:-}
+      JAVA_TOOL_OPTIONS: -Xmx${SERVER_HEAP_MB:-768}m
+    volumes:
+      - files:/var/lib/dnd-memory/files
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    image: dnd-memory-web:prod
+    container_name: dnd-prod-web
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.prod.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./certbot-www:/var/www/certbot
+
+volumes:
+  db-data:
+  files:

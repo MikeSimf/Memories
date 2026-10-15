@@ -1,0 +1,18 @@
+# Сборка сервера приложений DnD Memory (Java 11)
+FROM maven:3.9-eclipse-temurin-11 AS build
+WORKDIR /build
+COPY server/pom.xml ./pom.xml
+RUN mvn -B -q dependency:go-offline
+COPY server/src ./src
+RUN mvn -B -q -DskipTests package
+
+FROM eclipse-temurin:11-jre-alpine
+RUN addgroup -S dnd && adduser -S dnd -G dnd
+WORKDIR /app
+COPY --from=build /build/target/dnd-memory-server.jar /app/app.jar
+RUN mkdir -p /var/lib/dnd-memory/files && chown -R dnd:dnd /var/lib/dnd-memory /app
+USER dnd
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=5 \
+  CMD wget -qO- http://127.0.0.1:8080/api/health >/dev/null 2>&1 || exit 1
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=70", "-Dfile.encoding=UTF-8", "-jar", "/app/app.jar"]

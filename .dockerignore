@@ -1,0 +1,10 @@
+.git
+.gitignore
+**/target
+**/node_modules
+**/dist
+**/build
+**/.gradle
+android
+docs
+backups
