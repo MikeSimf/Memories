@@ -1,5 +1,6 @@
 package ru.dndmemory.data.repo;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 
@@ -49,6 +50,17 @@ public class EntityRepository {
         return db.entityDao().observeByType(campaignId, type.name());
     }
 
+    /**
+     * Объекты вкладки: «Персонажи» — {@code HERO,NPC}, «Локации» — {@code LOCATION},
+     * «Предметы» — {@code ITEM} (docs/api.md, раздел 6). Пустой список — все виды.
+     */
+    public LiveData<List<EntityRoom>> observeByTypes(String campaignId, List<String> types) {
+        if (types == null || types.isEmpty()) {
+            return db.entityDao().observeAll(campaignId);
+        }
+        return db.entityDao().observeByTypes(campaignId, types);
+    }
+
     public LiveData<EntityRoom> observe(String entityId) {
         return db.entityDao().observe(entityId);
     }
@@ -66,6 +78,13 @@ public class EntityRepository {
         return db.entityDao().findByTypeNow(campaignId, type.name());
     }
 
+    public List<EntityRoom> findByTypesNow(String campaignId, List<String> types) {
+        if (types == null || types.isEmpty()) {
+            return db.entityDao().findAllNow(campaignId);
+        }
+        return db.entityDao().findByTypesNow(campaignId, types);
+    }
+
     /** Офлайн-поиск по локальной базе — работает без сети (docs/api.md, раздел 8). */
     public LiveData<List<EntityRoom>> search(String campaignId, @Nullable EntityType type, String query) {
         String pattern = "%" + (query == null ? "" : query.trim()) + "%";
@@ -73,6 +92,16 @@ public class EntityRepository {
             return db.entityDao().search(campaignId, pattern);
         }
         return db.entityDao().searchByType(campaignId, type.name(), pattern);
+    }
+
+    /** Поиск по вкладке с несколькими видами: «Персонажи» ищет и героев, и НПС. */
+    public LiveData<List<EntityRoom>> searchByTypes(String campaignId, @Nullable List<String> types,
+                                                    String query) {
+        String pattern = "%" + (query == null ? "" : query.trim()) + "%";
+        if (types == null || types.isEmpty()) {
+            return db.entityDao().search(campaignId, pattern);
+        }
+        return db.entityDao().searchByTypes(campaignId, types, pattern);
     }
 
     /** Новый объект: id и clientId генерирует клиент, в базу он ещё не записан. */
@@ -161,9 +190,19 @@ public class EntityRepository {
 
     /** Полная перезагрузка списка объектов кампании (онлайн-обновление). */
     public void refresh(String campaignId, RepoCallback<List<EntityRoom>> callback) {
+        refresh(campaignId, null, callback);
+    }
+
+    /**
+     * Перезагрузка объектов вкладки: сервер фильтрует по {@code types}, например
+     * {@code HERO,NPC} (docs/api.md, раздел 6).
+     */
+    public void refresh(String campaignId, @Nullable List<String> types,
+                        RepoCallback<List<EntityRoom>> callback) {
+        String typeFilter = types == null || types.isEmpty() ? null : join(types);
         exec.io(() -> {
             List<EntityDto> remote = ApiCall.execute(
-                    api.entities(campaignId, null, null, null, 500, null));
+                    api.entities(campaignId, typeFilter, null, null, 500, null));
             List<EntityRoom> rooms = new ArrayList<>();
             if (remote != null) {
                 for (EntityDto dto : remote) {
@@ -187,6 +226,22 @@ public class EntityRepository {
     /** Снимок всех объектов кампании (для указателей имён и редактора ссылок). */
     public void loadEntities(String campaignId, RepoCallback<List<EntityRoom>> callback) {
         exec.io(() -> db.entityDao().findAllNow(campaignId), callback);
+    }
+
+    /** {@code types=HERO,NPC} — так фильтрует сервер. */
+    @NonNull
+    public static String join(@NonNull List<String> types) {
+        StringBuilder out = new StringBuilder();
+        for (String type : types) {
+            if (type == null || type.isEmpty()) {
+                continue;
+            }
+            if (out.length() > 0) {
+                out.append(',');
+            }
+            out.append(type);
+        }
+        return out.toString();
     }
 
     /** Обратные ссылки на объект (GET …/backlinks). */

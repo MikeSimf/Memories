@@ -78,6 +78,21 @@
     <string name="auth_invite_pending">После входа приглашение будет принято автоматически</string>
     <string name="auth_welcome">Вы вошли как %1$s</string>
 
+    <!-- Вход по QR-коду устройства (docs/api.md, раздел 3.1) -->
+    <string name="enroll_title">Отсканируйте QR-код от мастера</string>
+    <string name="enroll_subtitle">Мастер выдаёт QR-код для вашего телефона — пароль и SMS не нужны</string>
+    <string name="enroll_manual_hint">или введите код вручную</string>
+    <string name="enroll_code_hint">Код, например 7F3K9Q2M</string>
+    <string name="enroll_submit">Войти по коду</string>
+    <string name="enroll_existing">У меня уже есть аккаунт</string>
+    <string name="enroll_error_required">Введите код с QR-кода мастера</string>
+    <string name="enroll_error_invalid">Код недействителен: он просрочен или уже использован. Попросите у мастера новый QR-код.</string>
+    <string name="enroll_error_network">Нет связи с сервером. Проверьте интернет и повторите.</string>
+    <string name="enroll_error_unauthorized">Этот код не подходит для регистрации устройства. Попросите у мастера QR-код устройства.</string>
+    <string name="enroll_revoked">Доступ отозван мастером — попросите новый QR-код</string>
+    <string name="enroll_expired">Сессия истекла — войдите заново по QR-коду или паролю</string>
+    <string name="enroll_welcome_title">Вы вошли как %1$s</string>
+
     <!-- Кампании -->
     <string name="campaign_list_title">Кампании</string>
     <string name="campaign_list_empty">Пока нет ни одной кампании</string>
@@ -100,13 +115,13 @@
     <string name="role_editor_hero">Игрок</string>
     <string name="role_viewer">Наблюдатель</string>
 
-    <!-- Вкладки кампании -->
-    <string name="tab_heroes">Герои</string>
-    <string name="tab_npcs">Персонажи</string>
+    <!-- Вкладки кампании: три вместо шести -->
+    <string name="tab_characters">Персонажи</string>
     <string name="tab_locations">Локации</string>
     <string name="tab_items">Предметы</string>
     <string name="tab_retellings">Пересказы</string>
     <string name="tab_members">Участники</string>
+    <string name="retellings_title">Пересказы</string>
 
     <!-- Типы объектов -->
     <string name="entity_type_hero">Герой</string>
@@ -117,6 +132,10 @@
     <!-- Объекты -->
     <string name="entity_list_empty">Здесь пока пусто</string>
     <string name="entity_list_add">Добавить</string>
+    <string name="entity_filter_hint">Фильтр: название, описание, метки</string>
+    <string name="entity_filter_found">Найдено: %1$d</string>
+    <string name="entity_filter_clear">Очистить фильтр</string>
+    <string name="entity_filter_no_results">Ничего не найдено по фильтру</string>
     <string name="entity_detail_title">Карточка</string>
     <string name="entity_detail_type">Тип: %1$s</string>
     <string name="entity_detail_author">Автор: %1$s</string>
@@ -229,7 +248,9 @@
     <string name="invite_linked">Герой приглашённого</string>
     <string name="invite_token">Код: %1$s</string>
     <string name="invite_expires">Действует до %1$s</string>
+    <string name="invite_expires_hint">Срок действия, часов</string>
     <string name="invite_uses">Использовано %1$d из %2$d</string>
+    <string name="invite_uses_hint">Сколько раз можно использовать</string>
     <string name="invite_link">Ссылка: %1$s</string>
     <string name="invite_revoke_confirm">Отозвать приглашение %1$s?</string>
     <string name="invite_qr_title">QR-код приглашения</string>
@@ -246,6 +267,31 @@
     <string name="invite_accept_invalid">Приглашение недействительно или просрочено</string>
     <string name="invite_accepted">Вы присоединились к кампании</string>
     <string name="invite_login_required">Чтобы принять приглашение, войдите в аккаунт</string>
+
+    <!-- Режим приглашений и устройства кампании -->
+    <string name="invite_section_invites">Приглашения</string>
+    <string name="invite_section_devices">Устройства</string>
+    <string name="invite_mode_member">Приглашение участнику</string>
+    <string name="invite_mode_device">Регистрация устройства</string>
+    <string name="invite_device_name">Имя игрока</string>
+    <string name="invite_device_label">Подпись устройства</string>
+    <string name="invite_device_label_hint">Например «Телефон Ани»</string>
+    <string name="invite_device_expires_hint">Срок действия, часов</string>
+    <string name="invite_device_created">QR-код устройства создан</string>
+    <string name="invite_device_create_action">Выпустить QR устройства</string>
+    <string name="invite_qr_device_title">QR-код регистрации устройства</string>
+    <string name="invite_device_name_required">Укажите имя игрока</string>
+    <string name="invite_mode_label">Приглашение</string>
+    <string name="invite_mode_device_badge">Устройство</string>
+    <string name="device_list_empty">Устройств пока нет</string>
+    <string name="device_name">Игрок: %1$s</string>
+    <string name="device_label">Подпись: %1$s</string>
+    <string name="device_platform">Платформа: %1$s</string>
+    <string name="device_last_seen">Последний вход: %1$s</string>
+    <string name="device_revoked_badge">Отозвано</string>
+    <string name="device_revoke_confirm">Отозвать устройство «%1$s»? Его сессии перестанут работать, участие в кампании сохранится.</string>
+    <string name="device_revoked">Устройство отозвано</string>
+    <string name="device_manage_forbidden">Управлять устройствами может только владелец</string>
 
     <!-- Поиск -->
     <string name="search_title">Поиск</string>
@@ -267,10 +313,34 @@
     <string name="settings_full_resync_hint">Удалит локальные данные кампаний и загрузит их заново. Черновики сохранятся.</string>
     <string name="settings_server">Адрес сервера: %1$s</string>
     <string name="settings_user">Пользователь: %1$s</string>
-    <string name="settings_account_section">Аккаунт</string>
-    <string name="settings_logout_confirm">Выйти из аккаунта? Локальные данные кампаний будут удалены.</string>
+    <string name="settings_logout_confirm">Выйти из аккаунта? Локальные данные кампаний будут удалены. Неотправленные черновики пересказов тоже исчезнут.</string>
     <string name="settings_about">DnD Memory, версия %1$s</string>
     <string name="settings_resync_done">Данные загружены заново</string>
+
+    <!-- Профиль и пароль -->
+    <string name="settings_account_section">Аккаунт</string>
+    <string name="settings_profile_section">Профиль</string>
+    <string name="settings_profile_name">Имя</string>
+    <string name="settings_profile_email">Почта</string>
+    <string name="settings_profile_phone">Телефон</string>
+    <string name="settings_profile_save">Сохранить профиль</string>
+    <string name="settings_profile_saved">Профиль сохранён</string>
+    <string name="settings_phone_display">Телефон: %1$s</string>
+    <string name="settings_email_display">Почта: %1$s</string>
+    <string name="settings_password_set">Пароль задан — можно входить в веб-версию</string>
+    <string name="settings_password_not_set">Пароль не задан — вход только по QR-коду устройства</string>
+    <string name="settings_password_hint">Укажите почту или телефон и задайте пароль — после этого сможете входить в веб-версию</string>
+    <string name="settings_password_set_action">Задать пароль</string>
+    <string name="settings_password_change_action">Сменить пароль</string>
+    <string name="settings_password_current">Текущий пароль</string>
+    <string name="settings_password_new">Новый пароль</string>
+    <string name="settings_password_repeat">Повторите новый пароль</string>
+    <string name="settings_password_mismatch">Пароли не совпадают</string>
+    <string name="settings_password_current_required">Введите текущий пароль</string>
+    <string name="settings_password_changed">Пароль сохранён</string>
+    <string name="settings_password_dialog_title">Пароль для входа</string>
+    <string name="error_phone_taken">Такой телефон уже привязан к другому аккаунту</string>
+    <string name="error_password_wrong">Текущий пароль неверен</string>
 
     <!-- Ссылки [[Имя]] -->
     <string name="wiki_broken_link">Объект «%1$s» не найден</string>
@@ -291,5 +361,7 @@
     <string name="cd_icon">Значок</string>
     <string name="cd_close">Закрыть</string>
     <string name="cd_revoke">Отозвать</string>
+    <string name="cd_clear_filter">Очистить фильтр</string>
+    <string name="cd_devices">Устройства</string>
 
 </resources>

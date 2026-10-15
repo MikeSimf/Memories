@@ -2,6 +2,7 @@ package ru.dndmemory.data.repo;
 
 import android.net.Uri;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 
@@ -16,12 +17,15 @@ import ru.dndmemory.data.remote.ApiException;
 import ru.dndmemory.data.remote.ApiService;
 import ru.dndmemory.data.remote.TokenRefresher;
 import ru.dndmemory.data.remote.dto.AuthResponse;
+import ru.dndmemory.data.remote.dto.EnrollRequest;
+import ru.dndmemory.data.remote.dto.EnrollResponse;
 import ru.dndmemory.data.remote.dto.LoginRequest;
 import ru.dndmemory.data.remote.dto.OAuthCallbackRequest;
 import ru.dndmemory.data.remote.dto.PatchMeRequest;
 import ru.dndmemory.data.remote.dto.ProvidersResponse;
 import ru.dndmemory.data.remote.dto.RefreshRequest;
 import ru.dndmemory.data.remote.dto.RegisterRequest;
+import ru.dndmemory.data.remote.dto.SetPasswordRequest;
 import ru.dndmemory.data.remote.dto.TokenPairDto;
 import ru.dndmemory.data.remote.dto.UserDto;
 import ru.dndmemory.util.AppExecutors;
@@ -140,13 +144,56 @@ public class AuthRepository implements TokenRefresher {
         }, callback);
     }
 
+    /** Профиль и контакты для входа: {@code PATCH /api/me} (docs/api.md, раздел 3). */
     public void updateProfile(String displayName, @Nullable String avatarFileId,
+                              @Nullable String email, @Nullable String phone,
                               RepoCallback<UserDto> callback) {
         exec.io(() -> {
-            UserDto user = ApiCall.execute(
-                    svc().patchMe(new PatchMeRequest(displayName, avatarFileId)));
+            UserDto user = ApiCall.execute(svc().patchMe(
+                    new PatchMeRequest(displayName, avatarFileId, email, phone)));
             session.saveUser(user);
             return user;
+        }, callback);
+    }
+
+    /**
+     * Задать или сменить пароль. {@code currentPassword} нужен только при
+     * {@code hasPassword: true} — иначе сервер ответит ошибкой.
+     */
+    public void changePassword(@Nullable String currentPassword, String newPassword,
+                               RepoCallback<Void> callback) {
+        exec.io(() -> {
+            ApiCall.execute(svc().setPassword(new SetPasswordRequest(currentPassword, newPassword)));
+            // Пароль задан: обновляем профиль, чтобы признак hasPassword стал true.
+            meQuietly();
+            return null;
+        }, callback);
+    }
+
+    /** Тихая догрузка профиля: нужна, чтобы обновить {@code hasPassword} и телефон. */
+    @Nullable
+    private UserDto meQuietly() {
+        try {
+            UserDto user = ApiCall.execute(svc().me());
+            session.saveUser(user);
+            return user;
+        } catch (ApiException e) {
+            return null;
+        }
+    }
+
+    // --- Регистрация устройства по QR (docs/api.md, раздел 3.1) -------------
+
+    /**
+     * Обмен токена из QR мастера на сессию. Запрос идёт через клиента без
+     * {@code Authorization}: это единственный способ войти без пароля.
+     */
+    public void enrollDevice(String token, String label, RepoCallback<EnrollResponse> callback) {
+        exec.io(() -> {
+            EnrollResponse response = ApiCall.execute(
+                    authApi.enrollDevice(new EnrollRequest(token, label, "android")));
+            session.saveEnrollment(response);
+            return response;
         }, callback);
     }
 
@@ -214,11 +261,23 @@ public class AuthRepository implements TokenRefresher {
                 return tokens.accessToken;
             } catch (ApiException e) {
                 if (e.isUnauthorized() || e.isForbidden() || e.isNotFound()) {
-                    session.clear();
+                    // Сессия недействительна: устройство отозвали или refresh-токен истёк.
+                    // Сетевая ошибка сюда не попадает — офлайн-режим не ломается.
+                    session.markRevoked(revokedReason(e));
                 }
                 return null;
             }
         }
+    }
+
+    /** Причина для экрана QR: у отозванного устройства сервер отвечает особо. */
+    @NonNull
+    private static String revokedReason(@Nullable ApiException e) {
+        String message = e == null ? null : e.getServerMessage();
+        if (message != null && message.toLowerCase(java.util.Locale.ROOT).contains("отозван")) {
+            return SessionStore.REVOKED_DEVICE;
+        }
+        return SessionStore.SESSION_EXPIRED;
     }
 
     private static String encode(String value) {

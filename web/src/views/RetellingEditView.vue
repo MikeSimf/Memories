@@ -62,8 +62,8 @@ function back(): void {
     return
   }
   void router.push({
-    name: 'campaign-tab',
-    params: { campaignId: campaign.campaignId, tab: 'retellings' },
+    name: 'campaign-retellings',
+    params: { campaignId: campaign.campaignId },
   })
 }
 

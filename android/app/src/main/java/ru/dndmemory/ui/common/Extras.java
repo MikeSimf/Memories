@@ -13,6 +13,8 @@ public final class Extras {
     public static final String SEARCH_TYPE = "searchType";
     public static final String CREATE_NEW = "createNew";
     public static final String AUTHOR_ENTITY_ID = "authorEntityId";
+    /** Пояснение к экрану: например причина показа экрана QR. */
+    public static final String MESSAGE = "message";
 
     private Extras() {
     }

@@ -11,6 +11,9 @@ import {
   type AuthResponse,
   type OAuthProvider,
   type OAuthProvidersResponse,
+  type PatchMeRequest,
+  type SetPasswordRequest,
+  type UserDto,
   type UserProfile,
 } from '@/api'
 import { clearDatabase } from '@/db'
@@ -31,18 +34,25 @@ export const useAuthStore = defineStore('auth', () => {
     () => user.value !== null && tokenStore.get()?.accessToken !== undefined,
   )
 
+  /** `UserDto` → локальный профиль: контакты и признак пароля нужны экрану настроек. */
+  function toProfile(dto: UserDto): UserProfile {
+    return {
+      id: dto.id,
+      email: dto.email ?? null,
+      displayName: dto.displayName,
+      avatarUrl: dto.avatarUrl ?? null,
+      phone: dto.phone ?? null,
+      hasPassword: dto.hasPassword === true,
+    }
+  }
+
   function applyAuth(response: AuthResponse): void {
     tokenStore.set({
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
       expiresAt: Date.now() + response.expiresIn * 1000,
     })
-    const profile: UserProfile = {
-      id: response.user.id,
-      email: response.user.email,
-      displayName: response.user.displayName,
-      avatarUrl: response.user.avatarUrl,
-    }
+    const profile = toProfile(response.user)
     userStore.set(profile)
     user.value = profile
   }
@@ -181,12 +191,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
     try {
       const me = await authApi.me()
-      const profile: UserProfile = {
-        id: me.id,
-        email: me.email,
-        displayName: me.displayName,
-        avatarUrl: me.avatarUrl,
-      }
+      const profile = toProfile(me)
       userStore.set(profile)
       user.value = profile
     } catch (caught) {
@@ -197,6 +202,23 @@ export const useAuthStore = defineStore('auth', () => {
       // Нет сети — используем сохранённый профиль.
       ui.pushToast('warning', 'Профиль загружен из локального хранилища')
     }
+  }
+
+  /** `PATCH /api/me`: имя и контакты для входа. Ошибки не глотаем — их показывает экран. */
+  async function updateProfile(body: PatchMeRequest): Promise<void> {
+    const me = await authApi.patchMe(body)
+    const profile = toProfile(me)
+    userStore.set(profile)
+    user.value = profile
+  }
+
+  /**
+   * `POST /api/me/password`: задать или сменить пароль. После успеха обновляем
+   * профиль — признак `hasPassword` меняется, и форма перестаёт спрашивать текущий.
+   */
+  async function setPassword(body: SetPasswordRequest): Promise<void> {
+    await authApi.setPassword(body)
+    await refreshProfile()
   }
 
   function initialize(): void {
@@ -221,5 +243,7 @@ export const useAuthStore = defineStore('auth', () => {
     completeOAuth,
     loadProviders,
     refreshProfile,
+    updateProfile,
+    setPassword,
   }
 })

@@ -14,9 +14,14 @@ export interface AuthTokens {
 
 export interface UserProfile {
   id: string
-  email: string
+  /** Почта может быть не задана: аккаунт устройства живёт без неё (`api.md` §3.1). */
+  email: string | null
   displayName: string
   avatarUrl: string | null
+  /** Телефон в формате `+7XXXXXXXXXX`, если указан. */
+  phone: string | null
+  /** Задан ли пароль: по этому признаку интерфейс решает, спрашивать ли текущий. */
+  hasPassword: boolean
 }
 
 const TOKENS_KEY = 'dnd-memory.tokens'
@@ -90,9 +95,11 @@ export const userStore = {
       if (typeof parsed.id !== 'string') return null
       return {
         id: parsed.id,
-        email: typeof parsed.email === 'string' ? parsed.email : '',
+        email: typeof parsed.email === 'string' ? parsed.email : null,
         displayName: typeof parsed.displayName === 'string' ? parsed.displayName : '',
         avatarUrl: typeof parsed.avatarUrl === 'string' ? parsed.avatarUrl : null,
+        phone: typeof parsed.phone === 'string' ? parsed.phone : null,
+        hasPassword: parsed.hasPassword === true,
       }
     } catch {
       return null

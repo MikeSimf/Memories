@@ -15,39 +15,63 @@ import { matchesText } from '@/db/search'
 import { useCampaignStore } from '@/stores/campaign'
 import { formatDate, formatRelative } from '@/utils/datetime'
 
-type TabKey = 'heroes' | 'npcs' | 'locations' | 'items' | 'retellings' | 'members'
+/**
+ * Три вкладки объектов: «Персонажи» объединяет героев и НПС, плюс «Локации»
+ * и «Предметы». Пересказы и участники — отдельные разделы кампании.
+ */
+type EntityTabKey = 'characters' | 'locations' | 'items'
+type TabKey = EntityTabKey | 'retellings' | 'members'
 
-const TAB_TYPE: Record<string, EntityType> = {
-  heroes: 'HERO',
-  npcs: 'NPC',
-  locations: 'LOCATION',
-  items: 'ITEM',
+const TAB_TYPES: Record<EntityTabKey, EntityType[]> = {
+  characters: ['HERO', 'NPC'],
+  locations: ['LOCATION'],
+  items: ['ITEM'],
 }
+
+const TAB_TITLES: Record<EntityTabKey, string> = {
+  characters: 'Персонажи',
+  locations: ENTITY_TYPE_PLURALS.LOCATION,
+  items: ENTITY_TYPE_PLURALS.ITEM,
+}
+
+const props = defineProps<{ tab?: string }>()
 
 const route = useRoute()
 const campaign = useCampaignStore()
 
 const query = ref('')
-const tab = computed<TabKey>(() => (route.params.tab as TabKey) ?? 'heroes')
-const entityType = computed<EntityType | null>(() => TAB_TYPE[tab.value] ?? null)
-
-// Строка поиска внутри вкладки — своя для каждой вкладки.
-watch(tab, () => {
-  query.value = ''
+const tab = computed<TabKey>(() => {
+  const fromProps = props.tab
+  const fromRoute = typeof route.params.tab === 'string' ? route.params.tab : ''
+  const value = fromProps ?? fromRoute
+  return value === 'locations' || value === 'items' || value === 'retellings' || value === 'members'
+    ? value
+    : 'characters'
 })
 
-const entities = computed(() =>
-  entityType.value
-    ? campaign.activeEntities.filter((entity) => entity.type === entityType.value)
-    : [],
+const entityTypes = computed<EntityType[] | null>(() =>
+  tab.value === 'characters' || tab.value === 'locations' || tab.value === 'items'
+    ? TAB_TYPES[tab.value]
+    : null,
 )
 
+// Строка поиска внутри вкладки — своя для каждой вкладки.
+watch(
+  tab,
+  async () => {
+    query.value = ''
+    if (entityTypes.value) await campaign.loadTabEntities(entityTypes.value)
+  },
+  { immediate: true },
+)
+
+/** Список вкладки читается из IndexedDB с фильтром видов — работает офлайн. */
+const entities = computed(() => campaign.tabEntities)
+
+/** Быстрый фильтр: регистронезависимо по названию, описанию и тегам. */
 const filteredEntities = computed(() =>
   entities.value.filter((entity) =>
-    matchesText(
-      [entity.name, entity.summary, entity.description, entity.tags.join(' ')],
-      query.value,
-    ),
+    matchesText([entity.name, entity.summary, entity.description, entity.tags.join(' ')], query.value),
   ),
 )
 
@@ -56,13 +80,13 @@ const filteredRetellings = computed(() =>
 )
 
 const sectionTitle = computed(() => {
-  if (entityType.value) return ENTITY_TYPE_PLURALS[entityType.value]
   if (tab.value === 'retellings') return 'Пересказы'
-  return 'Участники'
+  if (tab.value === 'members') return 'Участники'
+  return TAB_TITLES[tab.value]
 })
 
-const canCreateHere = computed(() =>
-  entityType.value ? campaign.canCreate(entityType.value) : false,
+const createTypes = computed<EntityType[]>(() =>
+  entityTypes.value ? entityTypes.value.filter((type) => campaign.canCreate(type)) : [],
 )
 </script>
 
@@ -74,14 +98,16 @@ const canCreateHere = computed(() =>
         <SearchBox
           v-if="tab !== 'members'"
           v-model="query"
+          :debounce-ms="200"
           :placeholder="`Поиск: ${sectionTitle.toLowerCase()}`"
         />
         <RouterLink
-          v-if="entityType && canCreateHere"
+          v-for="type in createTypes"
+          :key="type"
           class="btn btn--primary btn--sm"
-          :to="{ name: 'entity-new', params: { campaignId: campaign.campaignId }, query: { type: entityType } }"
+          :to="{ name: 'entity-new', params: { campaignId: campaign.campaignId }, query: { type } }"
         >
-          + {{ ENTITY_TYPE_LABELS[entityType] }}
+          + {{ ENTITY_TYPE_LABELS[type] }}
         </RouterLink>
         <RouterLink
           v-if="tab === 'retellings' && campaign.canWriteRetellings"
@@ -93,13 +119,25 @@ const canCreateHere = computed(() =>
       </div>
     </div>
 
-    <!-- Объекты кампании: герои, персонажи, локации, предметы -->
-    <template v-if="entityType">
+    <!-- Объекты вкладки: персонажи (герои + НПС), локации, предметы -->
+    <template v-if="entityTypes">
+      <div class="row row--between search-summary">
+        <span class="faint">Найдено: {{ filteredEntities.length }}</span>
+        <button
+          v-if="query !== ''"
+          class="btn btn--ghost btn--sm"
+          type="button"
+          @click="query = ''"
+        >
+          Очистить
+        </button>
+      </div>
+
       <EmptyState
         v-if="entities.length === 0"
         :title="`Пока нет: ${sectionTitle.toLowerCase()}`"
         :hint="
-          canCreateHere
+          createTypes.length > 0
             ? 'Создайте первую запись — она сохранится на устройстве и уйдёт на сервер при синхронизации.'
             : 'У вас нет прав на создание объектов этого типа.'
         "
@@ -137,6 +175,13 @@ const canCreateHere = computed(() =>
 
     <!-- Пересказы: черновики и публикации -->
     <template v-else-if="tab === 'retellings'">
+      <div class="row row--between search-summary">
+        <span class="faint">Найдено: {{ filteredRetellings.length }}</span>
+        <button v-if="query !== ''" class="btn btn--ghost btn--sm" type="button" @click="query = ''">
+          Очистить
+        </button>
+      </div>
+
       <EmptyState
         v-if="campaign.retellingItems.length === 0"
         title="Пересказов пока нет"
@@ -178,3 +223,9 @@ const canCreateHere = computed(() =>
     </template>
   </section>
 </template>
+
+<style scoped>
+.search-summary {
+  min-height: 28px;
+}
+</style>

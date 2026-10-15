@@ -28,6 +28,12 @@ export type ChangeOp = 'UPSERT' | 'DELETE'
 /** `ObjectType` — тип объекта в журнале синхронизации. */
 export type ObjectType = 'ENTITY' | 'RETELLING' | 'CAMPAIGN' | 'MEMBER'
 
+/**
+ * `InviteMode` — вид QR-кода (`api.md` §5, §3.1).
+ * `MEMBER` — приглашение человеку, `DEVICE` — регистрация устройства.
+ */
+export type InviteMode = 'MEMBER' | 'DEVICE'
+
 /** Плоский список прав текущего пользователя в кампании (`myPermissions`). */
 export type Permission =
   | 'campaign.manage'
@@ -52,6 +58,7 @@ export type ApiErrorCode =
   | 'draft_not_synced'
   | 'invite_invalid'
   | 'email_taken'
+  | 'phone_taken'
   | 'rate_limited'
   | 'internal_error'
   | 'resync_required'
@@ -70,6 +77,8 @@ export const CHANGE_OPS: readonly ChangeOp[] = ['UPSERT', 'DELETE']
 
 export const OBJECT_TYPES: readonly ObjectType[] = ['ENTITY', 'RETELLING', 'CAMPAIGN', 'MEMBER']
 
+export const INVITE_MODES: readonly InviteMode[] = ['MEMBER', 'DEVICE']
+
 export const PERMISSIONS: readonly Permission[] = [
   'campaign.manage',
   'members.manage',
@@ -86,7 +95,7 @@ export const PERMISSIONS: readonly Permission[] = [
 
 export const ENTITY_TYPE_LABELS: Record<EntityType, string> = {
   HERO: 'Герой',
-  NPC: 'Персонаж',
+  NPC: 'НПС',
   LOCATION: 'Локация',
   ITEM: 'Предмет',
 }
@@ -126,6 +135,7 @@ export const API_ERROR_MESSAGES: Record<ApiErrorCode, string> = {
   draft_not_synced: 'Черновик хранится локально и не отправляется на сервер',
   invite_invalid: 'Приглашение недействительно или просрочено',
   email_taken: 'Эта почта уже занята',
+  phone_taken: 'Этот телефон уже занят',
   rate_limited: 'Слишком много запросов, попробуйте позже',
   internal_error: 'Ошибка на сервере',
   resync_required: 'Требуется полная перезагрузка данных кампании',
@@ -151,9 +161,14 @@ export interface ApiErrorBody {
 
 export interface UserDto {
   id: string
-  email: string
+  /** Почта может быть не задана: аккаунт, созданный по QR устройства, живёт без неё. */
+  email: string | null
   displayName: string
   avatarUrl: string | null
+  /** Телефон в формате `+7XXXXXXXXXX`, если указан (`api.md` §3). */
+  phone: string | null
+  /** `false` у аккаунта, созданного по QR устройства: пароль ещё не задан. */
+  hasPassword: boolean
 }
 
 export interface AuthResponse {
@@ -188,9 +203,22 @@ export interface LogoutRequest {
   refreshToken: string
 }
 
+/** `PATCH /api/me`: имя, аватар и контакты для входа в веб-версию (`api.md` §3). */
 export interface PatchMeRequest {
   displayName?: string
   avatarFileId?: string
+  email?: string
+  /** Пустая строка очищает телефон; сервер нормализует к `+7XXXXXXXXXX`. */
+  phone?: string
+}
+
+/**
+ * `POST /api/me/password`: текущий пароль обязателен, только если он уже задан
+ * (`hasPassword: true`).
+ */
+export interface SetPasswordRequest {
+  currentPassword?: string
+  newPassword: string
 }
 
 export interface OAuthProviderInfo {
@@ -289,6 +317,12 @@ export interface InviteDto {
   deepLink: string
   qrPngBase64: string
   role: MemberRole
+  /** `MEMBER` — приглашение человеку, `DEVICE` — QR для регистрации устройства. */
+  mode: InviteMode
+  /** Имя, которое получит пользователь при регистрации устройства. */
+  displayName: string | null
+  /** Подпись устройства: «Телефон Ани». */
+  label: string | null
   linkedEntityId: string | null
   linkedEntityName?: string | null
   expiresAt: string
@@ -312,6 +346,9 @@ export interface InvitePreviewDto {
   role: MemberRole
   linkedEntityId: string | null
   linkedEntityName: string | null
+  /** Режим QR: для `DEVICE` браузер не принимает приглашение, а предлагает приложение. */
+  mode: InviteMode
+  displayName: string | null
   expiresAt: string
 }
 
@@ -319,6 +356,57 @@ export interface AcceptInviteResponse {
   campaignId: string
   memberId: string
   role: MemberRole
+  /** Сервер отдаёт их дополнительно — удобно для приветствия после принятия. */
+  campaignTitle?: string
+  linkedEntityId?: string | null
+}
+
+/* ------------------------------------------------------------------ */
+/* 3.1. Регистрация устройства по QR                                   */
+/* ------------------------------------------------------------------ */
+
+/** `POST /api/campaigns/{id}/devices/enrollments` — тело шага админа. */
+export interface CreateEnrollmentRequest {
+  displayName: string
+  role: MemberRole
+  linkedEntityId?: string | null
+  /** По умолчанию 24 часа, в отличие от недели у приглашения участника. */
+  expiresInHours?: number
+  maxUses?: number
+  /** Подпись устройства: «Телефон Ани». */
+  label?: string
+}
+
+/** `POST /api/devices/enroll` — тело шага телефона (без авторизации). */
+export interface EnrollRequest {
+  token: string
+  label?: string
+  platform?: string
+}
+
+/** Ответ `POST /api/devices/enroll`: сессия устройства и созданный аккаунт. */
+export interface EnrollResponse {
+  user: UserDto
+  accessToken: string
+  refreshToken: string
+  expiresIn: number
+  deviceId: string
+  campaignId: string
+  campaignTitle: string
+  myRole: MemberRole
+}
+
+/** Элемент `GET /api/campaigns/{id}/devices`. */
+export interface DeviceDto {
+  id: string
+  userId: string
+  displayName: string
+  label: string | null
+  platform: string | null
+  campaignId: string
+  revoked: boolean
+  createdAt: string
+  lastSeenAt: string | null
 }
 
 /* ------------------------------------------------------------------ */
@@ -415,7 +503,12 @@ export interface PatchEntityRequest {
 }
 
 export interface EntityListQuery {
-  type?: EntityType
+  /**
+   * Фильтр по видам объектов (`api.md` §6): `?types=HERO,NPC`. Пусто — все виды.
+   * Вкладка «Персонажи» запрашивает `HERO,NPC`, «Локации» — `LOCATION`,
+   * «Предметы» — `ITEM`.
+   */
+  types?: EntityType[]
   q?: string
   updatedSince?: string
   limit?: number

@@ -58,13 +58,29 @@ export function tombstone(entity: Pick<LocalEntity, 'id' | 'updatedAt'>): Record
 
 export async function listEntities(
   campaignId: string,
-  options: { type?: EntityType; includeDeleted?: boolean } = {},
+  options: { types?: EntityType[]; includeDeleted?: boolean } = {},
 ): Promise<LocalEntity[]> {
   const db = await openDatabase()
-  const source = options.type
-    ? db.getAllFromIndex(STORE.entities, 'by-campaign-type', [campaignId, options.type])
-    : db.getAllFromIndex(STORE.entities, 'by-campaign', campaignId)
-  const items = await source
+  const types = options.types && options.types.length > 0 ? options.types : null
+  let items: LocalEntity[]
+  if (types && types.length === 1) {
+    // Один вид — читаем по индексу `[campaignId, type]` без полного перебора.
+    items = await db.getAllFromIndex(STORE.entities, 'by-campaign-type', [campaignId, types[0]])
+  } else if (types) {
+    // Несколько видов (вкладка «Персонажи»): читаем каждый индекс и объединяем по `id`.
+    const chunks = await Promise.all(
+      types.map((type) =>
+        db.getAllFromIndex(STORE.entities, 'by-campaign-type', [campaignId, type]),
+      ),
+    )
+    const merged = new Map<string, LocalEntity>()
+    for (const chunk of chunks) {
+      for (const item of chunk) merged.set(item.id, item)
+    }
+    items = [...merged.values()]
+  } else {
+    items = await db.getAllFromIndex(STORE.entities, 'by-campaign', campaignId)
+  }
   const filtered = options.includeDeleted ? items : items.filter((item) => !item.deleted)
   return filtered.sort((a, b) => a.name.localeCompare(b.name, 'ru'))
 }

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Тёмная тема: «подземелье». Имена те же, что в values/colors.xml,
+      поэтому тема и макеты не дублируются.
+    -->
+    <color name="colorPrimary">#E0B571</color>
+    <color name="colorPrimaryDark">#0F0C08</color>
+    <color name="colorOnPrimary">#2A1F10</color>
+    <color name="colorPrimaryContainer">#4A3A1C</color>
+    <color name="colorOnPrimaryContainer">#F6E3C3</color>
+    <color name="colorSecondary">#C9A227</color>
+    <color name="colorOnSecondary">#241B0C</color>
+    <color name="colorSurface">#1E1811</color>
+    <color name="colorOnSurface">#EFE3D0</color>
+    <color name="colorSurfaceVariant">#2A2118</color>
+    <color name="colorOnSurfaceVariant">#CFC0A8</color>
+    <color name="colorBackground">#14100B</color>
+    <color name="colorOnBackground">#EFE3D0</color>
+    <color name="colorError">#F2B8B5</color>
+    <color name="colorOnError">#601410</color>
+    <color name="colorOutline">#8C7B63</color>
+
+    <color name="panel_attention">#40331A</color>
+    <color name="card_stroke">#3A2E20</color>
+
+    <color name="wiki_link">#9EC1FF</color>
+    <color name="wiki_link_broken">#8A8A8A</color>
+    <color name="code_background">#241C13</color>
+
+    <color name="status_alive">#7BC67E</color>
+    <color name="status_dead">#EF9A9A</color>
+    <color name="status_unknown">#B0A79C</color>
+
+    <color name="badge_dirty">#FFB74D</color>
+    <color name="badge_conflict">#EF9A9A</color>
+    <color name="badge_published">#81C784</color>
+
+    <color name="text_muted">#A99B86</color>
+
+    <color name="ic_launcher_background">#3A2A18</color>
+</resources>

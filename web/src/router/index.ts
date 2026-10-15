@@ -52,12 +52,37 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        redirect: (to) => ({ name: 'campaign-tab', params: { campaignId: to.params.campaignId, tab: 'heroes' } }),
+        redirect: (to) => ({ name: 'campaign-tab', params: { campaignId: to.params.campaignId, tab: 'characters' } }),
       },
       {
-        path: ':tab(heroes|npcs|locations|items|retellings|members)',
+        // Три вкладки объектов: персонажи (герои и НПС вместе), локации, предметы.
+        path: ':tab(characters|locations|items)',
         name: 'campaign-tab',
         component: () => import('@/views/CampaignTabView.vue'),
+      },
+      {
+        // Старые адреса вкладок героев и НПС ведут на объединённую вкладку «Персонажи».
+        path: 'heroes',
+        redirect: (to) => ({ name: 'campaign-tab', params: { campaignId: to.params.campaignId, tab: 'characters' } }),
+      },
+      {
+        path: 'npcs',
+        redirect: (to) => ({ name: 'campaign-tab', params: { campaignId: to.params.campaignId, tab: 'characters' } }),
+      },
+      {
+        // Пересказы и участники — отдельные разделы кампании, не вкладки.
+        path: 'retellings',
+        name: 'campaign-retellings',
+        component: () => import('@/views/CampaignTabView.vue'),
+        props: { tab: 'retellings' },
+        meta: { title: 'Пересказы' },
+      },
+      {
+        path: 'members',
+        name: 'campaign-members',
+        component: () => import('@/views/CampaignTabView.vue'),
+        props: { tab: 'members' },
+        meta: { title: 'Участники' },
       },
       {
         path: 'search',

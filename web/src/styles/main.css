@@ -1,61 +1,63 @@
 /* DnD Memory — базовые стили и токены темы (тёмная и светлая). */
 
+/* Светлая тема — тёплая «пергаментная» палитра. */
 :root {
-  --bg: #f2f3f6;
-  --bg-elev: #ffffff;
-  --bg-sunken: #e7e9ee;
-  --bg-hover: #eceef3;
-  --text: #191c22;
-  --text-muted: #5d6371;
-  --text-faint: #8a90a0;
-  --border: #d8dbe3;
-  --border-strong: #b9bec9;
-  --accent: #6c47d6;
-  --accent-strong: #5330bb;
-  --accent-contrast: #ffffff;
-  --accent-soft: rgba(108, 71, 214, 0.12);
-  --danger: #c0392b;
-  --danger-soft: rgba(192, 57, 43, 0.12);
-  --warning: #9a6b00;
-  --warning-soft: rgba(214, 158, 0, 0.16);
-  --success: #2c7a4b;
-  --success-soft: rgba(44, 122, 75, 0.14);
-  --info: #2b6cb0;
-  --info-soft: rgba(43, 108, 176, 0.12);
+  --bg: #f6f2ea;
+  --bg-elev: #fffdf8;
+  --bg-sunken: #ebe4d8;
+  --bg-hover: #f0e9dd;
+  --text: #241d16;
+  --text-muted: #6b6053;
+  --text-faint: #94897a;
+  --border: #ded3c3;
+  --border-strong: #c3b6a2;
+  --accent: #a4591c;
+  --accent-strong: #86460f;
+  --accent-contrast: #fff8ef;
+  --accent-soft: rgba(164, 89, 28, 0.13);
+  --danger: #b23a2c;
+  --danger-soft: rgba(178, 58, 44, 0.12);
+  --warning: #8a6608;
+  --warning-soft: rgba(196, 148, 24, 0.18);
+  --success: #3d7a45;
+  --success-soft: rgba(61, 122, 69, 0.14);
+  --info: #2f628f;
+  --info-soft: rgba(47, 98, 143, 0.12);
   --radius-sm: 8px;
   --radius: 12px;
   --radius-lg: 18px;
-  --shadow: 0 2px 10px rgba(20, 22, 30, 0.08);
-  --shadow-lg: 0 12px 32px rgba(20, 22, 30, 0.18);
+  --shadow: 0 2px 10px rgba(60, 44, 26, 0.1);
+  --shadow-lg: 0 12px 32px rgba(60, 44, 26, 0.18);
   --header-height: 56px;
   --font: 'Segoe UI', 'Inter', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
 }
 
+/* Тёмная тема — спокойная, с тёплыми акцентами (факелы и пергамент). */
 [data-theme='dark'] {
-  --bg: #12141a;
-  --bg-elev: #1a1d25;
-  --bg-sunken: #0d0f14;
-  --bg-hover: #232733;
-  --text: #e7e9f0;
-  --text-muted: #a3aab9;
-  --text-faint: #7b8291;
-  --border: #2b303c;
-  --border-strong: #3b4150;
-  --accent: #a98bff;
-  --accent-strong: #c0aaff;
-  --accent-contrast: #17111f;
-  --accent-soft: rgba(169, 139, 255, 0.16);
-  --danger: #ff8a80;
-  --danger-soft: rgba(255, 138, 128, 0.16);
-  --warning: #ffc857;
-  --warning-soft: rgba(255, 200, 87, 0.16);
-  --success: #7fd99f;
-  --success-soft: rgba(127, 217, 159, 0.16);
-  --info: #8ab6ff;
-  --info-soft: rgba(138, 182, 255, 0.16);
-  --shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.5);
+  --bg: #15120e;
+  --bg-elev: #1e1a15;
+  --bg-sunken: #100d0a;
+  --bg-hover: #292218;
+  --text: #ece3d6;
+  --text-muted: #b0a493;
+  --text-faint: #877c6b;
+  --border: #332b22;
+  --border-strong: #4a3f31;
+  --accent: #e0a05a;
+  --accent-strong: #f0b878;
+  --accent-contrast: #1e1509;
+  --accent-soft: rgba(224, 160, 90, 0.16);
+  --danger: #f08a78;
+  --danger-soft: rgba(240, 138, 120, 0.16);
+  --warning: #e8c168;
+  --warning-soft: rgba(232, 193, 104, 0.16);
+  --success: #97cb90;
+  --success-soft: rgba(151, 203, 144, 0.16);
+  --info: #8fb4dd;
+  --info-soft: rgba(143, 180, 221, 0.16);
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.55);
 }
 
 * {

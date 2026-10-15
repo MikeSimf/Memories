@@ -35,7 +35,7 @@ async function create(): Promise<void> {
     description.value = ''
     await router.push({
       name: 'campaign-tab',
-      params: { campaignId: record.id, tab: 'heroes' },
+      params: { campaignId: record.id, tab: 'characters' },
     })
   } catch (caught) {
     ui.pushToast('error', errorMessage(caught))
@@ -104,7 +104,7 @@ const hasOfflineData = computed(() => campaigns.loadedFromCache)
         v-for="item in campaigns.items"
         :key="item.id"
         class="card card--link"
-        :to="{ name: 'campaign-tab', params: { campaignId: item.id, tab: 'heroes' } }"
+        :to="{ name: 'campaign-tab', params: { campaignId: item.id, tab: 'characters' } }"
       >
         <h2 class="card__title">{{ item.title }}</h2>
         <p v-if="item.description" class="card__excerpt">{{ item.description }}</p>

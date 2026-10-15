@@ -1,18 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Основная палитра: вино и золото на пергаменте -->
-    <color name="colorPrimary">#8E2434</color>
-    <color name="colorPrimaryDark">#5A1622</color>
-    <color name="colorOnPrimary">#FFFFFF</color>
-    <color name="colorSecondary">#B08D57</color>
-    <color name="colorOnSecondary">#1F1B16</color>
-    <color name="colorSurface">#FFFBF7</color>
-    <color name="colorOnSurface">#1F1B16</color>
-    <color name="colorBackground">#FFFBF7</color>
-    <color name="colorOnBackground">#1F1B16</color>
-    <color name="colorError">#B3261E</color>
+    <!--
+      Палитра DnD: тёплый пергамент, бронза и золото. Приоритет — читаемость
+      и скорость, поэтому только спокойные однотонные цвета, без градиентов.
+      Тёмная тема переопределяет те же имена в values-night/colors.xml.
+    -->
+    <color name="colorPrimary">#8A6A3B</color>
+    <color name="colorPrimaryDark">#5E4525</color>
+    <color name="colorOnPrimary">#FFF7EA</color>
+    <color name="colorPrimaryContainer">#EBDCC2</color>
+    <color name="colorOnPrimaryContainer">#3A2A14</color>
+    <color name="colorSecondary">#B98B2E</color>
+    <color name="colorOnSecondary">#FFF8EA</color>
+    <color name="colorSurface">#FBF4E6</color>
+    <color name="colorOnSurface">#2A2118</color>
+    <color name="colorSurfaceVariant">#EEE0C6</color>
+    <color name="colorOnSurfaceVariant">#57493A</color>
+    <color name="colorBackground">#F4EAD7</color>
+    <color name="colorOnBackground">#2A2118</color>
+    <color name="colorError">#A3231C</color>
     <color name="colorOnError">#FFFFFF</color>
-    <color name="colorOutline">#7A7570</color>
+    <color name="colorOutline">#8C7B63</color>
+
+    <!-- Плашки и разделители -->
+    <color name="panel_attention">#F1DFAF</color>
+    <color name="card_stroke">#DCCBA9</color>
 
     <!-- Разметка [[Имя]] -->
     <color name="wiki_link">#1A5FB4</color>
@@ -25,10 +37,13 @@
     <color name="status_unknown">#757575</color>
 
     <!-- Бейджи -->
-    <color name="badge_dirty">#EF6C00</color>
+    <color name="badge_dirty">#B36B00</color>
     <color name="badge_conflict">#C62828</color>
     <color name="badge_published">#2E7D32</color>
 
+    <!-- Пустое состояние и подписи -->
+    <color name="text_muted">#6B5B47</color>
+
     <!-- Иконка приложения -->
-    <color name="ic_launcher_background">#5A1622</color>
+    <color name="ic_launcher_background">#3A2A18</color>
 </resources>

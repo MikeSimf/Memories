@@ -12,10 +12,18 @@ import okhttp3.Route;
 import ru.dndmemory.data.local.SessionStore;
 
 /**
- * Реакция на 401: один раз обновляет access-токен (refresh-токен ротируется
- * сервером) и повторяет запрос. Если обновление не удалось — сессия сбрасывается.
+ * Реакция на 401: обновляет access-токен (refresh-токен ротируется сервером)
+ * и повторяет запрос ровно один раз.
+ *
+ * <p><b>Без зацикливания.</b> Повторный 401 означает, что сессия недействительна:
+ * второй раз refresh не вызываем. Признак отзыва передаёт
+ * {@link ru.dndmemory.data.repo.AuthRepository#refreshBlocking()} — он чистит
+ * токены и поднимает событие для экрана QR, а локальные данные в Room остаются.
  */
 public class TokenAuthenticator implements Authenticator {
+
+    /** Метка повтора: по ней второй 401 отличается от первого. */
+    private static final String HEADER_RETRIED = "X-Dnd-Retried";
 
     private static final Object LOCK = new Object();
 
@@ -35,7 +43,8 @@ public class TokenAuthenticator implements Authenticator {
             // 401 без нашего токена: это вход/регистрация, повторять нечем.
             return null;
         }
-        if (countRetries(response) >= 2) {
+        if (response.request().header(HEADER_RETRIED) != null || countRetries(response) >= 2) {
+            // Токен уже обновляли, сервер снова ответил 401 — сессия недействительна.
             return null;
         }
         String path = response.request().url().encodedPath();
@@ -54,7 +63,7 @@ public class TokenAuthenticator implements Authenticator {
             fresh = refresher.refreshBlocking();
         }
         if (fresh == null || fresh.isEmpty()) {
-            sessionStore.clear();
+            // Токены уже очищены в refreshBlocking — повтор запроса не поможет.
             return null;
         }
         return withToken(response.request(), fresh);
@@ -63,6 +72,7 @@ public class TokenAuthenticator implements Authenticator {
     private static Request withToken(Request request, String token) {
         return request.newBuilder()
                 .header("Authorization", "Bearer " + token)
+                .header(HEADER_RETRIED, "1")
                 .build();
     }
 

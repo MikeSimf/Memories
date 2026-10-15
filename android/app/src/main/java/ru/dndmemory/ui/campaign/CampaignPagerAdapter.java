@@ -7,13 +7,14 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import ru.dndmemory.data.model.EntityType;
 import ru.dndmemory.ui.entity.EntityListFragment;
-import ru.dndmemory.ui.members.MembersFragment;
-import ru.dndmemory.ui.retelling.RetellingListFragment;
 
-/** Шесть вкладок кампании: Герои, Персонажи, Локации, Предметы, Пересказы, Участники. */
+/**
+ * Три вкладки кампании: Персонажи (герои и НПС вместе), Локации, Предметы.
+ * Пересказы и Участники — отдельные экраны из меню шапки.
+ */
 public class CampaignPagerAdapter extends FragmentStateAdapter {
 
-    public static final int TAB_COUNT = 6;
+    public static final int TAB_COUNT = 3;
 
     public CampaignPagerAdapter(@NonNull FragmentActivity activity) {
         super(activity);
@@ -23,19 +24,13 @@ public class CampaignPagerAdapter extends FragmentStateAdapter {
     @Override
     public Fragment createFragment(int position) {
         switch (position) {
-            case 0:
-                return EntityListFragment.newInstance(EntityType.HERO);
-            case 2:
-                return EntityListFragment.newInstance(EntityType.LOCATION);
-            case 3:
-                return EntityListFragment.newInstance(EntityType.ITEM);
-            case 4:
-                return RetellingListFragment.newInstance();
-            case 5:
-                return MembersFragment.newInstance();
             case 1:
+                return EntityListFragment.newInstance(EntityType.LOCATION.name());
+            case 2:
+                return EntityListFragment.newInstance(EntityType.ITEM.name());
+            case 0:
             default:
-                return EntityListFragment.newInstance(EntityType.NPC);
+                return EntityListFragment.newInstance(EntityType.CHARACTERS);
         }
     }
 

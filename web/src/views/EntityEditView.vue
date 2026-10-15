@@ -34,10 +34,10 @@ function initialForm(): EntityFormValues {
 
 function tabForType(type: EntityType): string {
   switch (type) {
+    // Герои и НПС живут на одной вкладке «Персонажи».
     case 'HERO':
-      return 'heroes'
     case 'NPC':
-      return 'npcs'
+      return 'characters'
     case 'LOCATION':
       return 'locations'
     default:

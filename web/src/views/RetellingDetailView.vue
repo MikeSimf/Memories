@@ -63,8 +63,8 @@ async function remove(): Promise<void> {
     confirmDelete.value = false
     ui.pushToast('success', item.value.isDraft ? 'Черновик удалён' : 'Пересказ удалён')
     await router.push({
-      name: 'campaign-tab',
-      params: { campaignId: campaign.campaignId, tab: 'retellings' },
+      name: 'campaign-retellings',
+      params: { campaignId: campaign.campaignId },
     })
   } catch (caught) {
     ui.pushToast('error', errorMessage(caught))
@@ -208,7 +208,7 @@ async function keepLocal(): Promise<void> {
     >
       <RouterLink
         class="btn"
-        :to="{ name: 'campaign-tab', params: { campaignId: campaign.campaignId, tab: 'retellings' } }"
+        :to="{ name: 'campaign-retellings', params: { campaignId: campaign.campaignId } }"
       >
         К списку пересказов
       </RouterLink>

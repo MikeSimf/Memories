@@ -3,13 +3,17 @@ import { computed, ref } from 'vue'
 
 import {
   ApiError,
+  devicesApi,
+  entitiesApi,
   errorMessage,
   invitesApi,
   membersApi,
   type AcceptInviteResponse,
   type AddMemberRequest,
   type AddMemberResponse,
+  type CreateEnrollmentRequest,
   type CreateInviteRequest,
+  type DeviceDto,
   type EntityLinkDto,
   type EntityType,
   type InviteDto,
@@ -24,6 +28,7 @@ import {
   deleteMemberRecord,
   deleteRetellingRecord,
   draftToRetelling,
+  entityFromDto,
   entityToPayload,
   getDraft,
   getEntity,
@@ -37,6 +42,7 @@ import {
   onDatabaseChanged,
   pruneMembers,
   putDraft,
+  putEntities,
   putEntity,
   putMember,
   putMembers,
@@ -106,6 +112,13 @@ export const useCampaignStore = defineStore('campaign', () => {
   const drafts = ref<LocalRetellingDraft[]>([])
   const members = ref<MemberRecord[]>([])
   const invites = ref<InviteDto[]>([])
+  const devices = ref<DeviceDto[]>([])
+  /**
+   * Объекты активной вкладки: читаются из IndexedDB с фильтром видов
+   * (`listEntities(id, { types })`) — поэтому список работает и без сети.
+   */
+  const tabEntities = ref<LocalEntity[]>([])
+  const tabTypes = ref<EntityType[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
   let unsubscribeDatabase: (() => void) | null = null
@@ -235,6 +248,53 @@ export const useCampaignStore = defineStore('campaign', () => {
     retellings.value = retellingList
     drafts.value = draftList
     members.value = memberList
+    await readTabEntities()
+  }
+
+  /** Локальное чтение вкладки: тот же фильтр видов, что уходит на сервер. */
+  async function readTabEntities(): Promise<void> {
+    const id = campaignId.value
+    if (!id || tabTypes.value.length === 0) {
+      tabEntities.value = []
+      return
+    }
+    tabEntities.value = await listEntities(id, { types: tabTypes.value })
+  }
+
+  /**
+   * Свежие объекты вкладки с сервера: `GET /entities?types=…` (`api.md` §6).
+   * Записи с неотправленными правками не перетираем — их версия уйдёт push'ем.
+   * При отсутствии сети молча остаёмся на локальной базе.
+   */
+  async function refreshEntitiesFromServer(types: EntityType[]): Promise<void> {
+    const id = campaignId.value
+    if (!id || !ui.online) return
+    try {
+      const page = await entitiesApi.list(id, { types, limit: 500 })
+      const local = await listEntities(id, { includeDeleted: true })
+      const dirtyIds = new Set(
+        local.filter((entity) => entity.dirty === 1).map((entity) => entity.id),
+      )
+      const incoming = page.items
+        .filter((dto) => !dirtyIds.has(dto.id))
+        .map((dto) => entityFromDto(dto, { conflict: null }))
+      await putEntities(incoming)
+    } catch (caught) {
+      if (caught instanceof ApiError && caught.isOffline) return
+      console.warn('[dnd-memory] не удалось обновить объекты вкладки', caught)
+    }
+  }
+
+  /**
+   * Открытие вкладки: сначала локальная база с фильтром видов (работает офлайн),
+   * затем подтягивание свежих данных с сервера и повторное локальное чтение.
+   */
+  async function loadTabEntities(types: EntityType[]): Promise<void> {
+    tabTypes.value = [...types]
+    await readTabEntities()
+    await refreshEntitiesFromServer(types)
+    // Перечитываем стор целиком: свежие записи нужны и общим ссылкам `[[…]]`.
+    await reload()
   }
 
   /** Открытие кампании: локальные данные сразу, детали роли — при наличии сети. */
@@ -272,6 +332,9 @@ export const useCampaignStore = defineStore('campaign', () => {
     drafts.value = []
     members.value = []
     invites.value = []
+    devices.value = []
+    tabEntities.value = []
+    tabTypes.value = []
   }
 
   function entityById(id: string): LocalEntity | null {
@@ -769,6 +832,38 @@ export const useCampaignStore = defineStore('campaign', () => {
     invites.value = invites.value.filter((invite) => invite.id !== inviteId)
   }
 
+  /* ---------------------- Устройства (QR-регистрация) ---------------- */
+
+  /** Список устройств кампании (`api.md` §3.1, право `members.manage`). */
+  async function reloadDevices(): Promise<void> {
+    const id = requireCampaignId()
+    try {
+      devices.value = await devicesApi.list(id)
+    } catch (caught) {
+      if (caught instanceof ApiError && caught.isOffline) {
+        ui.pushToast('warning', 'Список устройств доступен только при наличии сети')
+        devices.value = []
+        return
+      }
+      throw caught
+    }
+  }
+
+  /** Выпуск QR-кода для регистрации устройства: возвращает его же для показа. */
+  async function createDeviceEnrollment(body: CreateEnrollmentRequest): Promise<InviteDto> {
+    const id = requireCampaignId()
+    const enrollment = await devicesApi.createEnrollment(id, body)
+    await reloadDevices()
+    return enrollment
+  }
+
+  /** Отзыв устройства: сессии гасятся, человек в кампании остаётся. */
+  async function revokeDevice(deviceId: string): Promise<void> {
+    const id = requireCampaignId()
+    await devicesApi.revoke(id, deviceId)
+    devices.value = devices.value.filter((device) => device.id !== deviceId)
+  }
+
   /** Принятие приглашения по токену (`/join/:token`). */
   async function acceptInvite(token: string): Promise<AcceptInviteResponse> {
     const response = await invitesApi.accept(token)
@@ -784,6 +879,9 @@ export const useCampaignStore = defineStore('campaign', () => {
     drafts,
     members,
     invites,
+    devices,
+    tabEntities,
+    tabTypes,
     loading,
     error,
     permissions,
@@ -842,6 +940,10 @@ export const useCampaignStore = defineStore('campaign', () => {
     reloadInvites,
     createInvite,
     revokeInvite,
+    reloadDevices,
+    createDeviceEnrollment,
+    revokeDevice,
+    loadTabEntities,
     acceptInvite,
   }
 })

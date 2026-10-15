@@ -13,8 +13,10 @@ import ru.dndmemory.ui.entity.EntityDetailActivity;
 import ru.dndmemory.ui.entity.EntityEditActivity;
 import ru.dndmemory.ui.invite.InviteAcceptActivity;
 import ru.dndmemory.ui.invite.InviteActivity;
+import ru.dndmemory.ui.members.MembersActivity;
 import ru.dndmemory.ui.retelling.RetellingDetailActivity;
 import ru.dndmemory.ui.retelling.RetellingEditActivity;
+import ru.dndmemory.ui.retelling.RetellingListActivity;
 import ru.dndmemory.ui.search.SearchActivity;
 import ru.dndmemory.ui.settings.SettingsActivity;
 
@@ -106,6 +108,19 @@ public final class Nav {
         context.startActivity(intent);
     }
 
+    /** Пересказы и участники — отдельные экраны в меню шапки кампании. */
+    public static void openRetellings(@NonNull Context context, @NonNull String campaignId) {
+        Intent intent = new Intent(context, RetellingListActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        context.startActivity(intent);
+    }
+
+    public static void openMembers(@NonNull Context context, @NonNull String campaignId) {
+        Intent intent = new Intent(context, MembersActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        context.startActivity(intent);
+    }
+
     /** Общий поиск по кампании или поиск внутри вкладки. */
     public static void openSearch(@NonNull Context context, @NonNull String campaignId,
                                   @Nullable String typeFilter) {
@@ -125,5 +140,10 @@ public final class Nav {
         Intent intent = new Intent(context, InviteAcceptActivity.class);
         intent.putExtra(Extras.INVITE_TOKEN, token);
         context.startActivity(intent);
+    }
+
+    /** Экран регистрации устройства по QR — основной вход в приложение. */
+    public static void openEnroll(@NonNull Context context, @Nullable String reason) {
+        context.startActivity(ru.dndmemory.ui.auth.EnrollActivity.intent(context, reason));
     }
 }

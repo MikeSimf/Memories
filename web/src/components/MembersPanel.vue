@@ -109,7 +109,7 @@ async function copy(text: string): Promise<void> {
       <span class="muted">{{ members.length }} участников</span>
       <div class="row">
         <RouterLink
-          v-if="campaign.canInvite"
+          v-if="campaign.canInvite || campaign.canManageMembers"
           class="btn btn--sm"
           :to="{ name: 'campaign-invites', params: { campaignId: campaign.campaignId } }"
         >

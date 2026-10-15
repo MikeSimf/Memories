@@ -1,21 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!--
+      Единственная тема приложения: цвета берутся по именам из colors.xml,
+      поэтому светлая и тёмная темы отличаются только файлом colors.xml
+      в values-night. Никаких тяжёлых эффектов — только скругления и границы.
+    -->
     <style name="Theme.DnDMemory" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorOnPrimary">@color/colorOnPrimary</item>
-        <item name="colorPrimaryContainer">@color/colorPrimaryDark</item>
-        <item name="colorOnPrimaryContainer">@color/colorOnPrimary</item>
+        <item name="colorPrimaryContainer">@color/colorPrimaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/colorOnPrimaryContainer</item>
         <item name="colorSecondary">@color/colorSecondary</item>
         <item name="colorOnSecondary">@color/colorOnSecondary</item>
         <item name="colorSurface">@color/colorSurface</item>
         <item name="colorOnSurface">@color/colorOnSurface</item>
+        <item name="colorSurfaceVariant">@color/colorSurfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/colorOnSurfaceVariant</item>
         <item name="android:colorBackground">@color/colorBackground</item>
+        <item name="colorOnBackground">@color/colorOnBackground</item>
         <item name="colorError">@color/colorError</item>
         <item name="colorOnError">@color/colorOnError</item>
         <item name="colorOutline">@color/colorOutline</item>
         <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="android:navigationBarColor">@color/colorBackground</item>
         <item name="android:windowBackground">@color/colorBackground</item>
+    </style>
+
+    <!-- Карточка-строка: скруглённые углы и тонкая граница вместо тени. -->
+    <style name="Widget.DnDMemory.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardBackgroundColor">?attr/colorSurface</item>
+        <item name="cardCornerRadius">14dp</item>
+        <item name="cardElevation">1dp</item>
+        <item name="strokeColor">@color/card_stroke</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <!-- Шапка кампании и других экранов на тёплом фоне поверхности. -->
+    <style name="Widget.DnDMemory.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="android:background">?attr/colorSurface</item>
+        <item name="titleTextColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- Поле быстрого фильтра вверху вкладки. -->
+    <style name="Widget.DnDMemory.Filter" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/colorPrimary</item>
+        <item name="hintTextColor">@color/colorOutline</item>
+    </style>
+
+    <!-- Крупная кнопка главного действия: сканирование QR. -->
+    <style name="Widget.DnDMemory.PrimaryButton" parent="Widget.Material3.Button">
+        <item name="android:textSize">17sp</item>
+        <item name="cornerRadius">16dp</item>
     </style>
 
 </resources>

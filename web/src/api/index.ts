@@ -10,6 +10,7 @@ export {
   campaignsApi,
   membersApi,
   invitesApi,
+  devicesApi,
   entitiesApi,
   retellingsApi,
   searchApi,

@@ -91,10 +91,10 @@ async function remove(): Promise<void> {
 
 function tabForType(type: EntityType): string {
   switch (type) {
+    // Герои и НПС живут на одной вкладке «Персонажи».
     case 'HERO':
-      return 'heroes'
     case 'NPC':
-      return 'npcs'
+      return 'characters'
     case 'LOCATION':
       return 'locations'
     default:
@@ -279,7 +279,7 @@ async function keepLocal(): Promise<void> {
     >
       <RouterLink
         class="btn"
-        :to="{ name: 'campaign-tab', params: { campaignId: campaign.campaignId, tab: 'heroes' } }"
+        :to="{ name: 'campaign-tab', params: { campaignId: campaign.campaignId, tab: 'characters' } }"
       >
         К списку
       </RouterLink>

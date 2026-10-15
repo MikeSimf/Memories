@@ -9,10 +9,14 @@ import type {
   CampaignListItem,
   CreateCampaignRequest,
   CreateEntityRequest,
+  CreateEnrollmentRequest,
   CreateInviteRequest,
   CreateRetellingRequest,
+  DeviceDto,
   EntityDto,
   EntityListQuery,
+  EnrollRequest,
+  EnrollResponse,
   FileDto,
   HealthDto,
   InviteDto,
@@ -35,6 +39,7 @@ import type {
   RetellingDto,
   RetellingListQuery,
   SearchResponse,
+  SetPasswordRequest,
   SyncPullResponse,
   SyncPushRequest,
   SyncPushResponse,
@@ -103,6 +108,14 @@ export const authApi = {
 
   patchMe(body: PatchMeRequest): Promise<UserDto> {
     return apiClient.request<UserDto>({ method: 'PATCH', path: '/api/me', body })
+  },
+
+  /**
+   * Задать или сменить пароль (`api.md` §3). `currentPassword` обязателен только
+   * при `hasPassword: true`. После запроса аккаунт устройства становится полноценным.
+   */
+  async setPassword(body: SetPasswordRequest): Promise<void> {
+    await apiClient.request<void>({ method: 'POST', path: '/api/me/password', body })
   },
 
   providers(): Promise<OAuthProvidersResponse> {
@@ -238,14 +251,55 @@ export const invitesApi = {
   },
 }
 
+/* --------------------- Регистрация устройства по QR ----------------------- */
+
+export const devicesApi = {
+  /** Шаг админа: выпуск QR-кода для устройства (`api.md` §3.1, право `members.manage`). */
+  createEnrollment(campaignId: string, body: CreateEnrollmentRequest): Promise<InviteDto> {
+    return apiClient.request<InviteDto>({
+      method: 'POST',
+      path: `/api/campaigns/${encodeURIComponent(campaignId)}/devices/enrollments`,
+      body,
+    })
+  },
+
+  /** Список устройств кампании (`members.manage`). */
+  async list(campaignId: string): Promise<DeviceDto[]> {
+    const page = await apiClient.request<PageDto<DeviceDto> | DeviceDto[]>({
+      path: `/api/campaigns/${encodeURIComponent(campaignId)}/devices`,
+    })
+    return toPage(page).items
+  },
+
+  /** Отзыв устройства: его сессии гасятся, человек остаётся в кампании. */
+  async revoke(campaignId: string, deviceId: string): Promise<void> {
+    await apiClient.request<void>({
+      method: 'DELETE',
+      path: `/api/campaigns/${encodeURIComponent(campaignId)}/devices/${encodeURIComponent(deviceId)}`,
+    })
+  },
+
+  /** Шаг телефона: единственный эндпоинт без авторизации (кроме входа и `/health`). */
+  enroll(body: EnrollRequest): Promise<EnrollResponse> {
+    return apiClient.request<EnrollResponse>({
+      method: 'POST',
+      path: '/api/devices/enroll',
+      body,
+      auth: false,
+    })
+  },
+}
+
 /* --------------------------------- Объекты -------------------------------- */
 
 export const entitiesApi = {
   async list(campaignId: string, query: EntityListQuery = {}): Promise<PageDto<EntityDto>> {
+    // `types` — список видов через запятую: `?types=HERO,NPC` (`api.md` §6).
+    const types = query.types && query.types.length > 0 ? query.types.join(',') : undefined
     const page = await apiClient.request<PageDto<EntityDto> | EntityDto[]>({
       path: `/api/campaigns/${encodeURIComponent(campaignId)}/entities`,
       query: {
-        type: query.type,
+        types,
         q: query.q,
         updatedSince: query.updatedSince,
         limit: query.limit,
@@ -412,6 +466,7 @@ export const api = {
   campaigns: campaignsApi,
   members: membersApi,
   invites: invitesApi,
+  devices: devicesApi,
   entities: entitiesApi,
   retellings: retellingsApi,
   search: searchApi,

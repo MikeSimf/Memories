@@ -65,16 +65,21 @@ async function startOAuth(provider: OAuthProvider): Promise<void> {
 
       <form class="stack" @submit.prevent="submit">
         <div class="field">
-          <label class="field__label" for="login-email">Почта</label>
+          <label class="field__label" for="login-email">Почта или телефон</label>
           <input
             id="login-email"
             v-model="email"
             class="input"
-            type="email"
-            autocomplete="email"
+            type="text"
+            inputmode="email"
+            autocomplete="username"
             required
-            placeholder="gm@example.com"
+            placeholder="gm@example.com или +7 999 123-45-67"
           />
+          <span class="field__hint">
+            Подойдёт почта или телефон, указанные в профиле. Телефон — в любом виде:
+            +7 999 123-45-67, 8 999 123 45 67.
+          </span>
         </div>
         <div class="field">
           <label class="field__label" for="login-password">Пароль</label>

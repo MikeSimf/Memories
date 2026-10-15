@@ -13,16 +13,24 @@ const sync = useSyncStore()
 const ui = useUiStore()
 
 const tabs = [
-  { key: 'heroes', label: 'Герои' },
-  { key: 'npcs', label: 'Персонажи' },
+  { key: 'characters', label: 'Персонажи' },
   { key: 'locations', label: 'Локации' },
   { key: 'items', label: 'Предметы' },
-  { key: 'retellings', label: 'Пересказы' },
-  { key: 'members', label: 'Участники' },
+] as const
+
+/** Разделы кампании, вынесенные из вкладок (маршруты сохранены). */
+const sections = [
+  { key: 'retellings', label: 'Пересказы', route: 'campaign-retellings' },
+  { key: 'members', label: 'Участники', route: 'campaign-members' },
 ] as const
 
 const campaignId = computed(() => String(route.params.campaignId ?? ''))
-const activeTab = computed(() => (typeof route.params.tab === 'string' ? route.params.tab : ''))
+const activeTab = computed(() => {
+  const name = route.name
+  if (name === 'campaign-retellings') return 'retellings'
+  if (name === 'campaign-members') return 'members'
+  return typeof route.params.tab === 'string' ? route.params.tab : ''
+})
 const roleLabel = computed(() =>
   campaign.campaign ? MEMBER_ROLE_LABELS[campaign.campaign.myRole] : '',
 )
@@ -78,7 +86,16 @@ onBeforeUnmount(() => {
         Поиск по кампании
       </RouterLink>
       <RouterLink
-        v-if="campaign.canInvite"
+        v-for="section in sections"
+        :key="section.key"
+        class="btn btn--sm"
+        :class="{ 'btn--primary': activeTab === section.key }"
+        :to="{ name: section.route, params: { campaignId } }"
+      >
+        {{ section.label }}
+      </RouterLink>
+      <RouterLink
+        v-if="campaign.canInvite || campaign.canManageMembers"
         class="btn btn--sm"
         :to="{ name: 'campaign-invites', params: { campaignId } }"
       >

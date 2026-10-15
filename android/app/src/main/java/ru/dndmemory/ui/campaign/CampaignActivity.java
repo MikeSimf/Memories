@@ -27,7 +27,11 @@ import ru.dndmemory.ui.common.Rights;
 import ru.dndmemory.ui.common.ViewModelFactory;
 import ru.dndmemory.ui.common.ViewUtils;
 
-/** Экран кампании: вкладки объектов, пересказов и участников. */
+/**
+ * Экран кампании: три вкладки объектов — Персонажи (герои и НПС вместе),
+ * Локации и Предметы. Пересказы, Участники и Приглашения вынесены в меню шапки
+ * отдельными пунктами (docs/api.md, раздел 6).
+ */
 public class CampaignActivity extends AppCompatActivity implements CampaignHost {
 
     private ActivityCampaignBinding binding;
@@ -71,18 +75,12 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
     private int tabTitle(int position) {
         switch (position) {
             case 0:
-                return R.string.tab_heroes;
+                return R.string.tab_characters;
             case 1:
-                return R.string.tab_npcs;
-            case 2:
                 return R.string.tab_locations;
-            case 3:
-                return R.string.tab_items;
-            case 4:
-                return R.string.tab_retellings;
-            case 5:
+            case 2:
             default:
-                return R.string.tab_members;
+                return R.string.tab_items;
         }
     }
 
@@ -92,20 +90,16 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
         return true;
     }
 
-    /** Тип объектов текущей вкладки — им фильтруется поиск. */
+    /** Типы объектов текущей вкладки — им фильтруется поиск. */
     @Nullable
     private String currentTabFilter() {
         switch (binding.campaignPager.getCurrentItem()) {
             case 0:
-                return EntityType.HERO.name();
+                return EntityType.CHARACTERS;
             case 1:
-                return EntityType.NPC.name();
-            case 2:
                 return EntityType.LOCATION.name();
-            case 3:
+            case 2:
                 return EntityType.ITEM.name();
-            case 4:
-                return "RETELLING";
             default:
                 return null;
         }
@@ -117,6 +111,14 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
         if (id == R.id.action_search) {
             // Поиск открывается с фильтром текущей вкладки; чип «Всё» даёт общий поиск.
             Nav.openSearch(this, campaignId, currentTabFilter());
+            return true;
+        }
+        if (id == R.id.action_retellings) {
+            Nav.openRetellings(this, campaignId);
+            return true;
+        }
+        if (id == R.id.action_members) {
+            Nav.openMembers(this, campaignId);
             return true;
         }
         if (id == R.id.action_invite) {

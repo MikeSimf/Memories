@@ -9,10 +9,22 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_retellings"
+        android:icon="@drawable/ic_retelling"
+        android:title="@string/tab_retellings"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_members"
+        android:icon="@drawable/ic_members"
+        android:title="@string/tab_members"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_invite"
         android:icon="@drawable/ic_qr"
         android:title="@string/action_invite"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_refresh"

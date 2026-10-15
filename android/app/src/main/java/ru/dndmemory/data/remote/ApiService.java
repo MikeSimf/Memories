@@ -21,9 +21,13 @@ import ru.dndmemory.data.remote.dto.AuthResponse;
 import ru.dndmemory.data.remote.dto.BacklinkDto;
 import ru.dndmemory.data.remote.dto.CampaignDto;
 import ru.dndmemory.data.remote.dto.CreateCampaignRequest;
+import ru.dndmemory.data.remote.dto.CreateDeviceEnrollmentRequest;
 import ru.dndmemory.data.remote.dto.CreateInviteRequest;
 import ru.dndmemory.data.remote.dto.CreateRetellingRequest;
+import ru.dndmemory.data.remote.dto.DeviceDto;
 import ru.dndmemory.data.remote.dto.EntityDto;
+import ru.dndmemory.data.remote.dto.EnrollRequest;
+import ru.dndmemory.data.remote.dto.EnrollResponse;
 import ru.dndmemory.data.remote.dto.FileDto;
 import ru.dndmemory.data.remote.dto.HealthDto;
 import ru.dndmemory.data.remote.dto.InviteDto;
@@ -43,6 +47,7 @@ import ru.dndmemory.data.remote.dto.RefreshRequest;
 import ru.dndmemory.data.remote.dto.RegisterRequest;
 import ru.dndmemory.data.remote.dto.RetellingDto;
 import ru.dndmemory.data.remote.dto.SearchResponse;
+import ru.dndmemory.data.remote.dto.SetPasswordRequest;
 import ru.dndmemory.data.remote.dto.SnapshotResponse;
 import ru.dndmemory.data.remote.dto.SyncStateDto;
 import ru.dndmemory.data.remote.dto.TokenPairDto;
@@ -79,6 +84,17 @@ public interface ApiService {
 
     @PATCH("api/me")
     Call<UserDto> patchMe(@Body PatchMeRequest body);
+
+    /** Задать или сменить пароль: после этого работает вход в веб-версию. */
+    @POST("api/me/password")
+    Call<Void> setPassword(@Body SetPasswordRequest body);
+
+    /**
+     * Шаг телефона при регистрации устройства (docs/api.md, раздел 3.1).
+     * Единственный эндпоинт, кроме входа и {@code /health}, доступный без авторизации.
+     */
+    @POST("api/devices/enroll")
+    Call<EnrollResponse> enrollDevice(@Body EnrollRequest body);
 
     @GET("api/auth/providers")
     Call<ProvidersResponse> providers();
@@ -129,6 +145,20 @@ public interface ApiService {
     Call<InviteDto> createInvite(@Path("id") String campaignId,
                                  @Body CreateInviteRequest body);
 
+    /** Выпуск QR-кода для регистрации устройства (docs/api.md, раздел 3.1). */
+    @POST("api/campaigns/{id}/devices/enrollments")
+    Call<InviteDto> createDeviceEnrollment(@Path("id") String campaignId,
+                                           @Body CreateDeviceEnrollmentRequest body);
+
+    /** Устройства кампании: кто получил доступ и когда заходил последний раз. */
+    @GET("api/campaigns/{id}/devices")
+    Call<List<DeviceDto>> devices(@Path("id") String campaignId);
+
+    /** Отзыв устройства: его сессии гасятся, участие в кампании сохраняется. */
+    @DELETE("api/campaigns/{id}/devices/{deviceId}")
+    Call<Void> revokeDevice(@Path("id") String campaignId,
+                            @Path("deviceId") String deviceId);
+
     @GET("api/campaigns/{id}/invites")
     Call<List<InviteDto>> invites(@Path("id") String campaignId);
 
@@ -145,9 +175,13 @@ public interface ApiService {
 
     // --- Объекты (раздел 6) -----------------------------------------------
 
+    /**
+     * Список объектов кампании. {@code types} — фильтр по видам, можно несколько:
+     * {@code HERO,NPC} (docs/api.md, раздел 6).
+     */
     @GET("api/campaigns/{id}/entities")
     Call<List<EntityDto>> entities(@Path("id") String campaignId,
-                                   @Query("type") String type,
+                                   @Query("types") String types,
                                    @Query("q") String query,
                                    @Query("updatedSince") String updatedSince,
                                    @Query("limit") Integer limit,
