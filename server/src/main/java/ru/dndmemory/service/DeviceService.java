@@ -71,7 +71,13 @@ public class DeviceService {
     public DeviceDtos.EnrollResponse enroll(DeviceDtos.EnrollRequest request) {
         Invite invite = inviteRepository.findByToken(request.getToken().trim().toUpperCase())
                 .orElseThrow(ApiException::inviteInvalid);
-        if (invite.getMode() != InviteMode.DEVICE || !invite.isValid()) {
+        if (invite.getMode() != InviteMode.DEVICE) {
+            // Это обычное приглашение участника: подсказываем человеку, что делать
+            throw new ApiException(org.springframework.http.HttpStatus.CONFLICT, "member_invite",
+                    "Это приглашение для входа в аккаунт — войдите или зарегистрируйтесь, "
+                            + "и код подхватится автоматически");
+        }
+        if (!invite.isValid()) {
             throw ApiException.inviteInvalid();
         }
         Campaign campaign = campaignRepository.findForUpdate(invite.getCampaignId())

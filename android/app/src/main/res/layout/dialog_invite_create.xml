@@ -1,68 +1,135 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:layout_height="wrap_content">
 
-    <TextView
-        android:id="@+id/invite_create_header"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/invite_create"
-        android:textAppearance="?attr/textAppearanceTitleMedium" />
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:hint="@string/invite_role"
-        app:endIconMode="dropdown_menu">
-
-        <com.google.android.material.textfield.MaterialAutoCompleteTextView
-            android:id="@+id/invite_create_role"
+        <TextView
+            android:id="@+id/invite_create_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="none" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:text="@string/invite_create"
+            android:textAppearance="?attr/textAppearanceTitleMedium" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/invite_linked"
-        app:endIconMode="dropdown_menu">
-
-        <com.google.android.material.textfield.MaterialAutoCompleteTextView
-            android:id="@+id/invite_create_linked"
+        <!-- Режим: приглашение участнику или регистрация устройства -->
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/invite_create_mode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="none" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginTop="12dp"
+            app:selectionRequired="true"
+            app:singleSelection="true">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/invite_expires">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/invite_create_mode_member"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/invite_mode_member" />
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/invite_create_expires"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/invite_create_mode_device"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/invite_mode_device" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <!-- Поля только для режима устройства -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/invite_create_name_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="number"
-            android:maxLines="1" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginTop="8dp"
+            android:hint="@string/invite_device_name"
+            android:visibility="gone">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/invite_uses">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/invite_create_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPersonName"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/invite_create_max_uses"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/invite_create_label_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="number"
-            android:maxLines="1" />
-    </com.google.android.material.textfield.TextInputLayout>
-</LinearLayout>
+            android:hint="@string/invite_device_label"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/invite_create_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/invite_create_role_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/invite_role"
+            app:endIconMode="dropdown_menu">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/invite_create_role"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/invite_create_linked_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/invite_linked"
+            app:endIconMode="dropdown_menu">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/invite_create_linked"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/invite_create_expires_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/invite_expires_hint">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/invite_create_expires"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/invite_create_max_uses_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/invite_uses_hint">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/invite_create_max_uses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

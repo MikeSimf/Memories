@@ -15,14 +15,17 @@ import ru.dndmemory.data.local.SettingsStore;
 import ru.dndmemory.data.local.entity.CampaignRoom;
 import ru.dndmemory.data.model.SyncResult;
 import ru.dndmemory.data.remote.ApiClient;
+import ru.dndmemory.data.remote.ApiException;
+import ru.dndmemory.data.remote.dto.UserDto;
 import ru.dndmemory.data.repo.AuthRepository;
 import ru.dndmemory.sync.SyncEngine;
 import ru.dndmemory.sync.SyncScheduler;
 import ru.dndmemory.util.AppExecutors;
 import ru.dndmemory.util.DateFormats;
+import ru.dndmemory.util.RepoCallback;
 import ru.dndmemory.util.Resource;
 
-/** Настройки: аккаунт, режим синхронизации, полная перезагрузка и выход. */
+/** Настройки: профиль и пароль, режим синхронизации, полная перезагрузка и выход. */
 public class SettingsViewModel extends ViewModel {
 
     private final AuthRepository auth;
@@ -35,6 +38,8 @@ public class SettingsViewModel extends ViewModel {
     private final MutableLiveData<Resource<Void>> actionState = new MutableLiveData<>();
     private final MutableLiveData<Integer> messageRes = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loggedOut = new MutableLiveData<>(false);
+    /** Профиль из {@code /api/me}: имя, почта, телефон, признак пароля. */
+    private final MutableLiveData<UserDto> profile = new MutableLiveData<>();
 
     public SettingsViewModel(@NonNull AuthRepository auth, @NonNull SettingsStore settings,
                              @NonNull SyncEngine syncEngine, @NonNull SyncScheduler scheduler,
@@ -51,6 +56,79 @@ public class SettingsViewModel extends ViewModel {
     public String userName() {
         String name = auth.displayName().getValue();
         return name == null ? "" : name;
+    }
+
+    /** Профиль с сервера; до ответа показываем то, что сохранено в сессии. */
+    @NonNull
+    public LiveData<UserDto> profile() {
+        return profile;
+    }
+
+    @NonNull
+    public String email() {
+        String value = auth.email();
+        return value == null ? "" : value;
+    }
+
+    @NonNull
+    public String phone() {
+        String value = auth.phone();
+        return value == null ? "" : value;
+    }
+
+    public boolean hasPassword() {
+        return auth.hasPassword();
+    }
+
+    public void loadProfile() {
+        auth.loadMe(new RepoCallback<UserDto>() {
+            @Override
+            public void onSuccess(@Nullable UserDto value) {
+                profile.setValue(value);
+            }
+
+            @Override
+            public void onError(@NonNull ApiException error) {
+                // Офлайн: остаются данные из сессии.
+            }
+        });
+    }
+
+    /** Изменить имя, почту и телефон ({@code PATCH /api/me}). */
+    public void saveProfile(@NonNull String displayName, @NonNull String email,
+                            @NonNull String phone) {
+        actionState.setValue(Resource.loading());
+        auth.updateProfile(displayName, null, email, phone, new RepoCallback<UserDto>() {
+            @Override
+            public void onSuccess(@Nullable UserDto value) {
+                actionState.setValue(Resource.success(null));
+                profile.setValue(value);
+                messageRes.setValue(R.string.settings_profile_saved);
+            }
+
+            @Override
+            public void onError(@NonNull ApiException error) {
+                actionState.setValue(Resource.error(error));
+            }
+        });
+    }
+
+    /** Задать или сменить пароль ({@code POST /api/me/password}). */
+    public void changePassword(@Nullable String currentPassword, @NonNull String newPassword) {
+        actionState.setValue(Resource.loading());
+        auth.changePassword(currentPassword, newPassword, new RepoCallback<Void>() {
+            @Override
+            public void onSuccess(@Nullable Void value) {
+                actionState.setValue(Resource.success(null));
+                messageRes.setValue(R.string.settings_password_changed);
+                loadProfile();
+            }
+
+            @Override
+            public void onError(@NonNull ApiException error) {
+                actionState.setValue(Resource.error(error));
+            }
+        });
     }
 
     @NonNull

@@ -93,6 +93,8 @@ public class App extends Application {
                     // открытии приложения Splash сам покажет экран QR.
                 }
                 appContainer.sessionStore().clearRevokedEvent();
+                // Одноразовый флаг причины: повторно не показываем.
+                appContainer.sessionStore().takeRevokeReason();
             });
         });
     }

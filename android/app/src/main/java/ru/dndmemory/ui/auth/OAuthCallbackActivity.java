@@ -45,6 +45,7 @@ public class OAuthCallbackActivity extends AppCompatActivity {
             return;
         }
         String provider = OAuthState.provider();
+        String inviteToken = OAuthState.inviteToken();
         OAuthState.clear();
         if (provider == null) {
             fail(getString(R.string.error_unauthorized));
@@ -54,7 +55,12 @@ public class OAuthCallbackActivity extends AppCompatActivity {
         auth.oauthCallback(provider, redirect.code, redirect.state, new RepoCallback<AuthResponse>() {
             @Override
             public void onSuccess(@Nullable AuthResponse value) {
-                Nav.openCampaignList(OAuthCallbackActivity.this);
+                // Пришли со ссылки-приглашения — возвращаемся к ней, а не в список.
+                if (inviteToken != null && !inviteToken.isEmpty()) {
+                    Nav.openInviteAccept(OAuthCallbackActivity.this, inviteToken);
+                } else {
+                    Nav.openCampaignList(OAuthCallbackActivity.this);
+                }
                 finish();
             }
 

@@ -267,6 +267,7 @@
     <string name="invite_accept_invalid">Приглашение недействительно или просрочено</string>
     <string name="invite_accepted">Вы присоединились к кампании</string>
     <string name="invite_login_required">Чтобы принять приглашение, войдите в аккаунт</string>
+    <string name="invite_accept_login_required">Это приглашение для участника: войдите в аккаунт или зарегистрируйтесь — приглашение примется автоматически.</string>
 
     <!-- Режим приглашений и устройства кампании -->
     <string name="invite_section_invites">Приглашения</string>

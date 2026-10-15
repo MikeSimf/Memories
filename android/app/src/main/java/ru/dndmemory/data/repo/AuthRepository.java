@@ -29,6 +29,7 @@ import ru.dndmemory.data.remote.dto.SetPasswordRequest;
 import ru.dndmemory.data.remote.dto.TokenPairDto;
 import ru.dndmemory.data.remote.dto.UserDto;
 import ru.dndmemory.util.AppExecutors;
+import ru.dndmemory.util.DeviceInfo;
 import ru.dndmemory.util.RepoCallback;
 
 /**
@@ -94,6 +95,23 @@ public class AuthRepository implements TokenRefresher {
 
     public String userId() {
         return session.userId();
+    }
+
+    /** Почта для входа в веб-версию (может быть не указана у аккаунта устройства). */
+    @Nullable
+    public String email() {
+        return session.email();
+    }
+
+    /** Телефон в формате, который вернул сервер ({@code +7XXXXXXXXXX}). */
+    @Nullable
+    public String phone() {
+        return session.phone();
+    }
+
+    /** У аккаунта, созданного по QR, пароля нет — интерфейс предложит его задать. */
+    public boolean hasPassword() {
+        return session.hasPassword();
     }
 
     /** Идентификатор установки для синхронизации. */
@@ -191,7 +209,7 @@ public class AuthRepository implements TokenRefresher {
     public void enrollDevice(String token, String label, RepoCallback<EnrollResponse> callback) {
         exec.io(() -> {
             EnrollResponse response = ApiCall.execute(
-                    authApi.enrollDevice(new EnrollRequest(token, label, "android")));
+                    authApi.enrollDevice(new EnrollRequest(token, label, DeviceInfo.platform())));
             session.saveEnrollment(response);
             return response;
         }, callback);

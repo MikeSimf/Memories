@@ -80,7 +80,13 @@ public class EnrollActivity extends AppCompatActivity {
         if (token != null && !token.isEmpty()) {
             pendingToken = QrUtils.extractToken(token);
             binding.enrollCode.setText(pendingToken);
-            if (!auth.isLoggedIn() && pendingToken != null) {
+            if (auth.isLoggedIn()) {
+                // Контракт: есть сессия → accept. Дальше решает экран приглашения.
+                Nav.openInviteAccept(this, pendingToken);
+                finish();
+                return;
+            }
+            if (pendingToken != null) {
                 // Пришли по ссылке/сканированию — обмениваем токен сразу.
                 submit(pendingToken);
             }

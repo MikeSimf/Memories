@@ -7,6 +7,7 @@
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/settings_toolbar"
+        style="@style/Widget.DnDMemory.Toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:title="@string/settings_title" />
@@ -22,30 +23,117 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Профиль: имя, почта, телефон и статус пароля -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/settings_account_section"
-                android:textAppearance="?attr/textAppearanceTitleSmall" />
+                android:text="@string/settings_profile_section"
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
 
             <TextView
                 android:id="@+id/settings_user"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
                 android:textAppearance="?attr/textAppearanceBodyMedium" />
 
             <TextView
-                android:id="@+id/settings_server"
+                android:id="@+id/settings_phone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/text_muted" />
+
+            <TextView
+                android:id="@+id/settings_email"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/text_muted" />
+
+            <TextView
+                android:id="@+id/settings_password_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorPrimary" />
+
+            <TextView
+                android:id="@+id/settings_password_hint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@color/panel_attention"
+                android:padding="12dp"
+                android:text="@string/settings_password_hint"
                 android:textAppearance="?attr/textAppearanceBodySmall" />
 
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.DnDMemory.Filter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="@string/settings_profile_name">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/settings_name_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.DnDMemory.Filter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/settings_profile_email">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/settings_email_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.DnDMemory.Filter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/settings_profile_phone">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/settings_phone_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="phone"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/settings_profile_save"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/settings_profile_save" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/settings_password_button"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/settings_password_set_action" />
+
+            <!-- Синхронизация -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="24dp"
                 android:text="@string/settings_sync_section"
-                android:textAppearance="?attr/textAppearanceTitleSmall" />
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
 
             <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/settings_wifi_only"
@@ -57,7 +145,8 @@
                 android:id="@+id/settings_last_sync"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceBodySmall" />
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/text_muted" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/settings_sync_now"
@@ -68,6 +157,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/settings_full_resync"
+                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/settings_full_resync" />
@@ -76,10 +166,20 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/settings_full_resync_hint"
-                android:textAppearance="?attr/textAppearanceBodySmall" />
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/text_muted" />
+
+            <TextView
+                android:id="@+id/settings_server"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/text_muted" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/settings_logout"
+                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -90,13 +190,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:textAppearance="?attr/textAppearanceBodySmall" />
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/text_muted" />
 
             <ProgressBar
                 android:id="@+id/settings_progress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
                 android:visibility="gone" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

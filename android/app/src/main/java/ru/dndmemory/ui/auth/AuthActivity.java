@@ -119,7 +119,8 @@ public class AuthActivity extends AppCompatActivity {
 
     private void startOauth(@NonNull String provider) {
         String state = viewModel.newState();
-        OAuthState.set(provider, state);
+        // Запоминаем приглашение: после возврата по dndmemory://oauth вернёмся на него.
+        OAuthState.set(provider, state, inviteToken);
         String url = viewModel.authorizeUrl(provider, state);
         try {
             CustomTabsIntent tabs = new CustomTabsIntent.Builder()

@@ -55,6 +55,8 @@ public class SessionStore {
     private static final String KEY_HAS_PASSWORD = "has_password";
     private static final String KEY_DEVICE_ID = "device_client_id";
     private static final String KEY_ENROLLED_DEVICE_ID = "enrolled_device_id";
+    /** Причина последнего отзыва сессии: переживает перезапуск приложения. */
+    private static final String KEY_REVOKE_REASON = "revoke_reason";
 
     private final SharedPreferences prefs;
     private final MutableLiveData<Boolean> loggedIn = new MutableLiveData<>(false);
@@ -145,6 +147,7 @@ public class SessionStore {
         }
         // Вход по паролю/OAuth: сессия больше не привязана к записи устройства.
         editor.remove(KEY_ENROLLED_DEVICE_ID);
+        editor.remove(KEY_REVOKE_REASON);
         writeUser(editor, response.user);
         editor.apply();
         publish(response.user == null ? prefs.getString(KEY_DISPLAY_NAME, null)
@@ -166,6 +169,7 @@ public class SessionStore {
         if (response.deviceId != null) {
             editor.putString(KEY_ENROLLED_DEVICE_ID, response.deviceId);
         }
+        editor.remove(KEY_REVOKE_REASON);
         writeUser(editor, response.user);
         editor.apply();
         publish(response.user == null ? null : response.user.displayName);
@@ -213,9 +217,23 @@ public class SessionStore {
         prefs.edit()
                 .clear()
                 .putString(KEY_DEVICE_ID, deviceId)
+                .putString(KEY_REVOKE_REASON, reason == null ? SESSION_EXPIRED : reason)
                 .apply();
         publish(null);
         revoked.postValue(reason == null ? SESSION_EXPIRED : reason);
+    }
+
+    /**
+     * Причина отзыва, если сессию прервали: экран QR покажет пояснение даже после
+     * перезапуска приложения. Флаг одноразовый — после чтения сбрасывается.
+     */
+    @Nullable
+    public String takeRevokeReason() {
+        String reason = prefs.getString(KEY_REVOKE_REASON, null);
+        if (reason != null) {
+            prefs.edit().remove(KEY_REVOKE_REASON).apply();
+        }
+        return reason;
     }
 
     /** Событие обработано — экран QR уже показан. */

@@ -36,7 +36,13 @@
             </intent-filter>
         </activity>
 
-        <!-- Вход, регистрация, OAuth через Custom Tabs -->
+        <!-- Основной вход: регистрация устройства по QR-коду мастера -->
+        <activity
+            android:name=".ui.auth.EnrollActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Вторичный вход: почта/телефон и пароль, OAuth через Custom Tabs -->
         <activity
             android:name=".ui.auth.AuthActivity"
             android:exported="false"
@@ -97,6 +103,14 @@
             android:name=".ui.retelling.RetellingEditActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.retelling.RetellingListActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.members.MembersActivity"
+            android:exported="false" />
 
         <activity
             android:name=".ui.invite.InviteActivity"

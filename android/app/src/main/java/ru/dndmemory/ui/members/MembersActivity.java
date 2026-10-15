@@ -18,11 +18,13 @@ public class MembersActivity extends BaseCampaignActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = ActivityMembersBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        // Кампанию и ViewModel готовим до setContentView: фрагмент из разметки
+        // создаётся при её раздувании и берёт их у Activity.
         if (!initCampaign()) {
             return;
         }
+        binding = ActivityMembersBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
         setSupportActionBar(binding.membersToolbar);
         if (getSupportActionBar() != null) {

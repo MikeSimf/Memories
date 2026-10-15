@@ -26,7 +26,26 @@ public final class ErrorMessages {
         if (e.isNetwork()) {
             return R.string.error_network;
         }
+        String code = e.getCode();
+        // Контакты для входа: сервер различает занятую почту и занятый телефон.
+        if ("email_taken".equals(code)) {
+            return R.string.error_email_taken;
+        }
+        if ("phone_taken".equals(code)) {
+            return R.string.error_phone_taken;
+        }
+        if ("invite_invalid".equals(code)) {
+            return R.string.error_invite_invalid;
+        }
+        if ("draft_not_synced".equals(code)) {
+            return R.string.retelling_publish_hint;
+        }
         if (e.isUnauthorized()) {
+            // 401 на смене пароля — это не «войдите заново», а неверный текущий пароль.
+            String message = e.getServerMessage();
+            if (message != null && message.toLowerCase(java.util.Locale.ROOT).contains("парол")) {
+                return R.string.error_password_wrong;
+            }
             return R.string.error_unauthorized;
         }
         if (e.isForbidden()) {
@@ -43,16 +62,6 @@ public final class ErrorMessages {
         }
         if (e.isResyncRequired()) {
             return R.string.error_conflict;
-        }
-        String code = e.getCode();
-        if ("email_taken".equals(code)) {
-            return R.string.error_email_taken;
-        }
-        if ("invite_invalid".equals(code)) {
-            return R.string.error_invite_invalid;
-        }
-        if ("draft_not_synced".equals(code)) {
-            return R.string.retelling_publish_hint;
         }
         if ("internal_error".equals(code)) {
             return R.string.error_server;
