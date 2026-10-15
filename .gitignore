@@ -5,7 +5,8 @@ build/
 .gradle/
 *.class
 *.jar
-!gradle/wrapper/gradle-wrapper.jar
+# jar-файл Gradle Wrapper нужен, чтобы ./gradlew работал в свежем клоне
+!**/gradle/wrapper/gradle-wrapper.jar
 
 # Зависимости
 node_modules/
