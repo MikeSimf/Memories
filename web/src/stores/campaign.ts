@@ -10,7 +10,6 @@ import {
   type AddMemberRequest,
   type AddMemberResponse,
   type CreateInviteRequest,
-  type EntityAttrs,
   type EntityLinkDto,
   type EntityType,
   type InviteDto,
@@ -71,23 +70,9 @@ import { createUuid } from '@/utils/uuid'
 import { useAuthStore } from './auth'
 import { useCampaignsStore } from './campaigns'
 import { useUiStore } from './ui'
+import type { EntityFormValues, RetellingFormValues } from '@/types/forms'
 
-export interface EntityFormValues {
-  type: EntityType
-  name: string
-  summary: string
-  description: string
-  attrs: EntityAttrs
-  tags: string[]
-  imageFileId: string | null
-}
-
-export interface RetellingFormValues {
-  title: string
-  body: string
-  authorEntityId: string | null
-  sessionDate: string | null
-}
+export type { EntityFormValues, RetellingFormValues }
 
 /** Строка объединённого списка пересказов: черновики и публикации вместе. */
 export interface RetellingListItem {

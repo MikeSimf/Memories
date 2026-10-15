@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.dndmemory.config.AppProperties;
@@ -372,11 +373,14 @@ public class SyncService {
         int pageSize = limit <= 0 ? DEFAULT_LIMIT : Math.min(limit, DEFAULT_LIMIT);
         int[] offsets = decodeCursor(cursor);
 
+        // Сортировка обязательна: без неё страницы snapshot могли бы пересекаться
         List<GameEntity> entities = entityRepository
-                .findAllByCampaignIdAndDeletedFalse(campaignId, PageRequest.of(offsets[0], pageSize))
+                .findAllByCampaignIdAndDeletedFalse(campaignId,
+                        PageRequest.of(offsets[0], pageSize, Sort.by(Sort.Direction.ASC, "name")))
                 .getContent();
         List<Retelling> retellings = offsets[0] == 0
-                ? retellingRepository.findAllByCampaignIdAndDeletedFalse(campaignId, PageRequest.of(offsets[1], pageSize))
+                ? retellingRepository.findAllByCampaignIdAndDeletedFalse(campaignId,
+                        PageRequest.of(offsets[1], pageSize, Sort.by(Sort.Direction.DESC, "createdAt")))
                 .getContent()
                 : Collections.emptyList();
 
