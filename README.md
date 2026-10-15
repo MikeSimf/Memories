@@ -32,11 +32,16 @@
 
 | Документ | О чём |
 |---|---|
+| [`docs/getting-started.md`](docs/getting-started.md) | Как забрать код и открыть его в IntelliJ IDEA, Android Studio, VS Code |
 | [`docs/architecture.md`](docs/architecture.md) | Архитектура и принятые решения |
 | [`docs/api.md`](docs/api.md) | HTTP API — контракт всех трёх частей |
 | [`docs/sync.md`](docs/sync.md) | Протокол офлайн-синхронизации и разрешение конфликтов |
 | [`docs/roles.md`](docs/roles.md) | Роли, права и жизненный цикл участника |
-| [`docs/deployment.md`](docs/deployment.md) | Развёртывание на своём сервере (Docker, два контура) |
+| [`docs/data-model.md`](docs/data-model.md) | Таблицы базы и связи между ними |
+| [`docs/deployment.md`](docs/deployment.md) | Развёртывание на своём сервере (Docker, два контура, TLS) |
+| [`docs/server-multi-project.md`](docs/server-multi-project.md) | Несколько проектов на одном сервере: шлюз, порты, имена |
+| [`docs/api-examples.md`](docs/api-examples.md) | Ручная проверка API через curl |
+| [`docs/verification.md`](docs/verification.md) | Что проверено запуском, а что нет |
 
 ## Быстрый старт
 
@@ -69,12 +74,20 @@ npm run build            # статика в web/dist
 ### Развёртывание на сервере
 
 ```bash
-sudo bash scripts/install-docker.sh                       # один раз: Docker и compose
-cp docker/env.test.example docker/env.test                # заполнить пароли и адрес
-./scripts/deploy.sh test                                  # тестовый контур, порт 8081
-cp docker/env.prod.example docker/env.prod                # рабочий контур: домен и TLS
-./scripts/deploy.sh prod                                  # рабочий контур, 80/443
+sudo bash scripts/install-docker.sh            # один раз: Docker и compose
+sudo docker network create edge                # общая сеть для всех проектов
+./scripts/ingress-up.sh                        # общий шлюз на 80/443
+cp docker/env.test.example docker/env.test     # заполнить пароли и адрес
+./scripts/deploy.sh test                       # тестовый контур, порт 8081
+cp docker/env.prod.example docker/env.prod     # рабочий контур: домен
+./scripts/deploy.sh prod
+sudo certbot certonly --webroot -w docker/ingress/certbot-www -d ваш-домен
+./scripts/ingress-domain.sh add ваш-домен dnd-prod-web 80
 ```
+
+На сервере можно держать сколько угодно проектов: 80 и 443 занимает один общий шлюз,
+рабочие контуры портов не публикуют, тестовые расходятся по портам 8081, 8082, …
+Правила и реестр портов — в [`docs/server-multi-project.md`](docs/server-multi-project.md).
 
 Подробная пошаговая инструкция, включая выпуск сертификата Let's Encrypt, резервные
 копии и обновление версии, — в [`docs/deployment.md`](docs/deployment.md).

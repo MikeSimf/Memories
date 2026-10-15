@@ -1,0 +1,2 @@
+# Каталог проверки Let's Encrypt (http://<домен>/.well-known/acme-challenge/).
+# Выпуск сертификата: sudo certbot certonly --webroot -w <этот каталог> -d <домен>

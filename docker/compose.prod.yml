@@ -1,5 +1,5 @@
-# Рабочий контур: 80/443, TLS-сертификаты Let's Encrypt с хоста, свой том и своя база.
-# Запуск: docker compose -p dnd-prod --env-file docker/env.prod -f docker/compose.prod.yml up -d --build
+# Рабочий контур: НЕ публикует порты сам — трафик приходит от общего шлюза
+# (docker/ingress) по домену. Запуск: ./scripts/deploy.sh prod
 name: dnd-prod
 
 services:
@@ -14,6 +14,7 @@ services:
       TZ: UTC
     volumes:
       - db-data:/var/lib/postgresql/data
+    networks: [internal]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dnd -d dnd"]
       interval: 10s
@@ -46,6 +47,7 @@ services:
       JAVA_TOOL_OPTIONS: -Xmx${SERVER_HEAP_MB:-768}m
     volumes:
       - files:/var/lib/dnd-memory/files
+    networks: [internal]
 
   web:
     build:
@@ -56,15 +58,15 @@ services:
     restart: unless-stopped
     depends_on:
       - server
-    environment:
-      DOMAIN: ${DOMAIN}
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
-      - ./nginx/nginx.prod.conf.template:/etc/nginx/templates/default.conf.template:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - ./certbot-www:/var/www/certbot
+      - ./nginx/nginx.app.conf.template:/etc/nginx/templates/default.conf.template:ro
+    networks: [internal, edge]
+
+networks:
+  internal:
+  edge:
+    external: true
+    name: edge
 
 volumes:
   db-data:

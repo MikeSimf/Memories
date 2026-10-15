@@ -23,6 +23,12 @@ fi
 
 command -v docker >/dev/null 2>&1 || { echo "Docker не установлен. Сначала запустите scripts/install-docker.sh" >&2; exit 1; }
 
+# Общая сеть нужна, чтобы шлюз (docker/ingress) видел контейнеры этого контура
+if ! docker network inspect edge >/dev/null 2>&1; then
+  docker network create edge >/dev/null
+  echo "==> Создана общая сеть edge"
+fi
+
 cd "$ROOT"
 echo "==> Контур: $CONTOUR (проект $PROJECT)"
 docker compose -p "$PROJECT" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build

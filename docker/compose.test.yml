@@ -1,5 +1,5 @@
-# Тестовый контур: порт 8081, свои тома и своя база.
-# Запуск: docker compose -p dnd-test --env-file docker/env.test -f docker/compose.test.yml up -d --build
+# Тестовый контур: наружу торчит только тестовый порт (по умолчанию 8081).
+# Запуск: ./scripts/deploy.sh test
 name: dnd-test
 
 services:
@@ -14,6 +14,7 @@ services:
       TZ: UTC
     volumes:
       - db-data:/var/lib/postgresql/data
+    networks: [internal]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dnd -d dnd"]
       interval: 10s
@@ -46,6 +47,7 @@ services:
       JAVA_TOOL_OPTIONS: -Xmx512m
     volumes:
       - files:/var/lib/dnd-memory/files
+    networks: [internal]
 
   web:
     build:
@@ -56,12 +58,18 @@ services:
     restart: unless-stopped
     depends_on:
       - server
-    environment:
-      TEST_PORT: ${TEST_PORT:-8081}
     ports:
       - "${TEST_PORT:-8081}:80"
     volumes:
-      - ./nginx/nginx.test.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./nginx/nginx.app.conf.template:/etc/nginx/templates/default.conf.template:ro
+    networks: [internal, edge]
+
+networks:
+  internal:
+  # Общая сеть для всех проектов на этом сервере: через неё шлюз видит контейнеры
+  edge:
+    external: true
+    name: edge
 
 volumes:
   db-data:

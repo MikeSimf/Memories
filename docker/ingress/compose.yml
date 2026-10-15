@@ -1,0 +1,22 @@
+# Общий шлюз сервера: один nginx на все проекты, владеет портами 80 и 443.
+# Домены добавляются скриптом: ./scripts/ingress-domain.sh add <домен> <контейнер> [порт]
+name: ingress
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: ingress-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d:ro
+      - ./certbot-www:/var/www/certbot
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    networks: [edge]
+
+networks:
+  edge:
+    external: true
+    name: edge
