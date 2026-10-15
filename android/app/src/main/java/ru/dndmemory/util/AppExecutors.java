@@ -4,6 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -53,22 +54,34 @@ public class AppExecutors {
     }
 
     /** Выполняет задачу в фоне и отдаёт результат (или ошибку) в главный поток. */
-    public <T> void io(@NonNull final Callable<T> task, @NonNull final RepoCallback<T> callback) {
+    public <T> void io(@NonNull final Callable<T> task, @Nullable final RepoCallback<T> callback) {
         diskAndNetwork.execute(() -> {
             try {
                 final T value = task.call();
-                main(() -> callback.onSuccess(value));
+                main(() -> {
+                    if (callback != null) {
+                        callback.onSuccess(value);
+                    }
+                });
             } catch (final ApiException e) {
-                main(() -> callback.onError(e));
+                main(() -> {
+                    if (callback != null) {
+                        callback.onError(e);
+                    }
+                });
             } catch (final Throwable t) {
                 final ApiException wrapped = ApiException.unexpected(t);
-                main(() -> callback.onError(wrapped));
+                main(() -> {
+                    if (callback != null) {
+                        callback.onError(wrapped);
+                    }
+                });
             }
         });
     }
 
     /** Вариант для задач без промежуточного значения на выходе. */
-    public void io(@NonNull final Runnable task, @NonNull final RepoCallback<Void> callback) {
+    public void io(@NonNull final Runnable task, @Nullable final RepoCallback<Void> callback) {
         io(() -> {
             task.run();
             return null;

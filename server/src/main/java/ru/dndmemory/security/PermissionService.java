@@ -97,8 +97,9 @@ public class PermissionService {
         if (member.getRole() == MemberRole.VIEWER) {
             throw ApiException.forbidden("Режим просмотра: создание недоступно");
         }
-        if (type == EntityType.HERO && member.getRole() == MemberRole.EDITOR_HERO) {
-            throw ApiException.forbidden("Создавать героев партии может мастер кампании");
+        if (type == EntityType.HERO && member.getRole() == MemberRole.EDITOR_HERO
+                && member.getLinkedEntityId() != null) {
+            throw ApiException.forbidden("У вас уже есть свой герой; создать второго может мастер кампании");
         }
     }
 }

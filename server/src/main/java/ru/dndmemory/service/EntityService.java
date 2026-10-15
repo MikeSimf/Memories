@@ -10,10 +10,12 @@ import ru.dndmemory.domain.ChangeOp;
 import ru.dndmemory.domain.EntityType;
 import ru.dndmemory.domain.GameEntity;
 import ru.dndmemory.domain.Member;
+import ru.dndmemory.domain.MemberRole;
 import ru.dndmemory.domain.ObjectType;
 import ru.dndmemory.domain.User;
 import ru.dndmemory.repo.CampaignRepository;
 import ru.dndmemory.repo.GameEntityRepository;
+import ru.dndmemory.repo.MemberRepository;
 import ru.dndmemory.repo.UserRepository;
 import ru.dndmemory.security.PermissionService;
 import ru.dndmemory.web.ApiException;
@@ -37,6 +39,7 @@ public class EntityService {
     private final GameEntityRepository entityRepository;
     private final CampaignRepository campaignRepository;
     private final UserRepository userRepository;
+    private final MemberRepository memberRepository;
     private final PermissionService permissionService;
     private final ChangeRecorder changeRecorder;
     private final DtoMapper dtoMapper;
@@ -114,6 +117,16 @@ public class EntityService {
         entity.setDeleted(false);
         entity.setRevision(campaign.getRevision() + 1);
         entityRepository.save(entity);
+
+        // Игрок с ролью «редактор как герой» создаёт своего героя — сразу привязываем его
+        if (entity.getType() == EntityType.HERO && member.getRole() == MemberRole.EDITOR_HERO
+                && member.getLinkedEntityId() == null) {
+            member.setLinkedEntityId(entity.getId());
+            member.setUpdatedAt(Instant.now());
+            memberRepository.save(member);
+            changeRecorder.record(campaign, ObjectType.MEMBER, member.getId(), ChangeOp.UPSERT,
+                    MemberPayloads.of(member), userId, null, null);
+        }
 
         Map<String, UUID> index = nameIndex(campaignId);
         index.putIfAbsent(entity.getName().toLowerCase(Locale.ROOT), entity.getId());

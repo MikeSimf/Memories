@@ -108,6 +108,22 @@ export class ApiClient {
   }
 
   private async send(options: RequestOptions, auth: boolean): Promise<RawResponse> {
+    const response = await this.fetchWithAuth(options, auth)
+    return this.readRaw(response)
+  }
+
+  private async readRaw(response: Response): Promise<RawResponse> {
+    const text = await response.text()
+    return {
+      status: response.status,
+      ok: response.ok,
+      headers: response.headers,
+      text,
+      contentType: response.headers.get('Content-Type') ?? '',
+    }
+  }
+
+  private async fetchWithAuth(options: RequestOptions, auth: boolean): Promise<Response> {
     const controller = new AbortController()
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
     const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -125,7 +141,7 @@ export class ApiClient {
     }
 
     try {
-      const response = await fetch(buildUrl(options.path, options.query), {
+      return await fetch(buildUrl(options.path, options.query), {
         method: options.method ?? 'GET',
         headers,
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
@@ -133,14 +149,6 @@ export class ApiClient {
         credentials: 'omit',
         cache: 'no-store',
       })
-      const text = await response.text()
-      return {
-        status: response.status,
-        ok: response.ok,
-        headers: response.headers,
-        text,
-        contentType: response.headers.get('Content-Type') ?? '',
-      }
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         if (options.signal?.aborted) {
@@ -161,6 +169,27 @@ export class ApiClient {
       clearTimeout(timer)
       options.signal?.removeEventListener('abort', onExternalAbort)
     }
+  }
+
+  /**
+   * Двоичный ответ с авторизацией — используется для изображений объектов
+   * (`GET /api/files/{id}` требует токен, `api.md` §10).
+   */
+  async fetchBlob(path: string, options: { auth?: boolean; signal?: AbortSignal } = {}): Promise<Blob> {
+    const auth = options.auth !== false
+    let response = await this.fetchWithAuth({ path, signal: options.signal }, auth)
+    if (response.status === 401 && auth) {
+      const tokens = await this.refreshTokens()
+      if (!tokens) {
+        this.onUnauthorized?.()
+        throw await this.toError(await this.readRaw(response))
+      }
+      response = await this.fetchWithAuth({ path, signal: options.signal }, auth)
+    }
+    if (!response.ok) {
+      throw await this.toError(await this.readRaw(response))
+    }
+    return response.blob()
   }
 
   private async toError(response: RawResponse): Promise<ApiError> {
@@ -238,10 +267,12 @@ export const apiClient = new ApiClient()
 
 /** Скачивание файла (например, картинки объекта) с авторизацией. */
 export async function fetchFileBlob(fileId: string): Promise<Blob> {
-  const response = await apiClient.raw({ path: `/api/files/${encodeURIComponent(fileId)}` })
-  return new Blob([response.text], {
-    type: response.contentType || 'application/octet-stream',
-  })
+  return apiClient.fetchBlob(`/api/files/${encodeURIComponent(fileId)}`)
+}
+
+/** Абсолютный адрес файла — используется как значение по умолчанию (без токена). */
+export function fileUrl(fileId: string): string {
+  return buildUrl(`/api/files/${encodeURIComponent(fileId)}`)
 }
 
 /** Загрузка файла: `multipart/form-data`, поле `file` (`api.md` §10). */

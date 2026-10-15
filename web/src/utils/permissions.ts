@@ -70,9 +70,14 @@ export interface PermissionSubject {
   permissions: readonly string[] | null | undefined
   /** Герой, привязанный к участнику (`linkedEntityId`) — `roles.md` §1. */
   linkedEntityId: string | null
+  /** Роль участника: нужна, чтобы отличить «своего героя» от героев партии. */
+  role?: MemberRole | null
 }
 
-/** Право писать объекты этого типа: НПС/локации/предметы — `entity.write`, герои — `hero.write`. */
+/**
+ * Право писать объекты этого типа: НПС/локации/предметы — `entity.write`,
+ * герои — `hero.write` (`roles.md` §2).
+ */
 export function canWriteEntityType(subject: PermissionSubject, type: string): boolean {
   if (type === 'HERO') {
     return hasPermission(subject.permissions, 'hero.write')
@@ -80,32 +85,36 @@ export function canWriteEntityType(subject: PermissionSubject, type: string): bo
   return hasPermission(subject.permissions, 'entity.write')
 }
 
-/** Создание конкретного объекта. Единственный герой `EDITOR_HERO` — свой (по привязке). */
+/**
+ * Создание объекта. `EDITOR_HERO` создаёт героя только если своего у него ещё
+ * нет — иначе герой партии заводится мастером (`roles.md` §2, правило 2).
+ */
 export function canCreateEntity(subject: PermissionSubject, type: string): boolean {
   if (type === 'HERO') {
-    return (
-      hasPermission(subject.permissions, 'hero.write') ||
-      hasPermission(subject.permissions, 'entity.write')
-    )
+    if (!hasPermission(subject.permissions, 'hero.write')) return false
+    if (subject.role === 'EDITOR_HERO') return subject.linkedEntityId === null
+    return true
   }
   return hasPermission(subject.permissions, 'entity.write')
 }
 
-/** Правка объекта: право на тип, авторство или «свой герой» (`roles.md` §2, правила 2 и 4). */
+/**
+ * Правка объекта (`roles.md` §2, правила 2 и 4):
+ * герои — `hero.write`, причём `EDITOR_HERO` только своего героя;
+ * остальное — `entity.write` либо авторство при `entity.write.own`.
+ */
 export function canEditEntity(
   subject: PermissionSubject,
   entity: EntityPermissionContext,
 ): boolean {
-  if (hasPermission(subject.permissions, 'entity.write')) return true
   if (entity.type === 'HERO') {
-    if (
-      hasPermission(subject.permissions, 'hero.write') &&
-      subject.linkedEntityId !== null &&
-      subject.linkedEntityId === entity.id
-    ) {
-      return true
+    if (!hasPermission(subject.permissions, 'hero.write')) return false
+    if (subject.role === 'EDITOR_HERO') {
+      return subject.linkedEntityId !== null && subject.linkedEntityId === entity.id
     }
+    return true
   }
+  if (hasPermission(subject.permissions, 'entity.write')) return true
   if (hasPermission(subject.permissions, 'entity.write.own') && isAuthor(subject, entity.createdBy)) {
     return true
   }
@@ -116,9 +125,6 @@ export function canDeleteEntity(
   subject: PermissionSubject,
   entity: EntityPermissionContext,
 ): boolean {
-  if (entity.type === 'HERO' && !hasPermission(subject.permissions, 'hero.write') && !hasPermission(subject.permissions, 'entity.write')) {
-    return false
-  }
   return canEditEntity(subject, entity)
 }
 

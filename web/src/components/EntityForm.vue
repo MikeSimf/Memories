@@ -2,9 +2,12 @@
 import { computed, ref } from 'vue'
 
 import { ENTITY_TYPE_LABELS, ENTITY_TYPES, type EntityType } from '@/api/types'
+import { errorMessage, uploadFile } from '@/api'
 import AttrFields from './AttrFields.vue'
+import EntityImage from './EntityImage.vue'
 import MarkupText from './MarkupText.vue'
 import TagInput from './TagInput.vue'
+import { useUiStore } from '@/stores/ui'
 import type { EntityFormValues } from '@/types/forms'
 
 const props = withDefaults(
@@ -26,6 +29,8 @@ const emit = defineEmits<{
 }>()
 
 const showPreview = ref(false)
+const uploading = ref(false)
+const ui = useUiStore()
 
 const typeLocked = computed(() => props.mode === 'edit' || !props.allowTypeChange)
 
@@ -35,6 +40,24 @@ function patch(changes: Partial<EntityFormValues>): void {
 
 function submit(): void {
   emit('submit')
+}
+
+/** Загрузка изображения — только при наличии сети (`architecture.md` §7). */
+async function onFileSelected(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  uploading.value = true
+  try {
+    const uploaded = await uploadFile(file)
+    patch({ imageFileId: uploaded.id })
+    ui.pushToast('success', 'Изображение загружено')
+  } catch (caught) {
+    ui.pushToast('error', errorMessage(caught))
+  } finally {
+    uploading.value = false
+  }
 }
 </script>
 
@@ -86,6 +109,22 @@ function submit(): void {
     <div class="field">
       <label class="field__label" for="entity-tags">Теги</label>
       <TagInput :model-value="modelValue.tags" @update:model-value="patch({ tags: $event })" />
+    </div>
+
+    <div class="field">
+      <span class="field__label">Изображение</span>
+      <div v-if="modelValue.imageFileId" class="stack stack--sm">
+        <EntityImage :file-id="modelValue.imageFileId" :alt="modelValue.name || 'Изображение'" />
+        <div class="row">
+          <button class="btn btn--sm" type="button" @click="patch({ imageFileId: null })">
+            Убрать изображение
+          </button>
+        </div>
+      </div>
+      <input type="file" accept="image/*" :disabled="uploading" @change="onFileSelected" />
+      <span class="field__hint">
+        Файл до 10 МБ, загружается на сервер сразу — в офлайне прикрепление недоступно.
+      </span>
     </div>
 
     <div class="field">

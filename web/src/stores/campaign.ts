@@ -34,6 +34,7 @@ import {
   listRetellings,
   memberFromDto,
   nowIso,
+  onDatabaseChanged,
   pruneMembers,
   putDraft,
   putEntity,
@@ -107,6 +108,7 @@ export const useCampaignStore = defineStore('campaign', () => {
   const invites = ref<InviteDto[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  let unsubscribeDatabase: (() => void) | null = null
 
   const userId = computed(() => auth.user?.id ?? null)
   const permissions = computed<Permission[]>(
@@ -120,6 +122,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     userId: userId.value,
     permissions: permissions.value,
     linkedEntityId: linkedEntityId.value,
+    role: campaign.value?.myRole ?? null,
   }))
 
   const canManageCampaign = computed(() => hasPermission(permissions.value, 'campaign.manage'))
@@ -239,6 +242,12 @@ export const useCampaignStore = defineStore('campaign', () => {
     loading.value = true
     error.value = null
     campaignId.value = id
+    // Синхронизация пишет в локальную базу отдельно от сторов, поэтому
+    // подписываемся на её изменения и перечитываем данные.
+    if (unsubscribeDatabase) unsubscribeDatabase()
+    unsubscribeDatabase = onDatabaseChanged((changedId) => {
+      if (changedId === campaignId.value) void reload()
+    })
     try {
       await reload()
       const details = await campaigns.loadDetails(id)
@@ -252,6 +261,10 @@ export const useCampaignStore = defineStore('campaign', () => {
   }
 
   function close(): void {
+    if (unsubscribeDatabase) {
+      unsubscribeDatabase()
+      unsubscribeDatabase = null
+    }
     campaignId.value = null
     campaign.value = null
     entities.value = []

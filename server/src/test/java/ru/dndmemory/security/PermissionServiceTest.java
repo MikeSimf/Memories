@@ -84,11 +84,26 @@ class PermissionServiceTest {
     }
 
     @Test
-    @DisplayName("Создавать героев партии редактору-герою нельзя")
-    void heroEditorCannotCreateHeroes() {
+    @DisplayName("Редактор-герой со своим героем второго создать не может, но предметы — сколько угодно")
+    void heroEditorCannotCreateSecondHero() {
         Member hero = member(MemberRole.EDITOR_HERO, UUID.randomUUID());
         assertThrows(ApiException.class, () -> service.requireEntityCreate(hero, EntityType.HERO));
         service.requireEntityCreate(hero, EntityType.ITEM);
+        service.requireEntityCreate(hero, EntityType.NPC);
+    }
+
+    @Test
+    @DisplayName("Пока своего героя нет, игрок может создать первого — он к нему привяжется")
+    void heroEditorWithoutLinkedHeroCanCreateFirstHero() {
+        service.requireEntityCreate(member(MemberRole.EDITOR_HERO, null), EntityType.HERO);
+    }
+
+    @Test
+    @DisplayName("Гость не создаёт ничего")
+    void viewerCannotCreateAnything() {
+        Member viewer = member(MemberRole.VIEWER, null);
+        assertThrows(ApiException.class, () -> service.requireEntityCreate(viewer, EntityType.ITEM));
+        assertThrows(ApiException.class, () -> service.requireEntityCreate(viewer, EntityType.HERO));
     }
 
     private boolean permissionsHas(Member member, String permission) {

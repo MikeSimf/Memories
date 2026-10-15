@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Тёмная тема: те же имена, приглушённые значения -->
+    <style name="Theme.DnDMemory" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#E8A0AC</item>
+        <item name="colorOnPrimary">#4A0E18</item>
+        <item name="colorPrimaryContainer">#6E1B28</item>
+        <item name="colorOnPrimaryContainer">#FFD9DF</item>
+        <item name="colorSecondary">#D6BE93</item>
+        <item name="colorOnSecondary">#2A2113</item>
+        <item name="colorSurface">#1B1614</item>
+        <item name="colorOnSurface">#EDE0DA</item>
+        <item name="colorBackground">#141110</item>
+        <item name="colorOnBackground">#EDE0DA</item>
+        <item name="colorError">#F2B8B5</item>
+        <item name="colorOnError">#601410</item>
+        <item name="colorOutline">#9A8F8A</item>
+        <item name="android:statusBarColor">#141110</item>
+        <item name="android:windowBackground">#141110</item>
+    </style>
+
+</resources>

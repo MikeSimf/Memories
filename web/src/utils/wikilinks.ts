@@ -32,6 +32,30 @@ export interface ResolvedWikiLink extends WikiLinkMatch {
 /** Ссылка вида `[[#uuid]]` — по идентификатору, минуя поиск по имени. */
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+/** Состояние разбора ограждённых блоков кода. */
+export interface FenceState {
+  marker: string | null
+}
+
+/**
+ * Учитывает блоки кода ``` / ~~~: возвращает `true`, если строка относится к
+ * блоку (открывает, закрывает или находится внутри) — внутри кода ссылки не ищутся.
+ */
+export function trackFence(state: FenceState, line: string): boolean {
+  const match = /^\s*(`{3,}|~{3,})/.exec(line)
+  if (state.marker !== null) {
+    if (match && match[1][0] === state.marker[0] && match[1].length >= state.marker.length) {
+      state.marker = null
+    }
+    return true
+  }
+  if (match) {
+    state.marker = match[1]
+    return true
+  }
+  return false
+}
+
 function parseInner(inner: string, raw: string, start: number, end: number): WikiLinkMatch {
   const pipe = inner.indexOf('|')
   const target = (pipe === -1 ? inner : inner.slice(0, pipe)).trim()
@@ -46,10 +70,10 @@ function parseInner(inner: string, raw: string, start: number, end: number): Wik
 /** Все ссылки `[[…]]` вне блоков и вставок кода. */
 export function parseWikiLinks(text: string): WikiLinkMatch[] {
   const result: WikiLinkMatch[] = []
+  const fence: FenceState = { marker: null }
   let offset = 0
   for (const line of text.split('\n')) {
-    if (line.trimStart().startsWith('```') || line.trimStart().startsWith('~~~')) {
-      // Строки-ограждения кода пропускаем: внутри них ссылки не разбираются.
+    if (trackFence(fence, line)) {
       offset += line.length + 1
       continue
     }

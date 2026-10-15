@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">DnD Memory</string>
+
+    <!-- Общие действия -->
+    <string name="action_retry">Повторить</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="action_save">Сохранить</string>
+    <string name="action_delete">Удалить</string>
+    <string name="action_edit">Редактировать</string>
+    <string name="action_close">Закрыть</string>
+    <string name="action_create">Создать</string>
+    <string name="action_refresh">Обновить</string>
+    <string name="action_search">Поиск</string>
+    <string name="action_settings">Настройки</string>
+    <string name="action_logout">Выйти</string>
+    <string name="action_invite">Приглашения</string>
+    <string name="action_scan_qr">Сканировать QR</string>
+    <string name="action_sync_now">Синхронизировать</string>
+    <string name="action_full_resync">Загрузить заново с сервера</string>
+    <string name="action_publish">Опубликовать</string>
+    <string name="action_save_draft">Сохранить черновик</string>
+    <string name="action_preview">Предпросмотр</string>
+    <string name="action_edit_body">Редактирование</string>
+    <string name="action_add">Добавить</string>
+    <string name="action_revoke">Отозвать</string>
+    <string name="action_accept">Принять</string>
+    <string name="action_accept_login">Войти и принять</string>
+    <string name="action_copy">Копировать</string>
+    <string name="action_share">Поделиться</string>
+    <string name="action_overwrite">Оставить мою версию</string>
+    <string name="action_take_server">Взять версию сервера</string>
+    <string name="ok">Понятно</string>
+
+    <string name="saved">Сохранено</string>
+    <string name="deleted">Удалено</string>
+    <string name="copied">Скопировано</string>
+    <string name="loading">Загрузка…</string>
+    <string name="permission_denied">Разрешение не выдано</string>
+
+    <!-- Состояние синхронизации -->
+    <string name="sync_status_idle">Синхронизировано</string>
+    <string name="sync_status_syncing">Синхронизация…</string>
+    <string name="sync_status_offline">Нет сети — работаем офлайн</string>
+    <string name="sync_status_error">Ошибка синхронизации</string>
+    <string name="sync_status_conflict">Есть расхождения с сервером</string>
+    <string name="sync_last_at">Последняя синхронизация: %1$s</string>
+    <string name="sync_never">ещё не было</string>
+
+    <!-- Ошибки -->
+    <string name="error_network">Нет связи с сервером. Изменения сохранятся локально.</string>
+    <string name="error_unauthorized">Нужно войти заново</string>
+    <string name="error_forbidden">Недостаточно прав</string>
+    <string name="error_not_found">Не найдено на сервере</string>
+    <string name="error_conflict">Версия на сервере новее</string>
+    <string name="error_rate_limited">Слишком много запросов, попробуйте позже</string>
+    <string name="error_unknown">Не удалось выполнить операцию</string>
+    <string name="error_email_taken">Такая почта уже зарегистрирована</string>
+    <string name="error_invite_invalid">Приглашение недействительно или просрочено</string>
+    <string name="error_server">Ошибка сервера</string>
+    <string name="error_password_short">Пароль должен быть не короче 8 символов</string>
+    <string name="error_required">Заполните поле</string>
+    <string name="error_api">Ошибка: %1$s</string>
+
+    <!-- Вход и регистрация -->
+    <string name="auth_title">Вход в DnD Memory</string>
+    <string name="auth_tab_login">Вход</string>
+    <string name="auth_tab_register">Регистрация</string>
+    <string name="auth_email">Почта</string>
+    <string name="auth_password">Пароль</string>
+    <string name="auth_display_name">Как вас зовут</string>
+    <string name="auth_login">Войти</string>
+    <string name="auth_register">Зарегистрироваться</string>
+    <string name="auth_or_oauth">Или войдите через</string>
+    <string name="auth_oauth_yandex">Яндекс ID</string>
+    <string name="auth_oauth_vk">VK ID</string>
+    <string name="auth_invite_pending">После входа приглашение будет принято автоматически</string>
+    <string name="auth_welcome">Вы вошли как %1$s</string>
+
+    <!-- Кампании -->
+    <string name="campaign_list_title">Кампании</string>
+    <string name="campaign_list_empty">Пока нет ни одной кампании</string>
+    <string name="campaign_list_empty_hint">Создайте первую кампанию или примите приглашение</string>
+    <string name="campaign_list_new">Новая кампания</string>
+    <string name="campaign_list_signed_as">Вы вошли как %1$s</string>
+    <string name="campaign_edit_title_new">Новая кампания</string>
+    <string name="campaign_edit_title_edit">Название кампании</string>
+    <string name="campaign_field_title">Название</string>
+    <string name="campaign_field_description">Описание</string>
+    <string name="campaign_counts">Участников: %1$d · Объектов: %2$d · Пересказов: %3$d</string>
+    <string name="campaign_updated">Обновлено: %1$s</string>
+    <string name="campaign_delete_confirm">Удалить кампанию «%1$s»? Действие необратимо.</string>
+    <string name="campaign_created">Кампания создана</string>
+    <string name="campaign_deleted">Кампания удалена</string>
+
+    <!-- Роли -->
+    <string name="role_owner">Владелец</string>
+    <string name="role_editor_master">Мастер</string>
+    <string name="role_editor_hero">Игрок</string>
+    <string name="role_viewer">Наблюдатель</string>
+
+    <!-- Вкладки кампании -->
+    <string name="tab_heroes">Герои</string>
+    <string name="tab_npcs">Персонажи</string>
+    <string name="tab_locations">Локации</string>
+    <string name="tab_items">Предметы</string>
+    <string name="tab_retellings">Пересказы</string>
+    <string name="tab_members">Участники</string>
+
+    <!-- Типы объектов -->
+    <string name="entity_type_hero">Герой</string>
+    <string name="entity_type_npc">Персонаж</string>
+    <string name="entity_type_location">Локация</string>
+    <string name="entity_type_item">Предмет</string>
+
+    <!-- Объекты -->
+    <string name="entity_list_empty">Здесь пока пусто</string>
+    <string name="entity_list_add">Добавить</string>
+    <string name="entity_detail_title">Карточка</string>
+    <string name="entity_detail_type">Тип: %1$s</string>
+    <string name="entity_detail_author">Автор: %1$s</string>
+    <string name="entity_detail_updated">Обновлено: %1$s</string>
+    <string name="entity_detail_tags">Метки</string>
+    <string name="entity_detail_summary">Кратко</string>
+    <string name="entity_detail_description">Описание</string>
+    <string name="entity_detail_attrs">Характеристики</string>
+    <string name="entity_detail_links">Упоминания</string>
+    <string name="entity_detail_backlinks">Упоминают</string>
+    <string name="entity_detail_no_backlinks">Пока никто не ссылается</string>
+    <string name="entity_detail_not_created">Объект ещё не на сервере</string>
+    <string name="entity_edit_title_new">Новый объект</string>
+    <string name="entity_edit_title_edit">Редактирование</string>
+    <string name="entity_edit_type">Тип</string>
+    <string name="entity_edit_name">Имя</string>
+    <string name="entity_edit_summary">Краткое описание</string>
+    <string name="entity_edit_description">Описание</string>
+    <string name="entity_edit_description_hint">Поддерживается markdown и ссылки [[Имя]]</string>
+    <string name="entity_edit_tags">Метки через запятую</string>
+    <string name="entity_edit_delete_confirm">Удалить объект «%1$s»?</string>
+    <string name="entity_conflict">Есть расхождение с версией на сервере</string>
+    <string name="entity_dirty">Не отправлено</string>
+    <string name="entity_not_found">Объект не найден</string>
+    <string name="entity_created_hint">Объект создан локально и уйдёт на сервер при связи</string>
+
+    <!-- Характеристики -->
+    <string name="attr_player_name">Игрок</string>
+    <string name="attr_race">Раса</string>
+    <string name="attr_klass">Класс</string>
+    <string name="attr_level">Уровень</string>
+    <string name="attr_hp">Хиты</string>
+    <string name="attr_ac">Класс доспеха</string>
+    <string name="attr_status">Состояние</string>
+    <string name="attr_faction">Фракция</string>
+    <string name="attr_location">Локация</string>
+    <string name="attr_region">Регион</string>
+    <string name="attr_kind">Вид</string>
+    <string name="attr_parent">Входит в</string>
+    <string name="attr_owner">Владелец</string>
+    <string name="attr_quantity">Количество</string>
+    <string name="attr_rarity">Редкость</string>
+    <string name="attr_unknown">%1$s</string>
+    <string name="attr_not_set">Не задано</string>
+    <string name="attr_choose">Выберите значение</string>
+
+    <string name="status_alive">Жив</string>
+    <string name="status_dead">Мёртв</string>
+    <string name="status_retired">Отошёл от дел</string>
+    <string name="status_unknown">Неизвестно</string>
+
+    <string name="kind_city">Город</string>
+    <string name="kind_dungeon">Подземелье</string>
+    <string name="kind_wild">Дикая местность</string>
+    <string name="kind_building">Здание</string>
+    <string name="kind_weapon">Оружие</string>
+    <string name="kind_armor">Доспех</string>
+    <string name="kind_potion">Зелье</string>
+    <string name="kind_treasure">Сокровище</string>
+    <string name="kind_quest">Квестовый</string>
+
+    <!-- Пересказы -->
+    <string name="retelling_list_empty">Пересказов пока нет</string>
+    <string name="retelling_list_drafts">Черновики</string>
+    <string name="retelling_list_new">Новый пересказ</string>
+    <string name="retelling_detail_title">Пересказ</string>
+    <string name="retelling_field_title">Заголовок</string>
+    <string name="retelling_field_date">Дата сессии</string>
+    <string name="retelling_field_author">От лица кого</string>
+    <string name="retelling_field_body">Текст</string>
+    <string name="retelling_field_body_hint">markdown и ссылки [[Имя]]</string>
+    <string name="retelling_author_none">Без привязки</string>
+    <string name="retelling_edited">Обновлено: %1$s</string>
+    <string name="retelling_author">От лица: %1$s</string>
+    <string name="retelling_status_draft">Черновик (только на устройстве)</string>
+    <string name="retelling_published">Опубликован</string>
+    <string name="retelling_delete_confirm">Удалить пересказ «%1$s»?</string>
+    <string name="retelling_edit_title_new">Новый пересказ</string>
+    <string name="retelling_edit_title_edit">Редактирование пересказа</string>
+    <string name="retelling_publish_hint">Черновик хранится только на устройстве. Нажмите «Опубликовать», чтобы отправить его.</string>
+    <string name="retelling_links">Упоминания</string>
+    <string name="retelling_conflict">Есть расхождение с версией на сервере</string>
+    <string name="retelling_draft_saved">Черновик сохранён</string>
+    <string name="retelling_published_toast">Пересказ опубликован</string>
+
+    <!-- Участники -->
+    <string name="members_title">Участники</string>
+    <string name="members_empty">Участников пока нет</string>
+    <string name="members_my_role">Ваша роль: %1$s</string>
+    <string name="members_add">Добавить участника</string>
+    <string name="members_role">Роль</string>
+    <string name="members_linked_hero">Связанный герой</string>
+    <string name="members_status">Статус</string>
+    <string name="members_status_active">Активен</string>
+    <string name="members_status_invited">Приглашён</string>
+    <string name="members_status_removed">Удалён</string>
+    <string name="members_remove_confirm">Убрать участника «%1$s»?</string>
+    <string name="members_last_owner_error">Нельзя понизить последнего владельца</string>
+    <string name="member_email">Почта участника</string>
+    <string name="member_email_hint">player@example.com</string>
+    <string name="members_added">Участник добавлен</string>
+    <string name="members_invited">Пользователя с такой почтой нет — создано приглашение</string>
+    <string name="members_manage_forbidden">Управлять участниками может только владелец</string>
+
+    <!-- Приглашения -->
+    <string name="invite_title">Приглашения</string>
+    <string name="invite_empty">Приглашений пока нет</string>
+    <string name="invite_create">Создать приглашение</string>
+    <string name="invite_role">Роль приглашённого</string>
+    <string name="invite_linked">Герой приглашённого</string>
+    <string name="invite_token">Код: %1$s</string>
+    <string name="invite_expires">Действует до %1$s</string>
+    <string name="invite_uses">Использовано %1$d из %2$d</string>
+    <string name="invite_link">Ссылка: %1$s</string>
+    <string name="invite_revoke_confirm">Отозвать приглашение %1$s?</string>
+    <string name="invite_qr_title">QR-код приглашения</string>
+    <string name="invite_created">Приглашение создано</string>
+    <string name="invite_camera_rationale">Нужен доступ к камере, чтобы отсканировать QR-код приглашения</string>
+    <string name="invite_camera_denied">Без доступа к камере сканирование невозможно. Откройте настройки приложения.</string>
+    <string name="invite_scan_title">Сканирование QR</string>
+    <string name="invite_scan_hint">Наведите камеру на QR-код</string>
+    <string name="invite_accept_title">Приглашение в кампанию</string>
+    <string name="invite_accept_campaign">Кампания: %1$s</string>
+    <string name="invite_accept_role">Роль: %1$s</string>
+    <string name="invite_accept_linked">Герой: %1$s</string>
+    <string name="invite_accept_expires">Действует до %1$s</string>
+    <string name="invite_accept_invalid">Приглашение недействительно или просрочено</string>
+    <string name="invite_accepted">Вы присоединились к кампании</string>
+    <string name="invite_login_required">Чтобы принять приглашение, войдите в аккаунт</string>
+
+    <!-- Поиск -->
+    <string name="search_title">Поиск</string>
+    <string name="search_hint">Что искать?</string>
+    <string name="search_all">Всё</string>
+    <string name="search_empty">Ничего не найдено</string>
+    <string name="search_prompt">Введите запрос</string>
+    <string name="search_results">Найдено: %1$d</string>
+    <string name="search_local_hint">Поиск идёт по локальной базе и работает без сети</string>
+    <string name="search_kind_entity">Объект</string>
+    <string name="search_kind_retelling">Пересказ</string>
+
+    <!-- Настройки -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_sync_section">Синхронизация</string>
+    <string name="settings_wifi_only">Синхронизировать только по Wi-Fi</string>
+    <string name="settings_sync_now">Синхронизировать сейчас</string>
+    <string name="settings_full_resync">Полная перезагрузка с сервера</string>
+    <string name="settings_full_resync_hint">Удалит локальные данные кампаний и загрузит их заново. Черновики сохранятся.</string>
+    <string name="settings_server">Адрес сервера: %1$s</string>
+    <string name="settings_user">Пользователь: %1$s</string>
+    <string name="settings_account_section">Аккаунт</string>
+    <string name="settings_logout_confirm">Выйти из аккаунта? Локальные данные кампаний будут удалены.</string>
+    <string name="settings_about">DnD Memory, версия %1$s</string>
+    <string name="settings_resync_done">Данные загружены заново</string>
+
+    <!-- Ссылки [[Имя]] -->
+    <string name="wiki_broken_link">Объект «%1$s» не найден</string>
+    <string name="wiki_create_suggestion">Создать объект «%1$s»?</string>
+
+    <!-- Content description -->
+    <string name="cd_add">Добавить</string>
+    <string name="cd_search">Поиск</string>
+    <string name="cd_settings">Настройки</string>
+    <string name="cd_logout">Выйти</string>
+    <string name="cd_refresh">Обновить</string>
+    <string name="cd_delete">Удалить</string>
+    <string name="cd_edit">Редактировать</string>
+    <string name="cd_more">Ещё</string>
+    <string name="cd_qr">QR-код</string>
+    <string name="cd_scan">Сканировать</string>
+    <string name="cd_sync">Синхронизация</string>
+    <string name="cd_icon">Значок</string>
+    <string name="cd_close">Закрыть</string>
+    <string name="cd_revoke">Отозвать</string>
+
+</resources>

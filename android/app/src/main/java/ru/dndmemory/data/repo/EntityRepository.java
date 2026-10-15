@@ -185,6 +185,17 @@ public class EntityRepository {
         }, callback);
     }
 
+    /** Снимок всех объектов кампании (для указателей имён и редактора ссылок). */
+    public void loadEntities(String campaignId, RepoCallback<List<EntityRoom>> callback) {
+        exec.io(() -> db.entityDao().findAllNow(campaignId), callback);
+    }
+
+    /** Обратные ссылки на объект (GET …/backlinks). */
+    public void loadBacklinks(String campaignId, String entityId,
+                              RepoCallback<List<ru.dndmemory.data.remote.dto.BacklinkDto>> callback) {
+        exec.io(() -> ApiCall.execute(api.backlinks(campaignId, entityId)), callback);
+    }
+
     /**
      * Локальное разрешение ссылок {@code [[Имя]]} по своей базе — правило то же,
      * что у сервера (docs/sync.md, раздел 7).

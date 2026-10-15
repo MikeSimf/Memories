@@ -278,6 +278,19 @@ export async function destroyDatabase(): Promise<void> {
   await deleteDB(DB_NAME)
 }
 
+/**
+ * Сколько данных потеряется при очистке базы: черновики пересказов живут только
+ * на устройстве, а очередь правок может ещё не уйти на сервер.
+ */
+export async function countLocalChanges(): Promise<{ drafts: number; pending: number }> {
+  const db = await openDatabase()
+  const [drafts, pending] = await Promise.all([
+    db.count(STORE.retellingDrafts),
+    db.count(STORE.pendingChanges),
+  ])
+  return { drafts, pending }
+}
+
 /** Служебные значения (последняя кампания, служебные флаги) в хранилище `meta`. */
 export async function readMeta(key: string): Promise<string | null> {
   const db = await openDatabase()

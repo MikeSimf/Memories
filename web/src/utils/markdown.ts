@@ -1,8 +1,8 @@
 import DOMPurify from 'dompurify'
 import MarkdownIt from 'markdown-it'
 
-import type { LinkResolver, WikiLinkMatch } from './wikilinks'
-import { emptyLinkResolver } from './wikilinks'
+import type { FenceState, LinkResolver, WikiLinkMatch } from './wikilinks'
+import { emptyLinkResolver, trackFence } from './wikilinks'
 
 /**
  * Рендер описаний: markdown + ссылки `[[…]]` (`docs/architecture.md` §4).
@@ -46,21 +46,10 @@ function extractWikiLinks(text: string): { text: string; links: ExtractedLink[] 
   const links: ExtractedLink[] = []
   let result = ''
   let offset = 0
-  let fence: string | null = null
+  const fence: FenceState = { marker: null }
 
   for (const line of text.split('\n')) {
-    const fenceMatch = /^\s*(`{3,}|~{3,})/.exec(line)
-    if (fence) {
-      result += line
-      if (fenceMatch && fenceMatch[1].startsWith(fence[0])) {
-        fence = null
-      }
-      result += '\n'
-      offset += line.length + 1
-      continue
-    }
-    if (fenceMatch) {
-      fence = fenceMatch[1]
+    if (trackFence(fence, line)) {
       result += line + '\n'
       offset += line.length + 1
       continue

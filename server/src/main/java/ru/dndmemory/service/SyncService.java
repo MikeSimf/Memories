@@ -139,7 +139,8 @@ public class SyncService {
             if (member.getRole() == ru.dndmemory.domain.MemberRole.VIEWER) {
                 return rejected(campaign, userId, change, "forbidden", null);
             }
-            if (type == EntityType.HERO && member.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_HERO) {
+            if (type == EntityType.HERO && member.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_HERO
+                    && member.getLinkedEntityId() != null) {
                 return rejected(campaign, userId, change, "forbidden", null);
             }
             server = new GameEntity();
@@ -212,6 +213,16 @@ public class SyncService {
         server.setDeleted(false);
         server.setRevision(campaign.getRevision() + 1);
         entityRepository.save(server);
+
+        if (created && server.getType() == EntityType.HERO
+                && member.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_HERO
+                && member.getLinkedEntityId() == null) {
+            member.setLinkedEntityId(server.getId());
+            member.setUpdatedAt(Instant.now());
+            memberRepository.save(member);
+            changeRecorder.record(campaign, ObjectType.MEMBER, member.getId(), ChangeOp.UPSERT,
+                    MemberPayloads.of(member), userId, null, deviceId);
+        }
 
         EntityDtos.EntityDto dto = dtoMapper.toEntity(server, entityService.nameIndex(campaign.getId()),
                 entityService.userNames(Collections.singletonList(server)));

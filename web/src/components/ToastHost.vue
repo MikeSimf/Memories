@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import { useUiStore } from '@/stores/ui'
+import { useUiStore, type Toast } from '@/stores/ui'
 
 const ui = useUiStore()
+
+function runAction(toast: Toast): void {
+  toast.action?.run()
+  ui.dismissToast(toast.id)
+}
 </script>
 
 <template>
@@ -9,15 +14,7 @@ const ui = useUiStore()
     <TransitionGroup name="toast">
       <div v-for="toast in ui.toasts" :key="toast.id" class="toast" :class="`toast--${toast.kind}`">
         <span class="toast__message">{{ toast.message }}</span>
-        <button
-          v-if="toast.action"
-          class="btn btn--sm"
-          type="button"
-          @click="
-            toast.action?.run()
-            ui.dismissToast(toast.id)
-          "
-        >
+        <button v-if="toast.action" class="btn btn--sm" type="button" @click="runAction(toast)">
           {{ toast.action.label }}
         </button>
         <button

@@ -114,8 +114,13 @@ POST /api/campaigns/{id}/sync/changes
 ### 3.2. Pull
 
 ```http
-GET /api/campaigns/{id}/sync/changes?since=41&limit=500
+GET /api/campaigns/{id}/sync/changes?since=41&limit=500&clientId=device-8f2c
 ```
+
+`clientId` (необязательный) — идентификатор установки, тот же, что в push. По нему
+сервер не возвращает клиенту его собственные изменения: он их уже применил локально.
+Если параметр не передан, отдаются все изменения подряд — это корректно, просто
+клиент получит эхо своих правок.
 ```json
 {
   "since": 41, "latestRevision": 43, "hasMore": false,

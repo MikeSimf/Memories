@@ -88,6 +88,19 @@ export function highlightSnippet(text: string, query: string, window = SNIPPET_W
 }
 
 /**
+ * Проверка совпадения по набору полей: используется строкой поиска внутри вкладки.
+ * Логика та же, что у поиска по кампании.
+ */
+export function matchesText(
+  values: Array<string | null | undefined>,
+  query: string,
+): boolean {
+  const tokens = tokenize(query)
+  if (tokens.length === 0) return true
+  return matches(values.filter((value): value is string => Boolean(value)).join('\n'), tokens)
+}
+
+/**
  * Поиск по локальной базе — та же логика, что у сервера (`api.md` §8):
  * регистронезависимый по `name`, `summary`, `description`, `tags` и `body` пересказов.
  * Поэтому поиск работает без сети.

@@ -941,6 +941,13 @@ p {
   display: inline-block;
 }
 
+.entity-image {
+  max-width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  display: block;
+}
+
 .sticky-actions {
   position: sticky;
   bottom: 0;
