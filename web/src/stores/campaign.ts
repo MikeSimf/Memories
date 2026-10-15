@@ -119,9 +119,17 @@ export const useCampaignStore = defineStore('campaign', () => {
    */
   const tabEntities = ref<LocalEntity[]>([])
   const tabTypes = ref<EntityType[]>([])
+  /** Идёт постраничная подгрузка вкладки с сервера (локальный список уже показан). */
+  const tabLoading = ref(false)
+  /** Сколько объектов вкладки уже получено с сервера (для индикатора). */
+  const tabLoaded = ref(0)
+  /** Сколько объектов обещает сервер (`total`); 0 — размер неизвестен. */
+  const tabTotal = ref(0)
   const loading = ref(false)
   const error = ref<string | null>(null)
   let unsubscribeDatabase: (() => void) | null = null
+  /** Метка последней загрузки вкладки: гасит ответы устаревших вкладок. */
+  let tabLoadToken = 0
 
   const userId = computed(() => auth.user?.id ?? null)
   const permissions = computed<Permission[]>(
@@ -261,38 +269,82 @@ export const useCampaignStore = defineStore('campaign', () => {
     tabEntities.value = await listEntities(id, { types: tabTypes.value })
   }
 
+  /** Сливаем свежие страницы в общий список объектов: ссылки `[[…]]` видят их сразу. */
+  function mergeEntities(incoming: LocalEntity[]): void {
+    if (incoming.length === 0) return
+    const byId = new Map(entities.value.map((entity) => [entity.id, entity]))
+    for (const entity of incoming) byId.set(entity.id, entity)
+    entities.value = [...byId.values()]
+  }
+
+  /** Предел страниц вкладки: сервер отдаёт максимум 500 за раз (`api.md` §1). */
+  const TAB_PAGE_LIMIT = 500
+  const TAB_MAX_PAGES = 20
+
   /**
-   * Свежие объекты вкладки с сервера: `GET /entities?types=…` (`api.md` §6).
+   * Постраничная загрузка вкладки: `GET /entities?types=…&limit=500&offset=…`
+   * (`api.md` §1, §6). Первая страница применяется сразу, дальше — по мере
+   * поступления, поэтому список наполняется постепенно, без блокирующего ожидания.
    * Записи с неотправленными правками не перетираем — их версия уйдёт push'ем.
-   * При отсутствии сети молча остаёмся на локальной базе.
+   * Без сети цикл не стартует: вкладка остаётся на данных IndexedDB.
    */
-  async function refreshEntitiesFromServer(types: EntityType[]): Promise<void> {
+  async function refreshEntitiesFromServer(types: EntityType[], token: number): Promise<void> {
     const id = campaignId.value
     if (!id || !ui.online) return
+    tabLoading.value = true
+    tabLoaded.value = 0
+    tabTotal.value = 0
     try {
-      const page = await entitiesApi.list(id, { types, limit: 500 })
-      const local = await listEntities(id, { includeDeleted: true })
-      const dirtyIds = new Set(
-        local.filter((entity) => entity.dirty === 1).map((entity) => entity.id),
-      )
-      const incoming = page.items
-        .filter((dto) => !dirtyIds.has(dto.id))
-        .map((dto) => entityFromDto(dto, { conflict: null }))
-      await putEntities(incoming)
+      let offset = 0
+      let total: number | null = null
+      for (let page = 0; page < TAB_MAX_PAGES; page += 1) {
+        if (token !== tabLoadToken) return
+        const response = await entitiesApi.list(id, { types, limit: TAB_PAGE_LIMIT, offset })
+        if (token !== tabLoadToken) return
+        const items = response.items
+        if (typeof response.total === 'number') total = response.total
+
+        // Не перетираем «грязные» записи: у них есть неотправленная правка.
+        const local = await listEntities(id, { types, includeDeleted: true })
+        const dirtyIds = new Set(
+          local.filter((entity) => entity.dirty === 1).map((entity) => entity.id),
+        )
+        const incoming = items
+          .filter((dto) => !dirtyIds.has(dto.id))
+          .map((dto) => entityFromDto(dto, { conflict: null }))
+        await putEntities(incoming)
+
+        // Обновляем то, что видит пользователь, сразу после каждой страницы.
+        mergeEntities(incoming)
+        tabLoaded.value += items.length
+        if (total !== null) tabTotal.value = total
+        await readTabEntities()
+
+        if (items.length === 0) break
+        offset += items.length
+        if (total !== null && offset >= total) break
+        // Сервер не сообщил `total` — последняя страница короче лимита.
+        if (items.length < TAB_PAGE_LIMIT) break
+      }
     } catch (caught) {
       if (caught instanceof ApiError && caught.isOffline) return
       console.warn('[dnd-memory] не удалось обновить объекты вкладки', caught)
+    } finally {
+      if (token === tabLoadToken) tabLoading.value = false
     }
   }
 
   /**
    * Открытие вкладки: сначала локальная база с фильтром видов (работает офлайн),
-   * затем подтягивание свежих данных с сервера и повторное локальное чтение.
+   * затем постраничная подгрузка с сервера и перечитывание стора на финал.
    */
   async function loadTabEntities(types: EntityType[]): Promise<void> {
+    const token = tabLoadToken + 1
+    tabLoadToken = token
     tabTypes.value = [...types]
     await readTabEntities()
-    await refreshEntitiesFromServer(types)
+    await refreshEntitiesFromServer(types, token)
+    if (token !== tabLoadToken) return
     // Перечитываем стор целиком: свежие записи нужны и общим ссылкам `[[…]]`.
     await reload()
   }
@@ -335,6 +387,11 @@ export const useCampaignStore = defineStore('campaign', () => {
     devices.value = []
     tabEntities.value = []
     tabTypes.value = []
+    // Гасим возможную незавершённую подгрузку вкладки.
+    tabLoadToken += 1
+    tabLoading.value = false
+    tabLoaded.value = 0
+    tabTotal.value = 0
   }
 
   function entityById(id: string): LocalEntity | null {
@@ -882,6 +939,9 @@ export const useCampaignStore = defineStore('campaign', () => {
     devices,
     tabEntities,
     tabTypes,
+    tabLoading,
+    tabLoaded,
+    tabTotal,
     loading,
     error,
     permissions,

@@ -106,6 +106,9 @@ public class SearchFragment extends Fragment implements SearchAdapter.Listener {
         group.removeAllViews();
         addChip(group, getString(R.string.search_all), FILTER_ALL,
                 initialFilter == null || initialFilter.isEmpty());
+        // Та же группировка, что во вкладках: герои и НПС ищутся вместе.
+        addChip(group, getString(R.string.tab_characters), EntityType.CHARACTERS,
+                EntityType.CHARACTERS.equalsIgnoreCase(initialFilter));
         for (EntityType type : EntityType.ALL) {
             String value = type.name();
             addChip(group, getString(Labels.entityType(type)), value, value.equals(initialFilter));

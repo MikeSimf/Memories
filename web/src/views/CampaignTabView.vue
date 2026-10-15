@@ -88,6 +88,13 @@ const sectionTitle = computed(() => {
 const createTypes = computed<EntityType[]>(() =>
   entityTypes.value ? entityTypes.value.filter((type) => campaign.canCreate(type)) : [],
 )
+
+/** Ненавязчивый текст подгрузки: сколько объектов вкладки уже пришло с сервера. */
+const tabProgressLabel = computed(() =>
+  campaign.tabTotal > 0
+    ? `Подгружаем: ${campaign.tabLoaded} из ${campaign.tabTotal}`
+    : 'Подгружаем…',
+)
 </script>
 
 <template>
@@ -122,7 +129,14 @@ const createTypes = computed<EntityType[]>(() =>
     <!-- Объекты вкладки: персонажи (герои + НПС), локации, предметы -->
     <template v-if="entityTypes">
       <div class="row row--between search-summary">
-        <span class="faint">Найдено: {{ filteredEntities.length }}</span>
+        <div class="row">
+          <span class="faint">Найдено: {{ filteredEntities.length }}</span>
+          <!-- Подгрузка не блокирует список: локальные данные уже показаны -->
+          <span v-if="campaign.tabLoading" class="faint tab-progress" role="status">
+            <span class="spinner spinner--sm" aria-hidden="true" />
+            {{ tabProgressLabel }}
+          </span>
+        </div>
         <button
           v-if="query !== ''"
           class="btn btn--ghost btn--sm"

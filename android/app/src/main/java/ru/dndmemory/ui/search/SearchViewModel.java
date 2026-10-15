@@ -62,11 +62,11 @@ public class SearchViewModel extends ViewModel {
 
     /** Пересобирает подписки на локальную базу под текущий запрос и фильтр. */
     private void resubscribe() {
+        List<String> types = typesOf(typeFilter.getValue());
         if (entitySource != null) {
             results.removeSource(entitySource);
         }
-        entitySource = entities.search(campaignId, EntityType.from(typeFilter.getValue()),
-                query.getValue());
+        entitySource = entities.searchByTypes(campaignId, types, query.getValue());
         results.addSource(entitySource, list -> {
             lastEntities = list == null ? Collections.emptyList() : list;
             combine();
@@ -115,8 +115,8 @@ public class SearchViewModel extends ViewModel {
     private void combine() {
         String filter = typeFilter.getValue();
         String text = query.getValue();
-        EntityType entityType = EntityType.from(filter);
-        boolean wantEntities = TextUtils.isEmpty(filter) || entityType != null;
+        List<String> types = typesOf(filter);
+        boolean wantEntities = types.isEmpty() ? TextUtils.isEmpty(filter) : true;
         boolean wantRetellings = TextUtils.isEmpty(filter) || "RETELLING".equalsIgnoreCase(filter);
 
         List<SearchAdapter.Item> out = new ArrayList<>();
@@ -137,6 +137,16 @@ public class SearchViewModel extends ViewModel {
         }
         results.setValue(out);
         loading.setValue(false);
+    }
+
+    /** Пустой список — «все виды»; {@code null}-фильтр тоже. */
+    @NonNull
+    private static List<String> typesOf(@Nullable String filter) {
+        if (filter == null || filter.trim().isEmpty()
+                || "RETELLING".equalsIgnoreCase(filter.trim())) {
+            return Collections.emptyList();
+        }
+        return EntityType.parseList(filter);
     }
 
     @NonNull

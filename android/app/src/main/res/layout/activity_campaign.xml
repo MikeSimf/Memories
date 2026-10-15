@@ -7,14 +7,20 @@
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/campaign_toolbar"
+        style="@style/Widget.DnDMemory.Toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize" />
 
+    <!-- Ровно три вкладки: Персонажи, Локации, Предметы -->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/campaign_tabs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:tabMode="scrollable" />
+        android:background="?attr/colorSurface"
+        app:tabIndicatorColor="?attr/colorSecondary"
+        app:tabMode="fixed"
+        app:tabSelectedTextColor="?attr/colorOnSurface"
+        app:tabTextColor="@color/text_muted" />
 
     <TextView
         android:id="@+id/campaign_sync_status"
@@ -25,7 +31,8 @@
         android:paddingEnd="16dp"
         android:paddingBottom="4dp"
         android:text="@string/sync_status_idle"
-        android:textAppearance="?attr/textAppearanceBodySmall" />
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="@color/text_muted" />
 
     <ProgressBar
         android:id="@+id/campaign_progress"
