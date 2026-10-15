@@ -313,6 +313,7 @@ export const useCampaignStore = defineStore('campaign', () => {
           .filter((dto) => !dirtyIds.has(dto.id))
           .map((dto) => entityFromDto(dto, { conflict: null }))
         await putEntities(incoming)
+        if (token !== tabLoadToken) return
 
         // Обновляем то, что видит пользователь, сразу после каждой страницы.
         mergeEntities(incoming)
