@@ -3,8 +3,8 @@ package ru.dndmemory.ui.entity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
 import java.util.List;
@@ -23,7 +23,8 @@ public class EntityDetailViewModel extends ViewModel {
     private final EntityRepository entities;
 
     private final MutableLiveData<String> entityId = new MutableLiveData<>();
-    private final LiveData<EntityRoom> entity;
+    private final MediatorLiveData<EntityRoom> entity = new MediatorLiveData<>();
+    private LiveData<EntityRoom> entitySource;
     private final MutableLiveData<NameIndex> nameIndex = new MutableLiveData<>();
     private final MutableLiveData<List<BacklinkDto>> backlinks = new MutableLiveData<>();
     private final MutableLiveData<Resource<Void>> actionState = new MutableLiveData<>();
@@ -33,12 +34,16 @@ public class EntityDetailViewModel extends ViewModel {
 
     public EntityDetailViewModel(@NonNull EntityRepository entities) {
         this.entities = entities;
-        this.entity = Transformations.switchMap(entityId, entities::observe);
     }
 
     public void start(@NonNull String campaignId, @NonNull String entityId) {
         this.campaignId = campaignId;
         this.entityId.setValue(entityId);
+        if (entitySource != null) {
+            entity.removeSource(entitySource);
+        }
+        entitySource = entities.observe(entityId);
+        entity.addSource(entitySource, entity::setValue);
         loadIndex();
         loadBacklinks();
     }

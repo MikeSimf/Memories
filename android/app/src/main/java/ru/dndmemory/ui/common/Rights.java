@@ -67,15 +67,16 @@ public final class Rights {
         return isOwnEntity(campaign, entity, currentUserId);
     }
 
+    /** «Своё» — созданное этим пользователем; право entity.write даёт больше. */
     private static boolean isOwnEntity(CampaignRoom campaign, EntityRoom entity, @Nullable String currentUserId) {
         if (entity == null || currentUserId == null) {
             return false;
         }
-        if (has(campaign, ENTITY_WRITE_OWN) && currentUserId.equals(entity.createdBy)) {
-            return true;
+        if (!currentUserId.equals(entity.createdBy)) {
+            return false;
         }
-        // Игрок правит своего героя, если он к нему привязан.
-        return entity.id != null && campaign.myPermissions != null;
+        return has(campaign, ENTITY_WRITE_OWN) || has(campaign, ENTITY_WRITE)
+                || has(campaign, HERO_WRITE);
     }
 
     public static boolean canCreateEntity(@Nullable CampaignRoom campaign) {

@@ -3,8 +3,8 @@ package ru.dndmemory.ui.campaign;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
 import ru.dndmemory.data.local.entity.CampaignRoom;
@@ -23,7 +23,8 @@ public class CampaignViewModel extends ViewModel {
     private final SyncScheduler scheduler;
 
     private final MutableLiveData<String> campaignId = new MutableLiveData<>();
-    private final LiveData<CampaignRoom> campaign;
+    private final MediatorLiveData<CampaignRoom> campaign = new MediatorLiveData<>();
+    private LiveData<CampaignRoom> campaignSource;
 
     public CampaignViewModel(@NonNull CampaignRepository campaigns, @NonNull AuthRepository auth,
                              @NonNull SyncEngine syncEngine, @NonNull SyncScheduler scheduler) {
@@ -31,11 +32,21 @@ public class CampaignViewModel extends ViewModel {
         this.auth = auth;
         this.syncEngine = syncEngine;
         this.scheduler = scheduler;
-        this.campaign = Transformations.switchMap(campaignId, campaigns::observeCampaign);
     }
 
+    /** Подписка на кампанию; при смене id старая подписка снимается. */
     public void setCampaignId(@Nullable String id) {
+        if (campaignSource != null) {
+            campaign.removeSource(campaignSource);
+            campaignSource = null;
+        }
         campaignId.setValue(id);
+        if (id == null || id.isEmpty()) {
+            campaign.setValue(null);
+            return;
+        }
+        campaignSource = campaigns.observeCampaign(id);
+        campaign.addSource(campaignSource, campaign::setValue);
     }
 
     @Nullable

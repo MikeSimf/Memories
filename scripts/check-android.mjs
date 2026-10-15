@@ -119,6 +119,18 @@ for (const file of javaFiles) {
     if (!check) continue;
     if (!check(name)) problems.push(`${short}: R.${type}.${name} — ресурс не найден`);
   }
+  // Классы ViewBinding генерируются из имён макетов: ActivityAuthBinding <-> activity_auth.xml
+  for (const match of source.matchAll(/^\s*import\s+ru\.dndmemory\.databinding\.(\w+Binding)\s*;/gm)) {
+    const binding = match[1];
+    const layout = binding.replace(/Binding$/, "")
+      .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+      .replace(/([A-Z]+)([A-Z][a-z])/g, "$1_$2")
+      .toLowerCase();
+    if (!fileResources.layout?.has(layout)) {
+      problems.push(short + ": " + binding + " — нет макета res/layout/" + layout + ".xml");
+    }
+  }
+
   // импорты наших классов должны указывать на существующие файлы
   for (const match of source.matchAll(/^\s*import\s+(ru\.dndmemory[\w.]*)\s*;/gm)) {
     const imported = match[1];

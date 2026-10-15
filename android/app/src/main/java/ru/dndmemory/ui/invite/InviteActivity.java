@@ -36,7 +36,6 @@ import ru.dndmemory.ui.common.NameIndex;
 import ru.dndmemory.ui.common.Nav;
 import ru.dndmemory.ui.common.ViewModelFactory;
 import ru.dndmemory.ui.common.ViewUtils;
-import ru.dndmemory.util.DateFormats;
 import ru.dndmemory.util.QrUtils;
 import ru.dndmemory.util.RepoCallback;
 import ru.dndmemory.util.Resource;
@@ -271,10 +270,5 @@ public class InviteActivity extends AppCompatActivity implements InviteAdapter.L
     public boolean onSupportNavigateUp() {
         finish();
         return true;
-    }
-
-    /** Не используется, но оставлено для совместимости с DateFormats в списке. */
-    static String expiresText(@Nullable String iso) {
-        return DateFormats.formatIso(iso);
     }
 }

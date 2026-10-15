@@ -63,10 +63,6 @@ public class CampaignListActivity extends AppCompatActivity implements CampaignA
 
     private boolean onMenu(@NonNull MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_search) {
-            ViewUtils.toast(this, R.string.search_hint);
-            return true;
-        }
         if (id == R.id.action_settings) {
             Nav.openSettings(this);
             return true;

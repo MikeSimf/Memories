@@ -2,7 +2,6 @@ package ru.dndmemory.ui.invite;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -112,10 +111,5 @@ public class ScanActivity extends AppCompatActivity {
     public void onBackPressed() {
         setResult(RESULT_CANCELED);
         super.onBackPressed();
-    }
-
-    /** Пустой View не нужен, но поле оставлено для читаемости разметки. */
-    static void noop(View view) {
-        // ничего не делает
     }
 }

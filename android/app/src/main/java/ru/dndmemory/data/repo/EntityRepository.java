@@ -19,7 +19,6 @@ import ru.dndmemory.util.AppExecutors;
 import ru.dndmemory.util.DateFormats;
 import ru.dndmemory.util.Ids;
 import ru.dndmemory.util.RepoCallback;
-import ru.dndmemory.util.WikiMarkdown;
 
 /**
  * Объекты кампании. Все правки — локальные: запись в Room плюс постановка в

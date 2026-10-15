@@ -1,6 +1,7 @@
 package ru.dndmemory.ui.campaign;
 
 import android.os.Bundle;
+import android.view.Menu;
 import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
@@ -16,6 +17,7 @@ import ru.dndmemory.App;
 import ru.dndmemory.AppContainer;
 import ru.dndmemory.R;
 import ru.dndmemory.data.local.entity.CampaignRoom;
+import ru.dndmemory.data.model.EntityType;
 import ru.dndmemory.databinding.ActivityCampaignBinding;
 import ru.dndmemory.ui.common.CampaignHost;
 import ru.dndmemory.ui.common.Extras;
@@ -56,8 +58,6 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
-        binding.campaignToolbar.inflateMenu(R.menu.menu_campaign);
-        binding.campaignToolbar.setOnMenuItemClickListener(this::onMenu);
 
         binding.campaignPager.setAdapter(new CampaignPagerAdapter(this));
         binding.campaignPager.setOffscreenPageLimit(1);
@@ -86,10 +86,37 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
         }
     }
 
-    private boolean onMenu(@NonNull MenuItem item) {
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_campaign, menu);
+        return true;
+    }
+
+    /** Тип объектов текущей вкладки — им фильтруется поиск. */
+    @Nullable
+    private String currentTabFilter() {
+        switch (binding.campaignPager.getCurrentItem()) {
+            case 0:
+                return EntityType.HERO.name();
+            case 1:
+                return EntityType.NPC.name();
+            case 2:
+                return EntityType.LOCATION.name();
+            case 3:
+                return EntityType.ITEM.name();
+            case 4:
+                return "RETELLING";
+            default:
+                return null;
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_search) {
-            Nav.openSearch(this, campaignId, null);
+            // Поиск открывается с фильтром текущей вкладки; чип «Всё» даёт общий поиск.
+            Nav.openSearch(this, campaignId, currentTabFilter());
             return true;
         }
         if (id == R.id.action_invite) {
@@ -105,7 +132,7 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
             viewModel.refresh();
             return true;
         }
-        return false;
+        return super.onOptionsItemSelected(item);
     }
 
     private void observe() {

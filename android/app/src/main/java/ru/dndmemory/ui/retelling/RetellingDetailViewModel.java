@@ -3,8 +3,8 @@ package ru.dndmemory.ui.retelling;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
 import java.util.List;
@@ -25,7 +25,8 @@ public class RetellingDetailViewModel extends ViewModel {
     private final EntityRepository entities;
 
     private final MutableLiveData<String> retellingId = new MutableLiveData<>();
-    private final LiveData<RetellingRoom> retelling;
+    private final MediatorLiveData<RetellingRoom> retelling = new MediatorLiveData<>();
+    private LiveData<RetellingRoom> retellingSource;
     private final MutableLiveData<NameIndex> nameIndex = new MutableLiveData<>();
     private final MutableLiveData<Resource<Void>> actionState = new MutableLiveData<>();
     private final MutableLiveData<Boolean> finishRequested = new MutableLiveData<>(false);
@@ -36,12 +37,16 @@ public class RetellingDetailViewModel extends ViewModel {
                                     @NonNull EntityRepository entities) {
         this.retellings = retellings;
         this.entities = entities;
-        this.retelling = Transformations.switchMap(retellingId, retellings::observe);
     }
 
     public void start(@NonNull String campaignId, @NonNull String retellingId) {
         this.campaignId = campaignId;
         this.retellingId.setValue(retellingId);
+        if (retellingSource != null) {
+            retelling.removeSource(retellingSource);
+        }
+        retellingSource = retellings.observe(retellingId);
+        retelling.addSource(retellingSource, retelling::setValue);
         entities.loadEntities(campaignId, new RepoCallback<List<EntityRoom>>() {
             @Override
             public void onSuccess(@Nullable List<EntityRoom> value) {

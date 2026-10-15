@@ -2,17 +2,12 @@ package ru.dndmemory.ui.entity;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -32,11 +27,10 @@ import ru.dndmemory.ui.common.ViewModelFactory;
 import ru.dndmemory.ui.common.ViewUtils;
 
 /**
- * Вкладка с объектами одного типа. Меню вкладки («Поиск», «Обновить») появляется
- * только когда фрагмент виден: MenuProvider регистрируется в состоянии RESUMED.
+ * Вкладка с объектами одного типа. Действия «Поиск» (с фильтром по вкладке) и
+ * «Обновить» живут в меню {@link ru.dndmemory.ui.campaign.CampaignActivity}.
  */
-public class EntityListFragment extends Fragment
-        implements EntityAdapter.Listener, MenuProvider {
+public class EntityListFragment extends Fragment implements EntityAdapter.Listener {
 
     private static final String ARG_TYPE = "argType";
 
@@ -101,8 +95,6 @@ public class EntityListFragment extends Fragment
             Nav.createEntity(requireContext(), campaignId, type.name());
         });
 
-        requireActivity().addMenuProvider(this, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
-
         observe();
     }
 
@@ -128,26 +120,6 @@ public class EntityListFragment extends Fragment
 
         campaignViewModel.campaign().observe(getViewLifecycleOwner(), campaign ->
                 ViewUtils.show(binding.entityListFab, Rights.canCreateEntity(campaign)));
-    }
-
-    @Override
-    public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        inflater.inflate(R.menu.menu_entity_list, menu);
-    }
-
-    @Override
-    public boolean onMenuItemSelected(@NonNull MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.action_search) {
-            Nav.openSearch(requireContext(), viewModel.campaignId(), type.name());
-            return true;
-        }
-        if (id == R.id.action_refresh) {
-            viewModel.refresh();
-            viewModel.syncNow();
-            return true;
-        }
-        return false;
     }
 
     @Override

@@ -1,0 +1,25 @@
+# Сборка Gradle
+.gradle/
+build/
+app/build/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Локальная конфигурация Android Studio
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Ключи подписи
+*.jks
+*.keystore
+keystore.properties
+
+# Прочее
+.DS_Store

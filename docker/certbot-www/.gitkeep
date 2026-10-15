@@ -1,0 +1,2 @@
+# Сюда nginx кладёт файлы проверки Let's Encrypt (/.well-known/acme-challenge/).
+# Каталог должен существовать до запуска compose, иначе Docker создаст его от root.

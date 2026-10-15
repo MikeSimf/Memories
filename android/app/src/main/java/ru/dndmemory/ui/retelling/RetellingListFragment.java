@@ -2,17 +2,12 @@ package ru.dndmemory.ui.retelling;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.view.MenuProvider;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
@@ -35,7 +30,7 @@ import ru.dndmemory.ui.common.ViewUtils;
 
 /** Вкладка «Пересказы»: черновики сверху, опубликованные ниже. */
 public class RetellingListFragment extends Fragment
-        implements RetellingAdapter.Listener, RetellingAdapter.DraftAdapter.Listener, MenuProvider {
+        implements RetellingAdapter.Listener, RetellingAdapter.DraftAdapter.Listener {
 
     private FragmentRetellingListBinding binding;
     private RetellingListViewModel viewModel;
@@ -88,8 +83,6 @@ public class RetellingListFragment extends Fragment
             }
             Nav.createRetelling(requireContext(), campaignId);
         });
-
-        requireActivity().addMenuProvider(this, getViewLifecycleOwner(), Lifecycle.State.RESUMED);
         observe();
     }
 
@@ -121,20 +114,6 @@ public class RetellingListFragment extends Fragment
 
         campaignViewModel.campaign().observe(getViewLifecycleOwner(), campaign ->
                 ViewUtils.show(binding.retellingListFab, Rights.canCreateRetelling(campaign)));
-    }
-
-    @Override
-    public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        inflater.inflate(R.menu.menu_retelling_list, menu);
-    }
-
-    @Override
-    public boolean onMenuItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.action_search) {
-            Nav.openSearch(requireContext(), viewModel.campaignId(), "RETELLING");
-            return true;
-        }
-        return false;
     }
 
     @Override

@@ -45,6 +45,7 @@ public class MembersFragment extends Fragment implements MemberAdapter.Listener 
     private CampaignViewModel campaignViewModel;
 
     private List<EntityRoom> heroes = new ArrayList<>();
+    private List<MemberRoom> lastMembers = new ArrayList<>();
     private NameIndex nameIndex = NameIndex.of(null);
     private MemberRoom currentMember;
 
@@ -93,6 +94,7 @@ public class MembersFragment extends Fragment implements MemberAdapter.Listener 
     private void observe() {
         viewModel.items().observe(getViewLifecycleOwner(), items -> {
             adapter.submitList(items);
+            lastMembers = items == null ? new ArrayList<>() : items;
             ViewUtils.show(binding.membersEmpty, items == null || items.isEmpty());
             currentMember = findCurrent(items);
             updateCurrentLabel();
@@ -166,6 +168,10 @@ public class MembersFragment extends Fragment implements MemberAdapter.Listener 
             ViewUtils.toast(requireContext(), R.string.members_manage_forbidden);
             return;
         }
+        if (isLastOwner(member)) {
+            ViewUtils.toast(requireContext(), R.string.members_last_owner_error);
+            return;
+        }
         final DialogMemberEditBinding dialog = DialogMemberEditBinding.inflate(getLayoutInflater());
         final boolean editing = member != null;
 
@@ -226,6 +232,21 @@ public class MembersFragment extends Fragment implements MemberAdapter.Listener 
                 .show();
     }
 
+    /** Последний владелец: его нельзя ни понизить, ни убрать (docs/roles.md). */
+    private boolean isLastOwner(@Nullable MemberRoom member) {
+        if (member == null || !MemberRole.OWNER.name().equals(member.role)) {
+            return false;
+        }
+        int owners = 0;
+        for (MemberRoom item : lastMembers) {
+            if (MemberRole.OWNER.name().equals(item.role)
+                    && !"REMOVED".equalsIgnoreCase(item.status)) {
+                owners++;
+            }
+        }
+        return owners <= 1;
+    }
+
     @NonNull
     private MemberRole selectedRole(@Nullable CharSequence shown) {
         if (shown != null) {
@@ -265,7 +286,7 @@ public class MembersFragment extends Fragment implements MemberAdapter.Listener 
         if (!Rights.canManageMembers(campaign)) {
             return;
         }
-        if (campaign != null && MemberRole.OWNER.name().equals(member.role)) {
+        if (isLastOwner(member)) {
             // Последнего владельца понизить нельзя (docs/roles.md, правило 1).
             ViewUtils.toast(requireContext(), R.string.members_last_owner_error);
             return;

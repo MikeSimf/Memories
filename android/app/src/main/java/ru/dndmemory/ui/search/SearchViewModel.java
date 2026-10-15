@@ -7,7 +7,6 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
 import java.util.ArrayList;
@@ -38,6 +37,9 @@ public class SearchViewModel extends ViewModel {
     private final MediatorLiveData<List<SearchAdapter.Item>> results = new MediatorLiveData<>();
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
 
+    private String campaignId = "";
+    private LiveData<List<EntityRoom>> entitySource;
+    private LiveData<List<RetellingRoom>> retellingSource;
     private List<EntityRoom> lastEntities = new ArrayList<>();
     private List<RetellingRoom> lastRetellings = new ArrayList<>();
     private boolean initialized;
@@ -54,16 +56,26 @@ public class SearchViewModel extends ViewModel {
         }
         initialized = true;
         typeFilter.setValue(initialFilter);
+        this.campaignId = campaignId;
+        resubscribe();
+    }
 
-        LiveData<List<EntityRoom>> entitySource = Transformations.switchMap(query, q ->
-                entities.search(campaignId, EntityType.from(typeFilter.getValue()), q));
+    /** Пересобирает подписки на локальную базу под текущий запрос и фильтр. */
+    private void resubscribe() {
+        if (entitySource != null) {
+            results.removeSource(entitySource);
+        }
+        entitySource = entities.search(campaignId, EntityType.from(typeFilter.getValue()),
+                query.getValue());
         results.addSource(entitySource, list -> {
             lastEntities = list == null ? Collections.emptyList() : list;
             combine();
         });
 
-        LiveData<List<RetellingRoom>> retellingSource = Transformations.switchMap(query, q ->
-                retellings.search(campaignId, q));
+        if (retellingSource != null) {
+            results.removeSource(retellingSource);
+        }
+        retellingSource = retellings.search(campaignId, query.getValue());
         results.addSource(retellingSource, list -> {
             lastRetellings = list == null ? Collections.emptyList() : list;
             combine();
@@ -86,13 +98,18 @@ public class SearchViewModel extends ViewModel {
     }
 
     public void setQuery(@Nullable String value) {
-        query.setValue(value == null ? "" : value);
+        String normalized = value == null ? "" : value;
+        if (normalized.equals(query.getValue())) {
+            return;
+        }
+        query.setValue(normalized);
+        resubscribe();
     }
 
     /** Смена фильтра перезапускает запрос к локальной базе. */
     public void setTypeFilter(@Nullable String filter) {
         typeFilter.setValue(filter);
-        query.setValue(query.getValue());
+        resubscribe();
     }
 
     private void combine() {
