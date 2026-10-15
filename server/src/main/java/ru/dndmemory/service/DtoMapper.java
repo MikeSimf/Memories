@@ -36,6 +36,8 @@ public class DtoMapper {
                 .displayName(user.getDisplayName())
                 .avatarFileId(user.getAvatarFileId())
                 .avatarUrl(user.getAvatarFileId() == null ? null : "/api/files/" + user.getAvatarFileId())
+                .phone(user.getPhone())
+                .hasPassword(user.hasPassword())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

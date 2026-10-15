@@ -26,6 +26,11 @@ for (const match of sql.matchAll(/CREATE TABLE (\w+)\s*\(([\s\S]*?)\n\);/g)) {
   tables[match[1]] = columns;
 }
 
+// Колонки, добавленные позже через ALTER TABLE ... ADD COLUMN
+for (const match of sql.matchAll(/ALTER TABLE\s+(\w+)\s+ADD COLUMN\s+(?:IF NOT EXISTS\s+)?(\w+)/gi)) {
+  if (tables[match[1]]) tables[match[1]].add(match[2]);
+}
+
 const camelToSnake = (value) => value.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
 const problems = [];
 

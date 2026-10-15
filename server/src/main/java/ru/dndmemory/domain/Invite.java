@@ -35,6 +35,19 @@ public class Invite {
     @Column(nullable = false, length = 20)
     private MemberRole role;
 
+    /** MEMBER — обычное приглашение, DEVICE — регистрация устройства по QR. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private InviteMode mode = InviteMode.MEMBER;
+
+    /** Имя пользователя, который будет создан при регистрации устройства. */
+    @Column(name = "display_name", length = 120)
+    private String displayName;
+
+    /** Подпись устройства: «Телефон Ани», «Планшет мастера». */
+    @Column(length = 120)
+    private String label;
+
     @Column(name = "linked_entity_id")
     private UUID linkedEntityId;
 

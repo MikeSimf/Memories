@@ -23,6 +23,7 @@ import ru.dndmemory.web.dto.EntityDtos;
 import javax.validation.Valid;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -35,13 +36,15 @@ public class EntityController {
     @GetMapping
     public EntityDtos.EntityListDto list(@AuthenticationPrincipal UserPrincipal principal,
                                          @PathVariable UUID campaignId,
-                                         @RequestParam(required = false) EntityType type,
+                                         @RequestParam(required = false) List<EntityType> types,
                                          @RequestParam(required = false, name = "q") String query,
                                          @RequestParam(required = false)
                                          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant updatedSince,
                                          @RequestParam(defaultValue = "50") int limit,
                                          @RequestParam(defaultValue = "0") int offset) {
-        return entityService.list(campaignId, principal.getId(), type, query, updatedSince, limit, offset);
+        Set<EntityType> typeFilter = types == null || types.isEmpty()
+                ? null : new java.util.LinkedHashSet<>(types);
+        return entityService.list(campaignId, principal.getId(), typeFilter, query, updatedSince, limit, offset);
     }
 
     @PostMapping

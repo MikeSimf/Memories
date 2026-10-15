@@ -38,6 +38,10 @@ public class RefreshToken {
     @Column(name = "user_agent", length = 255)
     private String userAgent;
 
+    /** Заполнен у сессий, выданных устройству по QR-коду: по нему устройство отзывается. */
+    @Column(name = "device_id")
+    private UUID deviceId;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 }

@@ -72,6 +72,22 @@ public final class AuthDtos {
         private String displayName;
 
         private UUID avatarFileId;
+
+        /** Почта и телефон — контакты, по которым можно войти в веб-версию. */
+        @Email(message = "Некорректная почта")
+        private String email;
+
+        private String phone;
+    }
+
+    @Data
+    public static class SetPasswordRequest {
+        /** Нужен только если пароль уже задан. */
+        private String currentPassword;
+
+        @NotBlank(message = "Укажите новый пароль")
+        @Size(min = 8, max = 100, message = "Пароль от 8 до 100 символов")
+        private String newPassword;
     }
 
     @Data
@@ -84,6 +100,13 @@ public final class AuthDtos {
         private String displayName;
         private String avatarUrl;
         private UUID avatarFileId;
+
+        /** Телефон в формате +7XXXXXXXXXX, если указан в профиле. */
+        private String phone;
+
+        /** false у аккаунта, созданного по QR устройства: пароль ещё не задан. */
+        private boolean hasPassword;
+
         private Instant createdAt;
     }
 

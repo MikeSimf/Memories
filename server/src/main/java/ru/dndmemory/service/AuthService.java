@@ -7,8 +7,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.dndmemory.config.AppProperties;
 import ru.dndmemory.domain.AuthProvider;
+import ru.dndmemory.domain.Device;
 import ru.dndmemory.domain.RefreshToken;
 import ru.dndmemory.domain.User;
+import ru.dndmemory.repo.DeviceRepository;
 import ru.dndmemory.repo.RefreshTokenRepository;
 import ru.dndmemory.repo.UserRepository;
 import ru.dndmemory.security.JwtService;
@@ -36,6 +38,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final DeviceRepository deviceRepository;
     private final AppProperties properties;
     private final DtoMapper dtoMapper;
 
@@ -57,15 +60,36 @@ public class AuthService {
 
     @Transactional
     public AuthDtos.TokenResponse login(AuthDtos.LoginRequest request) {
-        User user = userRepository.findByEmailIgnoreCase(normalizeEmail(request.getEmail()))
+        User user = findByLogin(request.getEmail())
                 .orElseThrow(() -> ApiException.unauthorized("Неверная почта или пароль"));
-        if (user.getPasswordHash() == null) {
-            throw ApiException.unauthorized("Этот аккаунт создан через Яндекс или VK — войдите тем же способом");
+        if (!user.hasPassword()) {
+            throw ApiException.unauthorized("У этого аккаунта ещё нет пароля — задайте его в профиле "
+                    + "или войдите, отсканировав QR-код устройства");
         }
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw ApiException.unauthorized("Неверная почта или пароль");
         }
         return issueTokens(user, "email");
+    }
+
+    /** Вход по почте или по телефону — как удобнее. */
+    @Transactional(readOnly = true)
+    public Optional<User> findByLogin(String identifier) {
+        if (identifier == null || identifier.trim().isEmpty()) {
+            return Optional.empty();
+        }
+        String value = identifier.trim();
+        if (PhoneUtils.looksLikePhone(value)) {
+            String phone = PhoneUtils.normalize(value);
+            if (phone != null) {
+                Optional<User> byPhone = userRepository.findByPhone(phone);
+                if (byPhone.isPresent()) {
+                    return byPhone;
+                }
+            }
+        }
+        String email = normalizeEmail(value);
+        return email == null ? Optional.empty() : userRepository.findByEmailIgnoreCase(email);
     }
 
     @Transactional
@@ -78,6 +102,16 @@ public class AuthService {
         stored.setRevoked(true);
         User user = userRepository.findById(stored.getUserId())
                 .orElseThrow(() -> ApiException.unauthorized("Пользователь не найден"));
+        if (stored.getDeviceId() != null) {
+            Device device = deviceRepository.findById(stored.getDeviceId()).orElse(null);
+            if (device == null || device.isRevoked()) {
+                throw ApiException.unauthorized("Устройство отозвано администратором");
+            }
+            device.setLastSeenAt(Instant.now());
+            deviceRepository.save(device);
+            return issueTokens(user, stored.getUserAgent(), device.getId(),
+                    properties.getJwt().getDeviceRefreshTokenDays());
+        }
         return issueTokens(user, stored.getUserAgent());
     }
 
@@ -145,8 +179,45 @@ public class AuthService {
         if (request.getAvatarFileId() != null) {
             user.setAvatarFileId(request.getAvatarFileId());
         }
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            String email = normalizeEmail(request.getEmail());
+            if (!email.equals(user.getEmail()) && userRepository.existsByEmailIgnoreCase(email)) {
+                throw ApiException.emailTaken();
+            }
+            user.setEmail(email);
+        }
+        if (request.getPhone() != null) {
+            if (request.getPhone().trim().isEmpty()) {
+                user.setPhone(null);
+            } else {
+                String phone = PhoneUtils.normalize(request.getPhone());
+                if (phone == null) {
+                    throw ApiException.validation("Не удалось разобрать номер телефона");
+                }
+                if (!phone.equals(user.getPhone()) && userRepository.existsByPhone(phone)) {
+                    throw new ApiException(HttpStatus.CONFLICT, "phone_taken",
+                            "Этот телефон уже привязан к другому аккаунту");
+                }
+                user.setPhone(phone);
+            }
+        }
         user.setUpdatedAt(Instant.now());
         return user;
+    }
+
+    /**
+     * Установка или смена пароля. После этого работает вход в веб-версию по почте
+     * или телефону — именно этот шаг проходят аккаунты, созданные по QR устройства.
+     */
+    @Transactional
+    public void setPassword(UUID userId, AuthDtos.SetPasswordRequest request) {
+        User user = requireUser(userId);
+        if (user.hasPassword() && (request.getCurrentPassword() == null
+                || !passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash()))) {
+            throw ApiException.unauthorized("Текущий пароль указан неверно");
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setUpdatedAt(Instant.now());
     }
 
     public AuthDtos.ProviderDto providerInfo(AppProperties.Provider provider, String name) {
@@ -160,7 +231,16 @@ public class AuthService {
         return jwtService.getAccessTtlSeconds();
     }
 
+    /** Долгоживущая сессия для устройства, зарегистрированного по QR-коду. */
+    public AuthDtos.TokenResponse issueDeviceTokens(User user, UUID deviceId, String userAgent) {
+        return issueTokens(user, userAgent, deviceId, properties.getJwt().getDeviceRefreshTokenDays());
+    }
+
     private AuthDtos.TokenResponse issueTokens(User user, String userAgent) {
+        return issueTokens(user, userAgent, null, properties.getJwt().getRefreshTokenDays());
+    }
+
+    private AuthDtos.TokenResponse issueTokens(User user, String userAgent, UUID deviceId, int refreshDays) {
         String accessToken = jwtService.createAccessToken(user);
         String refreshValue = newRefreshToken();
 
@@ -168,7 +248,8 @@ public class AuthService {
         refreshToken.setId(UUID.randomUUID());
         refreshToken.setUserId(user.getId());
         refreshToken.setTokenHash(sha256(refreshValue));
-        refreshToken.setExpiresAt(Instant.now().plus(properties.getJwt().getRefreshTokenDays(), ChronoUnit.DAYS));
+        refreshToken.setDeviceId(deviceId);
+        refreshToken.setExpiresAt(Instant.now().plus(refreshDays, ChronoUnit.DAYS));
         refreshToken.setUserAgent(userAgent == null ? null
                 : userAgent.substring(0, Math.min(userAgent.length(), 255)));
         refreshTokenRepository.save(refreshToken);

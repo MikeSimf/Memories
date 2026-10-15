@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.dndmemory.domain.InviteMode;
 import ru.dndmemory.domain.MemberRole;
 
 import javax.validation.constraints.Max;
@@ -44,6 +45,12 @@ public final class InviteDtos {
         private String deepLink;
         private String qrPngBase64;
         private MemberRole role;
+        /** MEMBER — приглашение человеку, DEVICE — QR для регистрации устройства. */
+        private InviteMode mode;
+        /** Имя, которое получит пользователь при регистрации устройства. */
+        private String displayName;
+        /** Подпись устройства: «Телефон Ани». */
+        private String label;
         private UUID linkedEntityId;
         private String linkedEntityName;
         private Instant expiresAt;
@@ -64,6 +71,8 @@ public final class InviteDtos {
         private MemberRole role;
         private UUID linkedEntityId;
         private String linkedEntityName;
+        private InviteMode mode;
+        private String displayName;
         private Instant expiresAt;
     }
 

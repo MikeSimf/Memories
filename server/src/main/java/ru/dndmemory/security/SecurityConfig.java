@@ -46,6 +46,8 @@ public class SecurityConfig {
                 .authorizeRequests()
                 .antMatchers("/api/auth/**", "/api/health", "/api/version").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/invites/*").permitAll()
+                // Регистрация устройства: пропуск — сам токен из QR-кода
+                .antMatchers(HttpMethod.POST, "/api/devices/enroll").permitAll()
                 .antMatchers("/api/**").authenticated()
                 .anyRequest().permitAll().and()
                 .exceptionHandling()

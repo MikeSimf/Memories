@@ -47,15 +47,17 @@ public class EntityService {
     private final WikiLinkService wikiLinkService;
 
     @Transactional(readOnly = true)
-    public EntityDtos.EntityListDto list(UUID campaignId, UUID userId, EntityType type, String query,
+    public EntityDtos.EntityListDto list(UUID campaignId, UUID userId, Set<EntityType> types, String query,
                                          Instant updatedSince, int limit, int offset) {
         permissionService.requireMember(campaignId, userId);
-        List<GameEntity> all = type == null
-                ? entityRepository.findAllByCampaignIdAndDeletedFalseOrderByNameAsc(campaignId)
-                : entityRepository.findAllByCampaignIdAndDeletedFalseAndTypeOrderByNameAsc(campaignId, type);
+        List<GameEntity> all = entityRepository.findAllByCampaignIdAndDeletedFalseOrderByNameAsc(campaignId);
 
         List<GameEntity> filtered = new ArrayList<>();
         for (GameEntity entity : all) {
+            // types пустой или не задан — значит нужны все виды объектов
+            if (types != null && !types.isEmpty() && !types.contains(entity.getType())) {
+                continue;
+            }
             if (updatedSince != null && !entity.getUpdatedAt().isAfter(updatedSince)) {
                 continue;
             }

@@ -8,6 +8,7 @@ import ru.dndmemory.domain.Campaign;
 import ru.dndmemory.domain.ChangeOp;
 import ru.dndmemory.domain.GameEntity;
 import ru.dndmemory.domain.Invite;
+import ru.dndmemory.domain.InviteMode;
 import ru.dndmemory.domain.Member;
 import ru.dndmemory.domain.MemberRole;
 import ru.dndmemory.domain.MemberStatus;
@@ -35,6 +36,8 @@ public class InviteService {
     private static final String ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int DEFAULT_HOURS = 168;
+    /** QR устройства живёт сутки: его сканируют сразу, а не через неделю. */
+    private static final int DEFAULT_DEVICE_HOURS = 24;
     private static final int DEFAULT_USES = 1;
 
     private final InviteRepository inviteRepository;
@@ -56,9 +59,25 @@ public class InviteService {
                 request.getExpiresInHours(), request.getMaxUses());
     }
 
+    /** Приглашение участника — обычный режим. */
     @Transactional
     public InviteDtos.InviteDto createInternal(Campaign campaign, UUID actorId, MemberRole role,
                                                UUID linkedEntityId, Integer expiresInHours, Integer maxUses) {
+        return createInternal(campaign, actorId, role, linkedEntityId, expiresInHours, maxUses,
+                InviteMode.MEMBER, null, null);
+    }
+
+    /**
+     * Общий случай: MEMBER — приглашение человеку, DEVICE — регистрация устройства
+     * по QR-коду (тогда displayName задаёт админ, а пароль не нужен).
+     */
+    @Transactional
+    public InviteDtos.InviteDto createInternal(Campaign campaign, UUID actorId, MemberRole role,
+                                               UUID linkedEntityId, Integer expiresInHours, Integer maxUses,
+                                               InviteMode mode, String displayName, String label) {
+        if (mode == InviteMode.DEVICE && (displayName == null || displayName.trim().isEmpty())) {
+            throw ApiException.validation("Для регистрации устройства укажите имя игрока");
+        }
         if (role == MemberRole.OWNER) {
             throw ApiException.validation("Нельзя пригласить второго владельца — выберите другую роль");
         }
@@ -68,9 +87,14 @@ public class InviteService {
         invite.setCampaignId(campaign.getId());
         invite.setToken(newToken());
         invite.setRole(role);
+        invite.setMode(mode);
+        invite.setDisplayName(displayName);
+        invite.setLabel(label);
         invite.setLinkedEntityId(linkedEntityId);
         invite.setCreatedBy(actorId);
-        invite.setExpiresAt(now.plus(expiresInHours == null ? DEFAULT_HOURS : expiresInHours, ChronoUnit.HOURS));
+        int hours = expiresInHours != null ? expiresInHours
+                : (mode == InviteMode.DEVICE ? DEFAULT_DEVICE_HOURS : DEFAULT_HOURS);
+        invite.setExpiresAt(now.plus(hours, ChronoUnit.HOURS));
         invite.setMaxUses(maxUses == null ? DEFAULT_USES : maxUses);
         invite.setUses(0);
         invite.setCreatedAt(now);
@@ -111,6 +135,8 @@ public class InviteService {
                 .campaignId(campaign.getId())
                 .campaignTitle(campaign.getTitle())
                 .role(invite.getRole())
+                .mode(invite.getMode())
+                .displayName(invite.getDisplayName())
                 .linkedEntityId(invite.getLinkedEntityId())
                 .linkedEntityName(linkedName(invite.getCampaignId(), invite.getLinkedEntityId()))
                 .expiresAt(invite.getExpiresAt())
@@ -121,6 +147,10 @@ public class InviteService {
     public InviteDtos.AcceptInviteResponse accept(String token, UUID userId) {
         Invite invite = inviteRepository.findByToken(token.trim().toUpperCase())
                 .orElseThrow(ApiException::inviteInvalid);
+        if (invite.getMode() == InviteMode.DEVICE) {
+            throw new ApiException(org.springframework.http.HttpStatus.CONFLICT, "invite_invalid",
+                    "Это QR-код для регистрации устройства — отсканируйте его в мобильном приложении");
+        }
         if (!invite.isValid()) {
             throw ApiException.inviteInvalid();
         }
@@ -171,6 +201,9 @@ public class InviteService {
                 .deepLink(deepLink)
                 .qrPngBase64(qrCodeGenerator.toPngBase64(webUrl))
                 .role(invite.getRole())
+                .mode(invite.getMode())
+                .displayName(invite.getDisplayName())
+                .label(invite.getLabel())
                 .linkedEntityId(invite.getLinkedEntityId())
                 .linkedEntityName(linkedName(campaignId, invite.getLinkedEntityId()))
                 .expiresAt(invite.getExpiresAt())

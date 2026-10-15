@@ -183,6 +183,23 @@ public class MemberService {
                 MemberPayloads.of(member), actorId, null, null);
     }
 
+    /** Снимает участие по идентификатору пользователя — используется при отзыве устройства. */
+    @Transactional
+    public void removeMemberFromCampaign(UUID campaignId, UUID targetUserId, UUID actorId) {
+        Member target = memberRepository.findByCampaignIdAndUserId(campaignId, targetUserId).orElse(null);
+        if (target == null || target.getStatus() == MemberStatus.REMOVED) {
+            return;
+        }
+        guardLastOwner(campaignId, target, "удалить");
+        Campaign campaign = campaignRepository.findForUpdate(campaignId)
+                .orElseThrow(() -> ApiException.notFound("Кампания"));
+        target.setStatus(MemberStatus.REMOVED);
+        target.setUpdatedAt(Instant.now());
+        memberRepository.save(target);
+        changeRecorder.record(campaign, ObjectType.MEMBER, target.getId(), ChangeOp.DELETE,
+                MemberPayloads.of(target), actorId, null, null);
+    }
+
     @Transactional
     public Member activate(UUID campaignId, UUID userId, MemberRole role, UUID linkedEntityId) {
         Member member = memberRepository.findByCampaignIdAndUserId(campaignId, userId).orElse(null);

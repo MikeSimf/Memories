@@ -61,15 +61,34 @@
 ### POST /api/auth/login
 `{ "email": "…", "password": "…" }` → `200` (та же схема). Ошибка `unauthorized`.
 
+Поле `email` принимает **и почту, и телефон** — сервер сам понимает, что передали
+(`+7 999 123-45-67`, `89991234567` и `+79991234567` — одно и то же). У аккаунта,
+созданного по QR устройства, пароля изначально нет: пока он не задан через
+`POST /api/me/password`, вход по паролю отвечает `401`.
+
 ### POST /api/auth/refresh
 `{ "refreshToken": "…" }` → `200` `{ accessToken, refreshToken, expiresIn }`.
-Старый refresh-токен инвалидируется (ротация).
+Старый refresh-токен инвалидируется (ротация). Если токен принадлежал устройству,
+которое админ отозвал, → `401` («Устройство отозвано администратором»).
 
 ### POST /api/auth/logout
 `{ "refreshToken": "…" }` → `204`.
 
 ### GET /api/me · PATCH /api/me
-`PATCH` принимает `{ "displayName": "…", "avatarFileId": "…" }`.
+`PATCH` принимает `{ "displayName": "…", "avatarFileId": "…", "email": "…", "phone": "+7…" }`.
+
+* `email` и `phone` — контакты для входа в веб-версию. Телефон нормализуется к виду
+  `+7XXXXXXXXXX`; занятая почта → `409 email_taken`, занятый телефон → `409 phone_taken`.
+  Пустая строка в `phone` очищает значение.
+* Профиль в ответе содержит `phone` и `hasPassword` — по второму признаку интерфейс
+  понимает, нужно ли спрашивать текущий пароль.
+
+### POST /api/me/password
+`{ "currentPassword": "…", "newPassword": "…" }` → `204`.
+
+Текущий пароль обязателен, только если пароль уже задан (`hasPassword: true`).
+Именно этот запрос превращает аккаунт устройства в полноценный: после него работает
+вход в веб-версию по почте или телефону.
 
 ### GET /api/auth/providers
 ```json
@@ -91,6 +110,75 @@ POST /api/auth/oauth/{provider}/callback
 ```
 → `200` (та же схема, что у `/login`). Сервер сам обменивает код на токен,
 получает профиль и создаёт/находит пользователя (связка по `provider + providerUserId`).
+
+## 3.1. Регистрация устройства по QR
+
+Мобильное приложение не требует ни пароля, ни SMS: админ выпускает QR-код для
+конкретного игрока, телефон сканирует его и получает долгоживущую сессию
+(refresh-токен на год, `DND_DEVICE_REFRESH_TOKEN_DAYS`).
+
+**Шаг админа** (нужно право `members.manage`):
+
+```http
+POST /api/campaigns/{id}/devices/enrollments
+{ "displayName": "Аня", "role": "EDITOR_HERO", "linkedEntityId": "…",
+  "expiresInHours": 24, "maxUses": 1, "label": "Телефон Ани" }
+```
+→ `201` — та же схема, что у приглашения (`token`, `url`, `deepLink`, `qrPngBase64`),
+плюс `"mode": "DEVICE"`, `displayName`, `label`. По умолчанию QR живёт сутки
+(`expiresInHours`), а не неделю, как приглашение участника.
+
+**Шаг телефона** (единственный эндпоинт без авторизации, кроме входа и `/health`):
+
+```http
+POST /api/devices/enroll
+{ "token": "7F3K9Q2M", "label": "Pixel 8 Ани", "platform": "android" }
+```
+→ `200`
+```json
+{ "user": { "id": "…", "displayName": "Аня", "email": null, "phone": null, "hasPassword": false },
+  "accessToken": "…", "refreshToken": "…", "expiresIn": 900,
+  "deviceId": "…", "campaignId": "…", "campaignTitle": "Курс на Фандалин", "myRole": "EDITOR_HERO" }
+```
+
+Сервер создаёт пользователя с указанным именем (почты и пароля у него нет), заводит
+запись устройства, добавляет человека в кампанию с ролью из QR и выдаёт сессию.
+Токен из QR одноразовый; повторное сканирование → `409 invite_invalid`.
+
+Дальше человек в профиле указывает почту и телефон и задаёт пароль
+(`PATCH /api/me`, `POST /api/me/password`) — после этого он может войти в веб-версию.
+Пока пароля нет, приложение работает по сессии устройства.
+
+**Управление устройствами** (право `members.manage`):
+
+| Метод | Путь | Что делает |
+|---|---|---|
+| GET | `/api/campaigns/{id}/devices` | список устройств кампании |
+| DELETE | `/api/campaigns/{id}/devices/{deviceId}` | отзывает устройство: его сессии гасятся |
+
+Элемент списка:
+```json
+{ "id": "…", "userId": "…", "displayName": "Аня", "label": "Телефон Ани",
+  "platform": "android", "campaignId": "…", "revoked": false,
+  "createdAt": "…", "lastSeenAt": "…" }
+```
+
+Отзыв устройства **не** исключает человека из кампании — у него может быть второе
+устройство. Для исключения участника есть `DELETE /api/campaigns/{id}/members/{memberId}`.
+
+### Два разных QR — не перепутать
+
+| | Приглашение участника | Регистрация устройства |
+|---|---|---|
+| Режим | `mode: "MEMBER"` | `mode: "DEVICE"` |
+| Кто выпускает | `POST /api/campaigns/{id}/invites` | `POST /api/campaigns/{id}/devices/enrollments` |
+| Как принимается | `POST /api/invites/{token}/accept` (нужен вход) | `POST /api/devices/enroll` (без входа) |
+| Кому подходит | тому, у кого уже есть аккаунт | новому игроку: аккаунт создаст сервер |
+| Срок | 7 дней | 1 день |
+
+Приложение решает так: **есть сохранённая сессия → `accept`**, сессии нет → `enroll`.
+Сервер отвечает взаимно: `accept` с токеном устройства → `409` с подсказкой
+«отсканируйте QR в мобильном приложении».
 
 ## 4. Кампании
 
@@ -145,9 +233,13 @@ POST /api/auth/oauth/{provider}/callback
 ```json
 { "id": "…", "token": "7F3K9Q2M", "url": "https://dnd.example.com/join/7F3K9Q2M",
   "deepLink": "dndmemory://join?token=7F3K9Q2M",
-  "qrPngBase64": "iVBORw0KGgo…", "role": "EDITOR_HERO", "linkedEntityId": "…",
+  "qrPngBase64": "iVBORw0KGgo…", "role": "EDITOR_HERO", "mode": "MEMBER",
+  "displayName": null, "label": null, "linkedEntityId": "…",
   "expiresAt": "…", "maxUses": 1, "uses": 0 }
 ```
+
+* `mode` различает два вида QR: `MEMBER` — приглашение человеку, `DEVICE` — регистрация
+  устройства (подробности в разделе 3.1). Это приглашение выпускается только как `MEMBER`.
 
 * `GET /api/campaigns/{id}/invites` — список; `DELETE /api/campaigns/{id}/invites/{inviteId}` — отозвать.
 * `GET /api/invites/{token}` — **без авторизации**, публичный предпросмотр:
@@ -163,7 +255,7 @@ POST /api/auth/oauth/{provider}/callback
 
 | Метод | Путь | Право |
 |---|---|---|
-| GET | `/api/campaigns/{id}/entities?type=&q=&updatedSince=&limit=&offset=` | `entity.read` |
+| GET | `/api/campaigns/{id}/entities?types=&q=&updatedSince=&limit=&offset=` | `entity.read` |
 | POST | `/api/campaigns/{id}/entities` | `entity.write` (герои — `hero.write`) |
 | GET | `/api/campaigns/{id}/entities/{entityId}` | `entity.read` |
 | PATCH | `/api/campaigns/{id}/entities/{entityId}` | `entity.write` |
@@ -182,6 +274,9 @@ POST /api/auth/oauth/{provider}/callback
   "createdAt": "…", "updatedAt": "…", "deleted": false }
 ```
 
+* `types` — фильтр по видам объектов, можно несколько: `?types=HERO,NPC`. Пусто или не
+  задан — все виды. Вкладка «Персонажи» в клиентах запрашивает `types=HERO,NPC`,
+  «Локации» — `types=LOCATION`, «Предметы» — `types=ITEM`.
 * `clientId` — обязателен при офлайн-создании: сервер использует его для идемпотентности
   (повторная отправка того же `clientId` не создаёт дубликат).
 * Создание `HERO` доступно мастеру и владельцу, а участнику с ролью `EDITOR_HERO` —

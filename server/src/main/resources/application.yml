@@ -54,6 +54,8 @@ dnd:
     secret: ${DND_JWT_SECRET:dnd-memory-dev-secret-change-me-please-32}
     access-token-minutes: ${DND_ACCESS_TOKEN_MINUTES:15}
     refresh-token-days: ${DND_REFRESH_TOKEN_DAYS:30}
+    # Сессия устройства живёт год: телефон не должен разлогиниваться
+    device-refresh-token-days: ${DND_DEVICE_REFRESH_TOKEN_DAYS:365}
   oauth:
     yandex:
       client-id: ${DND_YANDEX_CLIENT_ID:}

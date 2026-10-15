@@ -30,6 +30,8 @@ public class AppProperties {
         private String secret;
         private int accessTokenMinutes = 15;
         private int refreshTokenDays = 30;
+        /** Сессия устройства живёт год: телефон не должен разлогиниваться. */
+        private int deviceRefreshTokenDays = 365;
     }
 
     @Data

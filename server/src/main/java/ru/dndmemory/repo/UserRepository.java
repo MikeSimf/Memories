@@ -13,5 +13,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByEmailIgnoreCase(String email);
 
+    /** Телефон хранится в нормализованном виде (+7XXXXXXXXXX). */
+    java.util.Optional<User> findByPhone(String phone);
+
+    boolean existsByPhone(String phone);
+
     Optional<User> findByProviderAndProviderUserId(AuthProvider provider, String providerUserId);
 }

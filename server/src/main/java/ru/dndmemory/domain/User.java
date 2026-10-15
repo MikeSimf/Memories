@@ -37,6 +37,10 @@ public class User {
     @Column(name = "avatar_file_id")
     private UUID avatarFileId;
 
+    /** Телефон в формате +7XXXXXXXXXX. Уникален; нужен для входа в веб-версию. */
+    @Column(length = 32)
+    private String phone;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private AuthProvider provider = AuthProvider.LOCAL;
@@ -49,4 +53,7 @@ public class User {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt = Instant.now();
+    public boolean hasPassword() {
+        return passwordHash != null && !passwordHash.isEmpty();
+    }
 }
