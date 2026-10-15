@@ -37,6 +37,7 @@
 | Документ | О чём |
 |---|---|
 | [`docs/getting-started.md`](docs/getting-started.md) | Как забрать код и открыть его в IntelliJ IDEA, Android Studio, VS Code |
+| [`docs/master-guide.md`](docs/master-guide.md) | Памятка мастера: роли, выдача доступа по QR, частые вопросы |
 | [`docs/architecture.md`](docs/architecture.md) | Архитектура и принятые решения |
 | [`docs/api.md`](docs/api.md) | HTTP API — контракт всех трёх частей |
 | [`docs/sync.md`](docs/sync.md) | Протокол офлайн-синхронизации и разрешение конфликтов |

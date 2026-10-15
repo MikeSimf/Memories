@@ -142,14 +142,12 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
             adapter.submitList(items);
             boolean empty = items == null || items.isEmpty();
             boolean filtering = !text(binding.entityListFilter.getText()).isEmpty();
-            boolean hasSource = adapter.getItemCount() > 0;
+            Integer total = viewModel.total().getValue();
+            boolean tabHasItems = total != null && total > 0;
 
             // Пустое состояние разное: «здесь пусто» и «фильтр ничего не нашёл».
-            if (empty && filtering && !hasSource) {
-                binding.entityListEmpty.setText(R.string.entity_filter_no_results);
-            } else {
-                binding.entityListEmpty.setText(R.string.entity_list_empty);
-            }
+            binding.entityListEmpty.setText(filtering && tabHasItems
+                    ? R.string.entity_filter_no_results : R.string.entity_list_empty);
             ViewUtils.show(binding.entityListEmpty, empty);
             ViewUtils.show(binding.entityListRecycler, !empty);
 
