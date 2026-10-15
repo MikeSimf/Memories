@@ -28,6 +28,14 @@ const walk = (dir, filter = () => true) => {
   return out;
 };
 
+// Ресурсы, которые объявляют подключённые библиотеки, а не наш проект
+const LIBRARY_STRINGS = new Set([
+  'appbar_scrolling_view_behavior',
+  'bottom_sheet_behavior',
+  'password_toggle_content_description',
+  'search_menu_title',
+]);
+
 const javaFiles = walk(JAVA, (f) => f.endsWith('.java'));
 const xmlFiles = walk(APP, (f) => f.endsWith('.xml'));
 if (javaFiles.length === 0) {
@@ -105,7 +113,7 @@ const R_TYPES = {
 for (const file of javaFiles) {
   const source = read(file);
   const short = path.relative(ROOT, file);
-  for (const match of source.matchAll(/\bR\.(\w+)\.(\w+)/g)) {
+  for (const match of source.matchAll(/(?<![\w.])R\.(\w+)\.(\w+)/g)) {
     const [, type, name] = match;
     const check = R_TYPES[type];
     if (!check) continue;
@@ -115,14 +123,15 @@ for (const file of javaFiles) {
   for (const match of source.matchAll(/^\s*import\s+(ru\.dndmemory[\w.]*)\s*;/gm)) {
     const imported = match[1];
     // R и BuildConfig генерирует Gradle — в исходниках их нет
-    if (/\.(R|BuildConfig)$/.test(imported) || imported.endsWith(".databinding")) continue;
+    // R, BuildConfig и классы ViewBinding генерирует Gradle — в исходниках их нет
+    if (/\.(R|BuildConfig)$/.test(imported) || imported.includes(".databinding")) continue;
     if (!classIndex.has(imported) && !classIndex.has(imported.replace(/\.\w+$/, ""))) {
       problems.push(short + ": import " + imported + " — такого класса нет");
     }
   }
 
   // switch/case по идентификаторам вида case R.id.foo
-  for (const match of source.matchAll(/case\s+R\.id\.(\w+)/g)) {
+  for (const match of source.matchAll(/case\s+(?<![\w.])R\.id\.(\w+)/g)) {
     if (!ids.has(match[1])) problems.push(`${short}: case R.id.${match[1]} — идентификатор не найден`);
   }
 }
@@ -142,7 +151,7 @@ for (const file of xmlFiles) {
       problems.push(`${short}: @style/${name} — стиль не найден`);
       continue;
     }
-    if (type === 'string' && name.startsWith('android')) continue;
+    if (type === 'string' && (name.startsWith('android') || LIBRARY_STRINGS.has(name))) continue;
     if (R_TYPES[type] && !R_TYPES[type](name)) {
       problems.push(`${short}: @${type}/${name} — ресурс не найден`);
     }
@@ -195,3 +204,4 @@ if (problems.length === 0) {
 console.error(`Найдено расхождений: ${problems.length}\n` + problems.slice(0, 80).map((p) => '  - ' + p).join('\n'));
 if (problems.length > 80) console.error(`  … и ещё ${problems.length - 80}`);
 process.exit(1);
+
