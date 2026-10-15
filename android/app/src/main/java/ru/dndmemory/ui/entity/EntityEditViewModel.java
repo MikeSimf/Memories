@@ -81,7 +81,18 @@ public class EntityEditViewModel extends ViewModel {
             draft = room;
             List<EntityRoom> all = entities.findAllNow(campaignId);
             return new EditState(room, NameIndex.of(all), all);
-        }, state::setValue);
+        }, new RepoCallback<EditState>() {
+            @Override
+            public void onSuccess(@Nullable EditState value) {
+                state.setValue(value);
+            }
+
+            @Override
+            public void onError(@NonNull ApiException error) {
+                // Локальное чтение почти не падает; показываем ошибку экрану.
+                actionState.setValue(Resource.error(error));
+            }
+        });
     }
 
     @NonNull

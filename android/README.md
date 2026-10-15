@@ -192,3 +192,46 @@ android/
   (проверен по центральному каталогу zip). Если политика безопасности не
   пропускает бинарные файлы, восстановите его командой `gradle wrapper` или
   скачиванием из дистрибутива Gradle 8.5.
+
+## 9. Проверка сборки
+
+Сборка прогнана по-настоящему (JDK 17, Android SDK 34, Gradle 8.5 из wrapper):
+
+```bash
+cd android
+export JAVA_HOME=$(ls -d /data/external/tools/jdk-17* | head -1)
+export ANDROID_HOME=/data/external/tools/android-sdk
+export GRADLE_USER_HOME=/data/external/tools/gradle-home
+
+./gradlew assembleDebug --no-daemon --max-workers=1 \
+  -Dorg.gradle.jvmargs="-Xmx1024m -XX:MaxMetaspaceSize=512m" -Dorg.gradle.parallel=false
+
+./gradlew assembleRelease --no-daemon --max-workers=1 \
+  -Dorg.gradle.jvmargs="-Xmx1024m -XX:MaxMetaspaceSize=512m" -Dorg.gradle.parallel=false
+```
+
+Результат: `BUILD SUCCESSFUL` для обоих вариантов.
+
+| Артефакт | Размер | Примечание |
+|---|---|---|
+| `app/build/outputs/apk/debug/app-debug.apk` | 8,1 МБ | без минификации |
+| `app/build/outputs/apk/release/app-release-unsigned.apk` | 3,0 МБ | R8 + `shrinkResources`, подпись не настроена |
+
+Дополнительно проверено по собранным APK (`aapt2 dump badging` / `xmltree`, `dexdump`):
+
+* `package ru.dndmemory`, `minSdk 24`, `targetSdk 34`, версия 1.0.0;
+* разрешения: `INTERNET`, `ACCESS_NETWORK_STATE`, `CAMERA`
+  (`WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED`, `FOREGROUND_SERVICE` добавляет WorkManager);
+* все 15 активностей попали в release-манифест, launcher — `SplashActivity`;
+* оба deep link на месте: `dndmemory://oauth` и `dndmemory://join`;
+* адаптивная иконка (`mipmap-anydpi-v26/ic_launcher.xml`) собирается, есть PNG-фолбэки
+  для API 24–25;
+* правила R8 сохраняют имена полей DTO: в release-DEX у `EntityDto` остались
+  `campaignId`, `clientId`, `summary`, `description`, `attrs`, `tags`, `links`,
+  `revision`, `createdAt`, `updatedAt` и остальные — Gson-сериализация не сломается.
+
+Для установки на устройство соберите release с ключом:
+
+```bash
+./gradlew assembleRelease -Pandroid.injected.signing.store.file=... # или настройте signingConfigs
+```

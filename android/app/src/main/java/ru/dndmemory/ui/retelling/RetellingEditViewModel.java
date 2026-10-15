@@ -101,7 +101,18 @@ public class RetellingEditViewModel extends ViewModel {
             List<EntityRoom> all = entities.findAllNow(campaignId);
             List<EntityRoom> heroes = entities.findByTypeNow(campaignId, EntityType.HERO);
             return new EditState(found, NameIndex.of(all), heroes);
-        }, state::setValue);
+        }, new RepoCallback<EditState>() {
+            @Override
+            public void onSuccess(@Nullable EditState value) {
+                state.setValue(value);
+            }
+
+            @Override
+            public void onError(@NonNull ApiException error) {
+                // Локальное чтение почти не падает; показываем ошибку экрану.
+                actionState.setValue(Resource.error(error));
+            }
+        });
     }
 
     @NonNull

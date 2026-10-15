@@ -11,8 +11,7 @@
         <item name="colorOnSecondary">#2A2113</item>
         <item name="colorSurface">#1B1614</item>
         <item name="colorOnSurface">#EDE0DA</item>
-        <item name="colorBackground">#141110</item>
-        <item name="colorOnBackground">#EDE0DA</item>
+        <item name="android:colorBackground">#141110</item>
         <item name="colorError">#F2B8B5</item>
         <item name="colorOnError">#601410</item>
         <item name="colorOutline">#9A8F8A</item>

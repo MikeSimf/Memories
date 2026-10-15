@@ -20,20 +20,51 @@
 PostgreSQL. Для этого есть `./scripts/run-integration-tests.sh` (нужен Docker) —
 запустите его у себя перед первым развёртыванием.
 
-## Что проверено статически
+## Android — проверено настоящей сборкой
 
-* **Веб-версия** — сборка и проверка типов (`npm run build`, `vue-tsc --noEmit`)
-  выполнялись; результат указан в [`web/README.md`](../web/README.md).
-* **Android** — компилятора в окружении нет, поэтому вместо сборки выполнена сверка
-  ссылок: `node scripts/check-android.mjs` проверяет, что все `R.id`, `R.string`,
-  `R.layout`, `R.drawable`, `R.menu` из Java существуют, что ссылки `@string/…`,
-  `@drawable/…`, `@style/…` в макетах разрешаются, а активности из манифеста есть в
-  исходниках. Скрипт написан специально для этого проекта и запускается из корня
-  репозитория.
-* **Docker-конфигурация** — файлы `compose.test.yml`, `compose.prod.yml`,
-  `Dockerfile.server`, `Dockerfile.web` и конфиги nginx написаны, но **не запускались**:
-  `docker` в этом окружении отсутствует. Первый `./scripts/deploy.sh test` на вашем
-  сервере — это и есть их настоящая проверка.
+В окружении были поставлены JDK 17 и Android SDK 34 (платформа и build-tools), после
+чего проект собран по-настоящему:
+
+```bash
+cd android
+export JAVA_HOME=<JDK 17>
+export ANDROID_HOME=<android-sdk>
+./gradlew assembleDebug   --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1024m"
+./gradlew assembleRelease --no-daemon --max-workers=1 -Dorg.gradle.jvmargs="-Xmx1024m"
+```
+
+| Проверка | Результат |
+|---|---|
+| `assembleDebug` | `BUILD SUCCESSFUL`, `app-debug.apk` — 8,1 МБ |
+| `assembleRelease` (R8 + shrinkResources) | `BUILD SUCCESSFUL`, `app-release-unsigned.apk` — 3,0 МБ |
+| Повторная сборка | `BUILD SUCCESSFUL`, все задачи `UP-TO-DATE` (сборка воспроизводима) |
+| Содержимое APK (`aapt2 dump badging`) | `ru.dndmemory`, minSdk 24, targetSdk 34, v1.0.0, разрешения INTERNET/NETWORK_STATE/CAMERA, 15 активностей, launcher `SplashActivity` |
+| Deep link | `dndmemory://oauth` и `dndmemory://join` присутствуют в манифесте релиза |
+| Сохранность Gson-полей после R8 (`dexdump`) | Поля `EntityDto`/`EntityLink` не переименованы — сериализация в release не сломается |
+
+Дефекты, которые нашла сборка (и которые иначе попали бы к вам):
+
+1. `attr/colorBackground not found` — в Material3 нет app-атрибутов `colorBackground`
+   и `colorOnBackground`, это атрибуты платформы (`android:colorBackground`).
+2. `no suitable method found for io(…, state::setValue)` — `RepoCallback` не является
+   функциональным интерфейсом, method reference не подходил.
+
+Дополнительно до сборки исправлены: отсутствовавший `InviteAcceptActivity` (на него
+ссылались манифест и переходы), дублирование id пунктов меню между активностью
+кампании и вкладками, устаревший `Transformations.switchMap`, дыра в правилах
+`Rights.isOwnEntity` (редактор-герой мог править чужого героя).
+
+## Дополнительные статические проверки
+
+* **Согласованность Android-проекта** — `node scripts/check-android.mjs`: все `R.id`,
+  `R.string`, `R.layout`, `R.drawable`, `R.menu` из Java существуют; ссылки `@string/…`,
+  `@drawable/…`, `@style/…` в макетах разрешаются; импорты наших классов указывают на
+  существующие файлы; каждому `…Binding` соответствует свой макет; активности из
+  манифеста есть в исходниках.
+* **Веб-версия** — `npm run build` и `vue-tsc --noEmit` проходят (проверено повторно),
+  результат — 696 КБ статики, service worker и манифест PWA.
+* **YAML и инфраструктура** — compose-файлы разбираются как корректный YAML, все
+  `${ПЕРЕМЕННЫЕ}` описаны в примерах окружения, все монтируемые файлы существуют.
 
 ## Чего точно не проверено
 
@@ -43,12 +74,16 @@ PostgreSQL. Для этого есть `./scripts/run-integration-tests.sh` (н�
 2. **Полный цикл синхронизации двух устройств.** Логика push/pull и разрешения
    конфликтов покрыта кодом и документацией [`sync.md`](sync.md), но сценарий
    «телефон офлайн → правка → сервер → второй телефон» не воспроизводился.
-3. **Сборка APK.** Android-проект не собирался ни разу.
+3. **Запуск приложения на устройстве.** Собраны debug- и release-APK, проверено их
+   содержимое, но на эмуляторе и живом телефоне приложение не запускалось: логика
+   экранов и синхронизации проверена статически и сборкой, а не работой.
 4. **Внешние входы Яндекс и VK.** Код обмена кода на токен написан, но без
    зарегистрированных приложений и реальных `client_id` не выполнялся ни один запрос
    к провайдерам.
-5. **TLS и nginx.** Сертификат Let's Encrypt и конфиг `nginx.prod.conf.template`
-   не проверялись в бою.
+5. **TLS и nginx, docker build.** `docker` в этом окружении отсутствует, поэтому
+   образы не собирались и контуры не поднимались. Конфигурация проверена разбором
+   YAML и сверкой путей, но первый `./scripts/deploy.sh test` на вашем сервере — это
+   её настоящая проверка.
 
 ## Порядок первой проверки у себя
 
