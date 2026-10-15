@@ -59,11 +59,10 @@ sudo tar xzf /tmp/dnd-memory-1.0.0.tar.gz
 sudo chown -R $USER:$USER /opt/apps/dnd-memory
 ```
 
-**Вариант Б — git** (репозиторий на GitHub/GitLab — как его завести, см.
-[`getting-started.md`](getting-started.md), раздел 1):
+**Вариант Б — git** (репозиторий проекта: <https://github.com/MikeSimf/Memories>):
 
 ```bash
-cd /opt/apps && git clone https://github.com/<вы>/dnd-memory.git
+cd /opt/apps && git clone https://github.com/MikeSimf/Memories.git dnd-memory
 ```
 
 Дальше все команды выполняются из `/opt/apps/dnd-memory`.

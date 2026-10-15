@@ -13,6 +13,10 @@
 | Android-приложение | [`android/`](android) | Java, Room, Retrofit, WorkManager, ZXing, MVVM |
 | Развёртывание | [`docker/`](docker), [`scripts/`](scripts) | Docker Compose, nginx, два контура (test и prod) |
 
+## Репозиторий
+
+<https://github.com/MikeSimf/Memories> — ветка `main`.
+
 ## Что умеет
 
 * **Справочник по вкладкам** — Герои, Персонажи, Локации, Предметы, Пересказы, Участники.
