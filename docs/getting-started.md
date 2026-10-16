@@ -63,6 +63,12 @@ cd dnd-memory
 > обычный `mvn` из каталога `server/` работает независимо от ваших рабочих настроек.
 > Из корня репозитория используйте `./scripts/build-server.sh`. Подробности — в
 > [`server/README.md`](../server/README.md).
+>
+> **Настройки IDEA по Maven.** Idea читает свои настройки, поэтому если синхронизация
+> тянет зависимости через рабочее зеркало: `Settings → Build, Execution, Deployment →
+> Build Tools → Maven` — включите галочку **Use settings from .mvn/maven.config** или
+> укажите **User settings file** = `<проект>/server/.mvn/settings.xml` с галочкой
+> Override. Тогда и IDE, и консоль будут ходить в Maven Central.
 
 ## 2. Сервер приложений в IntelliJ IDEA
 
