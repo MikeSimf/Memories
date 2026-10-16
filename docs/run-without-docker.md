@@ -68,6 +68,35 @@ export DND_ADMIN_TOKEN="$(openssl rand -hex 16)"      # для выдачи сс
 | `DND_ADMIN_TOKEN` | `dnd.admin-token` | нет; без него админ-панель сброса отвечает 404 |
 | `DND_PORT` | `server.port` | нет, по умолчанию 8080 |
 
+
+### Кодировка файла настроек
+
+`application.yml` читается **строго как UTF-8**. Если файл сохранён в Windows-1251
+(обычное дело, когда правишь на Windows или копируешь через старый редактор),
+приложение падает ещё до старта:
+
+```
+org.yaml.snakeyaml.error.YAMLException: java.nio.charset.MalformedInputException: Input length = 1
+```
+
+Виноваты русские комментарии — их байты в cp1251 не являются корректным UTF-8.
+Проверить и починить:
+
+```bash
+# проверка: если команда молчит — файл в UTF-8
+iconv -f utf-8 -t utf-8 application.yml > /dev/null && echo "UTF-8 ok"
+
+# если файл в cp1251 — перекодировать
+iconv -f cp1251 -t utf-8 application.yml > application.utf8.yml && mv application.utf8.yml application.yml
+```
+
+**Надёжнее всего — взять файл вообще без кириллицы:**
+[`server/application.minimal.yml`](../server/application.minimal.yml). Он состоит только
+из ASCII-символов, поэтому остаётся корректным UTF-8 при любой кодировке редактора.
+
+Если файл создаётся прямо на сервере через `cat > application.yml <<EOF … EOF`,
+он тоже получится в UTF-8 — копирование из буфера по SSH кодировку не ломает.
+
 ## Шаг 3. Запуск и проверка
 
 ```bash
@@ -125,4 +154,5 @@ Jar её не отдаёт. Варианты:
 | `column "attrs" does not exist` и подобное | в строке подключения нет `?stringtype=unspecified` |
 | приложение стартует, но `/api/…` отвечает 401 на всё | истёк access-токен: обновите через `/api/auth/refresh` |
 | `502` из nginx | сервер не запущен или слушает не тот порт |
+| `YAMLException: MalformedInputException: Input length = 1` | файл настроек не в UTF-8 (обычно cp1251): перекодируйте или возьмите `application.minimal.yml` |
 | Русские буквы в логах превратились в `????` | запуск без `-Dfile.encoding=UTF-8` |

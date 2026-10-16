@@ -1,0 +1,26 @@
+# Minimal config for running the jar without Docker.
+# ASCII only on purpose: this file stays valid UTF-8 whatever editor or
+# encoding you use (Windows Notepad, cp1251, etc.).
+# Copy next to dnd-memory-server.jar as application.yml.
+#
+# Full Russian-commented template: server/application.example.yml
+# Guide: docs/run-without-docker.md
+
+server:
+  port: 8081
+
+spring:
+  datasource:
+    # stringtype=unspecified is required for JSON columns
+    url: jdbc:postgresql://localhost:5432/dnd?stringtype=unspecified
+    username: dnd
+    password: CHANGE_ME_DB_PASSWORD
+
+dnd:
+  jwt:
+    # must be at least 32 characters, otherwise the app refuses to start
+    secret: CHANGE_ME_RANDOM_STRING_AT_LEAST_32_CHARS
+  public-url: http://CHANGE_ME_SERVER_IP:8081
+  cors-origins: http://CHANGE_ME_SERVER_IP:8081
+  files-dir: /var/lib/dnd-memory/files
+  admin-token: CHANGE_ME_OR_DELETE_THIS_LINE
