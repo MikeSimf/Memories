@@ -134,6 +134,46 @@ journalctl -u dnd-memory -f          # логи
 
 Юнит запускает jar из `/opt/dnd-memory` с `-Xmx768m` и перезапускает при падении.
 
+
+### Пароль к базе не подходит
+
+Ошибка `FATAL: password authentication failed for user "dnd"` означает, что роль есть,
+но пароль другой (если бы роли не было, текст был бы `role "dnd" does not exist`).
+Проверяйте **тем же способом, каким подключается приложение** — по TCP с паролем:
+
+```bash
+PGPASSWORD=masterkey psql -h 127.0.0.1 -p 5432 -U dnd -d dnd -c "select current_user, current_database();"
+```
+
+* **Та же ошибка** → пароль в базе другой или вы попали в другой кластер. Задайте пароль заново
+  (команда `sudo -u postgres psql` идёт через unix-сокет — убедитесь, что это тот же сервер,
+  что слушает 5432):
+
+  ```bash
+  sudo -u postgres psql -c "\du"                                     # какие роли есть
+  sudo -u postgres psql -c "ALTER ROLE dnd WITH LOGIN PASSWORD 'masterkey';"
+  sudo -u postgres psql -c "ALTER DATABASE dnd OWNER TO dnd;"
+  ```
+
+  Если `role "dnd" does not exist` — создайте: `CREATE ROLE dnd LOGIN PASSWORD 'masterkey';`
+
+* **Команда прошла, а приложение всё равно падает** → в строке пароля в `application.yml`
+  лишний символ: пробел в конце, неразрывный пробел после копирования или кавычки.
+  Пароль без спецсимволов пишется без кавычек, со спецсимволами — в двойных:
+  `password: "p@ss:word"`.
+
+* **Проверить, нет ли второго кластера** на том же порту (частая причина, когда ставили
+  PostgreSQL раньше и уже позже):
+
+  ```bash
+  sudo ss -ltnp | grep 5432
+  sudo -u postgres psql -c "show port; show hba_file; select version();"
+  ```
+
+После правки пароля в базе перезапустите приложение: `Ctrl+C` и снова
+`java -Dfile.encoding=UTF-8 -jar dnd-memory-server.jar`. При успешном подключении в логе
+появится `Successfully applied 3 migrations` и `Started DndMemoryApplication`.
+
 ## Если нужна веб-версия
 
 Jar её не отдаёт. Варианты:
@@ -150,7 +190,7 @@ Jar её не отдаёт. Варианты:
 |---|---|
 | `DND_JWT_SECRET должен быть не короче 32 байт` | секрет короче 32 символов |
 | `Connection to localhost:5432 refused` | PostgreSQL не запущен или слушает другой порт |
-| `FATAL: password authentication failed for user "dnd"` | пароль в настройках не совпадает с базой |
+| `FATAL: password authentication failed for user "dnd"` | пароль в настройках не совпадает с тем, что в базе, либо приложение попадает в другой кластер PostgreSQL — см. раздел ниже |
 | `column "attrs" does not exist` и подобное | в строке подключения нет `?stringtype=unspecified` |
 | приложение стартует, но `/api/…` отвечает 401 на всё | истёк access-токен: обновите через `/api/auth/refresh` |
 | `502` из nginx | сервер не запущен или слушает не тот порт |
