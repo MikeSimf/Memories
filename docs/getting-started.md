@@ -58,6 +58,12 @@ cd dnd-memory
 (bare-репозиторий либо Gitea в Docker); подробности — в
 [`server-multi-project.md`](server-multi-project.md).
 
+> **Если у вас рабочее зеркало Maven.** В проекте есть свои настройки
+> (`server/.mvn/settings.xml`) с Maven Central, и они подключаются автоматически —
+> обычный `mvn` из каталога `server/` работает независимо от ваших рабочих настроек.
+> Из корня репозитория используйте `./scripts/build-server.sh`. Подробности — в
+> [`server/README.md`](../server/README.md).
+
 ## 2. Сервер приложений в IntelliJ IDEA
 
 Нужен **JDK 11** (проект собран под Java 11; JDK 17 тоже подойдёт, но собирать лучше

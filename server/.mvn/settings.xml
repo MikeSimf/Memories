@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Настройки Maven только для проекта DnD Memory.
+
+  Нужны, если у вас в ~/.m2/settings.xml прописано рабочее зеркало: оно перехватывает
+  все репозитории, и проект не собирается. Этот файл заменяет пользовательские
+  настройки (Maven читает только один файл настроек) и явно направляет всё в Maven
+  Central. Ваши рабочие настройки при этом не трогаются — они продолжат действовать
+  во всех остальных проектах.
+
+  Подключается автоматически через .mvn/maven.config, если запускать mvn из каталога
+  server/. Если запускаете из другого места — используйте scripts/build-server.sh.
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <mirrors>
+    <!-- Всё — в Maven Central, независимо от того, что настроено глобально -->
+    <mirror>
+      <id>dnd-memory-central</id>
+      <name>Maven Central для проекта DnD Memory</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <mirrorOf>*</mirrorOf>
+    </mirror>
+  </mirrors>
+
+</settings>
