@@ -26,18 +26,12 @@
     <string name="action_add">Добавить</string>
     <string name="action_revoke">Отозвать</string>
     <string name="action_accept">Принять</string>
-    <string name="action_accept_login">Войти и принять</string>
-    <string name="action_copy">Копировать</string>
-    <string name="action_share">Поделиться</string>
     <string name="action_overwrite">Оставить мою версию</string>
     <string name="action_take_server">Взять версию сервера</string>
     <string name="ok">Понятно</string>
 
     <string name="saved">Сохранено</string>
-    <string name="deleted">Удалено</string>
-    <string name="copied">Скопировано</string>
     <string name="loading">Загрузка…</string>
-    <string name="permission_denied">Разрешение не выдано</string>
 
     <!-- Состояние синхронизации -->
     <string name="sync_status_idle">Синхронизировано</string>
@@ -50,48 +44,44 @@
 
     <!-- Ошибки -->
     <string name="error_network">Нет связи с сервером. Изменения сохранятся локально.</string>
-    <string name="error_unauthorized">Нужно войти заново</string>
+    <string name="error_unauthorized">Неверный логин или пароль</string>
     <string name="error_forbidden">Недостаточно прав</string>
     <string name="error_not_found">Не найдено на сервере</string>
     <string name="error_conflict">Версия на сервере новее</string>
     <string name="error_rate_limited">Слишком много запросов, попробуйте позже</string>
     <string name="error_unknown">Не удалось выполнить операцию</string>
     <string name="error_email_taken">Такая почта уже зарегистрирована</string>
-    <string name="error_invite_invalid">Приглашение недействительно или просрочено</string>
+    <string name="error_email_required">Укажите почту — на неё приходит ссылка восстановления пароля</string>
+    <string name="error_login_taken">Такой логин уже занят</string>
+    <string name="error_invite_invalid">Приглашение уже использовано или просрочено</string>
     <string name="error_server">Ошибка сервера</string>
     <string name="error_password_short">Пароль должен быть не короче 8 символов</string>
+    <string name="error_password_wrong">Текущий пароль неверен</string>
+    <string name="error_phone_taken">Такой телефон уже привязан к другому аккаунту</string>
     <string name="error_required">Заполните поле</string>
     <string name="error_api">Ошибка: %1$s</string>
+    <string name="session_expired">Сессия истекла — войдите заново логином и паролем</string>
 
-    <!-- Вход и регистрация -->
+    <!-- Вход и регистрация: логин и пароль -->
     <string name="auth_title">Вход в DnD Memory</string>
     <string name="auth_tab_login">Вход</string>
     <string name="auth_tab_register">Регистрация</string>
+    <string name="auth_login_field">Логин</string>
     <string name="auth_email">Почта</string>
     <string name="auth_password">Пароль</string>
     <string name="auth_display_name">Как вас зовут</string>
     <string name="auth_login">Войти</string>
     <string name="auth_register">Зарегистрироваться</string>
-    <string name="auth_or_oauth">Или войдите через</string>
-    <string name="auth_oauth_yandex">Яндекс ID</string>
-    <string name="auth_oauth_vk">VK ID</string>
+    <string name="auth_forgot_password">Забыли пароль?</string>
+    <string name="auth_have_invite">У меня есть приглашение</string>
     <string name="auth_invite_pending">После входа приглашение будет принято автоматически</string>
     <string name="auth_welcome">Вы вошли как %1$s</string>
 
-    <!-- Вход по QR-коду устройства (docs/api.md, раздел 3.1) -->
-    <string name="enroll_title">Отсканируйте QR-код от мастера</string>
-    <string name="enroll_subtitle">Мастер выдаёт QR-код для вашего телефона — пароль и SMS не нужны</string>
-    <string name="enroll_manual_hint">или введите код вручную</string>
-    <string name="enroll_code_hint">Код, например 7F3K9Q2M</string>
-    <string name="enroll_submit">Войти по коду</string>
-    <string name="enroll_existing">У меня уже есть аккаунт</string>
-    <string name="enroll_error_required">Введите код с QR-кода мастера</string>
-    <string name="enroll_error_invalid">Код недействителен: он просрочен или уже использован. Попросите у мастера новый QR-код.</string>
-    <string name="enroll_error_network">Нет связи с сервером. Проверьте интернет и повторите.</string>
-    <string name="enroll_error_unauthorized">Этот код не подходит для регистрации устройства. Попросите у мастера QR-код устройства.</string>
-    <string name="enroll_revoked">Доступ отозван мастером — попросите новый QR-код</string>
-    <string name="enroll_expired">Сессия истекла — войдите заново по QR-коду или паролю</string>
-    <string name="enroll_welcome_title">Вы вошли как %1$s</string>
+    <!-- Сброс пароля: письма нет, ссылку передают администратору -->
+    <string name="password_reset_title">Сброс пароля</string>
+    <string name="password_reset_hint">Укажите почту аккаунта. Почтовый сервер пока не настроен: ссылка на сброс передаётся администратору, а подтверждение пароля делает веб-версия.</string>
+    <string name="password_reset_action">Запросить ссылку</string>
+    <string name="password_reset_sent">Ссылка передана администратору. Обратитесь к нему за ссылкой на сброс пароля.</string>
 
     <!-- Кампании -->
     <string name="campaign_list_title">Кампании</string>
@@ -115,7 +105,7 @@
     <string name="role_editor_hero">Игрок</string>
     <string name="role_viewer">Наблюдатель</string>
 
-    <!-- Вкладки кампании: три вместо шести -->
+    <!-- Вкладки кампании: три -->
     <string name="tab_characters">Персонажи</string>
     <string name="tab_locations">Локации</string>
     <string name="tab_items">Предметы</string>
@@ -123,79 +113,55 @@
     <string name="tab_members">Участники</string>
     <string name="retellings_title">Пересказы</string>
 
-    <!-- Типы объектов -->
+    <!-- Классы объектов (docs/api.md, раздел 2) -->
     <string name="entity_type_hero">Герой</string>
-    <string name="entity_type_npc">Персонаж</string>
+    <string name="entity_type_character">Персонаж</string>
     <string name="entity_type_location">Локация</string>
     <string name="entity_type_item">Предмет</string>
 
     <!-- Объекты -->
     <string name="entity_list_empty">Здесь пока пусто</string>
     <string name="entity_list_add">Добавить</string>
-    <string name="entity_filter_hint">Фильтр: название, описание, метки</string>
+    <string name="entity_create_choose">Что создаём?</string>
+    <string name="entity_hero_owner_only">Героя заводит и правит только владелец кампании</string>
+    <string name="entity_filter_hint">Фильтр: название или описание</string>
     <string name="entity_filter_found">Найдено: %1$d</string>
     <string name="entity_filter_clear">Очистить фильтр</string>
     <string name="entity_filter_no_results">Ничего не найдено по фильтру</string>
     <string name="entity_detail_title">Карточка</string>
-    <string name="entity_detail_type">Тип: %1$s</string>
-    <string name="entity_detail_author">Автор: %1$s</string>
+    <string name="entity_detail_type">Класс: %1$s</string>
     <string name="entity_detail_updated">Обновлено: %1$s</string>
-    <string name="entity_detail_tags">Метки</string>
-    <string name="entity_detail_summary">Кратко</string>
+    <string name="entity_detail_fields">Поля</string>
     <string name="entity_detail_description">Описание</string>
-    <string name="entity_detail_attrs">Характеристики</string>
     <string name="entity_detail_links">Упоминания</string>
-    <string name="entity_detail_backlinks">Упоминают</string>
-    <string name="entity_detail_no_backlinks">Пока никто не ссылается</string>
-    <string name="entity_detail_not_created">Объект ещё не на сервере</string>
     <string name="entity_edit_title_new">Новый объект</string>
     <string name="entity_edit_title_edit">Редактирование</string>
-    <string name="entity_edit_type">Тип</string>
+    <string name="entity_edit_type">Класс</string>
     <string name="entity_edit_name">Имя</string>
-    <string name="entity_edit_summary">Краткое описание</string>
     <string name="entity_edit_description">Описание</string>
     <string name="entity_edit_description_hint">Поддерживается markdown и ссылки [[Имя]]</string>
-    <string name="entity_edit_tags">Метки через запятую</string>
     <string name="entity_edit_delete_confirm">Удалить объект «%1$s»?</string>
     <string name="entity_conflict">Есть расхождение с версией на сервере</string>
     <string name="entity_dirty">Не отправлено</string>
-    <string name="entity_not_found">Объект не найден</string>
-    <string name="entity_created_hint">Объект создан локально и уйдёт на сервер при связи</string>
 
-    <!-- Характеристики -->
+    <!-- Поля классов -->
     <string name="attr_player_name">Игрок</string>
     <string name="attr_race">Раса</string>
-    <string name="attr_klass">Класс</string>
-    <string name="attr_level">Уровень</string>
-    <string name="attr_hp">Хиты</string>
-    <string name="attr_ac">Класс доспеха</string>
-    <string name="attr_status">Состояние</string>
-    <string name="attr_faction">Фракция</string>
-    <string name="attr_location">Локация</string>
-    <string name="attr_region">Регион</string>
-    <string name="attr_kind">Вид</string>
-    <string name="attr_parent">Входит в</string>
+    <string name="attr_klass">Класс персонажа</string>
+    <string name="attr_short_description">Краткое описание</string>
     <string name="attr_owner">Владелец</string>
-    <string name="attr_quantity">Количество</string>
-    <string name="attr_rarity">Редкость</string>
-    <string name="attr_unknown">%1$s</string>
+    <string name="attr_items">Предметы</string>
     <string name="attr_not_set">Не задано</string>
-    <string name="attr_choose">Выберите значение</string>
-
-    <string name="status_alive">Жив</string>
-    <string name="status_dead">Мёртв</string>
-    <string name="status_retired">Отошёл от дел</string>
-    <string name="status_unknown">Неизвестно</string>
-
-    <string name="kind_city">Город</string>
-    <string name="kind_dungeon">Подземелье</string>
-    <string name="kind_wild">Дикая местность</string>
-    <string name="kind_building">Здание</string>
-    <string name="kind_weapon">Оружие</string>
-    <string name="kind_armor">Доспех</string>
-    <string name="kind_potion">Зелье</string>
-    <string name="kind_treasure">Сокровище</string>
-    <string name="kind_quest">Квестовый</string>
+    <string name="entity_player_none">Не указан</string>
+    <string name="entity_owner_name_hint">Владелец как написан в мире</string>
+    <string name="entity_owner_link_hint">Ссылка на героя или персонажа</string>
+    <string name="entity_owner_none">Без ссылки</string>
+    <string name="entity_owner_hero">Герой: %1$s</string>
+    <string name="entity_owner_character">Персонаж: %1$s</string>
+    <string name="entity_item_add">Добавить предмет</string>
+    <string name="entity_item_name">Название</string>
+    <string name="entity_item_quantity">Кол-во</string>
+    <string name="entity_item_notes">Заметка</string>
 
     <!-- Пересказы -->
     <string name="retelling_list_empty">Пересказов пока нет</string>
@@ -227,7 +193,7 @@
     <string name="members_my_role">Ваша роль: %1$s</string>
     <string name="members_add">Добавить участника</string>
     <string name="members_role">Роль</string>
-    <string name="members_linked_hero">Связанный герой</string>
+    <string name="members_linked_hero">Герой</string>
     <string name="members_status">Статус</string>
     <string name="members_status_active">Активен</string>
     <string name="members_status_invited">Приглашён</string>
@@ -235,22 +201,22 @@
     <string name="members_remove_confirm">Убрать участника «%1$s»?</string>
     <string name="members_last_owner_error">Нельзя понизить последнего владельца</string>
     <string name="member_email">Почта участника</string>
-    <string name="member_email_hint">player@example.com</string>
     <string name="members_added">Участник добавлен</string>
     <string name="members_invited">Пользователя с такой почтой нет — создано приглашение</string>
     <string name="members_manage_forbidden">Управлять участниками может только владелец</string>
 
-    <!-- Приглашения -->
+    <!-- Приглашения: строго одноразовые -->
     <string name="invite_title">Приглашения</string>
     <string name="invite_empty">Приглашений пока нет</string>
     <string name="invite_create">Создать приглашение</string>
+    <string name="invite_single_use_hint">Приглашение одноразовое: после присоединения оно гаснет.</string>
     <string name="invite_role">Роль приглашённого</string>
     <string name="invite_linked">Герой приглашённого</string>
     <string name="invite_token">Код: %1$s</string>
+    <string name="invite_token_hint">Код приглашения</string>
     <string name="invite_expires">Действует до %1$s</string>
     <string name="invite_expires_hint">Срок действия, часов</string>
     <string name="invite_uses">Использовано %1$d из %2$d</string>
-    <string name="invite_uses_hint">Сколько раз можно использовать</string>
     <string name="invite_link">Ссылка: %1$s</string>
     <string name="invite_revoke_confirm">Отозвать приглашение %1$s?</string>
     <string name="invite_qr_title">QR-код приглашения</string>
@@ -265,41 +231,14 @@
     <string name="invite_accept_linked">Герой: %1$s</string>
     <string name="invite_accept_expires">Действует до %1$s</string>
     <string name="invite_accept_invalid">Приглашение недействительно или просрочено</string>
+    <string name="invite_accept_hint">Аккаунта ещё нет? Зарегистрируйтесь — приглашение применится сразу. Или войдите, и мы присоединим вас к кампании.</string>
     <string name="invite_accepted">Вы присоединились к кампании</string>
-    <string name="invite_login_required">Чтобы принять приглашение, войдите в аккаунт</string>
-    <string name="invite_accept_login_required">Это приглашение для участника: войдите в аккаунт или зарегистрируйтесь — приглашение примется автоматически.</string>
-
-    <!-- Режим приглашений и устройства кампании -->
-    <string name="invite_section_invites">Приглашения</string>
-    <string name="invite_section_devices">Устройства</string>
-    <string name="invite_mode_member">Приглашение участнику</string>
-    <string name="invite_mode_device">Регистрация устройства</string>
-    <string name="invite_device_name">Имя игрока</string>
-    <string name="invite_device_label">Подпись устройства</string>
-    <string name="invite_device_label_hint">Например «Телефон Ани»</string>
-    <string name="invite_device_expires_hint">Срок действия, часов</string>
-    <string name="invite_device_created">QR-код устройства создан</string>
-    <string name="invite_device_create_action">Выпустить QR устройства</string>
-    <string name="invite_qr_device_title">QR-код регистрации устройства</string>
-    <string name="invite_device_name_required">Укажите имя игрока</string>
-    <string name="invite_mode_label">Приглашение</string>
-    <string name="invite_mode_device_badge">Устройство</string>
-    <string name="device_list_empty">Устройств пока нет</string>
-    <string name="device_name">Игрок: %1$s</string>
-    <string name="device_label">Подпись: %1$s</string>
-    <string name="device_platform">Платформа: %1$s</string>
-    <string name="device_last_seen">Последний вход: %1$s</string>
-    <string name="device_revoked_badge">Отозвано</string>
-    <string name="device_revoke_confirm">Отозвать устройство «%1$s»? Его сессии перестанут работать, участие в кампании сохранится.</string>
-    <string name="device_revoked">Устройство отозвано</string>
-    <string name="device_manage_forbidden">Управлять устройствами может только владелец</string>
 
     <!-- Поиск -->
     <string name="search_title">Поиск</string>
     <string name="search_hint">Что искать?</string>
     <string name="search_all">Всё</string>
     <string name="search_empty">Ничего не найдено</string>
-    <string name="search_prompt">Введите запрос</string>
     <string name="search_results">Найдено: %1$d</string>
     <string name="search_local_hint">Поиск идёт по локальной базе и работает без сети</string>
     <string name="search_kind_entity">Объект</string>
@@ -319,19 +258,17 @@
     <string name="settings_resync_done">Данные загружены заново</string>
 
     <!-- Профиль и пароль -->
-    <string name="settings_account_section">Аккаунт</string>
     <string name="settings_profile_section">Профиль</string>
+    <string name="settings_profile_hint">Логин изменить нельзя. Почта обязательна: на неё приходит ссылка восстановления пароля.</string>
     <string name="settings_profile_name">Имя</string>
     <string name="settings_profile_email">Почта</string>
     <string name="settings_profile_phone">Телефон</string>
     <string name="settings_profile_save">Сохранить профиль</string>
     <string name="settings_profile_saved">Профиль сохранён</string>
+    <string name="settings_login_display">Логин: %1$s</string>
     <string name="settings_phone_display">Телефон: %1$s</string>
     <string name="settings_email_display">Почта: %1$s</string>
-    <string name="settings_password_set">Пароль задан — можно входить в веб-версию</string>
-    <string name="settings_password_not_set">Пароль не задан — вход только по QR-коду устройства</string>
-    <string name="settings_password_hint">Укажите почту или телефон и задайте пароль — после этого сможете входить в веб-версию</string>
-    <string name="settings_password_set_action">Задать пароль</string>
+    <string name="settings_password_hint">Пароль нужен для входа в приложение и веб-версию; сессия на телефоне живёт год.</string>
     <string name="settings_password_change_action">Сменить пароль</string>
     <string name="settings_password_current">Текущий пароль</string>
     <string name="settings_password_new">Новый пароль</string>
@@ -339,9 +276,7 @@
     <string name="settings_password_mismatch">Пароли не совпадают</string>
     <string name="settings_password_current_required">Введите текущий пароль</string>
     <string name="settings_password_changed">Пароль сохранён</string>
-    <string name="settings_password_dialog_title">Пароль для входа</string>
-    <string name="error_phone_taken">Такой телефон уже привязан к другому аккаунту</string>
-    <string name="error_password_wrong">Текущий пароль неверен</string>
+    <string name="settings_password_dialog_title">Смена пароля</string>
 
     <!-- Ссылки [[Имя]] -->
     <string name="wiki_broken_link">Объект «%1$s» не найден</string>
@@ -363,6 +298,5 @@
     <string name="cd_close">Закрыть</string>
     <string name="cd_revoke">Отозвать</string>
     <string name="cd_clear_filter">Очистить фильтр</string>
-    <string name="cd_devices">Устройства</string>
 
 </resources>

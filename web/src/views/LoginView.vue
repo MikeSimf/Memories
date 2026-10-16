@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import type { OAuthProvider, OAuthProviderInfo } from '@/api/types'
 import { errorMessage } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
@@ -12,21 +11,12 @@ const router = useRouter()
 const auth = useAuthStore()
 const ui = useUiStore()
 
-const email = ref('')
+const login = ref('')
 const password = ref('')
+const inviteCode = ref('')
 const submitting = ref(false)
-
-const oauthProviders = computed(() => {
-  const providers = auth.providers
-  if (!providers) return []
-  return (Object.entries(providers) as Array<[OAuthProvider, OAuthProviderInfo]>)
-    .filter(([, info]) => info && info.enabled)
-    .map(([key]) => ({ key, label: key === 'yandex' ? 'Войти через Яндекс' : 'Войти через VK' }))
-})
-
-onMounted(() => {
-  void auth.loadProviders()
-})
+const localError = ref<string | null>(null)
+const showInvite = ref(false)
 
 function redirectTarget(): string | { name: string } {
   const redirect = route.query.redirect
@@ -34,21 +24,31 @@ function redirectTarget(): string | { name: string } {
 }
 
 async function submit(): Promise<void> {
+  localError.value = null
+  if (login.value.trim() === '' || password.value === '') {
+    localError.value = 'Введите логин и пароль'
+    return
+  }
   submitting.value = true
   try {
-    await auth.login(email.value.trim(), password.value)
+    await auth.login(login.value.trim(), password.value)
     ui.pushToast('success', 'Добро пожаловать!')
     await router.replace(redirectTarget())
   } catch (caught) {
-    ui.pushToast('error', errorMessage(caught))
+    localError.value = errorMessage(caught)
   } finally {
     submitting.value = false
   }
 }
 
-async function startOAuth(provider: OAuthProvider): Promise<void> {
-  const url = await auth.startOAuth(provider)
-  window.location.href = url
+/** «У меня есть приглашение»: код ведёт на страницу приглашения `/join/<token>`. */
+async function openInvite(): Promise<void> {
+  const token = inviteCode.value.trim().toUpperCase()
+  if (token === '') {
+    localError.value = 'Введите код приглашения'
+    return
+  }
+  await router.push({ name: 'join', params: { token } })
 }
 </script>
 
@@ -65,21 +65,18 @@ async function startOAuth(provider: OAuthProvider): Promise<void> {
 
       <form class="stack" @submit.prevent="submit">
         <div class="field">
-          <label class="field__label" for="login-email">Почта или телефон</label>
+          <label class="field__label" for="login-name">Логин</label>
           <input
-            id="login-email"
-            v-model="email"
+            id="login-name"
+            v-model="login"
             class="input"
             type="text"
-            inputmode="email"
             autocomplete="username"
+            autocapitalize="none"
+            spellcheck="false"
             required
-            placeholder="gm@example.com или +7 999 123-45-67"
+            placeholder="gm"
           />
-          <span class="field__hint">
-            Подойдёт почта или телефон, указанные в профиле. Телефон — в любом виде:
-            +7 999 123-45-67, 8 999 123 45 67.
-          </span>
         </div>
         <div class="field">
           <label class="field__label" for="login-password">Пароль</label>
@@ -90,29 +87,45 @@ async function startOAuth(provider: OAuthProvider): Promise<void> {
             type="password"
             autocomplete="current-password"
             required
-            minlength="8"
           />
         </div>
+
+        <p v-if="localError" class="notice notice--danger">{{ localError }}</p>
+
         <button class="btn btn--primary btn--block" type="submit" :disabled="submitting">
           <span v-if="submitting" class="spinner" aria-hidden="true" />
           Войти
         </button>
       </form>
 
-      <template v-if="oauthProviders.length > 0">
-        <div class="divider">или</div>
-        <div class="stack stack--sm">
-          <button
-            v-for="provider in oauthProviders"
-            :key="provider.key"
-            class="btn btn--block"
-            type="button"
-            @click="startOAuth(provider.key)"
-          >
-            {{ provider.label }}
-          </button>
-        </div>
+      <p class="muted center" style="margin-top: 0.75rem">
+        <RouterLink :to="{ name: 'password-reset-request' }">Забыли пароль?</RouterLink>
+      </p>
+
+      <div class="divider">или</div>
+
+      <template v-if="showInvite">
+        <form class="stack stack--sm" @submit.prevent="openInvite">
+          <div class="field">
+            <label class="field__label" for="login-invite">Код приглашения</label>
+            <input
+              id="login-invite"
+              v-model="inviteCode"
+              class="input token-code"
+              type="text"
+              autocapitalize="characters"
+              spellcheck="false"
+              maxlength="8"
+              placeholder="7F3K9Q2M"
+            />
+            <span class="field__hint">Восемь символов из QR-кода приглашения.</span>
+          </div>
+          <button class="btn btn--block" type="submit">Открыть приглашение</button>
+        </form>
       </template>
+      <button v-else class="btn btn--block" type="button" @click="showInvite = true">
+        У меня есть приглашение
+      </button>
 
       <p class="muted center" style="margin-top: 1rem">
         Нет аккаунта?

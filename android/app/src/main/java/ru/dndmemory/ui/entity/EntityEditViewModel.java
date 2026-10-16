@@ -7,14 +7,15 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import ru.dndmemory.data.local.entity.EntityRoom;
+import ru.dndmemory.data.local.entity.MemberRoom;
 import ru.dndmemory.data.model.EntityType;
+import ru.dndmemory.data.model.HeroItem;
 import ru.dndmemory.data.remote.ApiException;
 import ru.dndmemory.data.repo.EntityRepository;
+import ru.dndmemory.data.repo.MemberRepository;
 import ru.dndmemory.ui.common.NameIndex;
 import ru.dndmemory.util.AppExecutors;
 import ru.dndmemory.util.RepoCallback;
@@ -22,26 +23,33 @@ import ru.dndmemory.util.Resource;
 
 /**
  * Редактор объекта. Все изменения остаются локальными: запись в Room плюс
- * постановка в очередь синхронизации (docs/sync.md, раздел 4).
+ * постановка в очередь синхронизации (docs/sync.md, раздел 5).
+ *
+ * <p>Поля зависят от класса: у героя — раса, класс, игрок и котомка; у персонажа —
+ * раса и краткое описание; у локации своих полей нет; у предмета — владелец
+ * и необязательная ссылка на героя или персонажа (docs/api.md, раздел 6).
  */
 public class EntityEditViewModel extends ViewModel {
 
-    /** Всё, что нужно экрану: сам объект, указатель имён и список для ссылок. */
+    /** Всё, что нужно экрану: объект, список участников и указатель имён. */
     public static final class EditState {
 
         public final EntityRoom entity;
         public final NameIndex nameIndex;
         public final List<EntityRoom> candidates;
+        public final List<MemberRoom> members;
 
         EditState(@NonNull EntityRoom entity, @NonNull NameIndex nameIndex,
-                  @NonNull List<EntityRoom> candidates) {
+                  @NonNull List<EntityRoom> candidates, @NonNull List<MemberRoom> members) {
             this.entity = entity;
             this.nameIndex = nameIndex;
             this.candidates = candidates;
+            this.members = members;
         }
     }
 
     private final EntityRepository entities;
+    private final MemberRepository members;
     private final AppExecutors executors;
 
     private final MutableLiveData<EditState> state = new MutableLiveData<>();
@@ -52,13 +60,15 @@ public class EntityEditViewModel extends ViewModel {
     private String campaignId;
     private boolean started;
 
-    public EntityEditViewModel(@NonNull EntityRepository entities, @NonNull AppExecutors executors) {
+    public EntityEditViewModel(@NonNull EntityRepository entities, @NonNull MemberRepository members,
+                               @NonNull AppExecutors executors) {
         this.entities = entities;
+        this.members = members;
         this.executors = executors;
     }
 
     public void start(@NonNull final String campaignId, @Nullable final String entityId,
-                      @Nullable final EntityType type, final boolean createNew) {
+                      @Nullable final EntityType kind, final boolean createNew) {
         if (started) {
             return;
         }
@@ -70,17 +80,15 @@ public class EntityEditViewModel extends ViewModel {
                 room = entities.find(entityId);
             }
             if (room == null) {
-                room = entities.createDraft(campaignId, type);
+                room = entities.createDraft(campaignId, kind);
             }
-            if (room.attrs == null) {
-                room.attrs = new HashMap<>();
-            }
-            if (room.tags == null) {
-                room.tags = new ArrayList<>();
+            if (room.items == null) {
+                room.items = new ArrayList<>();
             }
             draft = room;
             List<EntityRoom> all = entities.findAllNow(campaignId);
-            return new EditState(room, NameIndex.of(all), all);
+            List<MemberRoom> memberList = members.findAllNow(campaignId);
+            return new EditState(room, NameIndex.of(all), all, memberList);
         }, new RepoCallback<EditState>() {
             @Override
             public void onSuccess(@Nullable EditState value) {
@@ -110,22 +118,18 @@ public class EntityEditViewModel extends ViewModel {
         return finishRequested;
     }
 
-    public void setType(@Nullable EntityType type) {
-        if (draft == null || type == null) {
+    // --- Поля -----------------------------------------------------------------
+
+    public void setKind(@Nullable EntityType kind) {
+        if (draft == null || kind == null) {
             return;
         }
-        draft.type = type.name();
+        draft.kind = kind.name();
     }
 
     public void setName(@Nullable String name) {
         if (draft != null) {
             draft.name = name == null ? "" : name.trim();
-        }
-    }
-
-    public void setSummary(@Nullable String summary) {
-        if (draft != null) {
-            draft.summary = summary == null ? "" : summary.trim();
         }
     }
 
@@ -135,27 +139,86 @@ public class EntityEditViewModel extends ViewModel {
         }
     }
 
-    public void setTagsCsv(@Nullable String csv) {
+    /** Раса: есть у героя и у персонажа. */
+    public void setRace(@Nullable String race) {
+        if (draft != null) {
+            draft.race = nullable(race);
+        }
+    }
+
+    /** Класс — только у героя. */
+    public void setKlass(@Nullable String klass) {
+        if (draft != null) {
+            draft.klass = nullable(klass);
+        }
+    }
+
+    /** Кто отыгрывает героя: ссылка на участника кампании. */
+    public void setPlayerUserId(@Nullable String playerUserId, @Nullable String playerName) {
+        if (draft != null) {
+            draft.playerUserId = nullable(playerUserId);
+            draft.playerName = nullable(playerName);
+        }
+    }
+
+    /** Краткое описание — только у персонажа. */
+    public void setShortDescription(@Nullable String shortDescription) {
+        if (draft != null) {
+            draft.shortDescription = nullable(shortDescription);
+        }
+    }
+
+    /** Владелец предмета «как написано в мире». */
+    public void setOwnerName(@Nullable String ownerName) {
+        if (draft != null) {
+            draft.ownerName = nullable(ownerName);
+        }
+    }
+
+    /**
+     * Ссылка на владельца: не более одной из двух. Имя владельца сохраняем, чтобы
+     * карточка сразу показывала человека, не дожидаясь сервера.
+     */
+    public void setOwnerLink(@Nullable EntityRoom owner) {
         if (draft == null) {
             return;
         }
-        List<String> tags = new ArrayList<>();
-        if (csv != null) {
-            for (String part : csv.split(",")) {
-                String tag = part.trim();
-                if (!tag.isEmpty()) {
-                    tags.add(tag);
-                }
-            }
+        if (owner == null) {
+            draft.ownerHeroId = null;
+            draft.ownerHeroName = null;
+            draft.ownerCharacterId = null;
+            draft.ownerCharacterName = null;
+            return;
         }
-        draft.tags = tags;
+        if (EntityType.HERO.name().equalsIgnoreCase(owner.kind)) {
+            draft.ownerHeroId = owner.id;
+            draft.ownerHeroName = owner.name;
+            draft.ownerCharacterId = null;
+            draft.ownerCharacterName = null;
+        } else {
+            draft.ownerCharacterId = owner.id;
+            draft.ownerCharacterName = owner.name;
+            draft.ownerHeroId = null;
+            draft.ownerHeroName = null;
+        }
     }
 
-    public void setAttrs(@NonNull Map<String, String> attrs) {
+    /** Котомка героя: список заменяется целиком (docs/api.md, раздел 6). */
+    public void setItems(@NonNull List<HeroItem> items) {
         if (draft != null) {
-            draft.attrs = new HashMap<>(attrs);
+            draft.items = new ArrayList<>(items);
         }
     }
+
+    private static String nullable(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    // --- Действия -------------------------------------------------------------
 
     public void save() {
         if (draft == null) {

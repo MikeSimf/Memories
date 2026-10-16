@@ -14,6 +14,8 @@ const ui = useUiStore()
 
 const displayName = ref(auth.user?.displayName ?? '')
 const email = ref(auth.user?.email ?? '')
+/** Логин показывается только для чтения: сменить его нельзя (`api.md` §3). */
+const loginName = computed(() => auth.user?.login ?? '')
 const phone = ref(auth.user?.phone ?? '')
 const saving = ref(false)
 const loggingOut = ref(false)
@@ -35,7 +37,6 @@ const themes: Array<{ value: ThemeMode; label: string }> = [
 ]
 
 const baseUrl = computed(() => apiBaseUrl() || '(относительный путь /api — за nginx)')
-const hasPassword = computed(() => auth.user?.hasPassword === true)
 const canSaveProfile = computed(
   () => displayName.value.trim() !== '' && !saving.value,
 )
@@ -46,7 +47,7 @@ watch(
   (user) => {
     if (!user) return
     displayName.value = user.displayName
-    email.value = user.email ?? ''
+    email.value = user.email
     phone.value = user.phone ?? ''
   },
 )
@@ -76,7 +77,7 @@ function contactError(caught: unknown): string {
 onMounted(async () => {
   if (auth.user) {
     displayName.value = auth.user.displayName
-    email.value = auth.user.email ?? ''
+    email.value = auth.user.email
     phone.value = auth.user.phone ?? ''
   }
   try {
@@ -88,8 +89,12 @@ onMounted(async () => {
 })
 
 async function saveProfile(): Promise<void> {
-  saving.value = true
   profileError.value = null
+  if (email.value.trim() === '') {
+    profileError.value = 'Почта обязательна: на неё оформляется сброс пароля'
+    return
+  }
+  saving.value = true
   try {
     await auth.updateProfile({
       displayName: displayName.value.trim(),
@@ -115,20 +120,20 @@ async function savePassword(): Promise<void> {
     passwordError.value = 'Пароли не совпадают'
     return
   }
-  if (hasPassword.value && currentPassword.value === '') {
+  if (currentPassword.value === '') {
     passwordError.value = 'Укажите текущий пароль'
     return
   }
   savingPassword.value = true
   try {
     await auth.setPassword({
-      currentPassword: hasPassword.value ? currentPassword.value : undefined,
+      currentPassword: currentPassword.value,
       newPassword: newPassword.value,
     })
     currentPassword.value = ''
     newPassword.value = ''
     repeatPassword.value = ''
-    ui.pushToast('success', hasPassword.value ? 'Пароль изменён' : 'Пароль задан — вход в веб-версию доступен')
+    ui.pushToast('success', 'Пароль изменён')
   } catch (caught) {
     passwordError.value = contactError(caught)
     ui.pushToast('error', passwordError.value)
@@ -169,13 +174,18 @@ async function logout(): Promise<void> {
     <div class="page-header">
       <div class="page-header__titles">
         <h1>Настройки</h1>
-        <div class="page-header__subtitle">Профиль, вход по паролю, тема оформления и данные приложения</div>
+        <div class="page-header__subtitle">Профиль, почта для сброса пароля, тема оформления и данные приложения</div>
       </div>
       <RouterLink class="btn btn--sm" :to="{ name: 'campaigns' }">К кампаниям</RouterLink>
     </div>
 
     <form class="card stack" @submit.prevent="saveProfile">
       <h2>Профиль</h2>
+      <div class="field">
+        <label class="field__label" for="profile-login">Логин</label>
+        <input id="profile-login" class="input" type="text" :value="loginName" readonly disabled />
+        <span class="field__hint">Логин назначается при регистрации и не меняется.</span>
+      </div>
       <div class="row" style="align-items: flex-end">
         <div class="field" style="flex: 1; min-width: 200px">
           <label class="field__label" for="profile-name">Имя</label>
@@ -202,7 +212,7 @@ async function logout(): Promise<void> {
           type="email"
           placeholder="gm@example.com"
         />
-        <span class="field__hint">По почте или телефону вы входите в веб-версию с любого устройства.</span>
+        <span class="field__hint">Почта обязательна: на неё оформляется сброс пароля. Телефон — необязателен.</span>
       </div>
 
       <p v-if="profileError" class="notice notice--danger">{{ profileError }}</p>
@@ -218,15 +228,14 @@ async function logout(): Promise<void> {
     <form class="card stack" @submit.prevent="savePassword">
       <div class="row row--between">
         <h2 style="margin: 0">Пароль</h2>
-        <span class="badge" :class="hasPassword ? 'badge--success' : 'badge--warning'">
-          {{ hasPassword ? 'пароль задан' : 'пароль не задан' }}
-        </span>
+        <span class="badge badge--success">пароль задан</span>
       </div>
       <p class="notice notice--accent" style="margin: 0">
-        Укажите почту или телефон и задайте пароль — сможете входить с компьютера и телефона.
+        Вход в DnD Memory — только по логину и паролю. Если пароль забыт, запросите сброс
+        на экране входа: ссылка придёт администратору сервера.
       </p>
 
-      <div class="field" v-if="hasPassword">
+      <div class="field">
         <label class="field__label" for="profile-current-password">Текущий пароль</label>
         <input
           id="profile-current-password"
@@ -238,9 +247,7 @@ async function logout(): Promise<void> {
       </div>
       <div class="row" style="align-items: flex-end">
         <div class="field" style="flex: 1; min-width: 200px">
-          <label class="field__label" for="profile-new-password">
-            {{ hasPassword ? 'Новый пароль' : 'Пароль' }}
-          </label>
+          <label class="field__label" for="profile-new-password">Новый пароль</label>
           <input
             id="profile-new-password"
             v-model="newPassword"
@@ -270,10 +277,10 @@ async function logout(): Promise<void> {
         <button
           class="btn btn--primary"
           type="submit"
-          :disabled="savingPassword || newPassword.length < 8"
+          :disabled="savingPassword || newPassword.length < 8 || currentPassword.length === 0"
         >
           <span v-if="savingPassword" class="spinner" aria-hidden="true" />
-          {{ hasPassword ? 'Сменить пароль' : 'Задать пароль' }}
+          Сменить пароль
         </button>
       </div>
     </form>

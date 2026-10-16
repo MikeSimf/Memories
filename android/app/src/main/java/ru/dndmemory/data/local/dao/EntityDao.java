@@ -10,6 +10,11 @@ import java.util.List;
 
 import ru.dndmemory.data.local.entity.EntityRoom;
 
+/**
+ * Объекты кампании: одна таблица {@code entities} с дискриминатором {@code kind}
+ * (docs/redesign-v2.md, раздел 2). Запросы вкладок отличаются только фильтром
+ * по классу, поэтому отдельные DAO на каждый класс не нужны.
+ */
 @Dao
 public interface EntityDao {
 
@@ -17,18 +22,26 @@ public interface EntityDao {
             + "ORDER BY name COLLATE NOCASE ASC")
     LiveData<List<EntityRoom>> observeAll(String campaignId);
 
-    @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND deleted = 0 AND type = :type "
+    @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND deleted = 0 AND kind = :kind "
             + "ORDER BY name COLLATE NOCASE ASC")
-    LiveData<List<EntityRoom>> observeByType(String campaignId, String type);
+    LiveData<List<EntityRoom>> observeByKind(String campaignId, String kind);
 
-    /** Вкладка с несколькими видами объектов: «Персонажи» — {@code HERO,NPC}. */
+    /** Вкладка с несколькими классами: «Персонажи» — {@code HERO,CHARACTER}. */
     @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND deleted = 0 "
-            + "AND type IN (:types) ORDER BY name COLLATE NOCASE ASC")
-    LiveData<List<EntityRoom>> observeByTypes(String campaignId, List<String> types);
+            + "AND kind IN (:kinds) ORDER BY name COLLATE NOCASE ASC")
+    LiveData<List<EntityRoom>> observeByKinds(String campaignId, List<String> kinds);
 
     @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND deleted = 0 "
-            + "AND type IN (:types) ORDER BY name COLLATE NOCASE ASC")
-    List<EntityRoom> findByTypesNow(String campaignId, List<String> types);
+            + "AND kind IN (:kinds) ORDER BY name COLLATE NOCASE ASC")
+    List<EntityRoom> findByKindsNow(String campaignId, List<String> kinds);
+
+    @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND deleted = 0 AND kind = :kind "
+            + "ORDER BY name COLLATE NOCASE ASC")
+    List<EntityRoom> findByKindNow(String campaignId, String kind);
+
+    @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND deleted = 0 "
+            + "ORDER BY name COLLATE NOCASE ASC")
+    List<EntityRoom> findAllNow(String campaignId);
 
     @Query("SELECT * FROM entities WHERE id = :id")
     LiveData<EntityRoom> observe(String id);
@@ -36,48 +49,26 @@ public interface EntityDao {
     @Query("SELECT * FROM entities WHERE id = :id")
     EntityRoom find(String id);
 
-    @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND deleted = 0 AND type = :type "
-            + "ORDER BY name COLLATE NOCASE ASC")
-    List<EntityRoom> findByTypeNow(String campaignId, String type);
-
+    /**
+     * Офлайн-поиск по локальной базе (docs/api.md, раздел 8): по {@code name}
+     * и {@code description}; у персонажа дополнительно по {@code race}
+     * и {@code shortDescription}.
+     */
     @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND deleted = 0 "
-            + "ORDER BY name COLLATE NOCASE ASC")
-    List<EntityRoom> findAllNow(String campaignId);
-
-    @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND dirty = 1")
-    List<EntityRoom> findDirty(String campaignId);
-
-    @Query("SELECT COUNT(*) FROM entities WHERE campaignId = :campaignId AND dirty = 1")
-    LiveData<Integer> observeDirtyCount(String campaignId);
-
-    @Query("SELECT COUNT(*) FROM entities WHERE campaignId = :campaignId AND deleted = 0 AND type = :type")
-    LiveData<Integer> observeCountByType(String campaignId, String type);
-
-    /** Офлайн-поиск: та же логика, что у сервера (name/summary/description/tags). */
-    @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND deleted = 0 "
-            + "AND (name LIKE :pattern OR summary LIKE :pattern OR description LIKE :pattern) "
+            + "AND (name LIKE :pattern OR description LIKE :pattern "
+            + "     OR (kind = 'CHARACTER' AND (race LIKE :pattern OR shortDescription LIKE :pattern))) "
             + "ORDER BY name COLLATE NOCASE ASC")
     LiveData<List<EntityRoom>> search(String campaignId, String pattern);
 
+    /** Поиск внутри вкладки: та же логика, но только по её классам. */
     @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND deleted = 0 "
-            + "AND type = :type "
-            + "AND (name LIKE :pattern OR summary LIKE :pattern OR description LIKE :pattern) "
+            + "AND kind IN (:kinds) "
+            + "AND (name LIKE :pattern OR description LIKE :pattern "
+            + "     OR (kind = 'CHARACTER' AND (race LIKE :pattern OR shortDescription LIKE :pattern))) "
             + "ORDER BY name COLLATE NOCASE ASC")
-    LiveData<List<EntityRoom>> searchByType(String campaignId, String type, String pattern);
+    LiveData<List<EntityRoom>> searchByKinds(String campaignId, List<String> kinds, String pattern);
 
-    /** Поиск внутри вкладки с несколькими видами: «Персонажи» — {@code HERO,NPC}. */
-    @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND deleted = 0 "
-            + "AND type IN (:types) "
-            + "AND (name LIKE :pattern OR summary LIKE :pattern OR description LIKE :pattern) "
-            + "ORDER BY name COLLATE NOCASE ASC")
-    LiveData<List<EntityRoom>> searchByTypes(String campaignId, List<String> types, String pattern);
-
-    @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND deleted = 0 "
-            + "AND (name LIKE :pattern OR summary LIKE :pattern OR description LIKE :pattern) "
-            + "ORDER BY name COLLATE NOCASE ASC")
-    List<EntityRoom> searchNow(String campaignId, String pattern);
-
-    /** Разрешение ссылки [[Имя]] без учёта регистра (docs/sync.md, раздел 7). */
+    /** Разрешение ссылки [[Имя]] без учёта регистра (docs/sync.md, раздел 8). */
     @Query("SELECT * FROM entities WHERE campaignId = :campaignId AND deleted = 0 "
             + "AND name = :name COLLATE NOCASE ORDER BY name COLLATE NOCASE ASC LIMIT 1")
     EntityRoom resolveByName(String campaignId, String name);
@@ -91,6 +82,10 @@ public interface EntityDao {
     @Query("UPDATE entities SET dirty = 0, conflictJson = NULL, revision = :revision WHERE id = :id")
     void markClean(String id, long revision);
 
+    /** Сервер нашёл объект по ключу сопоставления и вернул свой id (docs/sync.md, 3.1). */
+    @Query("UPDATE entities SET id = :newId WHERE id = :oldId")
+    void reassignId(String oldId, String newId);
+
     @Query("UPDATE entities SET dirty = 0, revision = :revision, updatedAt = :updatedAt, deleted = 1 "
             + "WHERE id = :id")
     void applyTombstone(String id, long revision, String updatedAt);
@@ -100,9 +95,6 @@ public interface EntityDao {
 
     @Query("UPDATE entities SET conflictJson = :conflictJson, dirty = 0 WHERE id = :id")
     void setConflict(String id, String conflictJson);
-
-    @Query("UPDATE entities SET conflictJson = NULL WHERE id = :id")
-    void clearConflict(String id);
 
     @Query("DELETE FROM entities WHERE id = :id")
     void delete(String id);

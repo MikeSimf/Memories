@@ -15,6 +15,9 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import java.util.ArrayList;
 import java.util.List;
 
 import ru.dndmemory.App;
@@ -22,10 +25,12 @@ import ru.dndmemory.AppContainer;
 import ru.dndmemory.R;
 import ru.dndmemory.data.local.entity.CampaignRoom;
 import ru.dndmemory.data.local.entity.EntityRoom;
+import ru.dndmemory.data.model.EntityType;
 import ru.dndmemory.databinding.FragmentEntityListBinding;
 import ru.dndmemory.ui.campaign.CampaignViewModel;
 import ru.dndmemory.ui.common.CampaignHost;
 import ru.dndmemory.ui.common.ErrorMessages;
+import ru.dndmemory.ui.common.Labels;
 import ru.dndmemory.ui.common.Nav;
 import ru.dndmemory.ui.common.Rights;
 import ru.dndmemory.ui.common.ViewModelFactory;
@@ -33,16 +38,20 @@ import ru.dndmemory.ui.common.ViewUtils;
 import ru.dndmemory.util.AppExecutors;
 
 /**
- * Вкладка объектов. Список грузится по {@code types=HERO,NPC} (или одного вида),
- * вверху — поле быстрого фильтра: оно фильтрует прямо во время набора с небольшой
- * задержкой, поэтому длинный список не подтормаживает.
+ * Вкладка объектов. Список грузится по {@code kinds=HERO,CHARACTER} (или одного
+ * класса), вверху — поле быстрого фильтра: оно фильтрует прямо во время набора
+ * с небольшой задержкой, поэтому длинный список не подтормаживает.
+ *
+ * <p>На вкладке «Персонажи» кнопка «Добавить» спрашивает класс: герой или
+ * персонаж. Героя заводит только владелец кампании — остальным вариант
+ * не показываем (docs/roles.md).
  *
  * <p>Действия «Поиск», «Пересказы», «Участники», «Приглашения» и «Обновить»
  * живут в меню {@link ru.dndmemory.ui.campaign.CampaignActivity}.
  */
 public class EntityListFragment extends Fragment implements EntityAdapter.Listener {
 
-    private static final String ARG_TYPES = "argTypes";
+    private static final String ARG_KINDS = "argKinds";
     /** Задержка фильтра: достаточно, чтобы не считать на каждую букву. */
     private static final long FILTER_DELAY_MS = 200L;
 
@@ -50,16 +59,16 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
     private EntityListViewModel viewModel;
     private EntityAdapter adapter;
     private CampaignViewModel campaignViewModel;
-    private String types = "";
+    private String kinds = "";
 
     private final Handler filterHandler = new Handler(Looper.getMainLooper());
     private final Runnable filterTask = () -> viewModel.setQuery(text(binding.entityListFilter.getText()));
 
-    /** @param typesCsv список видов через запятую: {@code HERO,NPC}, {@code LOCATION}, {@code ITEM}. */
-    public static EntityListFragment newInstance(@NonNull String typesCsv) {
+    /** @param kindsCsv классы через запятую: {@code HERO,CHARACTER}, {@code LOCATION}, {@code ITEM}. */
+    public static EntityListFragment newInstance(@NonNull String kindsCsv) {
         EntityListFragment fragment = new EntityListFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_TYPES, typesCsv);
+        args.putString(ARG_KINDS, kindsCsv);
         fragment.setArguments(args);
         return fragment;
     }
@@ -76,8 +85,8 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         Bundle args = getArguments();
-        if (args != null && args.getString(ARG_TYPES) != null) {
-            types = args.getString(ARG_TYPES);
+        if (args != null && args.getString(ARG_KINDS) != null) {
+            kinds = args.getString(ARG_KINDS);
         }
 
         CampaignHost host = (CampaignHost) requireActivity();
@@ -89,7 +98,7 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
                 () -> new EntityListViewModel(container.entityRepository(),
                         container.syncScheduler(), AppExecutors.get())))
                 .get(EntityListViewModel.class);
-        viewModel.init(campaignId, types);
+        viewModel.init(campaignId, kinds);
 
         adapter = new EntityAdapter(this);
         binding.entityListRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -101,14 +110,7 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
             viewModel.refresh();
             viewModel.syncNow();
         });
-        binding.entityListFab.setOnClickListener(v -> {
-            CampaignRoom campaign = campaignViewModel.campaign().getValue();
-            if (!Rights.canCreateEntity(campaign)) {
-                ViewUtils.toast(requireContext(), R.string.error_forbidden);
-                return;
-            }
-            Nav.createEntity(requireContext(), campaignId, viewModel.createType());
-        });
+        binding.entityListFab.setOnClickListener(v -> onCreateClicked());
 
         observe();
     }
@@ -135,6 +137,54 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
             binding.entityListFilter.clearFocus();
             viewModel.setQuery("");
         });
+    }
+
+    /**
+     * Создание объекта: на вкладке с несколькими классами сначала спрашиваем
+     * класс, и предлагаем только те, на которые есть права.
+     */
+    private void onCreateClicked() {
+        CampaignRoom campaign = campaignViewModel.campaign().getValue();
+        if (!Rights.canCreateEntity(campaign)) {
+            ViewUtils.toast(requireContext(), R.string.error_forbidden);
+            return;
+        }
+        final String campaignId = viewModel.campaignId();
+        if (!viewModel.hasSeveralKinds()) {
+            EntityType kind = EntityType.fromOrCharacter(viewModel.createKind());
+            if (!Rights.canWrite(campaign, kind)) {
+                ViewUtils.toast(requireContext(), R.string.entity_hero_owner_only);
+                return;
+            }
+            Nav.createEntity(requireContext(), campaignId, kind.name());
+            return;
+        }
+
+        final List<EntityType> allowed = new ArrayList<>();
+        for (String rawKind : EntityType.parseList(viewModel.kindsCsv())) {
+            EntityType kind = EntityType.from(rawKind);
+            if (kind != null && Rights.canWrite(campaign, kind)) {
+                allowed.add(kind);
+            }
+        }
+        if (allowed.isEmpty()) {
+            ViewUtils.toast(requireContext(), R.string.error_forbidden);
+            return;
+        }
+        if (allowed.size() == 1) {
+            Nav.createEntity(requireContext(), campaignId, allowed.get(0).name());
+            return;
+        }
+        String[] labels = new String[allowed.size()];
+        for (int i = 0; i < allowed.size(); i++) {
+            labels[i] = getString(Labels.entityType(allowed.get(i)));
+        }
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.entity_create_choose)
+                .setItems(labels, (dialog, which) ->
+                        Nav.createEntity(requireContext(), campaignId, allowed.get(which).name()))
+                .setNegativeButton(R.string.action_cancel, null)
+                .show();
     }
 
     private void observe() {

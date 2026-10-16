@@ -31,6 +31,9 @@ public final class ErrorMessages {
         if ("email_taken".equals(code)) {
             return R.string.error_email_taken;
         }
+        if ("login_taken".equals(code)) {
+            return R.string.error_login_taken;
+        }
         if ("phone_taken".equals(code)) {
             return R.string.error_phone_taken;
         }

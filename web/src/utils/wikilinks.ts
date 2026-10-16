@@ -187,7 +187,7 @@ export const emptyLinkResolver: LinkResolver = {
 
 /**
  * Локальный аналог того, что делает сервер при сохранении объекта (`sync.md` §7):
- * собирает `links` из `summary` и `description`. Нужен, чтобы ссылки и «битые»
+ * собирает `links` из `description` (у персонажа — ещё из `shortDescription`). Нужен, чтобы ссылки и «битые»
  * упоминания работали без сети.
  */
 export function collectLinks(

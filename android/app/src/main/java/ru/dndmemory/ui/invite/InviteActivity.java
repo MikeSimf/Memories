@@ -25,7 +25,6 @@ import ru.dndmemory.R;
 import ru.dndmemory.data.local.entity.EntityRoom;
 import ru.dndmemory.data.model.MemberRole;
 import ru.dndmemory.data.remote.ApiException;
-import ru.dndmemory.data.remote.dto.DeviceDto;
 import ru.dndmemory.data.remote.dto.InviteDto;
 import ru.dndmemory.databinding.ActivityInviteBinding;
 import ru.dndmemory.databinding.DialogInviteCreateBinding;
@@ -41,29 +40,22 @@ import ru.dndmemory.util.RepoCallback;
 import ru.dndmemory.util.Resource;
 
 /**
- * Приглашения по QR и устройства кампании: создание, показ кода, список и отзыв
- * (docs/api.md, разделы 3.1 и 5).
- *
- * <p>Переключатель режима выпуска: «Приглашение участнику» — как раньше,
- * «Регистрация устройства» — QR для нового игрока (сервер сам создаст ему аккаунт).
- * Второй раздел экрана — список устройств с отзывом доступа.
+ * Приглашения по QR: выпуск одноразового кода, показ QR, список и отзыв
+ * (docs/api.md, раздел 5). Регистрации устройства больше нет — новый игрок
+ * по QR либо регистрируется, либо входит своим аккаунтом.
  */
-public class InviteActivity extends AppCompatActivity
-        implements InviteAdapter.Listener, DeviceAdapter.Listener {
+public class InviteActivity extends AppCompatActivity implements InviteAdapter.Listener {
 
+    /** Срок по умолчанию — 7 дней; число использований всегда 1. */
     private static final int MEMBER_EXPIRES_HOURS = 168;
-    private static final int DEVICE_EXPIRES_HOURS = 24;
 
     private ActivityInviteBinding binding;
     private InviteViewModel viewModel;
     private InviteAdapter adapter;
-    private DeviceAdapter deviceAdapter;
     private String campaignId;
 
     private final List<EntityRoom> heroes = new ArrayList<>();
     private NameIndex nameIndex = NameIndex.of(null);
-    /** Какой раздел открыт: приглашения или устройства. */
-    private boolean devicesSection;
 
     private final ActivityResultLauncher<Intent> scanLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -94,8 +86,7 @@ public class InviteActivity extends AppCompatActivity
 
         AppContainer container = App.container(this);
         viewModel = new ViewModelProvider(this, ViewModelFactory.of(
-                () -> new InviteViewModel(container.inviteRepository(),
-                        container.deviceRepository())))
+                () -> new InviteViewModel(container.inviteRepository())))
                 .get(InviteViewModel.class);
 
         setSupportActionBar(binding.inviteToolbar);
@@ -107,19 +98,7 @@ public class InviteActivity extends AppCompatActivity
         binding.inviteRecycler.setLayoutManager(new LinearLayoutManager(this));
         binding.inviteRecycler.setAdapter(adapter);
 
-        deviceAdapter = new DeviceAdapter(this);
-        binding.deviceRecycler.setLayoutManager(new LinearLayoutManager(this));
-        binding.deviceRecycler.setAdapter(deviceAdapter);
-
-        binding.inviteSectionToggle.check(R.id.invite_section_invites);
-        binding.inviteSectionToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-            if (isChecked) {
-                showSection(checkedId == R.id.invite_section_devices);
-            }
-        });
-
         binding.inviteSwipe.setOnRefreshListener(() -> viewModel.load(campaignId));
-        binding.deviceSwipe.setOnRefreshListener(() -> viewModel.loadDevices(campaignId));
         binding.inviteCreate.setOnClickListener(v -> showCreateDialog());
         binding.inviteScan.setOnClickListener(v ->
                 scanLauncher.launch(new Intent(this, ScanActivity.class)));
@@ -131,34 +110,26 @@ public class InviteActivity extends AppCompatActivity
         viewModel.load(campaignId);
     }
 
-    /** Разделы экрана: приглашения или устройства кампании. */
-    private void showSection(boolean devices) {
-        devicesSection = devices;
-        ViewUtils.show(binding.inviteSwipe, !devices);
-        ViewUtils.show(binding.inviteEmpty, !devices && adapter.getItemCount() == 0);
-        ViewUtils.show(binding.deviceSwipe, devices);
-        ViewUtils.show(binding.deviceEmpty, devices && deviceAdapter.getItemCount() == 0);
-        ViewUtils.show(binding.inviteActions, !devices);
-        if (devices) {
-            viewModel.loadDevices(campaignId);
-        } else {
-            viewModel.load(campaignId);
-        }
-    }
-
     private void loadHeroes(@NonNull AppContainer container) {
-        container.entityRepository().loadEntities(campaignId,
+        container.entityRepository().loadHeroes(campaignId,
                 new RepoCallback<List<EntityRoom>>() {
                     @Override
                     public void onSuccess(@Nullable List<EntityRoom> value) {
                         heroes.clear();
                         if (value != null) {
-                            for (EntityRoom entity : value) {
-                                if ("HERO".equalsIgnoreCase(entity.type)) {
-                                    heroes.add(entity);
-                                }
-                            }
+                            heroes.addAll(value);
                         }
+                    }
+
+                    @Override
+                    public void onError(@NonNull ApiException error) {
+                        heroes.clear();
+                    }
+                });
+        container.entityRepository().loadEntities(campaignId,
+                new RepoCallback<List<EntityRoom>>() {
+                    @Override
+                    public void onSuccess(@Nullable List<EntityRoom> value) {
                         nameIndex = NameIndex.of(value);
                     }
 
@@ -183,27 +154,7 @@ public class InviteActivity extends AppCompatActivity
             if (resource.isSuccess()) {
                 List<InviteDto> items = resource.data;
                 adapter.submitList(items);
-                // Пустое состояние показываем только в открытом разделе.
-                ViewUtils.show(binding.inviteEmpty,
-                        !devicesSection && (items == null || items.isEmpty()));
-            }
-        });
-
-        viewModel.deviceState().observe(this, resource -> {
-            if (resource == null) {
-                return;
-            }
-            binding.deviceSwipe.setRefreshing(resource.isLoading());
-            ViewUtils.show(binding.inviteProgress, resource.isLoading());
-            if (resource.isError()) {
-                ErrorMessages.show(binding.getRoot(), resource.error);
-                return;
-            }
-            if (resource.isSuccess()) {
-                List<DeviceDto> items = resource.data;
-                deviceAdapter.submitList(items);
-                ViewUtils.show(binding.deviceEmpty,
-                        devicesSection && (items == null || items.isEmpty()));
+                ViewUtils.show(binding.inviteEmpty, items == null || items.isEmpty());
             }
         });
 
@@ -225,8 +176,7 @@ public class InviteActivity extends AppCompatActivity
             return;
         }
         ViewUtils.show(binding.inviteQrGroup, true);
-        binding.inviteQrTitle.setText(invite.isDevice()
-                ? R.string.invite_qr_device_title : R.string.invite_qr_title);
+        binding.inviteQrTitle.setText(R.string.invite_qr_title);
         binding.inviteQrToken.setText(getString(R.string.invite_token,
                 invite.token == null ? "" : invite.token));
         binding.inviteQrLink.setText(getString(R.string.invite_link,
@@ -235,14 +185,10 @@ public class InviteActivity extends AppCompatActivity
         if (bitmap != null) {
             binding.inviteQrImage.setImageBitmap(bitmap);
         }
-        ViewUtils.toast(this, invite.isDevice()
-                ? R.string.invite_device_created : R.string.invite_created);
+        ViewUtils.toast(this, R.string.invite_created);
     }
 
-    /**
-     * Создание приглашения или QR устройства: режим, роль, привязка к герою,
-     * срок; для устройства ещё имя игрока и подпись (docs/api.md, раздел 3.1).
-     */
+    /** Создание приглашения: роль, привязка к герою и срок действия. */
     private void showCreateDialog() {
         final DialogInviteCreateBinding dialog = DialogInviteCreateBinding.inflate(getLayoutInflater());
 
@@ -262,52 +208,19 @@ public class InviteActivity extends AppCompatActivity
         }
         dialog.inviteCreateLinked.setSimpleItems(heroLabels.toArray(new String[0]));
         dialog.inviteCreateLinked.setText(heroLabels.get(0), false);
-
-        dialog.inviteCreateMode.check(R.id.invite_create_mode_member);
         dialog.inviteCreateExpires.setText(String.valueOf(MEMBER_EXPIRES_HOURS));
-        dialog.inviteCreateMaxUses.setText("1");
-        applyCreateMode(dialog, false);
-
-        dialog.inviteCreateMode.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-            if (isChecked) {
-                applyCreateMode(dialog, checkedId == R.id.invite_create_mode_device);
-            }
-        });
 
         new MaterialAlertDialogBuilder(this)
                 .setView(dialog.getRoot())
                 .setPositiveButton(R.string.action_create, (d, which) -> {
-                    boolean deviceMode = dialog.inviteCreateMode.getCheckedButtonId()
-                            == R.id.invite_create_mode_device;
                     MemberRole role = selectedRole(dialog.inviteCreateRole.getText());
                     String linked = selectedHeroId(dialog.inviteCreateLinked.getText());
                     int hours = parseInt(text(dialog.inviteCreateExpires.getText()),
-                            deviceMode ? DEVICE_EXPIRES_HOURS : MEMBER_EXPIRES_HOURS);
-                    if (deviceMode) {
-                        String name = text(dialog.inviteCreateName.getText());
-                        if (name.isEmpty()) {
-                            ViewUtils.toast(this, R.string.invite_device_name_required);
-                            return;
-                        }
-                        int uses = parseInt(text(dialog.inviteCreateMaxUses.getText()), 1);
-                        viewModel.createEnrollment(campaignId, name, role.name(), linked,
-                                hours, uses, text(dialog.inviteCreateLabel.getText()));
-                    } else {
-                        int uses = parseInt(text(dialog.inviteCreateMaxUses.getText()), 1);
-                        viewModel.create(campaignId, role.name(), linked, hours, uses);
-                    }
+                            MEMBER_EXPIRES_HOURS);
+                    viewModel.create(campaignId, role.name(), linked, hours);
                 })
                 .setNegativeButton(R.string.action_cancel, null)
                 .show();
-    }
-
-    /** Поля режима устройства: имя игрока и подпись; срок по умолчанию — сутки. */
-    private void applyCreateMode(@NonNull DialogInviteCreateBinding dialog, boolean device) {
-        ViewUtils.show(dialog.inviteCreateNameGroup, device);
-        ViewUtils.show(dialog.inviteCreateLabelGroup, device);
-        dialog.inviteCreateExpires.setText(String.valueOf(
-                device ? DEVICE_EXPIRES_HOURS : MEMBER_EXPIRES_HOURS));
-        dialog.inviteCreateMaxUses.setText("1");
     }
 
     @NonNull
@@ -331,7 +244,16 @@ public class InviteActivity extends AppCompatActivity
         if (value.isEmpty() || value.equals(getString(R.string.retelling_author_none))) {
             return null;
         }
-        return nameIndex.idFor(value);
+        String id = nameIndex.idFor(value);
+        if (id != null) {
+            return id;
+        }
+        for (EntityRoom hero : heroes) {
+            if (value.equals(hero.name)) {
+                return hero.id;
+            }
+        }
+        return null;
     }
 
     private static int parseInt(String value, int fallback) {
@@ -359,21 +281,6 @@ public class InviteActivity extends AppCompatActivity
                 .setPositiveButton(R.string.action_revoke, (dialog, which) -> {
                     if (invite.id != null) {
                         viewModel.revoke(campaignId, invite.id);
-                    }
-                })
-                .setNegativeButton(R.string.action_cancel, null)
-                .show();
-    }
-
-    @Override
-    public void onDeviceRevoke(@NonNull final DeviceDto device) {
-        String name = TextUtils.isEmpty(device.displayName)
-                ? getString(R.string.attr_not_set) : device.displayName;
-        new MaterialAlertDialogBuilder(this)
-                .setMessage(getString(R.string.device_revoke_confirm, name))
-                .setPositiveButton(R.string.action_revoke, (dialog, which) -> {
-                    if (device.id != null) {
-                        viewModel.revokeDevice(campaignId, device.id);
                     }
                 })
                 .setNegativeButton(R.string.action_cancel, null)

@@ -13,8 +13,13 @@ public final class Extras {
     public static final String SEARCH_TYPE = "searchType";
     public static final String CREATE_NEW = "createNew";
     public static final String AUTHOR_ENTITY_ID = "authorEntityId";
-    /** Пояснение к экрану: например причина показа экрана QR. */
+    /** Вкладка экрана входа: вход или регистрация. */
+    public static final String AUTH_TAB = "authTab";
+    /** Пояснение к экрану: например причина обрыва сессии. */
     public static final String MESSAGE = "message";
+
+    public static final String AUTH_TAB_LOGIN = "login";
+    public static final String AUTH_TAB_REGISTER = "register";
 
     private Extras() {
     }

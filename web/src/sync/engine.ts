@@ -1,61 +1,65 @@
 import {
   ApiError,
-  entitiesApi,
   errorMessage,
   getDeviceId,
+  objectsApi,
   retellingsApi,
   syncApi,
   type CampaignDto,
+  type ObjectClass,
   type SyncApplyStatus,
   type SyncChangeLogEntry,
   type SyncPullResponse,
   type SyncPushResponse,
   type SyncPushResult,
+  type SyncSnapshotResponse,
 } from '@/api'
+import { isObjectClass } from './payload'
 import {
   bumpAttempts,
   campaignRecordFromDto,
-  countEntities,
   countMembers,
+  countObjects,
   countRetellings,
-  deleteEntityRecord,
+  deleteObjectRecord,
   deletePendingChange,
   deleteRetellingRecord,
   emitDatabaseChanged,
-  entityFromDto,
-  entityToPayload,
   getCampaignRecord,
-  getEntity,
+  getObject,
   getRetelling,
   getSyncState,
-  listEntities,
+  listObjects,
   listPendingChanges,
   listRetellings,
   memberFromDto,
   nowIso,
+  objectFromDto,
+  objectToPayload,
   patchSyncState,
-  pruneEntities,
   pruneMembers,
+  pruneObjects,
   pruneRetellings,
   putCampaignRecord,
-  putEntities,
-  putEntity,
   putMembers,
+  putObject,
+  putObjects,
   putRetelling,
   putRetellings,
+  putPendingChange,
   retellingFromDto,
   retellingToPayload,
-  type LocalEntity,
+  type LocalObject,
   type LocalRetelling,
   type MemberRecord,
   type PendingChange,
   type SyncStateRecord,
 } from '@/db'
 import { debounce } from '@/utils/debounce'
-import { entityFromPayload, memberFromPayload, retellingFromPayload } from './payload'
+import { memberFromPayload, objectFromPayload, retellingFromPayload } from './payload'
 import { enqueueChange } from './queue'
 
-/** Причина запуска синхронизации — события из `sync.md` §5. */
+/** Причина запуска синхронизации — события из `sync.md` §6. */
 export type SyncReason = 'startup' | 'online' | 'local-change' | 'manual' | 'timer'
 
 export interface SyncOutcome {
@@ -151,23 +155,23 @@ export function isSyncing(campaignId: string): boolean {
 
 /** Объекты и пересказы, по которым сервер отклонил правку (`REJECTED`). */
 export async function countConflicts(campaignId: string): Promise<number> {
-  const [entities, retellings] = await Promise.all([
-    listEntities(campaignId, { includeDeleted: true }),
+  const [objects, retellings] = await Promise.all([
+    listObjects(campaignId, { includeDeleted: true }),
     listRetellings(campaignId, { includeDeleted: true }),
   ])
   return (
-    entities.filter((item) => item.conflict !== null).length +
+    objects.filter((item) => item.conflict !== null).length +
     retellings.filter((item) => item.conflict !== null).length
   )
 }
 
 export async function listConflictIds(campaignId: string): Promise<string[]> {
-  const [entities, retellings] = await Promise.all([
-    listEntities(campaignId, { includeDeleted: true }),
+  const [objects, retellings] = await Promise.all([
+    listObjects(campaignId, { includeDeleted: true }),
     listRetellings(campaignId, { includeDeleted: true }),
   ])
   return [
-    ...entities.filter((item) => item.conflict !== null).map((item) => item.id),
+    ...objects.filter((item) => item.conflict !== null).map((item) => item.id),
     ...retellings.filter((item) => item.conflict !== null).map((item) => item.id),
   ]
 }
@@ -275,34 +279,46 @@ function countStatus(summary: PushSummary, status: SyncApplyStatus): void {
   else summary.rejected += 1
 }
 
+/** Сервер нашёл объект по ключу сопоставления — переносим локальную запись на его id. */
+async function adoptServerId(campaignId: string, oldId: string, newId: string): Promise<void> {
+  const pending = await listPendingChanges(campaignId)
+  const affected = pending.filter((change) => change.objectId === oldId)
+  for (const change of affected) {
+    await putPendingChange({ ...change, objectId: newId })
+  }
+}
+
 async function applyPushResult(
   campaignId: string,
   change: PendingChange,
   result: SyncPushResult,
 ): Promise<void> {
-  if (change.objectType === 'ENTITY') {
-    const entity = await getEntity(change.objectId)
-    if (!entity) return
+  if (isObjectClass(change.objectType)) {
+    const object = await getObject(change.objectId)
+    if (!object) return
     if (result.status === 'REJECTED') {
-      await putEntity({ ...entity, dirty: 0, conflict: result.conflict ?? { reason: 'stale_base' } })
+      await putObject({ ...object, dirty: 0, conflict: result.conflict ?? { reason: 'stale_base' } })
       emitNotice({
         campaignId,
         kind: 'warning',
-        message: `«${entity.name}»: версия на сервере новее — правка не применена`,
+        message: `«${object.name}»: версия на сервере новее — правка не применена`,
       })
       return
     }
-    await putEntity({
-      ...entity,
-      revision: result.revision ?? entity.revision,
-      dirty: 0,
-      conflict: null,
-    })
+    const serverId = result.objectId
+    if (serverId && serverId !== object.id) {
+      // `matched_by_name`/`matched_by_name_and_race`: тот же объект уже есть на сервере.
+      await adoptServerId(campaignId, object.id, serverId)
+      await deleteObjectRecord(object.id)
+      await putObject({ ...object, id: serverId, revision: result.revision ?? object.revision, dirty: 0, conflict: null })
+    } else {
+      await putObject({ ...object, revision: result.revision ?? object.revision, dirty: 0, conflict: null })
+    }
     if (result.status === 'CONFLICT_RESOLVED') {
       emitNotice({
         campaignId,
         kind: 'info',
-        message: `«${entity.name}»: ваша версия новее, конфликт разрешён в вашу пользу`,
+        message: `«${object.name}»: ваша версия новее, конфликт разрешён в вашу пользу`,
       })
     }
     return
@@ -386,8 +402,8 @@ async function pullAll(campaignId: string, state: SyncStateRecord): Promise<Pull
   return { pulled, latestRevision: since, resyncRequired: false }
 }
 
-async function dirtyEntityIds(campaignId: string): Promise<Set<string>> {
-  const items = await listEntities(campaignId, { includeDeleted: true })
+async function dirtyObjectIds(campaignId: string): Promise<Set<string>> {
+  const items = await listObjects(campaignId, { includeDeleted: true })
   return new Set(items.filter((item) => item.dirty === 1).map((item) => item.id))
 }
 
@@ -401,7 +417,7 @@ async function applyChangeLog(
   changes: SyncChangeLogEntry[],
   skipIds: Set<string>,
 ): Promise<void> {
-  const entities: LocalEntity[] = []
+  const objects: LocalObject[] = []
   const retellings: LocalRetelling[] = []
   const members: MemberRecord[] = []
   let campaignPatch: CampaignDto | null = null
@@ -409,9 +425,10 @@ async function applyChangeLog(
   for (const entry of changes) {
     if (skipIds.has(entry.objectId)) continue
     const payload = entry.payload ?? {}
-    if (entry.objectType === 'ENTITY') {
-      const entity = entityFromPayload(campaignId, payload, entry.op)
-      if (entity) entities.push(entity)
+    if (isObjectClass(entry.objectType)) {
+      // `payload` — форма DTO своего класса (`sync.md` §1).
+      const object = objectFromPayload(campaignId, entry.objectType, payload, entry.op)
+      if (object) objects.push(object)
       continue
     }
     if (entry.objectType === 'RETELLING') {
@@ -430,34 +447,38 @@ async function applyChangeLog(
   }
 
   // Записи с неотправленными правками не перетираем.
-  const skipEntity = entities.length > 0 ? await dirtyEntityIds(campaignId) : new Set<string>()
+  const skipObject = objects.length > 0 ? await dirtyObjectIds(campaignId) : new Set<string>()
   const skipRetelling =
     retellings.length > 0 ? await dirtyRetellingIds(campaignId) : new Set<string>()
 
-  await putEntities(entities.filter((item) => !skipEntity.has(item.id)))
+  await putObjects(objects.filter((item) => !skipObject.has(item.id)))
   await putRetellings(retellings.filter((item) => !skipRetelling.has(item.id)))
   if (members.length > 0) {
     await putMembers(members)
   }
   if (campaignPatch) {
     const previous = await getCampaignRecord(campaignId)
-    await putCampaignRecord(
-      campaignRecordFromDto(
-        {
-          ...campaignPatch,
-          myRole: campaignPatch.myRole ?? previous?.myRole ?? 'VIEWER',
-          myPermissions: campaignPatch.myPermissions ?? previous?.myPermissions ?? [],
+    const record = campaignRecordFromDto(
+      {
+        ...campaignPatch,
+        myRole: campaignPatch.myRole ?? previous?.myRole ?? 'VIEWER',
+        myPermissions: campaignPatch.myPermissions ?? previous?.myPermissions ?? [],
+      },
+      {
+        counts: {
+          memberCount: previous?.memberCount ?? 0,
+          entityCount: previous?.entityCount ?? 0,
+          retellingCount: previous?.retellingCount ?? 0,
+          latestRevision: campaignPatch.latestRevision ?? previous?.latestRevision ?? 0,
         },
-        {
-          counts: {
-            memberCount: previous?.memberCount ?? 0,
-            entityCount: previous?.entityCount ?? 0,
-            retellingCount: previous?.retellingCount ?? 0,
-            latestRevision: campaignPatch.latestRevision ?? previous?.latestRevision ?? 0,
-          },
-        },
-      ),
+      },
     )
+    // `CAMPAIGN` в журнале не несёт кратких списков — сохраняем уже загруженные.
+    if (!Array.isArray(campaignPatch.members)) record.members = previous?.members ?? []
+    if (!Array.isArray(campaignPatch.retellings)) {
+      record.retellingBriefs = previous?.retellingBriefs ?? []
+    }
+    await putCampaignRecord(record)
   }
   emitDatabaseChanged(campaignId)
 }
@@ -467,21 +488,34 @@ async function applyChangeLog(
 /* ------------------------------------------------------------------ */
 
 export interface SnapshotSummary {
-  entities: number
+  /** Сколько объектов всех четырёх классов загружено. */
+  objects: number
   retellings: number
   members: number
   latestRevision: number
 }
 
+/** Страница snapshot отдаёт один класс за раз, поэтому разбираем их по очереди. */
+function snapshotObjects(
+  response: Pick<SyncSnapshotResponse, 'heroes' | 'characters' | 'locations' | 'items'>,
+): { ids: string[]; objects: LocalObject[] } {
+  const objects: LocalObject[] = []
+  for (const dto of response.heroes ?? []) objects.push(objectFromDto('HERO', dto))
+  for (const dto of response.characters ?? []) objects.push(objectFromDto('CHARACTER', dto))
+  for (const dto of response.locations ?? []) objects.push(objectFromDto('LOCATION', dto))
+  for (const dto of response.items ?? []) objects.push(objectFromDto('ITEM', dto))
+  return { ids: objects.map((object) => object.id), objects }
+}
+
 /**
  * Полная загрузка: первый вход на устройстве, смена устройства или `resync_required`
- * (журнал изменений скомпактирован — `sync.md` §6).
+ * (журнал изменений скомпактирован — `sync.md` §7).
  */
 export async function loadSnapshot(campaignId: string): Promise<SnapshotSummary> {
-  const entityIds = new Set<string>()
+  const objectIds = new Set<string>()
   const retellingIds = new Set<string>()
   const memberIds = new Set<string>()
-  const entities: LocalEntity[] = []
+  const objects: LocalObject[] = []
   const retellings: LocalRetelling[] = []
   const members: MemberRecord[] = []
   let campaign: CampaignDto | null = null
@@ -492,10 +526,9 @@ export async function loadSnapshot(campaignId: string): Promise<SnapshotSummary>
     const response = await syncApi.snapshot(campaignId, PAGE_LIMIT, cursor)
     latestRevision = Math.max(latestRevision, response.latestRevision ?? 0)
     if (response.campaign) campaign = response.campaign
-    for (const dto of response.entities ?? []) {
-      entityIds.add(dto.id)
-      entities.push(entityFromDto(dto))
-    }
+    const pageObjects = snapshotObjects(response)
+    for (const id of pageObjects.ids) objectIds.add(id)
+    objects.push(...pageObjects.objects)
     for (const dto of response.retellings ?? []) {
       retellingIds.add(dto.id)
       retellings.push(retellingFromDto(dto))
@@ -508,14 +541,14 @@ export async function loadSnapshot(campaignId: string): Promise<SnapshotSummary>
     if (!cursor) break
   }
 
-  const skipEntity = await dirtyEntityIds(campaignId)
+  const skipObject = await dirtyObjectIds(campaignId)
   const skipRetelling = await dirtyRetellingIds(campaignId)
 
-  await putEntities(entities.filter((item) => !skipEntity.has(item.id)))
+  await putObjects(objects.filter((item) => !skipObject.has(item.id)))
   await putRetellings(retellings.filter((item) => !skipRetelling.has(item.id)))
   await putMembers(members)
   // Записи, которых нет на сервере, удаляем — snapshot отражает полное состояние.
-  await pruneEntities(campaignId, entityIds)
+  await pruneObjects(campaignId, objectIds)
   await pruneRetellings(campaignId, retellingIds)
   await pruneMembers(campaignId, memberIds)
 
@@ -525,15 +558,22 @@ export async function loadSnapshot(campaignId: string): Promise<SnapshotSummary>
       id: campaignId,
       title: previous?.title ?? '',
       description: previous?.description ?? '',
+      ownerUserId: previous?.ownerUserId ?? null,
       myRole: previous?.myRole ?? 'VIEWER',
       myPermissions: (previous?.myPermissions ?? []) as CampaignDto['myPermissions'],
+      memberCount: previous?.memberCount ?? 0,
+      entityCount: previous?.entityCount ?? 0,
+      retellingCount: previous?.retellingCount ?? 0,
+      latestRevision: latestRevision,
+      members: previous?.members ?? [],
+      retellings: previous?.retellingBriefs ?? [],
       updatedAt: previous?.updatedAt ?? nowIso(),
     }
     await putCampaignRecord(
       campaignRecordFromDto(campaign ?? fallback, {
         permissions: campaign?.myPermissions ?? previous?.myPermissions ?? [],
         counts: {
-          entityCount: entityIds.size,
+          entityCount: objectIds.size,
           retellingCount: retellingIds.size,
           memberCount: memberIds.size,
           latestRevision,
@@ -548,7 +588,7 @@ export async function loadSnapshot(campaignId: string): Promise<SnapshotSummary>
     lastError: null,
     snapshotLoaded: true,
     counts: {
-      entities: entityIds.size,
+      objects: objectIds.size,
       retellings: retellingIds.size,
       members: memberIds.size,
     },
@@ -556,7 +596,7 @@ export async function loadSnapshot(campaignId: string): Promise<SnapshotSummary>
   emitDatabaseChanged(campaignId)
 
   return {
-    entities: entities.length,
+    objects: objects.length,
     retellings: retellings.length,
     members: members.length,
     latestRevision,
@@ -614,7 +654,7 @@ async function runSync(campaignId: string, reason: SyncReason): Promise<SyncOutc
     if (!state.snapshotLoaded) {
       const snapshot = await loadSnapshot(campaignId)
       outcome.snapshot = true
-      outcome.pulled = snapshot.entities + snapshot.retellings + snapshot.members
+      outcome.pulled = snapshot.objects + snapshot.retellings + snapshot.members
     } else {
       const pull = await pullAll(campaignId, state)
       if (pull.resyncRequired) {
@@ -650,7 +690,7 @@ async function refreshCampaignCounts(campaignId: string, latestRevision: number)
   const record = await getCampaignRecord(campaignId)
   if (!record) return
   const [entityCount, retellingCount, memberCount] = await Promise.all([
-    countEntities(campaignId),
+    countObjects(campaignId),
     countRetellings(campaignId),
     countMembers(campaignId),
   ])
@@ -667,22 +707,41 @@ async function refreshCampaignCounts(campaignId: string, latestRevision: number)
 /* Разрешение конфликтов (`sync.md` §4)                                */
 /* ------------------------------------------------------------------ */
 
+/** Перечитать объект с сервера по его классу (запасной путь при разборе конфликта). */
+async function fetchObjectFromServer(
+  campaignId: string,
+  objectClass: ObjectClass,
+  objectId: string,
+): Promise<LocalObject> {
+  switch (objectClass) {
+    case 'HERO':
+      return objectFromDto('HERO', await objectsApi.get(campaignId, 'HERO', objectId))
+    case 'CHARACTER':
+      return objectFromDto('CHARACTER', await objectsApi.get(campaignId, 'CHARACTER', objectId))
+    case 'ITEM':
+      return objectFromDto('ITEM', await objectsApi.get(campaignId, 'ITEM', objectId))
+    default:
+      return objectFromDto('LOCATION', await objectsApi.get(campaignId, 'LOCATION', objectId))
+  }
+}
+
 /** «Оставить серверную версию»: применяем состояние сервера и снимаем флаг. */
 export async function resolveConflictUseServer(
   campaignId: string,
   objectId: string,
 ): Promise<void> {
-  const entity = await getEntity(objectId)
-  if (entity?.conflict) {
-    const conflict = entity.conflict
+  const object = await getObject(objectId)
+  if (object?.conflict) {
+    const conflict = object.conflict
     if (conflict.server) {
-      const restored = entityFromPayload(
+      const restored = objectFromPayload(
         campaignId,
+        object.objectType,
         conflict.server,
         conflict.server.deleted === true ? 'DELETE' : 'UPSERT',
       )
       if (restored) {
-        await putEntity({
+        await putObject({
           ...restored,
           revision: conflict.serverRevision ?? restored.revision,
           dirty: 0,
@@ -694,11 +753,11 @@ export async function resolveConflictUseServer(
     }
     // Тела серверной версии нет — перечитываем объект с сервера.
     try {
-      const dto = await entitiesApi.get(campaignId, objectId)
-      await putEntity(entityFromDto(dto))
+      const local = await fetchObjectFromServer(campaignId, object.objectType, objectId)
+      await putObject({ ...local, dirty: 0, conflict: null })
     } catch (error) {
       if (error instanceof ApiError && error.isNotFound) {
-        await deleteEntityRecord(objectId)
+        await deleteObjectRecord(objectId)
       } else {
         throw error
       }
@@ -743,17 +802,17 @@ export async function resolveConflictUseServer(
 
 /** «Перезаписать своей версией»: новая правка с текущим `updatedAt` (`sync.md` §4). */
 export async function resolveConflictUseLocal(campaignId: string, objectId: string): Promise<void> {
-  const entity = await getEntity(objectId)
-  if (entity?.conflict) {
-    const updated: LocalEntity = { ...entity, conflict: null, dirty: 1, updatedAt: nowIso() }
-    await putEntity(updated)
+  const object = await getObject(objectId)
+  if (object?.conflict) {
+    const updated: LocalObject = { ...object, conflict: null, dirty: 1, updatedAt: nowIso() }
+    await putObject(updated)
     await enqueueChange({
       campaignId,
-      objectType: 'ENTITY',
-      objectId: entity.id,
-      op: entity.deleted ? 'DELETE' : 'UPSERT',
-      baseRevision: entity.conflict.serverRevision ?? entity.revision,
-      payload: entityToPayload(updated),
+      objectType: updated.objectType,
+      objectId: updated.id,
+      op: updated.deleted ? 'DELETE' : 'UPSERT',
+      baseRevision: object.conflict.serverRevision ?? object.revision,
+      payload: objectToPayload(updated),
     })
     emitDatabaseChanged(campaignId)
     notifyLocalChange(campaignId)
@@ -783,7 +842,7 @@ export async function resolveConflictUseLocal(campaignId: string, objectId: stri
 }
 
 /* ------------------------------------------------------------------ */
-/* Запуск синхронизации: события из `sync.md` §5                       */
+/* Запуск синхронизации: события из `sync.md` §6                       */
 /* ------------------------------------------------------------------ */
 
 const scheduledSync = debounce((campaignId: string) => {

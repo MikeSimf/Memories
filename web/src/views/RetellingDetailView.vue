@@ -178,7 +178,7 @@ async function keepLocal(): Promise<void> {
             :to="{
               name: 'entity-new',
               params: { campaignId: campaign.campaignId },
-              query: { type: 'NPC', name: brokenLink },
+              query: { class: 'CHARACTER', name: brokenLink },
             }"
           >
             Создать объект «{{ brokenLink }}»

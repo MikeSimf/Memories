@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import ru.dndmemory.R;
 import ru.dndmemory.data.local.entity.EntityRoom;
+import ru.dndmemory.data.model.EntityType;
 import ru.dndmemory.databinding.ItemEntityBinding;
 import ru.dndmemory.ui.common.Labels;
 import ru.dndmemory.ui.common.ViewUtils;
@@ -38,12 +39,16 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
                 @Override
                 public boolean areContentsTheSame(@NonNull EntityRoom oldItem, @NonNull EntityRoom newItem) {
                     return TextUtils.equals(oldItem.name, newItem.name)
-                            && TextUtils.equals(oldItem.summary, newItem.summary)
-                            && TextUtils.equals(oldItem.type, newItem.type)
+                            && TextUtils.equals(oldItem.description, newItem.description)
+                            && TextUtils.equals(oldItem.kind, newItem.kind)
+                            && TextUtils.equals(oldItem.race, newItem.race)
+                            && TextUtils.equals(oldItem.klass, newItem.klass)
+                            && TextUtils.equals(oldItem.playerName, newItem.playerName)
+                            && TextUtils.equals(oldItem.shortDescription, newItem.shortDescription)
+                            && TextUtils.equals(oldItem.ownerName, newItem.ownerName)
                             && oldItem.dirty == newItem.dirty
                             && oldItem.deleted == newItem.deleted
-                            && oldItem.hasConflict() == newItem.hasConflict()
-                            && TextUtils.equals(tagsOf(oldItem), tagsOf(newItem));
+                            && oldItem.hasConflict() == newItem.hasConflict();
                 }
             };
 
@@ -69,11 +74,6 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
         holder.itemView.setOnClickListener(v -> listener.onEntityClick(entity));
     }
 
-    @NonNull
-    private static String tagsOf(@NonNull EntityRoom room) {
-        return room.tags == null ? "" : TextUtils.join("|", room.tags);
-    }
-
     static final class EntityHolder extends RecyclerView.ViewHolder {
 
         private final ItemEntityBinding binding;
@@ -85,18 +85,13 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
 
         void bind(@NonNull final EntityRoom entity) {
             Context context = itemView.getContext();
-            binding.itemEntityIcon.setImageResource(Labels.entityIcon(entity.type));
+            binding.itemEntityIcon.setImageResource(Labels.entityIcon(entity.kind));
             binding.itemEntityName.setText(TextUtils.isEmpty(entity.name)
                     ? context.getString(R.string.attr_not_set) : entity.name);
-            // Герой и НПС живут в одной вкладке — различаем подписью, а не разделением.
-            binding.itemEntityType.setText(Labels.entityTypeText(context, entity.type));
-            ViewUtils.setTextOrGone(binding.itemEntitySummary, entity.summary);
-            if (entity.tags == null || entity.tags.isEmpty()) {
-                ViewUtils.show(binding.itemEntityTags, false);
-            } else {
-                binding.itemEntityTags.setText(TextUtils.join(" · ", entity.tags));
-                ViewUtils.show(binding.itemEntityTags, true);
-            }
+            // Герой и персонаж живут в одной вкладке — различаем подписью класса.
+            binding.itemEntityType.setText(Labels.entityTypeText(context, entity.kind));
+            ViewUtils.setTextOrGone(binding.itemEntitySubtitle,
+                    Labels.entitySubtitle(context, entity));
 
             if (entity.hasConflict()) {
                 binding.itemEntityStatus.setText(R.string.entity_conflict);

@@ -23,10 +23,18 @@ const routes: RouteRecordRaw[] = [
     meta: { public: true, bare: true, title: 'Регистрация' },
   },
   {
-    path: '/oauth/callback',
-    name: 'oauth-callback',
-    component: () => import('@/views/OAuthCallbackView.vue'),
-    meta: { public: true, bare: true, title: 'Вход через провайдера' },
+    path: '/forgot-password',
+    name: 'password-reset-request',
+    component: () => import('@/views/PasswordResetRequestView.vue'),
+    meta: { public: true, bare: true, title: 'Сброс пароля' },
+  },
+  {
+    // Ссылку на сброс сервер пишет в лог в виде `…/#/reset/<token>` (`api.md` §3),
+    // поэтому маршрут есть и в обычном виде, и с хешем (см. `beforeEach`).
+    path: '/reset/:token',
+    name: 'password-reset-confirm',
+    component: () => import('@/views/PasswordResetConfirmView.vue'),
+    meta: { public: true, bare: true, title: 'Новый пароль' },
   },
   {
     path: '/join/:token',
@@ -158,10 +166,19 @@ router.beforeEach((to) => {
   const auth = useAuthStore()
   auth.initialize()
 
+  // Ссылка сброса пароля приходит в виде `…/#/reset/<token>` (`api.md` §3):
+  // перенаправляем её на обычный маршрут `/reset/:token`.
+  const hash = window.location.hash
+  if (hash.startsWith('#/reset/')) {
+    const token = decodeURIComponent(hash.slice('#/reset/'.length))
+    if (token) return { name: 'password-reset-confirm', params: { token }, replace: true }
+  }
+
+  const isAuthScreen = to.name === 'login' || to.name === 'register'
   if (to.meta.public !== true && !auth.isAuthenticated) {
     return { name: 'login', query: to.fullPath === '/' ? {} : { redirect: to.fullPath } }
   }
-  if ((to.name === 'login' || to.name === 'register') && auth.isAuthenticated) {
+  if (isAuthScreen && auth.isAuthenticated) {
     return { name: 'campaigns' }
   }
   return true

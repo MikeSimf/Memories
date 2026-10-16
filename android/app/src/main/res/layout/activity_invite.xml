@@ -12,40 +12,11 @@
         android:layout_height="?attr/actionBarSize"
         app:title="@string/invite_title" />
 
-    <!-- Два раздела: приглашения участникам и устройства кампании -->
-    <com.google.android.material.button.MaterialButtonToggleGroup
-        android:id="@+id/invite_section_toggle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginEnd="12dp"
-        app:selectionRequired="true"
-        app:singleSelection="true">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/invite_section_invites"
-            style="?attr/materialButtonOutlinedStyle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/invite_section_invites" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/invite_section_devices"
-            style="?attr/materialButtonOutlinedStyle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/invite_section_devices" />
-    </com.google.android.material.button.MaterialButtonToggleGroup>
-
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <!-- Приглашения участникам -->
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/invite_swipe"
             android:layout_width="match_parent"
@@ -53,21 +24,6 @@
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/invite_recycler"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clipToPadding="false"
-                android:paddingBottom="88dp" />
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-        <!-- Устройства кампании -->
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/device_swipe"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/device_recycler"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:clipToPadding="false"
@@ -84,16 +40,6 @@
             android:textColor="@color/text_muted"
             android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/device_empty"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:padding="24dp"
-            android:text="@string/device_list_empty"
-            android:textColor="@color/text_muted"
-            android:visibility="gone" />
-
         <ProgressBar
             android:id="@+id/invite_progress"
             android:layout_width="wrap_content"
@@ -101,7 +47,6 @@
             android:layout_gravity="center"
             android:visibility="gone" />
 
-        <!-- Кнопки действий: видны только в разделе приглашений -->
         <LinearLayout
             android:id="@+id/invite_actions"
             android:layout_width="match_parent"

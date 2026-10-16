@@ -40,6 +40,7 @@
                 android:layout_marginTop="16dp"
                 app:tabMode="fixed" />
 
+            <!-- Вход: логин и пароль, внешних провайдеров больше нет -->
             <LinearLayout
                 android:id="@+id/auth_login_group"
                 android:layout_width="match_parent"
@@ -49,13 +50,13 @@
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/auth_email">
+                    android:hint="@string/auth_login_field">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/auth_login_email"
+                        android:id="@+id/auth_login_field"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="textEmailAddress"
+                        android:inputType="text"
                         android:maxLines="1" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -79,8 +80,17 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:text="@string/auth_login" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/auth_forgot_password"
+                    style="?attr/borderlessButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:text="@string/auth_forgot_password" />
             </LinearLayout>
 
+            <!-- Регистрация: логин, почта, пароль, имя -->
             <LinearLayout
                 android:id="@+id/auth_register_group"
                 android:layout_width="match_parent"
@@ -98,6 +108,19 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="textPersonName"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/auth_login_field">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/auth_register_login"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text"
                         android:maxLines="1" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -136,36 +159,14 @@
                     android:text="@string/auth_register" />
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/auth_or_oauth"
-                android:layout_width="match_parent"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/auth_have_invite"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:gravity="center"
-                android:text="@string/auth_or_oauth"
-                android:textAppearance="?attr/textAppearanceBodySmall" />
-
-            <LinearLayout
-                android:id="@+id/auth_oauth_group"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/auth_oauth_yandex"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/auth_oauth_yandex" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/auth_oauth_vk"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/auth_oauth_vk" />
-            </LinearLayout>
+                android:layout_gravity="start"
+                android:layout_marginTop="8dp"
+                android:text="@string/auth_have_invite" />
 
             <ProgressBar
                 android:id="@+id/auth_progress"

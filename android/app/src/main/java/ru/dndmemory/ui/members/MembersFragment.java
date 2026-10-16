@@ -205,7 +205,7 @@ public class MembersFragment extends Fragment implements MemberAdapter.Listener 
                     dialog.memberEditRoleInput.setText(getString(Labels.role(role)), false);
                 }
             }
-            String heroName = nameIndex.nameFor(member.linkedEntityId);
+            String heroName = nameIndex.nameFor(member.linkedHeroId);
             if (heroName != null) {
                 dialog.memberEditLinkedInput.setText(heroName, false);
             }
@@ -216,16 +216,16 @@ public class MembersFragment extends Fragment implements MemberAdapter.Listener 
                 .setPositiveButton(editing ? R.string.action_save : R.string.action_add,
                         (d, which) -> {
                             String role = selectedRole(dialog.memberEditRoleInput.getText()).name();
-                            String linked = selectedHeroId(dialog.memberEditLinkedInput.getText());
+                            String linkedHeroId = selectedHeroId(dialog.memberEditLinkedInput.getText());
                             if (editing) {
-                                viewModel.changeRole(member.id, role, linked);
+                                viewModel.changeRole(member.id, role, linkedHeroId);
                             } else {
                                 String email = text(dialog.memberEditEmailInput.getText());
                                 if (email.isEmpty()) {
                                     ViewUtils.toast(requireContext(), R.string.error_required);
                                     return;
                                 }
-                                viewModel.add(email, role, linked);
+                                viewModel.add(email, role, linkedHeroId);
                             }
                         })
                 .setNegativeButton(R.string.action_cancel, null)

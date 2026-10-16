@@ -3,7 +3,12 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { errorMessage } from '@/api'
-import { ENTITY_TYPE_LABELS, ENTITY_TYPES, type EntityType } from '@/api/types'
+import {
+  OBJECT_CLASS_LABELS,
+  OBJECT_CLASSES,
+  type ObjectClass,
+} from '@/api/types'
+import type { LocalObject } from '@/db/schema'
 import BaseModal from '@/components/BaseModal.vue'
 import ConflictNotice from '@/components/ConflictNotice.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -11,7 +16,6 @@ import EntityImage from '@/components/EntityImage.vue'
 import MarkupText from '@/components/MarkupText.vue'
 import { useCampaignStore } from '@/stores/campaign'
 import { useUiStore } from '@/stores/ui'
-import { filledAttrs } from '@/utils/attrs'
 import { formatDateTime } from '@/utils/datetime'
 
 const route = useRoute()
@@ -20,16 +24,47 @@ const campaign = useCampaignStore()
 const ui = useUiStore()
 
 const entityId = computed(() => String(route.params.entityId ?? ''))
-const entity = computed(() => campaign.entityById(entityId.value))
-const attrs = computed(() =>
-  entity.value ? filledAttrs(entity.value.type, entity.value.attrs) : [],
-)
+const entity = computed(() => campaign.objectById(entityId.value))
+const objectClass = computed<ObjectClass>(() => entity.value?.objectType ?? 'CHARACTER')
 const canEdit = computed(() => (entity.value ? campaign.canEdit(entity.value) : false))
 const canDelete = computed(() => (entity.value ? campaign.canDelete(entity.value) : false))
 
-/** Обратные ссылки считаем по локальной базе — работает и без сети (`sync.md` §7). */
+/** Поля своего класса (`api.md` §6): у локации своих полей нет. */
+const details = computed<Array<{ label: string; value: string }>>(() => {
+  const item = entity.value
+  if (!item) return []
+  if (item.objectType === 'HERO') {
+    const rows: Array<{ label: string; value: string }> = []
+    if (item.race) rows.push({ label: 'Раса', value: item.race })
+    if (item.klass) rows.push({ label: 'Класс', value: item.klass })
+    rows.push({ label: 'Игрок', value: item.playerName ?? 'не указан' })
+    return rows
+  }
+  if (item.objectType === 'CHARACTER') {
+    const rows: Array<{ label: string; value: string }> = []
+    if (item.race) rows.push({ label: 'Раса', value: item.race })
+    if (item.shortDescription) rows.push({ label: 'Краткое описание', value: item.shortDescription })
+    return rows
+  }
+  if (item.objectType === 'ITEM') {
+    return [
+      { label: 'Владелец', value: item.ownerName ?? 'не указан' },
+      {
+        label: 'Ссылка',
+        value: item.ownerHeroName
+          ? `герой «${item.ownerHeroName}»`
+          : item.ownerCharacterName
+            ? `персонаж «${item.ownerCharacterName}»`
+            : 'не указана',
+      },
+    ]
+  }
+  return []
+})
+
+/** Обратные ссылки считаем по локальной базе — работает и без сети (`sync.md` §8). */
 const backlinks = computed(() =>
-  campaign.activeEntities.filter(
+  campaign.activeObjects.filter(
     (item) => item.id !== entityId.value && item.links.some((link) => link.targetId === entityId.value),
   ),
 )
@@ -47,7 +82,7 @@ const outgoingLinks = computed(() => {
 })
 
 const brokenLinkName = ref<string | null>(null)
-const brokenLinkType = ref<EntityType>('NPC')
+const brokenLinkClass = ref<ObjectClass>('CHARACTER')
 const confirmDelete = ref(false)
 const busy = ref(false)
 
@@ -58,7 +93,9 @@ watch(entityId, () => {
 
 function onBrokenLink(payload: { name: string }): void {
   brokenLinkName.value = payload.name
-  brokenLinkType.value = entity.value?.type === 'HERO' ? 'NPC' : (entity.value?.type ?? 'NPC')
+  const current = entity.value?.objectType
+  // Ссылка в тексте героя чаще указывает на персонажа — так и предлагаем.
+  brokenLinkClass.value = current === 'CHARACTER' ? 'LOCATION' : 'CHARACTER'
 }
 
 function createFromBrokenLink(): void {
@@ -67,20 +104,21 @@ function createFromBrokenLink(): void {
   void router.push({
     name: 'entity-new',
     params: { campaignId: campaign.campaignId },
-    query: { type: brokenLinkType.value, name },
+    query: { class: brokenLinkClass.value, name },
   })
 }
 
 async function remove(): Promise<void> {
-  if (!entity.value) return
+  const item = entity.value
+  if (!item) return
   busy.value = true
   try {
-    await campaign.deleteEntity(entity.value.id)
+    await campaign.deleteObject(item.id)
     confirmDelete.value = false
     ui.pushToast('success', 'Объект удалён')
     await router.push({
       name: 'campaign-tab',
-      params: { campaignId: campaign.campaignId, tab: tabForType(entity.value.type) },
+      params: { campaignId: campaign.campaignId, tab: tabForClass(item) },
     })
   } catch (caught) {
     ui.pushToast('error', errorMessage(caught))
@@ -89,17 +127,24 @@ async function remove(): Promise<void> {
   }
 }
 
-function tabForType(type: EntityType): string {
-  switch (type) {
-    // Герои и НПС живут на одной вкладке «Персонажи».
-    case 'HERO':
-    case 'NPC':
-      return 'characters'
-    case 'LOCATION':
-      return 'locations'
-    default:
-      return 'items'
-  }
+function tabForClass(item: LocalObject): string {
+  // Герои и НПС живут на одной вкладке «Персонажи».
+  if (item.objectType === 'HERO' || item.objectType === 'CHARACTER') return 'characters'
+  if (item.objectType === 'LOCATION') return 'locations'
+  return 'items'
+}
+
+function badgeClass(item: LocalObject): string {
+  if (item.objectType === 'HERO') return 'badge--hero'
+  if (item.objectType === 'CHARACTER') return 'badge--npc'
+  if (item.objectType === 'LOCATION') return 'badge--location'
+  return 'badge--item'
+}
+
+/** Ссылка на предмет кампании из котомки героя. */
+function heroItemTargetId(itemId: string | null): string | null {
+  if (!itemId) return null
+  return campaign.objectById(itemId) ? itemId : null
 }
 
 async function keepServer(): Promise<void> {
@@ -139,8 +184,8 @@ async function keepLocal(): Promise<void> {
             <span v-if="entity.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />
           </h1>
           <div class="page-header__subtitle">
-            <span class="badge" :class="`badge--${entity.type.toLowerCase()}`">
-              {{ ENTITY_TYPE_LABELS[entity.type] }}
+            <span class="badge" :class="badgeClass(entity)">
+              {{ OBJECT_CLASS_LABELS[objectClass] }}
             </span>
             <span v-if="entity.deleted" class="badge badge--danger">удалён</span>
             <span class="faint"> · {{ campaign.changeSummary(entity) }}</span>
@@ -165,7 +210,9 @@ async function keepLocal(): Promise<void> {
         @keep-local="keepLocal"
       />
 
-      <p v-if="entity.summary" class="muted">{{ entity.summary }}</p>
+      <p v-if="!canEdit && objectClass === 'HERO'" class="notice">
+        Героя партии ведёт только владелец кампании — эта карточка доступна вам для чтения.
+      </p>
 
       <EntityImage
         v-if="entity.imageFileId"
@@ -173,18 +220,41 @@ async function keepLocal(): Promise<void> {
         :alt="`Изображение: ${entity.name}`"
       />
 
-      <div v-if="entity.tags.length > 0" class="chips">
-        <span v-for="tag in entity.tags" :key="tag" class="chip">{{ tag }}</span>
-      </div>
-
-      <div v-if="attrs.length > 0" class="card">
+      <div v-if="details.length > 0" class="card">
         <h2>Поля</h2>
         <dl class="attr-grid" style="margin: 0">
-          <div v-for="row in attrs" :key="row.key">
+          <div v-for="row in details" :key="row.label">
             <dt class="field__label">{{ row.label }}</dt>
             <dd style="margin: 0">{{ row.value }}</dd>
           </div>
         </dl>
+      </div>
+
+      <!-- Котомка героя: name, quantity, notes и ссылка на предмет кампании -->
+      <div v-if="entity.objectType === 'HERO'" class="card">
+        <h2>Предметы в котомке</h2>
+        <p v-if="entity.items.length === 0" class="faint">Список пуст.</p>
+        <div v-else class="list">
+          <div v-for="item in entity.items" :key="item.id" class="list-row">
+            <div class="list-row__main">
+              <div class="list-row__title">
+                {{ item.name }}
+                <span v-if="item.quantity && item.quantity > 1" class="badge">×{{ item.quantity }}</span>
+              </div>
+              <div v-if="item.notes" class="faint">{{ item.notes }}</div>
+            </div>
+            <RouterLink
+              v-if="heroItemTargetId(item.itemId)"
+              class="btn btn--sm"
+              :to="{
+                name: 'entity-detail',
+                params: { campaignId: campaign.campaignId, entityId: heroItemTargetId(item.itemId) },
+              }"
+            >
+              Открыть предмет
+            </RouterLink>
+          </div>
+        </div>
       </div>
 
       <div class="card">
@@ -246,10 +316,10 @@ async function keepLocal(): Promise<void> {
             <strong>«{{ brokenLinkName }}»</strong>, которого пока нет в кампании.
           </p>
           <div class="field">
-            <label class="field__label" for="broken-type">Тип нового объекта</label>
-            <select id="broken-type" v-model="brokenLinkType" class="select">
-              <option v-for="type in ENTITY_TYPES" :key="type" :value="type">
-                {{ ENTITY_TYPE_LABELS[type] }}
+            <label class="field__label" for="broken-class">Класс нового объекта</label>
+            <select id="broken-class" v-model="brokenLinkClass" class="select">
+              <option v-for="cls in OBJECT_CLASSES" :key="cls" :value="cls">
+                {{ OBJECT_CLASS_LABELS[cls] }}
               </option>
             </select>
           </div>

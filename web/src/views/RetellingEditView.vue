@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { errorMessage } from '@/api'
-import type { EntityType } from '@/api/types'
+import type { ObjectClass } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import EntityPicker from '@/components/EntityPicker.vue'
 import MarkupText from '@/components/MarkupText.vue'
@@ -17,7 +17,7 @@ const router = useRouter()
 const campaign = useCampaignStore()
 const ui = useUiStore()
 
-const HERO_TYPES: EntityType[] = ['HERO', 'NPC']
+const AUTHOR_CLASSES: ObjectClass[] = ['HERO', 'CHARACTER']
 
 const retellingId = computed(() =>
   typeof route.params.retellingId === 'string' ? route.params.retellingId : '',
@@ -184,7 +184,7 @@ async function savePublished(): Promise<void> {
           <label class="field__label" for="retelling-author">От лица кого</label>
           <EntityPicker
             :model-value="form.authorEntityId"
-            :types="HERO_TYPES"
+            :classes="AUTHOR_CLASSES"
             empty-label="— от лица мастера —"
             @update:model-value="form.authorEntityId = $event"
           />

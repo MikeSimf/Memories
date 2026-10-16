@@ -1,33 +1,26 @@
 package ru.dndmemory.data.remote.dto;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import ru.dndmemory.data.model.EntityLink;
 
-/** Объект кампании (docs/api.md, раздел 6). Используется и в телах запросов. */
+/**
+ * Общие поля объекта кампании (docs/api.md, раздел 6). Базовый класс для
+ * {@link HeroDto}, {@link CharacterDto}, {@link LocationDto} и {@link ItemDto}:
+ * тело запроса и ответа всегда в форме DTO своего класса, лишних полей нет.
+ */
 public class EntityDto {
 
     public String id;
     public String campaignId;
 
-    /** UUID создания — ключ идемпотентности для офлайн-созданных объектов. */
-    public String clientId;
-
-    /** HERO | NPC | LOCATION | ITEM */
-    public String type;
-
     public String name;
-    public String summary;
     public String description;
 
-    public Map<String, String> attrs = new HashMap<>();
-    public List<String> tags = new ArrayList<>();
-    public List<EntityLink> links = new ArrayList<>();
-
     public String imageFileId;
+
+    public List<EntityLink> links = new ArrayList<>();
 
     public String createdBy;
     public String updatedBy;

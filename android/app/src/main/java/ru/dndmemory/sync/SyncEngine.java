@@ -9,7 +9,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import ru.dndmemory.data.Mappers;
@@ -21,6 +23,7 @@ import ru.dndmemory.data.local.entity.PendingChangeRoom;
 import ru.dndmemory.data.local.entity.RetellingRoom;
 import ru.dndmemory.data.local.entity.SyncStateRoom;
 import ru.dndmemory.data.model.ConflictInfo;
+import ru.dndmemory.data.model.EntityType;
 import ru.dndmemory.data.model.ObjectType;
 import ru.dndmemory.data.model.SyncResult;
 import ru.dndmemory.data.model.SyncStatus;
@@ -49,6 +52,10 @@ import ru.dndmemory.util.DateFormats;
  * получают серверные ревизии, и следующий pull не возвращает их обратно.
  * Если журнал сервера скомпактился и пришёл {@code 410 resync_required},
  * выполняется полная перезагрузка через snapshot с курсорами.
+ *
+ * <p>В журнале больше нет общего {@code ENTITY}: у каждого класса объектов своё
+ * значение {@code objectType}, а {@code payload} — форма DTO своего класса
+ * (docs/api.md, раздел 9).
  */
 public class SyncEngine {
 
@@ -169,6 +176,7 @@ public class SyncEngine {
             return SyncResult.ok(0, 0, 0, currentRevision(campaignId));
         }
         PushRequest request = new PushRequest(deviceClientId);
+        Map<String, String> localIds = new HashMap<>();
         for (PendingChangeRoom change : pending) {
             PushChangeDto dto = new PushChangeDto();
             dto.clientChangeId = change.clientChangeId;
@@ -178,6 +186,7 @@ public class SyncEngine {
             dto.baseRevision = change.baseRevision;
             dto.payload = parsePayload(change.payloadJson);
             request.changes.add(dto);
+            localIds.put(change.clientChangeId, change.objectId);
         }
 
         PushResponse response;
@@ -201,20 +210,26 @@ public class SyncEngine {
             if (result == null || result.clientChangeId == null) {
                 continue;
             }
+            String localId = localIds.get(result.clientChangeId);
             if (result.isApplied() || result.isConflictResolved()) {
                 db.pendingChangeDao().deleteById(result.clientChangeId);
-                markAccepted(campaignId, result.objectId, result.revision);
+                String serverId = adoptServerId(localId, result.objectId);
+                markAccepted(campaignId, serverId, result.revision);
+                if (localId != null) {
+                    conflictObjects.remove(localId);
+                }
+                conflictObjects.remove(result.objectId);
                 if (result.isApplied()) {
                     applied++;
                 } else {
                     resolved++;
                 }
-                conflictObjects.remove(result.objectId);
             } else if (result.isRejected()) {
                 db.pendingChangeDao().deleteById(result.clientChangeId);
-                markRejected(campaignId, result.objectId, result.conflict);
-                if (result.objectId != null && !conflictObjects.contains(result.objectId)) {
-                    conflictObjects.add(result.objectId);
+                String objectId = localId != null ? localId : result.objectId;
+                markRejected(campaignId, objectId, result.conflict);
+                if (objectId != null && !conflictObjects.contains(objectId)) {
+                    conflictObjects.add(objectId);
                 }
                 rejected++;
             }
@@ -228,6 +243,25 @@ public class SyncEngine {
             status.postValue(SyncStatus.CONFLICT);
         }
         return ok;
+    }
+
+    /**
+     * Сервер мог найти объект по ключу сопоставления и вернуть свой id
+     * (docs/sync.md, раздел 4): локальную запись переименовываем, чтобы правки
+     * не удвоились. Дубль, который уже есть локально, просто убираем.
+     */
+    @Nullable
+    private String adoptServerId(@Nullable String localId, @Nullable String serverId) {
+        if (localId == null || serverId == null || serverId.isEmpty() || serverId.equals(localId)) {
+            return serverId == null || serverId.isEmpty() ? localId : serverId;
+        }
+        EntityRoom existing = db.entityDao().find(serverId);
+        if (existing != null) {
+            db.entityDao().delete(localId);
+        } else {
+            db.entityDao().reassignId(localId, serverId);
+        }
+        return serverId;
     }
 
     private void markAccepted(String campaignId, String objectId, long revision) {
@@ -289,7 +323,7 @@ public class SyncEngine {
         while (guard++ < 200) {
             PullResponse page;
             try {
-                page = ApiCall.execute(api.pullChanges(campaignId, since, PULL_LIMIT));
+                page = ApiCall.execute(api.pullChanges(campaignId, since, PULL_LIMIT, deviceClientId));
             } catch (ApiException e) {
                 if (e.isResyncRequired()) {
                     return SyncResult.resync();
@@ -335,25 +369,11 @@ public class SyncEngine {
             return;
         }
         switch (type) {
-            case ENTITY: {
-                EntityRoom local = db.entityDao().find(change.objectId);
-                if (local != null && local.dirty) {
-                    return; // не затираем неотправленную локальную правку
-                }
-                if (deleted) {
-                    if (local != null) {
-                        db.entityDao().applyTombstone(change.objectId, change.revision,
-                                updatedAt(payload, change.createdAt));
-                    }
-                    return;
-                }
-                if (payload == null) {
-                    return;
-                }
-                EntityDto dto = gson.fromJson(payload, EntityDto.class);
-                if (dto != null) {
-                    db.entityDao().upsert(Mappers.toRoom(dto, campaignId));
-                }
+            case HERO:
+            case CHARACTER:
+            case LOCATION:
+            case ITEM: {
+                applyEntityChange(campaignId, change, type.entityType(), deleted, payload);
                 break;
             }
             case RETELLING: {
@@ -424,6 +444,40 @@ public class SyncEngine {
         }
     }
 
+    /**
+     * Правка объекта кампании: тело в форме DTO своего класса
+     * ({@code HERO}, {@code CHARACTER}, {@code LOCATION}, {@code ITEM}).
+     */
+    private void applyEntityChange(String campaignId, PullChangeDto change,
+                                   @Nullable EntityType kind, boolean deleted,
+                                   @Nullable JsonObject payload) {
+        if (kind == null) {
+            return;
+        }
+        EntityRoom local = db.entityDao().find(change.objectId);
+        if (local != null && local.dirty) {
+            return; // не затираем неотправленную локальную правку
+        }
+        if (deleted) {
+            if (local != null) {
+                db.entityDao().applyTombstone(change.objectId, change.revision,
+                        updatedAt(payload, change.createdAt));
+            }
+            return;
+        }
+        if (payload == null) {
+            return;
+        }
+        EntityDto dto = gson.fromJson(payload, Mappers.dtoClass(kind));
+        if (dto != null) {
+            EntityRoom incoming = Mappers.toRoom(dto, kind, campaignId);
+            if (incoming.id == null || incoming.id.isEmpty()) {
+                incoming.id = change.objectId;
+            }
+            db.entityDao().upsert(incoming);
+        }
+    }
+
     // --- Snapshot (первый вход, смена устройства, resync) -------------------
 
     private SyncResult snapshot(String campaignId) throws ApiException {
@@ -441,13 +495,12 @@ public class SyncEngine {
             if (page == null) {
                 break;
             }
-            if (page.entities != null) {
-                for (EntityDto dto : page.entities) {
-                    if (dto != null && dto.id != null) {
-                        entities.add(Mappers.toRoom(dto, campaignId));
-                    }
-                }
-            }
+            // За одну страницу сервер отдаёт один класс: heroes, characters,
+            // locations, items, retellings (docs/sync.md, раздел 3.3).
+            addEntities(entities, page.heroes, EntityType.HERO, campaignId);
+            addEntities(entities, page.characters, EntityType.CHARACTER, campaignId);
+            addEntities(entities, page.locations, EntityType.LOCATION, campaignId);
+            addEntities(entities, page.items, EntityType.ITEM, campaignId);
             if (page.retellings != null) {
                 for (RetellingDto dto : page.retellings) {
                     if (dto != null && dto.id != null) {
@@ -511,6 +564,18 @@ public class SyncEngine {
 
         status.postValue(SyncStatus.IDLE);
         return SyncResult.ok(0, 0, entities.size() + retellings.size() + members.size(), latest);
+    }
+
+    private void addEntities(List<EntityRoom> out, @Nullable List<? extends EntityDto> page,
+                             EntityType kind, String campaignId) {
+        if (page == null) {
+            return;
+        }
+        for (EntityDto dto : page) {
+            if (dto != null && dto.id != null) {
+                out.add(Mappers.toRoom(dto, kind, campaignId));
+            }
+        }
     }
 
     // --- Вспомогательное ----------------------------------------------------

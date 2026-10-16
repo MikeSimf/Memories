@@ -1,10 +1,10 @@
 package ru.dndmemory.data.remote.dto;
 
 /**
- * PATCH /api/me — профиль и контакты для входа.
+ * PATCH /api/me — профиль и контакты для восстановления пароля.
  *
  * <p>Пустая строка в {@code phone} очищает значение; {@code email} и {@code phone}
- * нормализует сервер (docs/api.md, раздел 3).
+ * нормализует сервер (docs/api.md, раздел 3). Логин не меняется.
  */
 public class PatchMeRequest {
 

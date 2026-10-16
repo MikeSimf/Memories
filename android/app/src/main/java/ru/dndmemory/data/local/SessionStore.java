@@ -10,7 +10,6 @@ import androidx.lifecycle.MutableLiveData;
 import java.util.UUID;
 
 import ru.dndmemory.data.remote.dto.AuthResponse;
-import ru.dndmemory.data.remote.dto.EnrollResponse;
 import ru.dndmemory.data.remote.dto.TokenPairDto;
 import ru.dndmemory.data.remote.dto.UserDto;
 
@@ -18,18 +17,12 @@ import ru.dndmemory.data.remote.dto.UserDto;
  * Токены доступа, профиль пользователя и идентификатор установки
  * ({@code clientId} устройства из docs/sync.md, раздел 2).
  *
+ * <p>Сессия живёт на телефоне: refresh-токен выдан на 365 дней
+ * ({@code platform: "android"}), поэтому логин и пароль вводятся один раз.
+ *
  * <p>Хранилище — закрытый файл настроек приложения. Доступ к нему синхронный:
  * это нужно {@link ru.dndmemory.data.remote.AuthInterceptor}, который обязан
  * добавить {@code Authorization} до отправки запроса.
- *
- * <p><b>Два разных «deviceId».</b> {@code KEY_DEVICE_ID} — идентификатор установки
- * для синхронизации, он живёт вместе с приложением. {@code KEY_ENROLLED_DEVICE_ID} —
- * запись устройства на сервере: её видит админ и может отозвать доступ
- * (docs/api.md, раздел 3.1).
- *
- * <p><b>Отзыв доступа.</b> {@link #markRevoked()} чистит только сессию и поднимает
- * {@link #revoked()}: локальные данные кампаний в Room при этом сохраняются, чтобы
- * после нового QR-кода не загружать всё заново.
  *
  * <p><b>Спорное место.</b> В ТЗ указан DataStore 1.0.0. Его Java-API
  * ({@code DataStore.updateData}, {@code Flow}) работает только через
@@ -40,8 +33,6 @@ import ru.dndmemory.data.remote.dto.UserDto;
  */
 public class SessionStore {
 
-    /** Событие отзыва: админ отозвал устройство — нужен новый QR-код. */
-    public static final String REVOKED_DEVICE = "device_revoked";
     /** Событие отзыва: refresh-токен истёк или недействителен — нужен вход. */
     public static final String SESSION_EXPIRED = "session_expired";
 
@@ -49,19 +40,19 @@ public class SessionStore {
     private static final String KEY_ACCESS = "access_token";
     private static final String KEY_REFRESH = "refresh_token";
     private static final String KEY_USER_ID = "user_id";
+    private static final String KEY_LOGIN = "login";
     private static final String KEY_DISPLAY_NAME = "display_name";
     private static final String KEY_EMAIL = "email";
     private static final String KEY_PHONE = "phone";
     private static final String KEY_HAS_PASSWORD = "has_password";
     private static final String KEY_DEVICE_ID = "device_client_id";
-    private static final String KEY_ENROLLED_DEVICE_ID = "enrolled_device_id";
-    /** Причина последнего отзыва сессии: переживает перезапуск приложения. */
+    /** Причина последнего обрыва сессии: переживает перезапуск приложения. */
     private static final String KEY_REVOKE_REASON = "revoke_reason";
 
     private final SharedPreferences prefs;
     private final MutableLiveData<Boolean> loggedIn = new MutableLiveData<>(false);
     private final MutableLiveData<String> displayName = new MutableLiveData<>();
-    /** Признак «сессию отозвали»: одноразовое событие для показа экрана QR. */
+    /** Признак «сессию прервали»: одноразовое событие для показа экрана входа. */
     private final MutableLiveData<String> revoked = new MutableLiveData<>();
 
     public SessionStore(Context context) {
@@ -89,6 +80,11 @@ public class SessionStore {
         return prefs.getString(KEY_USER_ID, null);
     }
 
+    /** Логин для входа: показывается в профиле только для чтения. */
+    public String login() {
+        return prefs.getString(KEY_LOGIN, null);
+    }
+
     public String userName() {
         return prefs.getString(KEY_DISPLAY_NAME, null);
     }
@@ -101,15 +97,9 @@ public class SessionStore {
         return prefs.getString(KEY_PHONE, null);
     }
 
-    /** У аккаунта, созданного по QR устройства, пароля нет — его предлагают задать. */
+    /** Вход только по паролю, поэтому пароль есть всегда. */
     public boolean hasPassword() {
         return prefs.getBoolean(KEY_HAS_PASSWORD, true);
-    }
-
-    /** Запись устройства на сервере; {@code null} у аккаунта, созданного по паролю. */
-    @Nullable
-    public String enrolledDeviceId() {
-        return prefs.getString(KEY_ENROLLED_DEVICE_ID, null);
     }
 
     /** Идентификатор установки: сервер не отдаёт клиенту его собственные изменения. */
@@ -129,7 +119,7 @@ public class SessionStore {
         return displayName;
     }
 
-    /** Одноразовое событие отзыва сессии: {@link #REVOKED_DEVICE} либо {@link #SESSION_EXPIRED}. */
+    /** Одноразовое событие обрыва сессии: сейчас всегда {@link #SESSION_EXPIRED}. */
     public LiveData<String> revoked() {
         return revoked;
     }
@@ -145,34 +135,11 @@ public class SessionStore {
         if (response.refreshToken != null) {
             editor.putString(KEY_REFRESH, response.refreshToken);
         }
-        // Вход по паролю/OAuth: сессия больше не привязана к записи устройства.
-        editor.remove(KEY_ENROLLED_DEVICE_ID);
         editor.remove(KEY_REVOKE_REASON);
         writeUser(editor, response.user);
         editor.apply();
         publish(response.user == null ? prefs.getString(KEY_DISPLAY_NAME, null)
                 : response.user.displayName);
-    }
-
-    /** Ответ {@code POST /api/devices/enroll}: сессия плюс идентификатор устройства. */
-    public void saveEnrollment(EnrollResponse response) {
-        if (response == null) {
-            return;
-        }
-        SharedPreferences.Editor editor = prefs.edit();
-        if (response.accessToken != null) {
-            editor.putString(KEY_ACCESS, response.accessToken);
-        }
-        if (response.refreshToken != null) {
-            editor.putString(KEY_REFRESH, response.refreshToken);
-        }
-        if (response.deviceId != null) {
-            editor.putString(KEY_ENROLLED_DEVICE_ID, response.deviceId);
-        }
-        editor.remove(KEY_REVOKE_REASON);
-        writeUser(editor, response.user);
-        editor.apply();
-        publish(response.user == null ? null : response.user.displayName);
     }
 
     public void saveTokens(TokenPairDto tokens) {
@@ -207,10 +174,8 @@ public class SessionStore {
     }
 
     /**
-     * Доступ отозван (админ отозвал устройство или истёк refresh-токен).
-     * Чистим только сессию: кампании, объекты и черновики в Room остаются.
-     *
-     * @param reason {@link #REVOKED_DEVICE} или {@link #SESSION_EXPIRED}.
+     * Сессия прервана (refresh-токен истёк или отозван). Чистим только сессию:
+     * кампании, объекты и черновики в Room остаются.
      */
     public void markRevoked(@Nullable String reason) {
         String deviceId = deviceClientId();
@@ -224,8 +189,8 @@ public class SessionStore {
     }
 
     /**
-     * Причина отзыва, если сессию прервали: экран QR покажет пояснение даже после
-     * перезапуска приложения. Флаг одноразовый — после чтения сбрасывается.
+     * Причина обрыва сессии, если её прервали: экран входа покажет пояснение даже
+     * после перезапуска приложения. Флаг одноразовый — после чтения сбрасывается.
      */
     @Nullable
     public String takeRevokeReason() {
@@ -236,7 +201,7 @@ public class SessionStore {
         return reason;
     }
 
-    /** Событие обработано — экран QR уже показан. */
+    /** Событие обработано — экран входа уже показан. */
     public void clearRevokedEvent() {
         revoked.postValue(null);
     }
@@ -246,6 +211,7 @@ public class SessionStore {
             return;
         }
         editor.putString(KEY_USER_ID, user.id)
+                .putString(KEY_LOGIN, user.login)
                 .putString(KEY_DISPLAY_NAME, user.displayName)
                 .putString(KEY_EMAIL, user.email)
                 .putString(KEY_PHONE, user.phone)

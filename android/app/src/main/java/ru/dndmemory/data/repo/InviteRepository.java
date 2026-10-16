@@ -15,9 +15,11 @@ import ru.dndmemory.util.RepoCallback;
 
 /**
  * Приглашения по QR: создание, список, отзыв, публичный предпросмотр и принятие
- * (docs/api.md, раздел 5; docs/roles.md, раздел 3).
+ * (docs/api.md, раздел 5; docs/roles.md). Приглашение строго одноразовое.
  */
 public class InviteRepository {
+
+    private static final int DEFAULT_EXPIRES_HOURS = 168;
 
     private final ApiService api;
     private final AppExecutors exec;
@@ -27,15 +29,16 @@ public class InviteRepository {
         this.exec = exec;
     }
 
-    public void create(String campaignId, String role, @Nullable String linkedEntityId,
-                       int expiresInHours, int maxUses, RepoCallback<InviteDto> callback) {
+    public void create(String campaignId, String role, @Nullable String linkedHeroId,
+                       int expiresInHours, RepoCallback<InviteDto> callback) {
+        int hours = expiresInHours <= 0 ? DEFAULT_EXPIRES_HOURS : expiresInHours;
         exec.io(() -> ApiCall.execute(api.createInvite(campaignId,
-                new CreateInviteRequest(role, linkedEntityId, expiresInHours, maxUses))), callback);
+                new CreateInviteRequest(role, linkedHeroId, hours))), callback);
     }
 
-    public void createDefault(String campaignId, String role, @Nullable String linkedEntityId,
+    public void createDefault(String campaignId, String role, @Nullable String linkedHeroId,
                               RepoCallback<InviteDto> callback) {
-        create(campaignId, role, linkedEntityId, 168, 1, callback);
+        create(campaignId, role, linkedHeroId, DEFAULT_EXPIRES_HOURS, callback);
     }
 
     public void list(String campaignId, RepoCallback<List<InviteDto>> callback) {
@@ -54,6 +57,7 @@ public class InviteRepository {
         exec.io(() -> ApiCall.execute(api.invitePreview(token)), callback);
     }
 
+    /** Принятие приглашения: нужна авторизация (docs/api.md, раздел 5). */
     public void accept(String token, RepoCallback<AcceptInviteResponse> callback) {
         exec.io(() -> ApiCall.execute(api.acceptInvite(token)), callback);
     }

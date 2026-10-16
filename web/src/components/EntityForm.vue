@@ -1,45 +1,89 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { ENTITY_TYPE_LABELS, ENTITY_TYPES, type EntityType } from '@/api/types'
 import { errorMessage, uploadFile } from '@/api'
-import AttrFields from './AttrFields.vue'
+import { OBJECT_CLASSES, OBJECT_CLASS_LABELS, type ObjectClass } from '@/api/types'
 import EntityImage from './EntityImage.vue'
 import MarkupText from './MarkupText.vue'
-import TagInput from './TagInput.vue'
+import { useCampaignStore } from '@/stores/campaign'
 import { useUiStore } from '@/stores/ui'
-import type { EntityFormValues } from '@/types/forms'
+import { emptyHeroItem, type HeroItemFormValue, type ObjectFormValues } from '@/types/forms'
 
 const props = withDefaults(
   defineProps<{
-    modelValue: EntityFormValues
+    modelValue: ObjectFormValues
+    /** Класс объекта: при правке не меняется, при создании выбирается. */
+    objectClass: ObjectClass
     mode?: 'create' | 'edit'
     saving?: boolean
     submitLabel?: string
-    /** Разрешить смену типа (при создании). */
-    allowTypeChange?: boolean
+    /** Разрешить выбор класса (при создании). */
+    allowClassChange?: boolean
+    /** Только чтение для тех, кому герой недоступен. */
+    disabled?: boolean
   }>(),
-  { mode: 'create', saving: false, submitLabel: 'Сохранить', allowTypeChange: true },
+  { mode: 'create', saving: false, submitLabel: 'Сохранить', allowClassChange: true, disabled: false },
 )
 
 const emit = defineEmits<{
-  (event: 'update:modelValue', value: EntityFormValues): void
+  (event: 'update:modelValue', value: ObjectFormValues): void
+  (event: 'update:objectClass', value: ObjectClass): void
   (event: 'submit'): void
   (event: 'cancel'): void
 }>()
 
-const showPreview = ref(false)
-const uploading = ref(false)
+const campaign = useCampaignStore()
 const ui = useUiStore()
 
-const typeLocked = computed(() => props.mode === 'edit' || !props.allowTypeChange)
+const showPreview = ref(false)
+const uploading = ref(false)
 
-function patch(changes: Partial<EntityFormValues>): void {
+const classLocked = computed(() => props.mode === 'edit' || !props.allowClassChange)
+const isHero = computed(() => props.objectClass === 'HERO')
+const isCharacter = computed(() => props.objectClass === 'CHARACTER')
+const isItem = computed(() => props.objectClass === 'ITEM')
+
+/** Игрок героя — участник кампании (`playerUserId`). */
+const playerOptions = computed(() =>
+  campaign.members
+    .filter((member) => member.status !== 'REMOVED')
+    .map((member) => ({ id: member.userId, name: member.displayName })),
+)
+
+function patch(changes: Partial<ObjectFormValues>): void {
   emit('update:modelValue', { ...props.modelValue, ...changes })
 }
 
 function submit(): void {
   emit('submit')
+}
+
+/* ------------------------------ Котомка героя ----------------------------- */
+
+function updateItem(index: number, changes: Partial<HeroItemFormValue>): void {
+  const items = props.modelValue.items.map((item, position) =>
+    position === index ? { ...item, ...changes } : item,
+  )
+  patch({ items })
+}
+
+function addItem(): void {
+  patch({ items: [...props.modelValue.items, emptyHeroItem()] })
+}
+
+function removeItem(index: number): void {
+  patch({ items: props.modelValue.items.filter((_, position) => position !== index) })
+}
+
+/* --------------------------- Ссылки предмета ------------------------------ */
+
+/** Ссылка не более чем на одного владельца: выбор одного очищает другой. */
+function setOwnerHero(value: string): void {
+  patch({ ownerHeroId: value === '' ? null : value, ownerCharacterId: null })
+}
+
+function setOwnerCharacter(value: string): void {
+  patch({ ownerCharacterId: value === '' ? null : value, ownerHeroId: null })
 }
 
 /** Загрузка изображения — только при наличии сети (`architecture.md` §7). */
@@ -65,24 +109,24 @@ async function onFileSelected(event: Event): Promise<void> {
   <form class="stack" @submit.prevent="submit">
     <div class="row" style="align-items: flex-end">
       <div class="field" style="flex: 0 0 190px">
-        <label class="field__label" for="entity-type">Тип объекта</label>
+        <label class="field__label" for="object-class">Класс объекта</label>
         <select
-          id="entity-type"
+          id="object-class"
           class="select"
-          :value="modelValue.type"
-          :disabled="typeLocked"
-          @change="patch({ type: ($event.target as HTMLSelectElement).value as EntityType })"
+          :value="objectClass"
+          :disabled="classLocked"
+          @change="emit('update:objectClass', ($event.target as HTMLSelectElement).value as ObjectClass)"
         >
-          <option v-for="type in ENTITY_TYPES" :key="type" :value="type">
-            {{ ENTITY_TYPE_LABELS[type] }}
+          <option v-for="cls in OBJECT_CLASSES" :key="cls" :value="cls">
+            {{ OBJECT_CLASS_LABELS[cls] }}
           </option>
         </select>
       </div>
 
       <div class="field" style="flex: 1; min-width: 220px">
-        <label class="field__label" for="entity-name">Название</label>
+        <label class="field__label" for="object-name">Название</label>
         <input
-          id="entity-name"
+          id="object-name"
           class="input"
           type="text"
           required
@@ -93,23 +137,191 @@ async function onFileSelected(event: Event): Promise<void> {
       </div>
     </div>
 
-    <div class="field">
-      <label class="field__label" for="entity-summary">Краткое описание</label>
-      <input
-        id="entity-summary"
-        class="input"
-        type="text"
-        :value="modelValue.summary"
-        placeholder="Мэр Фандалина"
-        @input="patch({ summary: ($event.target as HTMLInputElement).value })"
-      />
-      <span class="field__hint">Показывается в списках и в результатах поиска.</span>
-    </div>
+    <!-- Герой: раса, класс, игрок -->
+    <template v-if="isHero">
+      <div class="row" style="align-items: flex-end">
+        <div class="field" style="flex: 1; min-width: 180px">
+          <label class="field__label" for="hero-race">Раса</label>
+          <input
+            id="hero-race"
+            class="input"
+            type="text"
+            :value="modelValue.race"
+            placeholder="Полуэльф"
+            @input="patch({ race: ($event.target as HTMLInputElement).value })"
+          />
+        </div>
+        <div class="field" style="flex: 1; min-width: 180px">
+          <label class="field__label" for="hero-klass">Класс</label>
+          <input
+            id="hero-klass"
+            class="input"
+            type="text"
+            :value="modelValue.klass"
+            placeholder="Следопыт"
+            @input="patch({ klass: ($event.target as HTMLInputElement).value })"
+          />
+        </div>
+        <div class="field" style="flex: 1; min-width: 200px">
+          <label class="field__label" for="hero-player">Игрок</label>
+          <select
+            id="hero-player"
+            class="select"
+            :value="modelValue.playerUserId ?? ''"
+            @change="patch({ playerUserId: ($event.target as HTMLSelectElement).value || null })"
+          >
+            <option value="">не указан</option>
+            <option v-for="player in playerOptions" :key="player.id" :value="player.id">
+              {{ player.name }}
+            </option>
+          </select>
+        </div>
+      </div>
 
-    <div class="field">
-      <label class="field__label" for="entity-tags">Теги</label>
-      <TagInput :model-value="modelValue.tags" @update:model-value="patch({ tags: $event })" />
-    </div>
+      <div class="field">
+        <div class="row row--between">
+          <span class="field__label">Предметы в котомке</span>
+          <button class="btn btn--ghost btn--sm" type="button" @click="addItem">Добавить предмет</button>
+        </div>
+        <p v-if="modelValue.items.length === 0" class="faint">
+          Список пуст. Предмет можно связать с предметом кампании — тогда откроется его карточка.
+        </p>
+        <div v-else class="stack stack--sm">
+          <div v-for="(item, index) in modelValue.items" :key="index" class="row" style="align-items: flex-end">
+            <div class="field" style="flex: 2; min-width: 180px">
+              <label class="field__label" :for="`hero-item-name-${index}`">Название</label>
+              <input
+                :id="`hero-item-name-${index}`"
+                class="input"
+                type="text"
+                :value="item.name"
+                placeholder="Меч справедливости"
+                @input="updateItem(index, { name: ($event.target as HTMLInputElement).value })"
+              />
+            </div>
+            <div class="field" style="flex: 0 0 110px">
+              <label class="field__label" :for="`hero-item-qty-${index}`">Кол-во</label>
+              <input
+                :id="`hero-item-qty-${index}`"
+                class="input"
+                type="number"
+                min="0"
+                :value="item.quantity ?? ''"
+                @input="
+                  updateItem(index, {
+                    quantity:
+                      ($event.target as HTMLInputElement).value === ''
+                        ? null
+                        : Number(($event.target as HTMLInputElement).value),
+                  })
+                "
+              />
+            </div>
+            <div class="field" style="flex: 2; min-width: 180px">
+              <label class="field__label" :for="`hero-item-ref-${index}`">Предмет кампании</label>
+              <select
+                :id="`hero-item-ref-${index}`"
+                class="select"
+                :value="item.itemId ?? ''"
+                @change="updateItem(index, { itemId: ($event.target as HTMLSelectElement).value || null })"
+              >
+                <option value="">по названию</option>
+                <option v-for="option in campaign.items" :key="option.id" :value="option.id">
+                  {{ option.name }}
+                </option>
+              </select>
+            </div>
+            <div class="field" style="flex: 2; min-width: 180px">
+              <label class="field__label" :for="`hero-item-notes-${index}`">Заметки</label>
+              <input
+                :id="`hero-item-notes-${index}`"
+                class="input"
+                type="text"
+                :value="item.notes"
+                placeholder="подарок мэра"
+                @input="updateItem(index, { notes: ($event.target as HTMLInputElement).value })"
+              />
+            </div>
+            <button class="btn btn--ghost btn--sm" type="button" @click="removeItem(index)">Убрать</button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Персонаж (НПС): раса и краткое описание -->
+    <template v-if="isCharacter">
+      <div class="row" style="align-items: flex-end">
+        <div class="field" style="flex: 1; min-width: 180px">
+          <label class="field__label" for="character-race">Раса</label>
+          <input
+            id="character-race"
+            class="input"
+            type="text"
+            :value="modelValue.race"
+            placeholder="Человек"
+            @input="patch({ race: ($event.target as HTMLInputElement).value })"
+          />
+        </div>
+        <div class="field" style="flex: 2; min-width: 220px">
+          <label class="field__label" for="character-short">Краткое описание</label>
+          <input
+            id="character-short"
+            class="input"
+            type="text"
+            :value="modelValue.shortDescription"
+            placeholder="Мэр Фандалина"
+            @input="patch({ shortDescription: ($event.target as HTMLInputElement).value })"
+          />
+        </div>
+      </div>
+      <span class="field__hint">По расе и краткому описанию тоже идёт поиск.</span>
+    </template>
+
+    <!-- Предмет: владелец строкой и необязательная ссылка -->
+    <template v-if="isItem">
+      <div class="field">
+        <label class="field__label" for="item-owner">Владелец</label>
+        <input
+          id="item-owner"
+          class="input"
+          type="text"
+          :value="modelValue.ownerName"
+          placeholder="гильдия воров"
+          @input="patch({ ownerName: ($event.target as HTMLInputElement).value })"
+        />
+        <span class="field__hint">Как написано в мире. Ссылку можно указать ниже — либо на героя, либо на персонажа.</span>
+      </div>
+      <div class="row" style="align-items: flex-end">
+        <div class="field" style="flex: 1; min-width: 200px">
+          <label class="field__label" for="item-owner-hero">Владелец-герой</label>
+          <select
+            id="item-owner-hero"
+            class="select"
+            :value="modelValue.ownerHeroId ?? ''"
+            @change="setOwnerHero(($event.target as HTMLSelectElement).value)"
+          >
+            <option value="">не указан</option>
+            <option v-for="hero in campaign.heroes" :key="hero.id" :value="hero.id">
+              {{ hero.name }}
+            </option>
+          </select>
+        </div>
+        <div class="field" style="flex: 1; min-width: 200px">
+          <label class="field__label" for="item-owner-character">Владелец-персонаж</label>
+          <select
+            id="item-owner-character"
+            class="select"
+            :value="modelValue.ownerCharacterId ?? ''"
+            @change="setOwnerCharacter(($event.target as HTMLSelectElement).value)"
+          >
+            <option value="">не указан</option>
+            <option v-for="character in campaign.characters" :key="character.id" :value="character.id">
+              {{ character.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </template>
 
     <div class="field">
       <span class="field__label">Изображение</span>
@@ -128,23 +340,14 @@ async function onFileSelected(event: Event): Promise<void> {
     </div>
 
     <div class="field">
-      <label class="field__label">Поля по типу</label>
-      <AttrFields
-        :type="modelValue.type"
-        :attrs="modelValue.attrs"
-        @update:attrs="patch({ attrs: $event })"
-      />
-    </div>
-
-    <div class="field">
       <div class="row row--between">
-        <label class="field__label" for="entity-description">Описание</label>
+        <label class="field__label" for="object-description">Описание</label>
         <button class="btn btn--ghost btn--sm" type="button" @click="showPreview = !showPreview">
           {{ showPreview ? 'Скрыть предпросмотр' : 'Предпросмотр разметки' }}
         </button>
       </div>
       <textarea
-        id="entity-description"
+        id="object-description"
         class="textarea textarea--tall"
         :value="modelValue.description"
         placeholder="Связан с [[Лира Ксенофонт|Лиры]] долгом…"
@@ -162,7 +365,11 @@ async function onFileSelected(event: Event): Promise<void> {
 
     <div class="row row--end">
       <button class="btn" type="button" :disabled="saving" @click="emit('cancel')">Отмена</button>
-      <button class="btn btn--primary" type="submit" :disabled="saving || modelValue.name.trim() === ''">
+      <button
+        class="btn btn--primary"
+        type="submit"
+        :disabled="saving || disabled || modelValue.name.trim() === ''"
+      >
         <span v-if="saving" class="spinner" aria-hidden="true" />
         {{ submitLabel }}
       </button>

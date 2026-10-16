@@ -5,12 +5,10 @@ import { RouterView, useRoute } from 'vue-router'
 import { MEMBER_ROLE_LABELS } from '@/api/types'
 import { useCampaignStore } from '@/stores/campaign'
 import { useSyncStore } from '@/stores/sync'
-import { useUiStore } from '@/stores/ui'
 
 const route = useRoute()
 const campaign = useCampaignStore()
 const sync = useSyncStore()
-const ui = useUiStore()
 
 const tabs = [
   { key: 'characters', label: 'Персонажи' },
@@ -35,11 +33,11 @@ const roleLabel = computed(() =>
   campaign.campaign ? MEMBER_ROLE_LABELS[campaign.campaign.myRole] : '',
 )
 
-/** Объекты и пересказы, по которым сервер отклонил правку (`sync.md` §4). */
+/** Объекты и пересказы, по которым сервер отклонил правку (`sync.md` §5). */
 const conflicts = computed(() => [
-  ...campaign.entities
-    .filter((entity) => entity.conflict !== null && !entity.deleted)
-    .map((entity) => ({ id: entity.id, name: entity.name, kind: 'entity' as const })),
+  ...campaign.objects
+    .filter((object) => object.conflict !== null && !object.deleted)
+    .map((object) => ({ id: object.id, name: object.name, kind: 'object' as const })),
   ...campaign.retellings
     .filter((retelling) => retelling.conflict !== null && !retelling.deleted)
     .map((retelling) => ({ id: retelling.id, name: retelling.title, kind: 'retelling' as const })),
@@ -49,15 +47,10 @@ watch(
   campaignId,
   async (id) => {
     if (!id) return
+    // Участники и краткие пересказы приходят в карточке кампании (`api.md` §4),
+    // поэтому отдельных запросов за ними здесь нет.
     await campaign.open(id)
     await sync.start(id)
-    if (ui.online) {
-      try {
-        await campaign.reloadMembers()
-      } catch (error) {
-        console.warn('[dnd-memory] не удалось обновить участников', error)
-      }
-    }
   },
   { immediate: true },
 )
@@ -130,7 +123,7 @@ onBeforeUnmount(() => {
           :key="item.id"
           class="btn btn--sm"
           :to="
-            item.kind === 'entity'
+            item.kind === 'object'
               ? { name: 'entity-detail', params: { campaignId, entityId: item.id } }
               : { name: 'retelling-detail', params: { campaignId, retellingId: item.id } }
           "

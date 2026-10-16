@@ -1,4 +1,4 @@
-import type { MemberRole, Permission, RetellingDto } from '@/api/types'
+import type { MemberRole, ObjectClass, Permission, RetellingDto } from '@/api/types'
 
 /**
  * Локальное зеркало матрицы ролей из `docs/roles.md`.
@@ -12,18 +12,16 @@ export const ROLE_PERMISSIONS: Record<MemberRole, readonly Permission[]> = {
     'invite.create',
     'entity.read',
     'entity.write',
-    'entity.write.own',
     'hero.write',
     'retelling.read',
     'retelling.write',
     'retelling.write.own',
     'retelling.publish',
   ],
+  // Героев ведёт только владелец кампании (`roles.md` §2, правило 2).
   EDITOR_MASTER: [
     'entity.read',
     'entity.write',
-    'entity.write.own',
-    'hero.write',
     'retelling.read',
     'retelling.write',
     'retelling.write.own',
@@ -32,8 +30,6 @@ export const ROLE_PERMISSIONS: Record<MemberRole, readonly Permission[]> = {
   EDITOR_HERO: [
     'entity.read',
     'entity.write',
-    'entity.write.own',
-    'hero.write',
     'retelling.read',
     'retelling.write',
     'retelling.write.own',
@@ -53,13 +49,6 @@ export function hasPermission(
   return permissions.includes(permission)
 }
 
-export interface EntityPermissionContext {
-  /** Тип объекта (`HERO` — герой партии). */
-  type: string
-  id: string
-  createdBy: string
-}
-
 export interface RetellingPermissionContext {
   createdBy: string
 }
@@ -68,68 +57,34 @@ export interface PermissionSubject {
   /** Идентификатор текущего пользователя. */
   userId: string | null
   permissions: readonly string[] | null | undefined
-  /** Герой, привязанный к участнику (`linkedEntityId`) — `roles.md` §1. */
-  linkedEntityId: string | null
-  /** Роль участника: нужна, чтобы отличить «своего героя» от героев партии. */
+  /** Герой, привязанный к участнику (`linkedHeroId`) — `roles.md` §1. */
+  linkedHeroId: string | null
+  /** Роль участника — для подписей интерфейса. */
   role?: MemberRole | null
 }
 
 /**
- * Право писать объекты этого типа: НПС/локации/предметы — `entity.write`,
- * герои — `hero.write` (`roles.md` §2).
+ * Право писать объекты класса (`roles.md` §2): герои — `hero.write`, который есть
+ * только у владельца; персонажи, локации и предметы — `entity.write`.
  */
-export function canWriteEntityType(subject: PermissionSubject, type: string): boolean {
-  if (type === 'HERO') {
+export function canWriteClass(subject: PermissionSubject, objectClass: ObjectClass): boolean {
+  if (objectClass === 'HERO') {
     return hasPermission(subject.permissions, 'hero.write')
   }
   return hasPermission(subject.permissions, 'entity.write')
 }
 
-/**
- * Создание объекта. `EDITOR_HERO` создаёт героя только если своего у него ещё
- * нет — иначе герой партии заводится мастером (`roles.md` §2, правило 2).
- */
-export function canCreateEntity(subject: PermissionSubject, type: string): boolean {
-  if (type === 'HERO') {
-    if (!hasPermission(subject.permissions, 'hero.write')) return false
-    if (subject.role === 'EDITOR_HERO') return subject.linkedEntityId === null
-    return true
-  }
-  return hasPermission(subject.permissions, 'entity.write')
+/** Создание объекта класса — те же права, что и на правку. */
+export function canCreateObject(subject: PermissionSubject, objectClass: ObjectClass): boolean {
+  return canWriteClass(subject, objectClass)
 }
 
-/**
- * Правка объекта (`roles.md` §2, правила 2 и 4):
- * герои — `hero.write`, причём `EDITOR_HERO` только своего героя;
- * остальное — `entity.write` либо авторство при `entity.write.own`.
- */
-export function canEditEntity(
-  subject: PermissionSubject,
-  entity: EntityPermissionContext,
-): boolean {
-  if (entity.type === 'HERO') {
-    if (!hasPermission(subject.permissions, 'hero.write')) return false
-    if (subject.role === 'EDITOR_HERO') {
-      return subject.linkedEntityId !== null && subject.linkedEntityId === entity.id
-    }
-    return true
-  }
-  if (hasPermission(subject.permissions, 'entity.write')) return true
-  if (hasPermission(subject.permissions, 'entity.write.own') && isAuthor(subject, entity.createdBy)) {
-    return true
-  }
-  return false
+export function canEditObject(subject: PermissionSubject, objectClass: ObjectClass): boolean {
+  return canWriteClass(subject, objectClass)
 }
 
-export function canDeleteEntity(
-  subject: PermissionSubject,
-  entity: EntityPermissionContext,
-): boolean {
-  return canEditEntity(subject, entity)
-}
-
-function isAuthor(subject: PermissionSubject, createdBy: string): boolean {
-  return subject.userId !== null && createdBy !== '' && subject.userId === createdBy
+export function canDeleteObject(subject: PermissionSubject, objectClass: ObjectClass): boolean {
+  return canWriteClass(subject, objectClass)
 }
 
 /** Можно ли создать пересказ: `retelling.write` (`roles.md` §2). */
@@ -139,17 +94,20 @@ export function canCreateRetelling(subject: PermissionSubject): boolean {
 
 /**
  * Правка пересказа: автор — при `retelling.write.own`, чужой — только
- * при `retelling.publish` (`api.md` §7, `roles.md` §2, правило 3).
+ * при `retelling.publish` (`api.md` §7, `roles.md` §2, правило 4).
  */
 export function canEditRetelling(
   subject: PermissionSubject,
   retelling: RetellingPermissionContext,
 ): boolean {
   if (hasPermission(subject.permissions, 'retelling.publish')) return true
-  if (hasPermission(subject.permissions, 'retelling.write') && isAuthor(subject, retelling.createdBy)) {
+  if (
+    hasPermission(subject.permissions, 'retelling.write.own') &&
+    isAuthor(subject, retelling.createdBy)
+  ) {
     return true
   }
-  return hasPermission(subject.permissions, 'retelling.write.own') && isAuthor(subject, retelling.createdBy)
+  return hasPermission(subject.permissions, 'retelling.write') && isAuthor(subject, retelling.createdBy)
 }
 
 export function canDeleteRetelling(
@@ -167,9 +125,13 @@ export function canUseAuthorEntity(subject: PermissionSubject, authorEntityId: s
   if (authorEntityId === null) return true
   if (hasPermission(subject.permissions, 'retelling.publish')) return true
   if (hasPermission(subject.permissions, 'entity.write')) return true
-  return subject.linkedEntityId === authorEntityId
+  return subject.linkedHeroId === authorEntityId
 }
 
 export function isOwnRetelling(subject: PermissionSubject, retelling: RetellingDto): boolean {
   return isAuthor(subject, retelling.createdBy)
+}
+
+function isAuthor(subject: PermissionSubject, createdBy: string): boolean {
+  return subject.userId !== null && createdBy !== '' && subject.userId === createdBy
 }

@@ -6,22 +6,30 @@ import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import ru.dndmemory.data.model.EntityLink;
+import ru.dndmemory.data.model.HeroItem;
 
 /**
- * Объект кампании: герой, НПС, локация или предмет.
- * Все четыре типа живут в одной таблице, различия — в {@code attrs}
- * (docs/architecture.md, раздел 2).
+ * Объект кампании: герой, персонаж (НПС), локация или предмет.
+ *
+ * <p>Все четыре класса живут в одной таблице с дискриминатором {@code kind} —
+ * так решил клиент (docs/redesign-v2.md, раздел 2 разрешает и один столбец-признак).
+ * Поля, которых у класса нет, остаются {@code null}: у героя — {@code race},
+ * {@code klass}, {@code playerUserId} и {@code items}; у персонажа — {@code race}
+ * и {@code shortDescription}; у локации своих полей нет; у предмета —
+ * {@code ownerName} и одна из ссылок {@code ownerHeroId}/{@code ownerCharacterId}.
+ *
+ * <p>Пришедший с сервера объект всегда одного класса, поэтому «лишние» поля
+ * локальной записи не заполняются и в push не уходят — тело правки собирается
+ * по классу в {@code Mappers}.
  */
 @Entity(
         tableName = "entities",
         indices = {
                 @Index(value = {"campaignId"}),
-                @Index(value = {"campaignId", "type"}),
+                @Index(value = {"campaignId", "kind"}),
                 @Index(value = {"campaignId", "name"})
         }
 )
@@ -33,21 +41,42 @@ public class EntityRoom {
 
     public String campaignId;
 
-    /** UUID создания: сервер использует его для идемпотентности. */
-    public String clientId;
-
-    /** HERO | NPC | LOCATION | ITEM */
-    public String type;
+    /** HERO | CHARACTER | LOCATION | ITEM */
+    public String kind;
 
     public String name;
-    public String summary;
     public String description;
 
-    public Map<String, String> attrs = new HashMap<>();
-    public List<String> tags = new ArrayList<>();
-    public List<EntityLink> links = new ArrayList<>();
+    // --- герой ---------------------------------------------------------------
+
+    public String race;
+    public String klass;
+
+    /** Кто отыгрывает героя — ссылка на пользователя, необязательна. */
+    public String playerUserId;
+    public String playerName;
+
+    /** Котомка героя: {@code hero_items} приходит внутри DTO героя целиком. */
+    public List<HeroItem> items = new ArrayList<>();
+
+    // --- персонаж (НПС) ------------------------------------------------------
+
+    public String shortDescription;
+
+    // --- предмет -------------------------------------------------------------
+
+    /** Владелец «как написано в мире». */
+    public String ownerName;
+    public String ownerHeroId;
+    public String ownerHeroName;
+    public String ownerCharacterId;
+    public String ownerCharacterName;
+
+    // --- общее ---------------------------------------------------------------
 
     public String imageFileId;
+
+    public List<EntityLink> links = new ArrayList<>();
 
     public String createdBy;
     public String updatedBy;
@@ -69,9 +98,5 @@ public class EntityRoom {
 
     public boolean hasConflict() {
         return conflictJson != null && !conflictJson.isEmpty();
-    }
-
-    public String attr(String key) {
-        return attrs == null ? null : attrs.get(key);
     }
 }

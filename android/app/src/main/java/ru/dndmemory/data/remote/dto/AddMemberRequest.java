@@ -5,11 +5,11 @@ public class AddMemberRequest {
 
     public String email;
     public String role;
-    public String linkedEntityId;
+    public String linkedHeroId;
 
-    public AddMemberRequest(String email, String role, String linkedEntityId) {
+    public AddMemberRequest(String email, String role, String linkedHeroId) {
         this.email = email;
         this.role = role;
-        this.linkedEntityId = linkedEntityId;
+        this.linkedHeroId = linkedHeroId;
     }
 }

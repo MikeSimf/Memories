@@ -7,22 +7,29 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/** Тип объекта кампании (docs/api.md, раздел 2). */
+/**
+ * Класс объекта кампании (docs/api.md, раздел 2): {@code HERO}, {@code CHARACTER},
+ * {@code LOCATION}, {@code ITEM}. У каждого класса свой набор REST-эндпоинтов
+ * и своё значение {@code objectType} в журнале синхронизации.
+ */
 public enum EntityType {
     HERO,
-    NPC,
+    CHARACTER,
     LOCATION,
     ITEM;
 
-    public static final List<EntityType> ALL = Arrays.asList(HERO, NPC, LOCATION, ITEM);
+    public static final List<EntityType> ALL = Arrays.asList(HERO, CHARACTER, LOCATION, ITEM);
 
-    /** Значения для запроса {@code /search?types=...}. */
-    public static final String SEARCH_TYPES = "HERO,NPC,LOCATION,ITEM,RETELLING";
+    /** Значения для запроса {@code /search?kinds=...}. */
+    public static final String SEARCH_KINDS = "HERO,CHARACTER,LOCATION,ITEM,RETELLING";
 
-    /** Вкладка «Персонажи»: герои и НПС вместе (docs/api.md, раздел 6). */
-    public static final String CHARACTERS = "HERO,NPC";
+    /**
+     * Вкладка «Персонажи»: герои и персонажи (НПС) вместе, различаются пометкой
+     * в списке (docs/redesign-v2.md, раздел 5).
+     */
+    public static final String CHARACTERS = "HERO,CHARACTER";
 
-    /** Регистрация в списке: 1 получатель, к которому применяется права {@code hero.write}. */
+    /** Псевдо-класс поиска: пересказы живут отдельной таблицей. */
     public static final String RETELLING = "RETELLING";
 
     @Nullable
@@ -38,13 +45,15 @@ public enum EntityType {
         return null;
     }
 
-    public static EntityType fromOrNpc(@Nullable String raw) {
+    /** Неизвестный или пустой класс трактуем как персонажа — самый безопасный вариант. */
+    @NonNull
+    public static EntityType fromOrCharacter(@Nullable String raw) {
         EntityType t = from(raw);
-        return t == null ? NPC : t;
+        return t == null ? CHARACTER : t;
     }
 
     /**
-     * Разбор строки фильтра {@code types=HERO,NPC} в список известных типов.
+     * Разбор строки фильтра {@code kinds=HERO,CHARACTER} в список известных классов.
      * Пустая строка и мусор дают пустой список — это значит «без фильтра».
      */
     @NonNull
@@ -62,12 +71,12 @@ public enum EntityType {
         return out;
     }
 
-    /** Тег вкладки: имя типа, которым создаётся объект кнопкой «Добавить». */
+    /** Класс, которым создаётся объект кнопкой «Добавить» на этой вкладке. */
     @NonNull
     public static String createTypeFor(@Nullable String csv) {
         List<String> types = parseList(csv);
-        if (types.isEmpty() || types.contains(NPC.name())) {
-            return NPC.name();
+        if (types.isEmpty() || types.contains(CHARACTER.name())) {
+            return CHARACTER.name();
         }
         return types.get(0);
     }
@@ -76,7 +85,7 @@ public enum EntityType {
         return this == HERO;
     }
 
-    /** Герои партии правятся отдельным правом {@code hero.write}. */
+    /** Героев ведёт только владелец кампании — право {@code hero.write}. */
     public boolean requiresHeroPermission() {
         return this == HERO;
     }

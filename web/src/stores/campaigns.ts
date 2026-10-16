@@ -13,8 +13,12 @@ import {
   clearCampaignData,
   deleteCampaignRecord,
   getCampaignRecord,
+  getRetelling,
   listCampaignRecords,
+  memberFromDto,
   putCampaignRecord,
+  putMembers,
+  putRetelling,
   type CampaignRecord,
 } from '@/db'
 import { isOnline } from '@/sync/engine'
@@ -56,7 +60,17 @@ export const useCampaignsStore = defineStore('campaigns', () => {
           }),
         )
       }
-      await Promise.all(records.map((record) => putCampaignRecord(record)))
+      // Список кампаний краткий: краткие пересказы и участники сохраняем из кэша.
+      await Promise.all(
+        records.map(async (record) => {
+          const previous = await getCampaignRecord(record.id)
+          await putCampaignRecord({
+            ...record,
+            members: previous?.members ?? [],
+            retellingBriefs: previous?.retellingBriefs ?? [],
+          })
+        }),
+      )
       items.value = records.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       loadedFromCache.value = false
     } catch (caught) {
@@ -68,7 +82,11 @@ export const useCampaignsStore = defineStore('campaigns', () => {
     }
   }
 
-  /** Детали кампании: роль и права текущего пользователя (`api.md` §4). */
+  /**
+   * Детали кампании (`api.md` §4): роль, права, счётчики, а также краткие списки
+   * участников и пересказов. Участников сразу кладём в локальное хранилище —
+   * интерфейсу не нужен отдельный запрос за ними.
+   */
   async function loadDetails(campaignId: string): Promise<CampaignRecord | null> {
     try {
       const dto: CampaignDto = await campaignsApi.get(campaignId)
@@ -81,6 +99,39 @@ export const useCampaignsStore = defineStore('campaigns', () => {
           latestRevision: dto.latestRevision ?? 0,
         },
       })
+      // Участников обновляем точечно: список в карточке кампании краткий, поэтому
+      // удалять по нему локальные записи нельзя (удаление приходит журналом sync).
+      if (record.members.length > 0) {
+        await putMembers(record.members.map((member) => memberFromDto(campaignId, member)))
+      }
+      // Краткие пересказы из карточки кампании становятся локальными «заглушками»:
+      // список открывается без отдельного запроса, а полный текст придёт синхронизацией.
+      for (const brief of record.retellingBriefs) {
+        const existing = await getRetelling(brief.id)
+        if (existing) continue
+        await putRetelling({
+          id: brief.id,
+          campaignId,
+          clientId: brief.id,
+          title: brief.title,
+          body: '',
+          authorEntityId: null,
+          authorEntityName: null,
+          sessionDate: brief.sessionDate,
+          status: 'PUBLISHED',
+          links: [],
+          revision: brief.revision,
+          createdBy: '',
+          createdByName: '',
+          updatedBy: '',
+          updatedByName: '',
+          createdAt: brief.updatedAt,
+          updatedAt: brief.updatedAt,
+          deleted: false,
+          dirty: 0,
+          conflict: null,
+        })
+      }
       await putCampaignRecord(record)
       return record
     } catch (caught) {
@@ -119,7 +170,7 @@ export const useCampaignsStore = defineStore('campaigns', () => {
         latestRevision: dto.latestRevision ?? previous?.latestRevision ?? 0,
       },
     })
-    await putCampaignRecord(record)
+    await putCampaignRecord({ ...record, members: previous?.members ?? [], retellingBriefs: previous?.retellingBriefs ?? [] })
     items.value = items.value.map((item) => (item.id === record.id ? record : item))
   }
 

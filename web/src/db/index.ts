@@ -1,5 +1,5 @@
 export * from './schema'
-export * from './entities'
+export * from './objects'
 export * from './retellings'
 export * from './members'
 export * from './campaigns'

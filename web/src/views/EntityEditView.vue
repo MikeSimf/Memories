@@ -3,12 +3,12 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { errorMessage } from '@/api'
-import { ENTITY_TYPE_PLURALS, ENTITY_TYPES, type EntityType } from '@/api/types'
+import { OBJECT_CLASS_LABELS, OBJECT_CLASSES, type ObjectClass } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import EntityForm from '@/components/EntityForm.vue'
 import { useCampaignStore } from '@/stores/campaign'
 import { useUiStore } from '@/stores/ui'
-import { emptyEntityForm, type EntityFormValues } from '@/types/forms'
+import { emptyObjectForm, type ObjectFormValues } from '@/types/forms'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,39 +17,44 @@ const ui = useUiStore()
 
 const entityId = computed(() => (typeof route.params.entityId === 'string' ? route.params.entityId : ''))
 const isEdit = computed(() => entityId.value !== '')
-const existing = computed(() => (isEdit.value ? campaign.entityById(entityId.value) : null))
+const existing = computed(() => (isEdit.value ? campaign.objectById(entityId.value) : null))
 
 const saving = ref(false)
-const form = ref<EntityFormValues>(initialForm())
+/** Класс объекта: при создании выбирается, при правке берётся у самой записи. */
+const objectClass = ref<ObjectClass>(initialClass())
+const form = ref<ObjectFormValues>(emptyObjectForm())
 
-function initialForm(): EntityFormValues {
-  const typeParam = route.query.type
-  const type =
-    typeof typeParam === 'string' && (ENTITY_TYPES as readonly string[]).includes(typeParam)
-      ? (typeParam as EntityType)
-      : 'NPC'
-  const name = typeof route.query.name === 'string' ? route.query.name : ''
-  return emptyEntityForm(type, name)
+function initialClass(): ObjectClass {
+  const fromQuery = route.query.class
+  if (typeof fromQuery === 'string' && (OBJECT_CLASSES as readonly string[]).includes(fromQuery)) {
+    return fromQuery as ObjectClass
+  }
+  return 'CHARACTER'
 }
 
-function tabForType(type: EntityType): string {
-  switch (type) {
-    // Герои и НПС живут на одной вкладке «Персонажи».
-    case 'HERO':
-    case 'NPC':
-      return 'characters'
-    case 'LOCATION':
-      return 'locations'
-    default:
-      return 'items'
-  }
+function tabForClass(cls: ObjectClass): string {
+  // Герои и НПС живут на одной вкладке «Персонажи».
+  if (cls === 'HERO' || cls === 'CHARACTER') return 'characters'
+  if (cls === 'LOCATION') return 'locations'
+  return 'items'
 }
 
 watch(
   existing,
-  (entity) => {
-    if (entity) {
-      form.value = campaign.entityFormValues(entity)
+  (object) => {
+    if (!object) return
+    objectClass.value = object.objectType
+    form.value = campaign.objectFormValues(object)
+  },
+  { immediate: true },
+)
+
+/** Имя из ссылки `[[…]]` — предзаполняем новую запись (`missing-names`). */
+watch(
+  () => route.query.name,
+  (value) => {
+    if (!isEdit.value && typeof value === 'string' && form.value.name === '') {
+      form.value = { ...form.value, name: value }
     }
   },
   { immediate: true },
@@ -59,7 +64,7 @@ const allowed = computed(() => {
   if (isEdit.value) {
     return existing.value ? campaign.canEdit(existing.value) : false
   }
-  return campaign.canCreate(form.value.type)
+  return campaign.canCreate(objectClass.value)
 })
 
 function back(): void {
@@ -72,7 +77,7 @@ function back(): void {
   }
   void router.push({
     name: 'campaign-tab',
-    params: { campaignId: campaign.campaignId, tab: tabForType(form.value.type) },
+    params: { campaignId: campaign.campaignId, tab: tabForClass(objectClass.value) },
   })
 }
 
@@ -80,7 +85,7 @@ async function submit(): Promise<void> {
   saving.value = true
   try {
     if (isEdit.value && existing.value) {
-      const updated = await campaign.updateEntity(existing.value.id, form.value)
+      const updated = await campaign.updateObject(existing.value.id, form.value)
       if (updated) {
         ui.pushToast('success', 'Изменения сохранены на устройстве')
         await router.push({
@@ -89,7 +94,7 @@ async function submit(): Promise<void> {
         })
       }
     } else {
-      const created = await campaign.createEntity(form.value)
+      const created = await campaign.createObject(objectClass.value, form.value)
       ui.pushToast('success', 'Объект создан и уйдёт на сервер при синхронизации')
       await router.push({
         name: 'entity-detail',
@@ -118,9 +123,7 @@ async function submit(): Promise<void> {
     <EmptyState
       v-if="!allowed"
       title="Недостаточно прав"
-      :hint="`Для этого действия нужно право на изменение объектов. Ваша роль не позволяет ${
-        isEdit ? 'править' : 'создавать'
-      } запись этого типа.`"
+      :hint="`Ваша роль не позволяет ${isEdit ? 'править' : 'создавать'} запись этого класса. Героев партии ведёт только владелец кампании.`"
     >
       <button class="btn" type="button" @click="back">Назад</button>
     </EmptyState>
@@ -136,9 +139,10 @@ async function submit(): Promise<void> {
     <div v-else class="card">
       <EntityForm
         v-model="form"
+        v-model:object-class="objectClass"
         :mode="isEdit ? 'edit' : 'create'"
         :saving="saving"
-        :submit-label="isEdit ? 'Сохранить изменения' : `Создать: ${ENTITY_TYPE_PLURALS[form.type].toLowerCase()}`"
+        :submit-label="isEdit ? 'Сохранить изменения' : `Создать: ${OBJECT_CLASS_LABELS[objectClass].toLowerCase()}`"
         @submit="submit"
         @cancel="back"
       />

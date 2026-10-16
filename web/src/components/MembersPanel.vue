@@ -22,14 +22,13 @@ const ui = useUiStore()
 const addOpen = ref(false)
 const email = ref('')
 const role = ref<MemberRole>('EDITOR_HERO')
-const linkedEntityId = ref<string | null>(null)
+const linkedHeroId = ref<string | null>(null)
 const busy = ref(false)
 const createdInvite = ref<InviteDto | null>(null)
 const qrDataUrl = ref<string | null>(null)
 
 const canManage = computed(() => campaign.canManageMembers)
 const members = computed(() => campaign.members.filter((member) => member.status !== 'REMOVED'))
-const heroTypeList = ['HERO'] as const
 
 async function submitAdd(): Promise<void> {
   if (email.value.trim() === '') return
@@ -38,11 +37,11 @@ async function submitAdd(): Promise<void> {
     const response = await campaign.addMember({
       email: email.value.trim(),
       role: role.value,
-      linkedEntityId: linkedEntityId.value,
+      linkedHeroId: linkedHeroId.value,
     })
     addOpen.value = false
     email.value = ''
-    linkedEntityId.value = null
+    linkedHeroId.value = null
     if (response.invite) {
       createdInvite.value = response.invite
       qrDataUrl.value = await generateQrDataUrl(response.invite.url)
@@ -139,8 +138,8 @@ async function copy(text: string): Promise<void> {
             </span>
           </div>
           <div class="faint">{{ member.email }}</div>
-          <div v-if="member.linkedEntityName" class="faint">
-            герой: {{ member.linkedEntityName }}
+          <div v-if="member.linkedHeroName" class="faint">
+            герой: {{ member.linkedHeroName }}
           </div>
         </div>
 
@@ -157,8 +156,8 @@ async function copy(text: string): Promise<void> {
             </option>
           </select>
           <EntityPicker
-            :model-value="member.linkedEntityId"
-            :types="[...heroTypeList]"
+            :model-value="member.linkedHeroId"
+            :classes="['HERO']"
             empty-label="— без героя —"
             @update:model-value="changeHero(member.id, $event)"
           />
@@ -195,8 +194,11 @@ async function copy(text: string): Promise<void> {
         </div>
         <div class="field">
           <label class="field__label">Связь с героем</label>
-          <EntityPicker v-model="linkedEntityId" :types="[...heroTypeList]" empty-label="— без героя —" />
-          <span class="field__hint">Для роли «Игрок» даёт права на своего героя.</span>
+          <EntityPicker v-model="linkedHeroId" :classes="['HERO']" empty-label="— без героя —" />
+          <span class="field__hint">
+            Привязка нужна интерфейсу — видно, кто за кого играет. На права она не влияет:
+            героев ведёт только владелец кампании.
+          </span>
         </div>
         <div class="modal__actions">
           <button class="btn" type="button" @click="addOpen = false">Отмена</button>

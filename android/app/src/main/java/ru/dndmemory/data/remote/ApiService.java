@@ -18,28 +18,25 @@ import ru.dndmemory.data.remote.dto.AcceptInviteResponse;
 import ru.dndmemory.data.remote.dto.AddMemberRequest;
 import ru.dndmemory.data.remote.dto.AddMemberResponse;
 import ru.dndmemory.data.remote.dto.AuthResponse;
-import ru.dndmemory.data.remote.dto.BacklinkDto;
 import ru.dndmemory.data.remote.dto.CampaignDto;
+import ru.dndmemory.data.remote.dto.CharacterDto;
 import ru.dndmemory.data.remote.dto.CreateCampaignRequest;
-import ru.dndmemory.data.remote.dto.CreateDeviceEnrollmentRequest;
 import ru.dndmemory.data.remote.dto.CreateInviteRequest;
 import ru.dndmemory.data.remote.dto.CreateRetellingRequest;
-import ru.dndmemory.data.remote.dto.DeviceDto;
-import ru.dndmemory.data.remote.dto.EntityDto;
-import ru.dndmemory.data.remote.dto.EnrollRequest;
-import ru.dndmemory.data.remote.dto.EnrollResponse;
 import ru.dndmemory.data.remote.dto.FileDto;
 import ru.dndmemory.data.remote.dto.HealthDto;
+import ru.dndmemory.data.remote.dto.HeroDto;
 import ru.dndmemory.data.remote.dto.InviteDto;
 import ru.dndmemory.data.remote.dto.InvitePreviewDto;
+import ru.dndmemory.data.remote.dto.ItemDto;
+import ru.dndmemory.data.remote.dto.LocationDto;
 import ru.dndmemory.data.remote.dto.LoginRequest;
 import ru.dndmemory.data.remote.dto.MemberDto;
-import ru.dndmemory.data.remote.dto.OAuthCallbackRequest;
 import ru.dndmemory.data.remote.dto.PatchCampaignRequest;
 import ru.dndmemory.data.remote.dto.PatchMeRequest;
 import ru.dndmemory.data.remote.dto.PatchMemberRequest;
 import ru.dndmemory.data.remote.dto.PatchRetellingRequest;
-import ru.dndmemory.data.remote.dto.ProvidersResponse;
+import ru.dndmemory.data.remote.dto.PasswordResetRequest;
 import ru.dndmemory.data.remote.dto.PullResponse;
 import ru.dndmemory.data.remote.dto.PushRequest;
 import ru.dndmemory.data.remote.dto.PushResponse;
@@ -54,7 +51,7 @@ import ru.dndmemory.data.remote.dto.TokenPairDto;
 import ru.dndmemory.data.remote.dto.UserDto;
 import ru.dndmemory.data.remote.dto.VersionDto;
 
-/** Полный набор эндпоинтов docs/api.md. Базовый путь — {@code /api}. */
+/** Полный набор эндпоинтов docs/api.md (v2). Базовый путь — {@code /api}. */
 public interface ApiService {
 
     // --- Служебные (docs/api.md, раздел 11) --------------------------------
@@ -65,7 +62,7 @@ public interface ApiService {
     @GET("api/version")
     Call<VersionDto> version();
 
-    // --- Аутентификация (раздел 3) -----------------------------------------
+    // --- Аутентификация: только логин и пароль (раздел 3) -------------------
 
     @POST("api/auth/register")
     Call<AuthResponse> register(@Body RegisterRequest body);
@@ -79,29 +76,18 @@ public interface ApiService {
     @POST("api/auth/logout")
     Call<Void> logout(@Body RefreshRequest body);
 
+    /** Ответ всегда {@code 202}: по нему нельзя узнать, есть ли такой адрес. */
+    @POST("api/auth/password-reset/request")
+    Call<Void> requestPasswordReset(@Body PasswordResetRequest body);
+
     @GET("api/me")
     Call<UserDto> me();
 
     @PATCH("api/me")
     Call<UserDto> patchMe(@Body PatchMeRequest body);
 
-    /** Задать или сменить пароль: после этого работает вход в веб-версию. */
     @POST("api/me/password")
     Call<Void> setPassword(@Body SetPasswordRequest body);
-
-    /**
-     * Шаг телефона при регистрации устройства (docs/api.md, раздел 3.1).
-     * Единственный эндпоинт, кроме входа и {@code /health}, доступный без авторизации.
-     */
-    @POST("api/devices/enroll")
-    Call<EnrollResponse> enrollDevice(@Body EnrollRequest body);
-
-    @GET("api/auth/providers")
-    Call<ProvidersResponse> providers();
-
-    @POST("api/auth/oauth/{provider}/callback")
-    Call<AuthResponse> oauthCallback(@Path("provider") String provider,
-                                     @Body OAuthCallbackRequest body);
 
     // --- Кампании (раздел 4) -----------------------------------------------
 
@@ -145,20 +131,6 @@ public interface ApiService {
     Call<InviteDto> createInvite(@Path("id") String campaignId,
                                  @Body CreateInviteRequest body);
 
-    /** Выпуск QR-кода для регистрации устройства (docs/api.md, раздел 3.1). */
-    @POST("api/campaigns/{id}/devices/enrollments")
-    Call<InviteDto> createDeviceEnrollment(@Path("id") String campaignId,
-                                           @Body CreateDeviceEnrollmentRequest body);
-
-    /** Устройства кампании: кто получил доступ и когда заходил последний раз. */
-    @GET("api/campaigns/{id}/devices")
-    Call<List<DeviceDto>> devices(@Path("id") String campaignId);
-
-    /** Отзыв устройства: его сессии гасятся, участие в кампании сохраняется. */
-    @DELETE("api/campaigns/{id}/devices/{deviceId}")
-    Call<Void> revokeDevice(@Path("id") String campaignId,
-                            @Path("deviceId") String deviceId);
-
     @GET("api/campaigns/{id}/invites")
     Call<List<InviteDto>> invites(@Path("id") String campaignId);
 
@@ -173,40 +145,105 @@ public interface ApiService {
     @POST("api/invites/{token}/accept")
     Call<AcceptInviteResponse> acceptInvite(@Path("token") String token);
 
-    // --- Объекты (раздел 6) -----------------------------------------------
+    // --- Герои (раздел 6): создаёт, правит и удаляет только владелец --------
 
-    /**
-     * Список объектов кампании. {@code types} — фильтр по видам, можно несколько:
-     * {@code HERO,NPC} (docs/api.md, раздел 6).
-     */
-    @GET("api/campaigns/{id}/entities")
-    Call<List<EntityDto>> entities(@Path("id") String campaignId,
-                                   @Query("types") String types,
-                                   @Query("q") String query,
-                                   @Query("updatedSince") String updatedSince,
-                                   @Query("limit") Integer limit,
-                                   @Query("offset") Integer offset);
+    @GET("api/campaigns/{id}/heroes")
+    Call<List<HeroDto>> heroes(@Path("id") String campaignId,
+                               @Query("q") String query,
+                               @Query("updatedSince") String updatedSince,
+                               @Query("limit") Integer limit,
+                               @Query("offset") Integer offset);
 
-    @POST("api/campaigns/{id}/entities")
-    Call<EntityDto> createEntity(@Path("id") String campaignId, @Body EntityDto body);
+    @POST("api/campaigns/{id}/heroes")
+    Call<HeroDto> createHero(@Path("id") String campaignId, @Body HeroDto body);
 
-    @GET("api/campaigns/{id}/entities/{entityId}")
-    Call<EntityDto> entity(@Path("id") String campaignId,
-                           @Path("entityId") String entityId);
+    @GET("api/campaigns/{id}/heroes/{heroId}")
+    Call<HeroDto> hero(@Path("id") String campaignId, @Path("heroId") String heroId);
 
-    @PATCH("api/campaigns/{id}/entities/{entityId}")
-    Call<EntityDto> patchEntity(@Path("id") String campaignId,
-                                @Path("entityId") String entityId,
-                                @Header("If-Match") Integer ifMatchRevision,
-                                @Body EntityDto body);
+    @PATCH("api/campaigns/{id}/heroes/{heroId}")
+    Call<HeroDto> patchHero(@Path("id") String campaignId, @Path("heroId") String heroId,
+                            @Header("If-Match") Integer ifMatchRevision,
+                            @Body HeroDto body);
 
-    @DELETE("api/campaigns/{id}/entities/{entityId}")
-    Call<Void> deleteEntity(@Path("id") String campaignId,
-                            @Path("entityId") String entityId);
+    @DELETE("api/campaigns/{id}/heroes/{heroId}")
+    Call<Void> deleteHero(@Path("id") String campaignId, @Path("heroId") String heroId);
 
-    @GET("api/campaigns/{id}/entities/{entityId}/backlinks")
-    Call<List<BacklinkDto>> backlinks(@Path("id") String campaignId,
-                                      @Path("entityId") String entityId);
+    // --- Персонажи (НПС) ---------------------------------------------------
+
+    @GET("api/campaigns/{id}/characters")
+    Call<List<CharacterDto>> characters(@Path("id") String campaignId,
+                                        @Query("q") String query,
+                                        @Query("updatedSince") String updatedSince,
+                                        @Query("limit") Integer limit,
+                                        @Query("offset") Integer offset);
+
+    @POST("api/campaigns/{id}/characters")
+    Call<CharacterDto> createCharacter(@Path("id") String campaignId,
+                                       @Body CharacterDto body);
+
+    @GET("api/campaigns/{id}/characters/{characterId}")
+    Call<CharacterDto> character(@Path("id") String campaignId,
+                                 @Path("characterId") String characterId);
+
+    @PATCH("api/campaigns/{id}/characters/{characterId}")
+    Call<CharacterDto> patchCharacter(@Path("id") String campaignId,
+                                      @Path("characterId") String characterId,
+                                      @Header("If-Match") Integer ifMatchRevision,
+                                      @Body CharacterDto body);
+
+    @DELETE("api/campaigns/{id}/characters/{characterId}")
+    Call<Void> deleteCharacter(@Path("id") String campaignId,
+                               @Path("characterId") String characterId);
+
+    // --- Локации -----------------------------------------------------------
+
+    @GET("api/campaigns/{id}/locations")
+    Call<List<LocationDto>> locations(@Path("id") String campaignId,
+                                      @Query("q") String query,
+                                      @Query("updatedSince") String updatedSince,
+                                      @Query("limit") Integer limit,
+                                      @Query("offset") Integer offset);
+
+    @POST("api/campaigns/{id}/locations")
+    Call<LocationDto> createLocation(@Path("id") String campaignId,
+                                     @Body LocationDto body);
+
+    @GET("api/campaigns/{id}/locations/{locationId}")
+    Call<LocationDto> location(@Path("id") String campaignId,
+                               @Path("locationId") String locationId);
+
+    @PATCH("api/campaigns/{id}/locations/{locationId}")
+    Call<LocationDto> patchLocation(@Path("id") String campaignId,
+                                    @Path("locationId") String locationId,
+                                    @Header("If-Match") Integer ifMatchRevision,
+                                    @Body LocationDto body);
+
+    @DELETE("api/campaigns/{id}/locations/{locationId}")
+    Call<Void> deleteLocation(@Path("id") String campaignId,
+                              @Path("locationId") String locationId);
+
+    // --- Предметы ----------------------------------------------------------
+
+    @GET("api/campaigns/{id}/items")
+    Call<List<ItemDto>> items(@Path("id") String campaignId,
+                              @Query("q") String query,
+                              @Query("updatedSince") String updatedSince,
+                              @Query("limit") Integer limit,
+                              @Query("offset") Integer offset);
+
+    @POST("api/campaigns/{id}/items")
+    Call<ItemDto> createItem(@Path("id") String campaignId, @Body ItemDto body);
+
+    @GET("api/campaigns/{id}/items/{itemId}")
+    Call<ItemDto> item(@Path("id") String campaignId, @Path("itemId") String itemId);
+
+    @PATCH("api/campaigns/{id}/items/{itemId}")
+    Call<ItemDto> patchItem(@Path("id") String campaignId, @Path("itemId") String itemId,
+                            @Header("If-Match") Integer ifMatchRevision,
+                            @Body ItemDto body);
+
+    @DELETE("api/campaigns/{id}/items/{itemId}")
+    Call<Void> deleteItem(@Path("id") String campaignId, @Path("itemId") String itemId);
 
     // --- Пересказы (раздел 7) ---------------------------------------------
 
@@ -240,7 +277,7 @@ public interface ApiService {
     @GET("api/campaigns/{id}/search")
     Call<SearchResponse> search(@Path("id") String campaignId,
                                 @Query("q") String query,
-                                @Query("types") String types,
+                                @Query("kinds") String kinds,
                                 @Query("limit") Integer limit);
 
     // --- Синхронизация (раздел 9, docs/sync.md) ---------------------------
@@ -248,7 +285,8 @@ public interface ApiService {
     @GET("api/campaigns/{id}/sync/changes")
     Call<PullResponse> pullChanges(@Path("id") String campaignId,
                                    @Query("since") long since,
-                                   @Query("limit") int limit);
+                                   @Query("limit") int limit,
+                                   @Query("clientId") String clientId);
 
     @POST("api/campaigns/{id}/sync/changes")
     Call<PushResponse> pushChanges(@Path("id") String campaignId,

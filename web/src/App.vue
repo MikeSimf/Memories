@@ -9,7 +9,7 @@ import { useAuthStore } from '@/stores/auth'
 const route = useRoute()
 const auth = useAuthStore()
 
-/** Экраны входа, OAuth и приглашения рисуются без общей шапки. */
+/** Экраны входа, сброса пароля и приглашения рисуются без общей шапки. */
 const bare = computed(() => route.meta.bare === true)
 const narrow = computed(() => route.meta.narrow === true)
 </script>

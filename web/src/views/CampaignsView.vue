@@ -20,6 +20,8 @@ const title = ref('')
 const description = ref('')
 const creating = ref(false)
 const scannerOpen = ref(false)
+const joinOpen = ref(false)
+const joinToken = ref('')
 
 onMounted(() => {
   void campaigns.load()
@@ -64,6 +66,18 @@ function onQrDetected(value: string): void {
   void router.push({ name: 'join', params: { token } })
 }
 
+/** Присоединение по коду приглашения: играет ту же роль, что и QR (`/join/:token`). */
+async function joinByCode(): Promise<void> {
+  const token = extractToken(joinToken.value)
+  if (!token) {
+    ui.pushToast('warning', 'Проверьте код приглашения')
+    return
+  }
+  joinOpen.value = false
+  joinToken.value = ''
+  await router.push({ name: 'join', params: { token } })
+}
+
 const roleLabel = (role: MemberRole): string => MEMBER_ROLE_LABELS[role]
 const hasOfflineData = computed(() => campaigns.loadedFromCache)
 </script>
@@ -78,6 +92,7 @@ const hasOfflineData = computed(() => campaigns.loadedFromCache)
           <template v-if="hasOfflineData"> · данные с устройства</template>
         </div>
       </div>
+      <button class="btn" type="button" @click="joinOpen = true">Присоединиться по коду</button>
       <button class="btn" type="button" @click="scannerOpen = true">Присоединиться по QR</button>
       <button class="btn btn--primary" type="button" @click="createOpen = true">Новая кампания</button>
     </div>
@@ -148,6 +163,31 @@ const hasOfflineData = computed(() => campaigns.loadedFromCache)
             <span v-if="creating" class="spinner" aria-hidden="true" />
             Создать
           </button>
+        </div>
+      </form>
+    </BaseModal>
+
+    <BaseModal :open="joinOpen" title="Присоединиться по коду" @close="joinOpen = false">
+      <form class="stack" @submit.prevent="joinByCode">
+        <div class="field">
+          <label class="field__label" for="join-token">Код приглашения</label>
+          <input
+            id="join-token"
+            v-model="joinToken"
+            class="input token-code"
+            type="text"
+            autocapitalize="characters"
+            spellcheck="false"
+            maxlength="8"
+            placeholder="7F3K9Q2M"
+          />
+          <span class="field__hint">
+            Восемь символов из QR-кода или ссылки приглашения. Приглашение одноразовое.
+          </span>
+        </div>
+        <div class="modal__actions">
+          <button class="btn" type="button" @click="joinOpen = false">Отмена</button>
+          <button class="btn btn--primary" type="submit">Открыть приглашение</button>
         </div>
       </form>
     </BaseModal>

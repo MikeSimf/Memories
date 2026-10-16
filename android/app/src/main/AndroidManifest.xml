@@ -36,32 +36,17 @@
             </intent-filter>
         </activity>
 
-        <!-- Основной вход: регистрация устройства по QR-коду мастера -->
-        <activity
-            android:name=".ui.auth.EnrollActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-
-        <!-- Вторичный вход: почта/телефон и пароль, OAuth через Custom Tabs -->
+        <!-- Вход: только логин и пароль -->
         <activity
             android:name=".ui.auth.AuthActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- Deep link dndmemory://oauth — возврат из Custom Tab -->
+        <!-- Сброс пароля: поле почты, ссылку передают администратору -->
         <activity
-            android:name=".ui.auth.OAuthCallbackActivity"
-            android:exported="true"
-            android:launchMode="singleTask">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:host="oauth"
-                    android:scheme="dndmemory" />
-            </intent-filter>
-        </activity>
+            android:name=".ui.auth.PasswordResetActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <!-- Deep link dndmemory://join?token=... -->
         <activity

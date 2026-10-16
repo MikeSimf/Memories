@@ -4,8 +4,8 @@ import type { MemberDto } from '@/api/types'
 export function memberFromDto(campaignId: string, dto: MemberDto): MemberRecord {
   return {
     ...dto,
-    linkedEntityId: dto.linkedEntityId ?? null,
-    linkedEntityName: dto.linkedEntityName ?? null,
+    linkedHeroId: dto.linkedHeroId ?? null,
+    linkedHeroName: dto.linkedHeroName ?? null,
     campaignId,
     cachedAt: nowIso(),
   }

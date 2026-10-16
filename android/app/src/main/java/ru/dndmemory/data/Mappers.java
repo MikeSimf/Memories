@@ -1,15 +1,21 @@
 package ru.dndmemory.data;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
+import androidx.annotation.Nullable;
 import ru.dndmemory.data.local.entity.CampaignRoom;
 import ru.dndmemory.data.local.entity.EntityRoom;
 import ru.dndmemory.data.local.entity.MemberRoom;
 import ru.dndmemory.data.local.entity.RetellingRoom;
 import ru.dndmemory.data.model.EntityLink;
+import ru.dndmemory.data.model.EntityType;
+import ru.dndmemory.data.model.HeroItem;
 import ru.dndmemory.data.remote.dto.CampaignDto;
+import ru.dndmemory.data.remote.dto.CharacterDto;
 import ru.dndmemory.data.remote.dto.EntityDto;
+import ru.dndmemory.data.remote.dto.HeroDto;
+import ru.dndmemory.data.remote.dto.ItemDto;
+import ru.dndmemory.data.remote.dto.LocationDto;
 import ru.dndmemory.data.remote.dto.MemberDto;
 import ru.dndmemory.data.remote.dto.RetellingDto;
 
@@ -17,6 +23,12 @@ import ru.dndmemory.data.remote.dto.RetellingDto;
  * Преобразование «сеть ↔ локальная база». Единственное место, где сопоставляются
  * DTO сервера и Room-сущности, поэтому его же использует {@code SyncEngine}
  * при применении журнала изменений.
+ *
+ * <p>У объектов кампании четыре класса живут в одной таблице с дискриминатором
+ * {@code kind}, но в теле запроса и ответа всегда форма DTO своего класса
+ * (docs/api.md, раздел 6): {@link #toDto(EntityRoom)} собирает нужный подкласс
+ * по {@code kind}, а {@link #toRoom(EntityDto, EntityType, String)} читает поля
+ * только своего класса.
  */
 public final class Mappers {
 
@@ -61,24 +73,53 @@ public final class Mappers {
         return dto;
     }
 
-    // --- Объекты ------------------------------------------------------------
+    // --- Объекты кампании ----------------------------------------------------
 
-    public static EntityRoom toRoom(EntityDto dto, String fallbackCampaignId) {
+    /** DTO нужного класса: сервер ждёт ровно форму своего класса. */
+    public static EntityDto newDto(@Nullable EntityType type) {
+        EntityType kind = type == null ? EntityType.CHARACTER : type;
+        switch (kind) {
+            case HERO:
+                return new HeroDto();
+            case LOCATION:
+                return new LocationDto();
+            case ITEM:
+                return new ItemDto();
+            case CHARACTER:
+            default:
+                return new CharacterDto();
+        }
+    }
+
+    /** Класс DTO по значению {@code objectType} журнала изменений. */
+    public static Class<? extends EntityDto> dtoClass(EntityType type) {
+        EntityType kind = type == null ? EntityType.CHARACTER : type;
+        switch (kind) {
+            case HERO:
+                return HeroDto.class;
+            case LOCATION:
+                return LocationDto.class;
+            case ITEM:
+                return ItemDto.class;
+            case CHARACTER:
+            default:
+                return CharacterDto.class;
+        }
+    }
+
+    public static EntityRoom toRoom(EntityDto dto, EntityType type, String fallbackCampaignId) {
         EntityRoom room = new EntityRoom();
         if (dto == null) {
             return room;
         }
+        EntityType kind = type == null ? EntityType.CHARACTER : type;
         room.id = nz(dto.id);
         room.campaignId = dto.campaignId != null ? dto.campaignId : fallbackCampaignId;
-        room.clientId = dto.clientId;
-        room.type = dto.type;
+        room.kind = kind.name();
         room.name = dto.name;
-        room.summary = dto.summary;
         room.description = dto.description;
-        room.attrs = dto.attrs == null ? new HashMap<>() : new HashMap<>(dto.attrs);
-        room.tags = dto.tags == null ? new ArrayList<>() : new ArrayList<>(dto.tags);
-        room.links = dto.links == null ? new ArrayList<EntityLink>() : new ArrayList<>(dto.links);
         room.imageFileId = dto.imageFileId;
+        room.links = dto.links == null ? new ArrayList<EntityLink>() : new ArrayList<>(dto.links);
         room.createdBy = dto.createdBy;
         room.updatedBy = dto.updatedBy;
         room.revision = dto.revision;
@@ -87,31 +128,66 @@ public final class Mappers {
         room.deleted = dto.deleted;
         room.dirty = false;
         room.conflictJson = null;
+
+        if (kind == EntityType.HERO && dto instanceof HeroDto) {
+            HeroDto hero = (HeroDto) dto;
+            room.race = hero.race;
+            room.klass = hero.klass;
+            room.playerUserId = hero.playerUserId;
+            room.playerName = hero.playerName;
+            room.items = hero.items == null ? new ArrayList<HeroItem>() : new ArrayList<>(hero.items);
+        } else if (kind == EntityType.CHARACTER && dto instanceof CharacterDto) {
+            CharacterDto character = (CharacterDto) dto;
+            room.race = character.race;
+            room.shortDescription = character.shortDescription;
+        } else if (kind == EntityType.ITEM && dto instanceof ItemDto) {
+            ItemDto item = (ItemDto) dto;
+            room.ownerName = item.ownerName;
+            room.ownerHeroId = item.ownerHeroId;
+            room.ownerHeroName = item.ownerHeroName;
+            room.ownerCharacterId = item.ownerCharacterId;
+            room.ownerCharacterName = item.ownerCharacterName;
+        }
         return room;
     }
 
+    /** Тело правки: подкласс DTO по классу объекта, лишние поля не отправляются. */
     public static EntityDto toDto(EntityRoom room) {
-        EntityDto dto = new EntityDto();
         if (room == null) {
-            return dto;
+            return new CharacterDto();
         }
+        EntityType kind = EntityType.fromOrCharacter(room.kind);
+        EntityDto dto = newDto(kind);
+
         dto.id = room.id;
         dto.campaignId = room.campaignId;
-        dto.clientId = room.clientId == null ? room.id : room.clientId;
-        dto.type = room.type;
         dto.name = room.name;
-        dto.summary = room.summary;
         dto.description = room.description;
-        dto.attrs = room.attrs == null ? new HashMap<>() : room.attrs;
-        dto.tags = room.tags == null ? new ArrayList<>() : room.tags;
-        dto.links = room.links == null ? new ArrayList<EntityLink>() : room.links;
         dto.imageFileId = room.imageFileId;
+        dto.links = room.links == null ? new ArrayList<EntityLink>() : room.links;
         dto.createdBy = room.createdBy;
         dto.updatedBy = room.updatedBy;
         dto.revision = room.revision;
         dto.createdAt = room.createdAt;
         dto.updatedAt = room.updatedAt;
         dto.deleted = room.deleted;
+
+        if (dto instanceof HeroDto) {
+            HeroDto hero = (HeroDto) dto;
+            hero.race = room.race;
+            hero.klass = room.klass;
+            hero.playerUserId = room.playerUserId;
+            hero.items = room.items == null ? new ArrayList<HeroItem>() : room.items;
+        } else if (dto instanceof CharacterDto) {
+            CharacterDto character = (CharacterDto) dto;
+            character.race = room.race;
+            character.shortDescription = room.shortDescription;
+        } else if (dto instanceof ItemDto) {
+            ItemDto item = (ItemDto) dto;
+            item.ownerName = room.ownerName;
+            item.ownerHeroId = room.ownerHeroId;
+            item.ownerCharacterId = room.ownerCharacterId;
+        }
         return dto;
     }
 
@@ -180,8 +256,8 @@ public final class Mappers {
         room.displayName = dto.displayName;
         room.email = dto.email;
         room.role = dto.role;
-        room.linkedEntityId = dto.linkedEntityId;
-        room.linkedEntityName = dto.linkedEntityName;
+        room.linkedHeroId = dto.linkedHeroId;
+        room.linkedHeroName = dto.linkedHeroName;
         room.status = dto.status;
         room.createdAt = dto.createdAt;
         return room;
@@ -197,8 +273,8 @@ public final class Mappers {
         dto.displayName = room.displayName;
         dto.email = room.email;
         dto.role = room.role;
-        dto.linkedEntityId = room.linkedEntityId;
-        dto.linkedEntityName = room.linkedEntityName;
+        dto.linkedHeroId = room.linkedHeroId;
+        dto.linkedHeroName = room.linkedHeroName;
         dto.status = room.status;
         dto.createdAt = room.createdAt;
         return dto;

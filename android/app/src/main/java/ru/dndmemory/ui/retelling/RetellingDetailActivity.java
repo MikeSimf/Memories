@@ -159,7 +159,7 @@ public class RetellingDetailActivity extends AppCompatActivity {
         new MaterialAlertDialogBuilder(this)
                 .setMessage(getString(R.string.wiki_create_suggestion, name))
                 .setPositiveButton(R.string.action_create, (dialog, which) ->
-                        Nav.createEntity(this, campaignId, EntityType.NPC.name()))
+                        Nav.createEntity(this, campaignId, EntityType.CHARACTER.name()))
                 .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }

@@ -84,8 +84,12 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.SearchHold
         void bind(@NonNull final Item item) {
             binding.itemSearchTitle.setText(item.title);
             binding.itemSearchSnippet.setText(item.snippet);
-            binding.itemSearchKind.setText(KIND_RETELLING.equals(item.kind)
-                    ? R.string.search_kind_retelling : R.string.search_kind_entity);
+            if (KIND_RETELLING.equals(item.kind)) {
+                binding.itemSearchKind.setText(R.string.search_kind_retelling);
+            } else {
+                binding.itemSearchKind.setText(
+                        ru.dndmemory.ui.common.Labels.entityTypeText(itemView.getContext(), item.type));
+            }
             itemView.setOnClickListener(v -> listener.onSearchItemClick(item));
         }
     }

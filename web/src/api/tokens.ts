@@ -14,13 +14,16 @@ export interface AuthTokens {
 
 export interface UserProfile {
   id: string
-  /** Почта может быть не задана: аккаунт устройства живёт без неё (`api.md` §3.1). */
-  email: string | null
+  /** Логин для входа — в профиле только для чтения (`api.md` §3). */
+  login: string
+  /** Почта обязательна: контакт для сброса пароля. */
+  email: string
+  emailVerified: boolean
   displayName: string
   avatarUrl: string | null
   /** Телефон в формате `+7XXXXXXXXXX`, если указан. */
   phone: string | null
-  /** Задан ли пароль: по этому признаку интерфейс решает, спрашивать ли текущий. */
+  /** Признак заданного пароля: вход только по логину и паролю, поэтому всегда `true`. */
   hasPassword: boolean
 }
 
@@ -95,7 +98,9 @@ export const userStore = {
       if (typeof parsed.id !== 'string') return null
       return {
         id: parsed.id,
-        email: typeof parsed.email === 'string' ? parsed.email : null,
+        login: typeof parsed.login === 'string' ? parsed.login : '',
+        email: typeof parsed.email === 'string' ? parsed.email : '',
+        emailVerified: parsed.emailVerified === true,
         displayName: typeof parsed.displayName === 'string' ? parsed.displayName : '',
         avatarUrl: typeof parsed.avatarUrl === 'string' ? parsed.avatarUrl : null,
         phone: typeof parsed.phone === 'string' ? parsed.phone : null,

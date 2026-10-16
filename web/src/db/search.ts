@@ -1,11 +1,11 @@
-import { listEntities } from './entities'
+import { listObjects } from './objects'
 import { listDrafts, listRetellings } from './retellings'
-import type { EntityType } from '@/api/types'
+import type { LocalObject } from './schema'
+import type { ObjectClass, SearchKind } from '@/api/types'
 
 export interface LocalSearchItem {
-  kind: 'ENTITY' | 'RETELLING'
+  kind: SearchKind
   id: string
-  type: EntityType | null
   title: string
   /** Фрагмент с подсветкой `<b>…</b>` — той же формы, что отдаёт сервер (`api.md` §8). */
   snippet: string
@@ -16,7 +16,8 @@ export interface LocalSearchItem {
 }
 
 export interface LocalSearchOptions {
-  types?: EntityType[]
+  /** Виды объектов; пусто — все четыре класса. */
+  classes?: ObjectClass[]
   includeRetellings?: boolean
   limit?: number
 }
@@ -101,9 +102,26 @@ export function matchesText(
 }
 
 /**
+ * Поля объекта, по которым идёт поиск (`api.md` §8): имя и описание, у персонажа
+ * дополнительно раса и краткое описание.
+ */
+export function objectSearchFields(object: LocalObject): string[] {
+  const fields = [object.name, object.description]
+  if (object.objectType === 'CHARACTER') {
+    fields.push(object.race ?? '', object.shortDescription ?? '')
+  }
+  return fields.filter((value) => value !== '')
+}
+
+/** Живой фильтр вкладки: та же логика, что у локального поиска (`api.md` §8). */
+export function objectMatchesQuery(object: LocalObject, query: string): boolean {
+  return matchesText(objectSearchFields(object), query)
+}
+
+/**
  * Поиск по локальной базе — та же логика, что у сервера (`api.md` §8):
- * регистронезависимый по `name`, `summary`, `description`, `tags` и `body` пересказов.
- * Поэтому поиск работает без сети.
+ * регистронезависимый по `name`, `description` (у персонажа ещё `race` и
+ * `shortDescription`), у пересказов — по заголовку и тексту. Работает без сети.
  */
 export async function searchLocal(
   campaignId: string,
@@ -116,32 +134,30 @@ export async function searchLocal(
   }
   const limit = options.limit ?? 50
   const includeRetellings = options.includeRetellings !== false
-  const typeFilter = options.types && options.types.length > 0 ? new Set(options.types) : null
+  const classFilter =
+    options.classes && options.classes.length > 0 ? new Set<ObjectClass>(options.classes) : null
 
   const scored: Array<{ score: number; item: LocalSearchItem }> = []
 
-  const entities = await listEntities(campaignId)
-  for (const entity of entities) {
-    if (typeFilter && !typeFilter.has(entity.type)) continue
-    const title = entity.name
-    const haystack = [entity.name, entity.summary, entity.description, entity.tags.join(' ')].join('\n')
+  const objects = await listObjects(campaignId)
+  for (const object of objects) {
+    if (classFilter && !classFilter.has(object.objectType)) continue
+    const title = object.name
+    const haystack = objectSearchFields(object).join('\n')
     if (!matches(haystack, tokens)) continue
     const titleHit = matches(title, tokens) ? 0 : 1
-    const snippetSource = matches(entity.summary, tokens)
-      ? entity.summary
-      : matches(entity.description, tokens)
-        ? entity.description
-        : entity.summary || entity.description || title
+    const snippetSource = matches(object.description, tokens)
+      ? object.description
+      : objectSearchFields(object).find((field) => matches(field, tokens)) ?? title
     scored.push({
       score: titleHit * 1000 + title.length,
       item: {
-        kind: 'ENTITY',
-        id: entity.id,
-        type: entity.type,
+        kind: object.objectType,
+        id: object.id,
         title,
         snippet: highlightSnippet(snippetSource, query),
-        revision: entity.revision,
-        updatedAt: entity.updatedAt,
+        revision: object.revision,
+        updatedAt: object.updatedAt,
         isDraft: false,
       },
     })
@@ -158,7 +174,6 @@ export async function searchLocal(
         item: {
           kind: 'RETELLING',
           id: retelling.id,
-          type: null,
           title: retelling.title,
           snippet: highlightSnippet(retelling.body || retelling.title, query),
           revision: retelling.revision,
@@ -178,7 +193,6 @@ export async function searchLocal(
         item: {
           kind: 'RETELLING',
           id: draft.id,
-          type: null,
           title: draft.title,
           snippet: highlightSnippet(draft.body || draft.title, query),
           revision: 0,

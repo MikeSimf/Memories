@@ -12,7 +12,6 @@ import ru.dndmemory.data.remote.AuthInterceptor;
 import ru.dndmemory.data.remote.TokenAuthenticator;
 import ru.dndmemory.data.repo.AuthRepository;
 import ru.dndmemory.data.repo.CampaignRepository;
-import ru.dndmemory.data.repo.DeviceRepository;
 import ru.dndmemory.data.repo.EntityRepository;
 import ru.dndmemory.data.repo.InviteRepository;
 import ru.dndmemory.data.repo.MemberRepository;
@@ -42,7 +41,6 @@ public class AppContainer {
     private final RetellingRepository retellingRepository;
     private final MemberRepository memberRepository;
     private final InviteRepository inviteRepository;
-    private final DeviceRepository deviceRepository;
     private final SyncEngine syncEngine;
     private final SyncScheduler syncScheduler;
 
@@ -54,7 +52,7 @@ public class AppContainer {
         sessionStore = new SessionStore(app);
         settingsStore = new SettingsStore(app);
 
-        // 1. Клиент без авторизации: вход, регистрация, refresh, провайдеры.
+        // 1. Клиент без авторизации: вход, регистрация, сброс пароля, refresh.
         OkHttpClient plainClient = ApiClient.plainHttpClient();
         ApiService plainApi = ApiClient.create(plainClient);
 
@@ -76,7 +74,6 @@ public class AppContainer {
         retellingRepository = new RetellingRepository(database, apiService, pendingWriter, executors);
         memberRepository = new MemberRepository(database, apiService, executors);
         inviteRepository = new InviteRepository(apiService, executors);
-        deviceRepository = new DeviceRepository(apiService, executors);
 
         // 5. Синхронизация.
         syncEngine = new SyncEngine(database, apiService, sessionStore.deviceClientId());
@@ -121,10 +118,6 @@ public class AppContainer {
 
     public InviteRepository inviteRepository() {
         return inviteRepository;
-    }
-
-    public DeviceRepository deviceRepository() {
-        return deviceRepository;
     }
 
     public SyncEngine syncEngine() {

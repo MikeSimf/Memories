@@ -24,6 +24,7 @@
             android:padding="16dp">
 
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/entity_edit_type_group"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/entity_edit_type"
@@ -49,22 +50,141 @@
                     android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.textfield.TextInputLayout
+            <TextView
+                android:id="@+id/entity_edit_fields_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/entity_edit_summary">
+                android:layout_marginTop="8dp"
+                android:text="@string/entity_detail_fields"
+                android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+            <!-- Герой и персонаж -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/entity_edit_race_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/attr_race"
+                android:visibility="gone">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/entity_edit_summary_input"
+                    android:id="@+id/entity_edit_race_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapSentences"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Только герой -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/entity_edit_klass_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/attr_klass"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/entity_edit_klass_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapSentences"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/entity_edit_player_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/attr_player_name"
+                android:visibility="gone"
+                app:endIconMode="dropdown_menu">
+
+                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                    android:id="@+id/entity_edit_player"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Только персонаж -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/entity_edit_short_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/attr_short_description"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/entity_edit_short_input"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textCapSentences"
                     android:maxLines="2" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Только предмет -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/entity_edit_owner_name_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/entity_owner_name_hint"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/entity_edit_owner_name_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapSentences"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/entity_edit_owner_link_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/entity_owner_link_hint"
+                android:visibility="gone"
+                app:endIconMode="dropdown_menu">
+
+                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                    android:id="@+id/entity_edit_owner_link"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Котомка героя -->
+            <LinearLayout
+                android:id="@+id/entity_edit_items_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/attr_items"
+                    android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                <LinearLayout
+                    android:id="@+id/entity_edit_items"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/entity_edit_add_item"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/entity_item_add" />
+            </LinearLayout>
+
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:hint="@string/entity_edit_description"
                 app:helperText="@string/entity_edit_description_hint">
 
@@ -76,32 +196,6 @@
                     android:inputType="textMultiLine"
                     android:minLines="6" />
             </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/entity_edit_tags">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/entity_edit_tags_input"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:maxLines="1" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/entity_detail_attrs"
-                android:textAppearance="?attr/textAppearanceTitleSmall" />
-
-            <LinearLayout
-                android:id="@+id/entity_edit_attrs"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

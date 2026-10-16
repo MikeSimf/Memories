@@ -3,6 +3,7 @@ package ru.dndmemory.ui.members;
 import android.content.Context;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -80,25 +81,19 @@ public class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.MemberHold
             ViewUtils.setTextOrGone(binding.itemMemberEmail, member.email);
             binding.itemMemberRole.setText(Labels.roleText(context, member.role));
 
-            String hero = member.linkedEntityName;
-            if (hero == null || hero.isEmpty()) {
-                nameIndexOrNothing();
+            if (TextUtils.isEmpty(member.linkedHeroName)) {
+                ViewUtils.show(binding.itemMemberLinked, false);
             } else {
                 binding.itemMemberLinked.setText(context.getString(
-                        R.string.members_linked_hero) + ": " + hero);
+                        R.string.members_linked_hero) + ": " + member.linkedHeroName);
                 ViewUtils.show(binding.itemMemberLinked, true);
             }
 
             binding.itemMemberStatus.setText(context.getString(Labels.memberStatus(member.status)));
 
             itemView.setOnClickListener(v -> listener.onMemberClick(member));
-            binding.itemMemberMore.setVisibility(manageAllowed ? android.view.View.VISIBLE
-                    : android.view.View.GONE);
+            binding.itemMemberMore.setVisibility(manageAllowed ? View.VISIBLE : View.GONE);
             binding.itemMemberMore.setOnClickListener(v -> listener.onMemberMore(member));
-        }
-
-        private void nameIndexOrNothing() {
-            ViewUtils.show(binding.itemMemberLinked, false);
         }
     }
 }

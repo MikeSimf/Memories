@@ -10,7 +10,7 @@
         android:layout_height="wrap_content">
 
         <com.google.android.material.appbar.MaterialToolbar
-        style="@style/Widget.DnDMemory.Toolbar"
+            style="@style/Widget.DnDMemory.Toolbar"
             android:id="@+id/entity_toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
@@ -84,26 +84,34 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Поля своего класса вместо прежних attrs -->
             <TextView
-                android:id="@+id/entity_tags"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textAppearance="?attr/textAppearanceLabelMedium" />
-
-            <TextView
-                android:id="@+id/entity_summary_title"
+                android:id="@+id/entity_fields_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:text="@string/entity_detail_summary"
+                android:text="@string/entity_detail_fields"
                 android:textAppearance="?attr/textAppearanceTitleSmall" />
 
-            <TextView
-                android:id="@+id/entity_summary"
+            <LinearLayout
+                android:id="@+id/entity_fields"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceBodyLarge" />
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/entity_items_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/attr_items"
+                android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+            <LinearLayout
+                android:id="@+id/entity_items"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
 
             <TextView
                 android:id="@+id/entity_description_title"
@@ -120,20 +128,6 @@
                 android:textAppearance="?attr/textAppearanceBodyLarge" />
 
             <TextView
-                android:id="@+id/entity_attrs_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="@string/entity_detail_attrs"
-                android:textAppearance="?attr/textAppearanceTitleSmall" />
-
-            <LinearLayout
-                android:id="@+id/entity_attrs"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
-
-            <TextView
                 android:id="@+id/entity_links_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -146,28 +140,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
-
-            <TextView
-                android:id="@+id/entity_backlinks_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="@string/entity_detail_backlinks"
-                android:textAppearance="?attr/textAppearanceTitleSmall" />
-
-            <LinearLayout
-                android:id="@+id/entity_backlinks"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
-
-            <TextView
-                android:id="@+id/entity_backlinks_empty"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/entity_detail_no_backlinks"
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:visibility="gone" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

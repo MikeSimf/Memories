@@ -3,35 +3,37 @@ import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import {
-  ENTITY_TYPE_LABELS,
-  ENTITY_TYPE_PLURALS,
+  OBJECT_CLASS_LABELS,
+  OBJECT_CLASS_PLURALS,
   RETELLING_STATUS_LABELS,
-  type EntityType,
+  type ObjectClass,
 } from '@/api/types'
+import type { LocalObject } from '@/db/schema'
 import EmptyState from '@/components/EmptyState.vue'
 import MembersPanel from '@/components/MembersPanel.vue'
 import SearchBox from '@/components/SearchBox.vue'
-import { matchesText } from '@/db/search'
+import { matchesText, objectMatchesQuery } from '@/db/search'
 import { useCampaignStore } from '@/stores/campaign'
 import { formatDate, formatRelative } from '@/utils/datetime'
 
 /**
- * Три вкладки объектов: «Персонажи» объединяет героев и НПС, плюс «Локации»
- * и «Предметы». Пересказы и участники — отдельные разделы кампании.
+ * Три вкладки объектов: «Персонажи» объединяет героев и НПС (два запроса —
+ * `GET .../heroes` и `GET .../characters`), плюс «Локации» и «Предметы».
+ * Пересказы и участники — отдельные разделы кампании.
  */
 type EntityTabKey = 'characters' | 'locations' | 'items'
 type TabKey = EntityTabKey | 'retellings' | 'members'
 
-const TAB_TYPES: Record<EntityTabKey, EntityType[]> = {
-  characters: ['HERO', 'NPC'],
+const TAB_CLASSES: Record<EntityTabKey, ObjectClass[]> = {
+  characters: ['HERO', 'CHARACTER'],
   locations: ['LOCATION'],
   items: ['ITEM'],
 }
 
 const TAB_TITLES: Record<EntityTabKey, string> = {
   characters: 'Персонажи',
-  locations: ENTITY_TYPE_PLURALS.LOCATION,
-  items: ENTITY_TYPE_PLURALS.ITEM,
+  locations: OBJECT_CLASS_PLURALS.LOCATION,
+  items: OBJECT_CLASS_PLURALS.ITEM,
 }
 
 const props = defineProps<{ tab?: string }>()
@@ -49,9 +51,9 @@ const tab = computed<TabKey>(() => {
     : 'characters'
 })
 
-const entityTypes = computed<EntityType[] | null>(() =>
+const objectClasses = computed<ObjectClass[] | null>(() =>
   tab.value === 'characters' || tab.value === 'locations' || tab.value === 'items'
-    ? TAB_TYPES[tab.value]
+    ? TAB_CLASSES[tab.value]
     : null,
 )
 
@@ -60,19 +62,17 @@ watch(
   tab,
   async () => {
     query.value = ''
-    if (entityTypes.value) await campaign.loadTabEntities(entityTypes.value)
+    if (objectClasses.value) await campaign.loadTabObjects(objectClasses.value)
   },
   { immediate: true },
 )
 
-/** Список вкладки читается из IndexedDB с фильтром видов — работает офлайн. */
-const entities = computed(() => campaign.tabEntities)
+/** Список вкладки читается из IndexedDB с фильтром классов — работает офлайн. */
+const objects = computed(() => campaign.tabObjects)
 
-/** Быстрый фильтр: регистронезависимо по названию, описанию и тегам. */
-const filteredEntities = computed(() =>
-  entities.value.filter((entity) =>
-    matchesText([entity.name, entity.summary, entity.description, entity.tags.join(' ')], query.value),
-  ),
+/** Живой фильтр: имя и описание, у персонажа ещё раса и краткое описание. */
+const filteredObjects = computed(() =>
+  objects.value.filter((object) => objectMatchesQuery(object, query.value)),
 )
 
 const filteredRetellings = computed(() =>
@@ -85,9 +85,26 @@ const sectionTitle = computed(() => {
   return TAB_TITLES[tab.value]
 })
 
-const createTypes = computed<EntityType[]>(() =>
-  entityTypes.value ? entityTypes.value.filter((type) => campaign.canCreate(type)) : [],
+/** Классы, которые пользователь может создать на этой вкладке (героя — только владелец). */
+const createClasses = computed<ObjectClass[]>(() =>
+  objectClasses.value ? objectClasses.value.filter((cls) => campaign.canCreate(cls)) : [],
 )
+
+function badgeClass(object: LocalObject): string {
+  if (object.objectType === 'HERO') return 'badge--hero'
+  if (object.objectType === 'CHARACTER') return 'badge--npc'
+  if (object.objectType === 'LOCATION') return 'badge--location'
+  return 'badge--item'
+}
+
+/** Короткая строка под названием: у персонажа — краткое описание, у героя — раса и класс. */
+function excerpt(object: LocalObject): string {
+  if (object.objectType === 'CHARACTER') return object.shortDescription ?? ''
+  if (object.objectType === 'HERO') {
+    return [object.race, object.klass].filter((value): value is string => Boolean(value)).join(' · ')
+  }
+  return ''
+}
 
 /** Ненавязчивый текст подгрузки: сколько объектов вкладки уже пришло с сервера. */
 const tabProgressLabel = computed(() =>
@@ -109,12 +126,12 @@ const tabProgressLabel = computed(() =>
           :placeholder="`Поиск: ${sectionTitle.toLowerCase()}`"
         />
         <RouterLink
-          v-for="type in createTypes"
-          :key="type"
+          v-for="cls in createClasses"
+          :key="cls"
           class="btn btn--primary btn--sm"
-          :to="{ name: 'entity-new', params: { campaignId: campaign.campaignId }, query: { type } }"
+          :to="{ name: 'entity-new', params: { campaignId: campaign.campaignId }, query: { class: cls } }"
         >
-          + {{ ENTITY_TYPE_LABELS[type] }}
+          + {{ OBJECT_CLASS_LABELS[cls] }}
         </RouterLink>
         <RouterLink
           v-if="tab === 'retellings' && campaign.canWriteRetellings"
@@ -127,10 +144,10 @@ const tabProgressLabel = computed(() =>
     </div>
 
     <!-- Объекты вкладки: персонажи (герои + НПС), локации, предметы -->
-    <template v-if="entityTypes">
+    <template v-if="objectClasses">
       <div class="row row--between search-summary">
         <div class="row">
-          <span class="faint">Найдено: {{ filteredEntities.length }}</span>
+          <span class="faint">Найдено: {{ filteredObjects.length }}</span>
           <!-- Подгрузка не блокирует список: локальные данные уже показаны -->
           <span v-if="campaign.tabLoading" class="faint tab-progress" role="status">
             <span class="spinner spinner--sm" aria-hidden="true" />
@@ -148,40 +165,37 @@ const tabProgressLabel = computed(() =>
       </div>
 
       <EmptyState
-        v-if="entities.length === 0"
+        v-if="objects.length === 0"
         :title="`Пока нет: ${sectionTitle.toLowerCase()}`"
         :hint="
-          createTypes.length > 0
+          createClasses.length > 0
             ? 'Создайте первую запись — она сохранится на устройстве и уйдёт на сервер при синхронизации.'
             : 'У вас нет прав на создание объектов этого типа.'
         "
       />
       <EmptyState
-        v-else-if="filteredEntities.length === 0"
+        v-else-if="filteredObjects.length === 0"
         title="Ничего не найдено"
         hint="Попробуйте изменить запрос — поиск идёт по локальной базе и работает без сети."
       />
       <div v-else class="grid">
         <RouterLink
-          v-for="entity in filteredEntities"
-          :key="entity.id"
+          v-for="object in filteredObjects"
+          :key="object.id"
           class="card card--link"
-          :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: entity.id } }"
+          :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: object.id } }"
         >
           <h3 class="card__title">
-            {{ entity.name }}
-            <span v-if="entity.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />
+            {{ object.name }}
+            <span v-if="object.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />
           </h3>
-          <p v-if="entity.summary" class="card__excerpt">{{ entity.summary }}</p>
-          <div v-if="entity.tags.length > 0" class="chips" style="margin-top: 0.4rem">
-            <span v-for="tag in entity.tags" :key="tag" class="chip">{{ tag }}</span>
-          </div>
+          <p v-if="excerpt(object)" class="card__excerpt">{{ excerpt(object) }}</p>
           <div class="card__meta">
-            <span class="badge" :class="`badge--${entity.type.toLowerCase()}`">
-              {{ ENTITY_TYPE_LABELS[entity.type] }}
+            <span class="badge" :class="badgeClass(object)">
+              {{ OBJECT_CLASS_LABELS[object.objectType] }}
             </span>
-            <span v-if="entity.conflict" class="badge badge--danger">расхождение</span>
-            <span>{{ campaign.changeSummary(entity) }}</span>
+            <span v-if="object.conflict" class="badge badge--danger">расхождение</span>
+            <span>{{ campaign.changeSummary(object) }}</span>
           </div>
         </RouterLink>
       </div>

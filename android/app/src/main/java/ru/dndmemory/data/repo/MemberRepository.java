@@ -20,7 +20,8 @@ import ru.dndmemory.util.RepoCallback;
 
 /**
  * Участники кампании. Роли меняет только {@code OWNER}, поэтому операции идут
- * напрямую в сеть, а результат сразу попадает в Room.
+ * напрямую в сеть, а результат сразу попадает в Room. Привязка участника —
+ * к герою ({@code linkedHeroId}), а не к общему объекту (docs/api.md, раздел 5).
  */
 public class MemberRepository {
 
@@ -84,10 +85,10 @@ public class MemberRepository {
      * сервер вернёт приглашение — интерфейс покажет его QR-код.
      */
     public void add(String campaignId, String email, String role,
-                    @Nullable String linkedEntityId, RepoCallback<AddMemberResponse> callback) {
+                    @Nullable String linkedHeroId, RepoCallback<AddMemberResponse> callback) {
         exec.io(() -> {
             AddMemberResponse response = ApiCall.execute(api.addMember(campaignId,
-                    new AddMemberRequest(email, role, linkedEntityId)));
+                    new AddMemberRequest(email, role, linkedHeroId)));
             if (response != null && response.member != null) {
                 db.memberDao().upsert(Mappers.toRoom(response.member, campaignId));
             }
@@ -96,10 +97,10 @@ public class MemberRepository {
     }
 
     public void changeRole(String campaignId, String memberId, String role,
-                           @Nullable String linkedEntityId, RepoCallback<MemberRoom> callback) {
+                           @Nullable String linkedHeroId, RepoCallback<MemberRoom> callback) {
         exec.io(() -> {
             MemberDto dto = ApiCall.execute(api.patchMember(campaignId, memberId,
-                    new PatchMemberRequest(role, linkedEntityId)));
+                    new PatchMemberRequest(role, linkedHeroId)));
             MemberRoom room = Mappers.toRoom(dto, campaignId);
             if (room.id == null || room.id.isEmpty()) {
                 room.id = memberId;

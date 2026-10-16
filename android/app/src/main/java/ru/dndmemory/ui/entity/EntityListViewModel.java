@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import ru.dndmemory.data.local.entity.EntityRoom;
@@ -21,8 +22,9 @@ import ru.dndmemory.util.RepoCallback;
 import ru.dndmemory.util.Resource;
 
 /**
- * Вкладка объектов: «Персонажи» ({@code HERO,NPC}), «Локации» ({@code LOCATION})
- * или «Предметы» ({@code ITEM}) — тот же фильтр уходит и в API, и в Room.
+ * Вкладка объектов: «Персонажи» ({@code HERO,CHARACTER}), «Локации»
+ * ({@code LOCATION}) или «Предметы» ({@code ITEM}) — тот же фильтр уходит
+ * и в API, и в Room.
  *
  * <p>Быстрый фильтр считает список в фоне: пока пользователь набирает, прежние
  * проходы помечаются устаревшими по номеру поколения, поэтому на списке в сотни
@@ -41,8 +43,8 @@ public class EntityListViewModel extends ViewModel {
     private final AtomicInteger filterGeneration = new AtomicInteger();
 
     private String campaignId;
-    private String typesCsv = "";
-    private List<String> types = new ArrayList<>();
+    private String kindsCsv = "";
+    private List<String> kinds = new ArrayList<>();
     /** Полный список вкладки до фильтрации. */
     private List<EntityRoom> all = new ArrayList<>();
     private String query = "";
@@ -56,15 +58,15 @@ public class EntityListViewModel extends ViewModel {
     }
 
     /** Вызывается один раз: ViewModel переживает пересоздание View. */
-    public void init(@NonNull String campaignId, @NonNull String typesCsv) {
+    public void init(@NonNull String campaignId, @NonNull String kindsCsv) {
         if (initialized) {
             return;
         }
         initialized = true;
         this.campaignId = campaignId;
-        this.typesCsv = typesCsv;
-        this.types = EntityType.parseList(typesCsv);
-        items.addSource(entities.observeByTypes(campaignId, types), list -> {
+        this.kindsCsv = kindsCsv;
+        this.kinds = EntityType.parseList(kindsCsv);
+        items.addSource(entities.observeByKinds(campaignId, kinds), list -> {
             all = list == null ? new ArrayList<>() : list;
             total.setValue(all.size());
             applyFilter();
@@ -88,16 +90,21 @@ public class EntityListViewModel extends ViewModel {
         return refreshState;
     }
 
-    /** Строка фильтра вкладки: {@code HERO,NPC}. */
+    /** Строка фильтра вкладки: {@code HERO,CHARACTER}. */
     @NonNull
-    public String typesCsv() {
-        return typesCsv;
+    public String kindsCsv() {
+        return kindsCsv;
     }
 
-    /** Тип, которым создаётся объект кнопкой «Добавить» на этой вкладке. */
+    /** Класс, которым создаётся объект кнопкой «Добавить» на этой вкладке. */
     @NonNull
-    public String createType() {
-        return EntityType.createTypeFor(typesCsv);
+    public String createKind() {
+        return EntityType.createTypeFor(kindsCsv);
+    }
+
+    /** Вкладка содержит несколько классов («Персонажи») — тогда спрашиваем класс. */
+    public boolean hasSeveralKinds() {
+        return kinds.size() > 1;
     }
 
     @NonNull
@@ -105,7 +112,7 @@ public class EntityListViewModel extends ViewModel {
         return campaignId;
     }
 
-    /** Запрос быстрого фильтра: без учёта регистра по названию, описанию и меткам. */
+    /** Запрос быстрого фильтра: без учёта регистра по названию и описанию. */
     public void setQuery(@Nullable String value) {
         String normalized = value == null ? "" : value.trim();
         if (normalized.equals(query)) {
@@ -118,7 +125,7 @@ public class EntityListViewModel extends ViewModel {
     /** Онлайн-обновление списка вкладки; фоновая синхронизация идёт своим ходом. */
     public void refresh() {
         refreshState.setValue(Resource.loading());
-        entities.refresh(campaignId, types, new RepoCallback<List<EntityRoom>>() {
+        entities.refresh(campaignId, kinds, new RepoCallback<List<EntityRoom>>() {
             @Override
             public void onSuccess(@Nullable List<EntityRoom> value) {
                 refreshState.setValue(Resource.success(null));
@@ -152,13 +159,16 @@ public class EntityListViewModel extends ViewModel {
         });
     }
 
-    /** Совпадение без учёта регистра: название, краткое описание, описание и метки. */
+    /**
+     * Совпадение без учёта регистра: название и описание, а у персонажа ещё
+     * и раса с кратким описанием (docs/api.md, раздел 8).
+     */
     @NonNull
     static List<EntityRoom> filter(@NonNull List<EntityRoom> source, @NonNull String query) {
         if (query.isEmpty()) {
             return source;
         }
-        String needle = query.toLowerCase(java.util.Locale.ROOT);
+        String needle = query.toLowerCase(Locale.ROOT);
         List<EntityRoom> out = new ArrayList<>();
         for (EntityRoom room : source) {
             if (matches(room, needle)) {
@@ -169,22 +179,19 @@ public class EntityListViewModel extends ViewModel {
     }
 
     private static boolean matches(@NonNull EntityRoom room, @NonNull String needle) {
-        if (room.name != null && room.name.toLowerCase(java.util.Locale.ROOT).contains(needle)) {
-            return true;
-        }
-        if (room.summary != null && room.summary.toLowerCase(java.util.Locale.ROOT).contains(needle)) {
+        if (room.name != null && room.name.toLowerCase(Locale.ROOT).contains(needle)) {
             return true;
         }
         if (room.description != null
-                && room.description.toLowerCase(java.util.Locale.ROOT).contains(needle)) {
+                && room.description.toLowerCase(Locale.ROOT).contains(needle)) {
             return true;
         }
-        if (room.tags != null) {
-            for (String tag : room.tags) {
-                if (tag != null && tag.toLowerCase(java.util.Locale.ROOT).contains(needle)) {
-                    return true;
-                }
+        if (EntityType.CHARACTER.name().equalsIgnoreCase(room.kind)) {
+            if (room.race != null && room.race.toLowerCase(Locale.ROOT).contains(needle)) {
+                return true;
             }
+            return room.shortDescription != null
+                    && room.shortDescription.toLowerCase(Locale.ROOT).contains(needle);
         }
         return false;
     }

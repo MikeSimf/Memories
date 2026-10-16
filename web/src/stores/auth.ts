@@ -9,9 +9,8 @@ import {
   tokenStore,
   userStore,
   type AuthResponse,
-  type OAuthProvider,
-  type OAuthProvidersResponse,
   type PatchMeRequest,
+  type RegisterRequest,
   type SetPasswordRequest,
   type UserDto,
   type UserProfile,
@@ -19,26 +18,25 @@ import {
 import { clearDatabase } from '@/db'
 import { useUiStore } from './ui'
 
-const OAUTH_STATE_KEY = 'dnd-memory.oauth-state'
-const OAUTH_PROVIDER_KEY = 'dnd-memory.oauth-provider'
-
+/** Вход — только по логину и паролю: провайдеров (Яндекс, VK) больше нет. */
 export const useAuthStore = defineStore('auth', () => {
   const ui = useUiStore()
 
   const user = ref<UserProfile | null>(userStore.get())
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const providers = ref<OAuthProvidersResponse | null>(null)
 
   const isAuthenticated = computed(
     () => user.value !== null && tokenStore.get()?.accessToken !== undefined,
   )
 
-  /** `UserDto` → локальный профиль: контакты и признак пароля нужны экрану настроек. */
+  /** `UserDto` → локальный профиль: логин, почта и признак пароля нужны настройкам. */
   function toProfile(dto: UserDto): UserProfile {
     return {
       id: dto.id,
-      email: dto.email ?? null,
+      login: dto.login ?? '',
+      email: dto.email ?? '',
+      emailVerified: dto.emailVerified === true,
       displayName: dto.displayName,
       avatarUrl: dto.avatarUrl ?? null,
       phone: dto.phone ?? null,
@@ -57,11 +55,11 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = profile
   }
 
-  async function login(email: string, password: string): Promise<void> {
+  async function login(login: string, password: string): Promise<void> {
     loading.value = true
     error.value = null
     try {
-      applyAuth(await authApi.login({ email, password }))
+      applyAuth(await authApi.login({ login, password }))
     } catch (caught) {
       error.value = errorMessage(caught)
       throw caught
@@ -70,11 +68,46 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function register(email: string, password: string, displayName: string): Promise<void> {
+  /**
+   * Регистрация: логин, почта, пароль, имя. `inviteToken` передаётся при переходе
+   * по QR — пользователь создаётся и сразу присоединяется к кампании (`api.md` §3).
+   */
+  async function register(body: RegisterRequest): Promise<void> {
     loading.value = true
     error.value = null
     try {
-      applyAuth(await authApi.register({ email, password, displayName }))
+      applyAuth(await authApi.register(body))
+    } catch (caught) {
+      error.value = errorMessage(caught)
+      throw caught
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * «Забыли пароль?»: сервер всегда отвечает `202`, поэтому интерфейс показывает
+   * нейтральный текст — по ответу нельзя узнать, есть ли такой адрес (`api.md` §3).
+   */
+  async function requestPasswordReset(email: string): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      await authApi.requestPasswordReset(email)
+    } catch (caught) {
+      error.value = errorMessage(caught)
+      throw caught
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /** Новый пароль по токену из ссылки `#/reset/:token`; все сессии гасятся. */
+  async function confirmPasswordReset(token: string, newPassword: string): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      await authApi.confirmPasswordReset(token, newPassword)
     } catch (caught) {
       error.value = errorMessage(caught)
       throw caught
@@ -114,76 +147,6 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
   }
 
-  /** Адрес страницы возврата для OAuth — маршрут `/oauth/callback`. */
-  function oauthRedirectUri(): string {
-    return `${window.location.origin}/oauth/callback`
-  }
-
-  /** Начало входа через провайдера: запоминаем `state` и уходим на его страницу. */
-  async function startOAuth(provider: OAuthProvider): Promise<string> {
-    const state = crypto.randomUUID()
-    try {
-      window.sessionStorage.setItem(OAUTH_STATE_KEY, state)
-      window.sessionStorage.setItem(OAUTH_PROVIDER_KEY, provider)
-    } catch {
-      /* sessionStorage может быть недоступен — state проверим мягко */
-    }
-    return authApi.oauthAuthorizeUrl(provider, oauthRedirectUri(), state)
-  }
-
-  async function completeOAuth(
-    provider: OAuthProvider,
-    params: { code: string | null; state: string | null; error?: string | null },
-  ): Promise<void> {
-    loading.value = true
-    error.value = null
-    try {
-      if (params.error) {
-        throw new ApiError({ status: 400, code: 'unauthorized', message: params.error })
-      }
-      if (!params.code) {
-        throw new ApiError({
-          status: 400,
-          code: 'validation_failed',
-          message: 'Провайдер не вернул код авторизации',
-        })
-      }
-      const expectedState = window.sessionStorage.getItem(OAUTH_STATE_KEY)
-      const storedProvider = window.sessionStorage.getItem(OAUTH_PROVIDER_KEY) as OAuthProvider | null
-      if (expectedState && params.state && expectedState !== params.state) {
-        throw new ApiError({
-          status: 400,
-          code: 'unauthorized',
-          message: 'Проверка state не пройдена, попробуйте войти заново',
-        })
-      }
-      applyAuth(
-        await authApi.oauthCallback(provider ?? storedProvider ?? 'yandex', {
-          code: params.code,
-          redirectUri: oauthRedirectUri(),
-          state: params.state ?? '',
-        }),
-      )
-      window.sessionStorage.removeItem(OAUTH_STATE_KEY)
-      window.sessionStorage.removeItem(OAUTH_PROVIDER_KEY)
-    } catch (caught) {
-      error.value = errorMessage(caught)
-      throw caught
-    } finally {
-      loading.value = false
-    }
-  }
-
-  async function loadProviders(): Promise<void> {
-    try {
-      providers.value = await authApi.providers()
-    } catch (caught) {
-      // Без списка провайдеров экран входа всё равно работает по почте и паролю.
-      console.warn('[dnd-memory] не удалось получить список OAuth-провайдеров', caught)
-      providers.value = null
-    }
-  }
-
   async function refreshProfile(): Promise<void> {
     if (!tokenStore.get()) {
       user.value = null
@@ -204,7 +167,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /** `PATCH /api/me`: имя и контакты для входа. Ошибки не глотаем — их показывает экран. */
+  /** `PATCH /api/me`: имя, почта, телефон. Ошибки не глотаем — их показывает экран. */
   async function updateProfile(body: PatchMeRequest): Promise<void> {
     const me = await authApi.patchMe(body)
     const profile = toProfile(me)
@@ -212,10 +175,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = profile
   }
 
-  /**
-   * `POST /api/me/password`: задать или сменить пароль. После успеха обновляем
-   * профиль — признак `hasPassword` меняется, и форма перестаёт спрашивать текущий.
-   */
+  /** `POST /api/me/password`: текущий пароль обязателен — пароль есть всегда. */
   async function setPassword(body: SetPasswordRequest): Promise<void> {
     await authApi.setPassword(body)
     await refreshProfile()
@@ -232,16 +192,14 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     loading,
     error,
-    providers,
     isAuthenticated,
     initialize,
     login,
     register,
+    requestPasswordReset,
+    confirmPasswordReset,
     logout,
     forceLogout,
-    startOAuth,
-    completeOAuth,
-    loadProviders,
     refreshProfile,
     updateProfile,
     setPassword,

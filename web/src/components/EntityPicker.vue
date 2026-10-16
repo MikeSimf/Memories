@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { ENTITY_TYPE_LABELS, type EntityType } from '@/api/types'
+import { OBJECT_CLASS_LABELS, type ObjectClass } from '@/api/types'
 import { useCampaignStore } from '@/stores/campaign'
 
 const props = withDefaults(
   defineProps<{
     modelValue: string | null
-    /** Ограничение по типам объектов (например, только локации). */
-    types?: EntityType[]
+    /** Ограничение по классам объектов (например, только герои). */
+    classes?: ObjectClass[]
     placeholder?: string
     emptyLabel?: string
   }>(),
-  { placeholder: '', emptyLabel: '— не выбрано —', types: undefined },
+  { placeholder: '', emptyLabel: '— не выбрано —', classes: undefined },
 )
 
 const emit = defineEmits<{ (event: 'update:modelValue', value: string | null): void }>()
@@ -20,8 +20,8 @@ const emit = defineEmits<{ (event: 'update:modelValue', value: string | null): v
 const campaign = useCampaignStore()
 
 const options = computed(() =>
-  campaign.entityOptions.filter(
-    (option) => !props.types || props.types.length === 0 || props.types.includes(option.type),
+  campaign.objectOptions.filter(
+    (option) => !props.classes || props.classes.length === 0 || props.classes.includes(option.objectClass),
   ),
 )
 
@@ -41,10 +41,10 @@ function onChange(event: Event): void {
   <select class="select" :value="knownValue" @change="onChange">
     <option value="">{{ emptyLabel }}</option>
     <option v-if="missingOption" :value="knownValue">
-      {{ campaign.entityName(knownValue) || 'не найден на устройстве' }}
+      {{ campaign.objectName(knownValue) || 'не найден на устройстве' }}
     </option>
     <option v-for="option in options" :key="option.id" :value="option.id">
-      {{ option.name }} — {{ ENTITY_TYPE_LABELS[option.type] }}
+      {{ option.name }} — {{ OBJECT_CLASS_LABELS[option.objectClass] }}
     </option>
   </select>
 </template>

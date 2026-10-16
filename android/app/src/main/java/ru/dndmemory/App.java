@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 
 import ru.dndmemory.data.remote.ApiException;
 import ru.dndmemory.data.remote.dto.UserDto;
-import ru.dndmemory.ui.auth.EnrollActivity;
+import ru.dndmemory.ui.common.Nav;
 import ru.dndmemory.util.AppExecutors;
 import ru.dndmemory.util.RepoCallback;
 
@@ -18,12 +18,11 @@ import ru.dndmemory.util.RepoCallback;
  * Точка входа приложения.
  *
  * <p>При старте: собирает {@link AppContainer}, запускает синхронизацию
- * ({@code SyncWorker} при {@code onStart}, docs/sync.md раздел 5) и ставит
+ * ({@code SyncWorker} при {@code onStart}, docs/sync.md раздел 6) и ставит
  * периодический воркер на 15 минут.
  *
- * <p>Следит за отзывом сессии: если сервер отверг refresh-токен (устройство
- * отозвано мастером), приложение показывает экран «Отсканируйте QR-код»
- * с пояснением. Локальные данные при этом не удаляются.
+ * <p>Следит за обрывом сессии: если сервер отверг refresh-токен, приложение
+ * показывает экран входа с пояснением. Локальные данные при этом не удаляются.
  */
 public class App extends Application {
 
@@ -73,8 +72,8 @@ public class App extends Application {
     }
 
     /**
-     * Отзыв доступа: сессия уже очищена, локальные данные на месте. Открываем
-     * экран QR с пояснением — и для отозванного устройства, и для истёкшей сессии.
+     * Сессия прервана: она уже очищена, локальные данные на месте. Открываем
+     * экран входа с пояснением.
      */
     private void observeRevoked(@NonNull final AppContainer appContainer) {
         appContainer.sessionStore().revoked().observeForever(reason -> {
@@ -84,13 +83,13 @@ public class App extends Application {
             final String message = reason;
             // Событие приходит из фонового потока — экран открываем в главном.
             new Handler(Looper.getMainLooper()).post(() -> {
-                Intent intent = EnrollActivity.intent(this, message);
+                Intent intent = Nav.auth(this, null, message);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 try {
                     startActivity(intent);
                 } catch (RuntimeException ignored) {
                     // Фоновый запуск мог быть запрещён системой: при следующем
-                    // открытии приложения Splash сам покажет экран QR.
+                    // открытии приложения Splash сам покажет экран входа.
                 }
                 appContainer.sessionStore().clearRevokedEvent();
                 // Одноразовый флаг причины: повторно не показываем.

@@ -1,29 +1,35 @@
 package ru.dndmemory.ui.common;
 
 import android.content.Context;
+import android.text.TextUtils;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import ru.dndmemory.R;
+import ru.dndmemory.data.local.entity.EntityRoom;
 import ru.dndmemory.data.model.EntityType;
+import ru.dndmemory.data.model.HeroItem;
 import ru.dndmemory.data.model.MemberRole;
 import ru.dndmemory.data.model.MemberStatus;
 import ru.dndmemory.data.model.SyncStatus;
 
-/** Преобразование перечислений и ключей attrs в человекочитаемые подписи. */
+/** Преобразование перечислений и полей классов в человекочитаемые подписи. */
 public final class Labels {
 
     private Labels() {
     }
 
-    // --- Типы объектов ------------------------------------------------------
+    // --- Классы объектов ----------------------------------------------------
 
     @StringRes
     public static int entityType(@Nullable EntityType type) {
         if (type == null) {
-            return R.string.entity_type_npc;
+            return R.string.entity_type_character;
         }
         switch (type) {
             case HERO:
@@ -32,15 +38,15 @@ public final class Labels {
                 return R.string.entity_type_location;
             case ITEM:
                 return R.string.entity_type_item;
-            case NPC:
+            case CHARACTER:
             default:
-                return R.string.entity_type_npc;
+                return R.string.entity_type_character;
         }
     }
 
     @DrawableRes
-    public static int entityIcon(@Nullable String rawType) {
-        EntityType type = EntityType.from(rawType);
+    public static int entityIcon(@Nullable String rawKind) {
+        EntityType type = EntityType.from(rawKind);
         if (type == null) {
             return R.drawable.ic_npc;
         }
@@ -51,18 +57,74 @@ public final class Labels {
                 return R.drawable.ic_location;
             case ITEM:
                 return R.drawable.ic_item;
-            case NPC:
+            case CHARACTER:
             default:
                 return R.drawable.ic_npc;
         }
     }
 
-    public static CharSequence entityTypeText(Context context, @Nullable String rawType) {
-        EntityType type = EntityType.from(rawType);
+    public static CharSequence entityTypeText(Context context, @Nullable String rawKind) {
+        EntityType type = EntityType.from(rawKind);
         if (type == null) {
             return context.getString(R.string.attr_not_set);
         }
         return context.getString(entityType(type));
+    }
+
+    /**
+     * Вторая строка в списке объектов: у героя — раса, класс и игрок,
+     * у персонажа — раса и краткое описание, у предмета — владелец.
+     */
+    @Nullable
+    public static CharSequence entitySubtitle(Context context, @Nullable EntityRoom room) {
+        if (room == null) {
+            return null;
+        }
+        EntityType kind = EntityType.from(room.kind);
+        if (kind == null) {
+            return null;
+        }
+        switch (kind) {
+            case HERO:
+                return join(room.race, room.klass, room.playerName);
+            case CHARACTER:
+                return join(room.race, room.shortDescription);
+            case ITEM:
+                return TextUtils.isEmpty(room.ownerName) ? null : room.ownerName;
+            case LOCATION:
+            default:
+                return null;
+        }
+    }
+
+    /** Строка «Предмет ×2 — заметка» для карточки героя. */
+    @Nullable
+    public static CharSequence heroItemText(Context context, @Nullable HeroItem item) {
+        if (item == null || TextUtils.isEmpty(item.name)) {
+            return null;
+        }
+        StringBuilder out = new StringBuilder(item.name);
+        if (item.quantity != null && item.quantity > 1) {
+            out.append(" ×").append(item.quantity);
+        }
+        if (!TextUtils.isEmpty(item.notes)) {
+            out.append(" — ").append(item.notes);
+        }
+        return out.toString();
+    }
+
+    @Nullable
+    private static CharSequence join(String... parts) {
+        List<String> values = new ArrayList<>();
+        for (String part : parts) {
+            if (!TextUtils.isEmpty(part)) {
+                values.add(part);
+            }
+        }
+        if (values.isEmpty()) {
+            return null;
+        }
+        return TextUtils.join(" · ", values);
     }
 
     // --- Роли и статусы участников -----------------------------------------
@@ -130,104 +192,5 @@ public final class Labels {
             default:
                 return R.string.sync_status_idle;
         }
-    }
-
-    // --- Характеристики -----------------------------------------------------
-
-    /** @return ресурс подписи или 0, если ключ неизвестен. */
-    @StringRes
-    public static int attrLabel(@Nullable String key) {
-        if (key == null) {
-            return 0;
-        }
-        switch (key) {
-            case "playerName":
-                return R.string.attr_player_name;
-            case "race":
-                return R.string.attr_race;
-            case "klass":
-                return R.string.attr_klass;
-            case "level":
-                return R.string.attr_level;
-            case "hp":
-                return R.string.attr_hp;
-            case "ac":
-                return R.string.attr_ac;
-            case "status":
-                return R.string.attr_status;
-            case "faction":
-                return R.string.attr_faction;
-            case "locationEntityId":
-                return R.string.attr_location;
-            case "region":
-                return R.string.attr_region;
-            case "kind":
-                return R.string.attr_kind;
-            case "parentEntityId":
-                return R.string.attr_parent;
-            case "ownerEntityId":
-                return R.string.attr_owner;
-            case "quantity":
-                return R.string.attr_quantity;
-            case "rarity":
-                return R.string.attr_rarity;
-            default:
-                return 0;
-        }
-    }
-
-    public static CharSequence attrLabelText(Context context, @Nullable String key) {
-        int res = attrLabel(key);
-        if (res == 0) {
-            return context.getString(R.string.attr_unknown, key == null ? "" : key);
-        }
-        return context.getString(res);
-    }
-
-    /** Значения-перечисления показываем по-русски, остальное — как есть. */
-    public static CharSequence attrValue(Context context, @Nullable String key,
-                                         @Nullable String value) {
-        if (value == null || value.isEmpty()) {
-            return context.getString(R.string.attr_not_set);
-        }
-        if ("status".equals(key)) {
-            switch (value) {
-                case "alive":
-                    return context.getString(R.string.status_alive);
-                case "dead":
-                    return context.getString(R.string.status_dead);
-                case "retired":
-                    return context.getString(R.string.status_retired);
-                case "unknown":
-                    return context.getString(R.string.status_unknown);
-                default:
-                    return value;
-            }
-        }
-        if ("kind".equals(key)) {
-            switch (value) {
-                case "city":
-                    return context.getString(R.string.kind_city);
-                case "dungeon":
-                    return context.getString(R.string.kind_dungeon);
-                case "wild":
-                    return context.getString(R.string.kind_wild);
-                case "building":
-                    return context.getString(R.string.kind_building);
-                case "weapon":
-                    return context.getString(R.string.kind_weapon);
-                case "armor":
-                    return context.getString(R.string.kind_armor);
-                case "potion":
-                    return context.getString(R.string.kind_potion);
-                case "treasure":
-                    return context.getString(R.string.kind_treasure);
-                case "quest":
-                    return context.getString(R.string.kind_quest);
-                default:
-                    return value;
-            }
-        }
-        return value;
     }
 }

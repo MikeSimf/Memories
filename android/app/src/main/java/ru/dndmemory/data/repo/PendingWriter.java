@@ -11,6 +11,7 @@ import ru.dndmemory.data.local.entity.MemberRoom;
 import ru.dndmemory.data.local.entity.PendingChangeRoom;
 import ru.dndmemory.data.local.entity.RetellingRoom;
 import ru.dndmemory.data.model.ChangeOp;
+import ru.dndmemory.data.model.EntityType;
 import ru.dndmemory.data.model.ObjectType;
 import ru.dndmemory.data.remote.ApiClient;
 import ru.dndmemory.util.DateFormats;
@@ -30,10 +31,13 @@ public class PendingWriter {
         this.db = db;
     }
 
+    /** Класс объекта берётся из самой записи: {@code HERO}, {@code CHARACTER}, … */
     public void entity(EntityRoom room, ChangeOp op) {
-        PendingChangeRoom change = base(room.campaignId, ObjectType.ENTITY, room.id, op, room.revision);
+        EntityType kind = EntityType.fromOrCharacter(room.kind);
+        ObjectType type = ObjectType.from(kind);
+        PendingChangeRoom change = base(room.campaignId, type, room.id, op, room.revision);
         if (op == ChangeOp.DELETE) {
-            change.payloadJson = tombstone(room.id, room.updatedAt);
+            change.payloadJson = tombstone(room.id, type, room.updatedAt, room.revision);
         } else {
             change.payloadJson = gson.toJson(Mappers.toDto(room));
         }
@@ -43,7 +47,7 @@ public class PendingWriter {
     public void retelling(RetellingRoom room, ChangeOp op) {
         PendingChangeRoom change = base(room.campaignId, ObjectType.RETELLING, room.id, op, room.revision);
         if (op == ChangeOp.DELETE) {
-            change.payloadJson = tombstone(room.id, room.updatedAt);
+            change.payloadJson = tombstone(room.id, ObjectType.RETELLING, room.updatedAt, room.revision);
         } else {
             change.payloadJson = gson.toJson(Mappers.toDto(room));
         }
@@ -53,7 +57,7 @@ public class PendingWriter {
     public void campaign(CampaignRoom room, ChangeOp op) {
         PendingChangeRoom change = base(room.id, ObjectType.CAMPAIGN, room.id, op, room.latestRevision);
         if (op == ChangeOp.DELETE) {
-            change.payloadJson = tombstone(room.id, room.updatedAt);
+            change.payloadJson = tombstone(room.id, ObjectType.CAMPAIGN, room.updatedAt, 0L);
         } else {
             change.payloadJson = gson.toJson(Mappers.toDto(room));
         }
@@ -63,7 +67,7 @@ public class PendingWriter {
     public void member(MemberRoom room, ChangeOp op) {
         PendingChangeRoom change = base(room.campaignId, ObjectType.MEMBER, room.id, op, 0L);
         if (op == ChangeOp.DELETE) {
-            change.payloadJson = tombstone(room.id, DateFormats.nowIso());
+            change.payloadJson = tombstone(room.id, ObjectType.MEMBER, DateFormats.nowIso(), 0L);
         } else {
             change.payloadJson = gson.toJson(Mappers.toDto(room));
         }
@@ -71,10 +75,14 @@ public class PendingWriter {
     }
 
     /** Надгробие для DELETE (docs/sync.md, раздел 1). */
-    public static String tombstone(String objectId, String updatedAt) {
+    public static String tombstone(String objectId, ObjectType type, String updatedAt, long revision) {
         JsonObject json = new JsonObject();
         json.addProperty("id", objectId);
+        if (type != null) {
+            json.addProperty("objectType", type.name());
+        }
         json.addProperty("deleted", true);
+        json.addProperty("revision", revision);
         json.addProperty("updatedAt", updatedAt == null ? DateFormats.nowIso() : updatedAt);
         return json.toString();
     }
@@ -84,7 +92,7 @@ public class PendingWriter {
         PendingChangeRoom change = new PendingChangeRoom();
         change.clientChangeId = Ids.changeId();
         change.campaignId = campaignId;
-        change.objectType = type == null ? ObjectType.ENTITY.name() : type.name();
+        change.objectType = type == null ? ObjectType.CHARACTER.name() : type.name();
         change.objectId = objectId;
         change.op = op == null ? ChangeOp.UPSERT.name() : op.name();
         change.baseRevision = baseRevision;

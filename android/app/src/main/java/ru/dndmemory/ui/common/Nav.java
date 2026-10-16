@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import ru.dndmemory.ui.auth.AuthActivity;
+import ru.dndmemory.ui.auth.PasswordResetActivity;
 import ru.dndmemory.ui.campaign.CampaignActivity;
 import ru.dndmemory.ui.campaigns.CampaignListActivity;
 import ru.dndmemory.ui.entity.EntityDetailActivity;
@@ -27,11 +28,30 @@ public final class Nav {
     }
 
     public static Intent auth(@NonNull Context context, @Nullable String inviteToken) {
+        return auth(context, inviteToken, null);
+    }
+
+    /**
+     * Экран входа.
+     *
+     * @param inviteToken приглашение, которое нужно принять после входа
+     * @param message     пояснение, например причина обрыва сессии
+     */
+    public static Intent auth(@NonNull Context context, @Nullable String inviteToken,
+                              @Nullable String message) {
         Intent intent = new Intent(context, AuthActivity.class);
         if (inviteToken != null && !inviteToken.isEmpty()) {
             intent.putExtra(Extras.INVITE_TOKEN, inviteToken);
         }
+        if (message != null && !message.isEmpty()) {
+            intent.putExtra(Extras.MESSAGE, message);
+        }
         return intent;
+    }
+
+    /** Сброс пароля: письма нет, ссылку передают администратору. */
+    public static void openPasswordReset(@NonNull Context context) {
+        context.startActivity(new Intent(context, PasswordResetActivity.class));
     }
 
     public static void openCampaignList(@NonNull Context context) {
@@ -54,12 +74,12 @@ public final class Nav {
         context.startActivity(intent);
     }
 
-    /** Новый объект: {@code entityId} пустой, тип задан. */
+    /** Новый объект: {@code entityId} пустой, класс задан. */
     public static void createEntity(@NonNull Context context, @NonNull String campaignId,
-                                    @Nullable String type) {
+                                    @Nullable String kind) {
         Intent intent = new Intent(context, EntityEditActivity.class);
         intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
-        intent.putExtra(Extras.ENTITY_TYPE, type);
+        intent.putExtra(Extras.ENTITY_TYPE, kind);
         intent.putExtra(Extras.CREATE_NEW, true);
         context.startActivity(intent);
     }
@@ -123,11 +143,11 @@ public final class Nav {
 
     /** Общий поиск по кампании или поиск внутри вкладки. */
     public static void openSearch(@NonNull Context context, @NonNull String campaignId,
-                                  @Nullable String typeFilter) {
+                                  @Nullable String kindFilter) {
         Intent intent = new Intent(context, SearchActivity.class);
         intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
-        if (typeFilter != null) {
-            intent.putExtra(Extras.SEARCH_TYPE, typeFilter);
+        if (kindFilter != null) {
+            intent.putExtra(Extras.SEARCH_TYPE, kindFilter);
         }
         context.startActivity(intent);
     }
@@ -136,14 +156,10 @@ public final class Nav {
         context.startActivity(new Intent(context, SettingsActivity.class));
     }
 
+    /** Экран принятия одноразового приглашения (QR или deep link). */
     public static void openInviteAccept(@NonNull Context context, @NonNull String token) {
         Intent intent = new Intent(context, InviteAcceptActivity.class);
         intent.putExtra(Extras.INVITE_TOKEN, token);
         context.startActivity(intent);
-    }
-
-    /** Экран регистрации устройства по QR — основной вход в приложение. */
-    public static void openEnroll(@NonNull Context context, @Nullable String reason) {
-        context.startActivity(ru.dndmemory.ui.auth.EnrollActivity.intent(context, reason));
     }
 }

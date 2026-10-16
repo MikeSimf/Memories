@@ -18,7 +18,9 @@ export function retellingFromDto(
     links: dto.links ?? [],
     revision: typeof dto.revision === 'number' ? dto.revision : 0,
     createdBy: dto.createdBy ?? '',
+    createdByName: dto.createdByName ?? '',
     updatedBy: dto.updatedBy ?? '',
+    updatedByName: dto.updatedByName ?? '',
     createdAt: dto.createdAt ?? nowIso(),
     updatedAt: dto.updatedAt ?? nowIso(),
     deleted: Boolean(dto.deleted),
@@ -140,7 +142,7 @@ export async function pruneDrafts(campaignId: string, keepIds: Set<string>): Pro
 /** Публикация черновика: черновик становится локальным `PUBLISHED` и уходит в очередь. */
 export function draftToRetelling(
   draft: LocalRetellingDraft,
-  extra: { createdBy: string; updatedBy: string },
+  extra: { createdBy: string; updatedBy: string; createdByName?: string; updatedByName?: string },
 ): LocalRetelling {
   const timestamp = nowIso()
   return {
@@ -156,7 +158,9 @@ export function draftToRetelling(
     links: [],
     revision: 0,
     createdBy: extra.createdBy,
+    createdByName: extra.createdByName ?? '',
     updatedBy: extra.updatedBy,
+    updatedByName: extra.updatedByName ?? '',
     createdAt: draft.createdAt || timestamp,
     updatedAt: timestamp,
     deleted: false,

@@ -15,15 +15,22 @@ import ru.dndmemory.data.model.EntityLink;
 import ru.dndmemory.data.model.EntityType;
 import ru.dndmemory.data.remote.ApiCall;
 import ru.dndmemory.data.remote.ApiService;
+import ru.dndmemory.data.remote.dto.CharacterDto;
 import ru.dndmemory.data.remote.dto.EntityDto;
+import ru.dndmemory.data.remote.dto.HeroDto;
+import ru.dndmemory.data.remote.dto.ItemDto;
+import ru.dndmemory.data.remote.dto.LocationDto;
+import ru.dndmemory.data.remote.dto.SearchResponse;
 import ru.dndmemory.util.AppExecutors;
 import ru.dndmemory.util.DateFormats;
 import ru.dndmemory.util.Ids;
 import ru.dndmemory.util.RepoCallback;
 
 /**
- * Объекты кампании. Все правки — локальные: запись в Room плюс постановка в
- * {@code pending_changes}. На сервер их отправит {@code SyncEngine}.
+ * Объекты кампании. Все четыре класса лежат в одной таблице {@code entities}
+ * с дискриминатором {@code kind}, но сеть у каждого класса своя — четыре набора
+ * эндпоинтов (docs/api.md, раздел 6). Все правки локальные: запись в Room плюс
+ * постановка в {@code pending_changes}, на сервер их отправит {@code SyncEngine}.
  */
 public class EntityRepository {
 
@@ -43,22 +50,22 @@ public class EntityRepository {
         return db.entityDao().observeAll(campaignId);
     }
 
-    public LiveData<List<EntityRoom>> observeByType(String campaignId, EntityType type) {
-        if (type == null) {
+    public LiveData<List<EntityRoom>> observeByKind(String campaignId, @Nullable EntityType kind) {
+        if (kind == null) {
             return db.entityDao().observeAll(campaignId);
         }
-        return db.entityDao().observeByType(campaignId, type.name());
+        return db.entityDao().observeByKind(campaignId, kind.name());
     }
 
     /**
-     * Объекты вкладки: «Персонажи» — {@code HERO,NPC}, «Локации» — {@code LOCATION},
-     * «Предметы» — {@code ITEM} (docs/api.md, раздел 6). Пустой список — все виды.
+     * Объекты вкладки: «Персонажи» — {@code HERO,CHARACTER}, «Локации» —
+     * {@code LOCATION}, «Предметы» — {@code ITEM}. Пустой список — все классы.
      */
-    public LiveData<List<EntityRoom>> observeByTypes(String campaignId, List<String> types) {
-        if (types == null || types.isEmpty()) {
+    public LiveData<List<EntityRoom>> observeByKinds(String campaignId, List<String> kinds) {
+        if (kinds == null || kinds.isEmpty()) {
             return db.entityDao().observeAll(campaignId);
         }
-        return db.entityDao().observeByTypes(campaignId, types);
+        return db.entityDao().observeByKinds(campaignId, kinds);
     }
 
     public LiveData<EntityRoom> observe(String entityId) {
@@ -74,46 +81,47 @@ public class EntityRepository {
         return db.entityDao().findAllNow(campaignId);
     }
 
-    public List<EntityRoom> findByTypeNow(String campaignId, EntityType type) {
-        return db.entityDao().findByTypeNow(campaignId, type.name());
+    /** Объекты одного класса — например, только герои для участников и приглашений. */
+    public List<EntityRoom> findByKindNow(String campaignId, EntityType kind) {
+        return db.entityDao().findByKindNow(campaignId, kind.name());
     }
 
-    public List<EntityRoom> findByTypesNow(String campaignId, List<String> types) {
-        if (types == null || types.isEmpty()) {
+    public List<EntityRoom> findByKindsNow(String campaignId, List<String> kinds) {
+        if (kinds == null || kinds.isEmpty()) {
             return db.entityDao().findAllNow(campaignId);
         }
-        return db.entityDao().findByTypesNow(campaignId, types);
+        return db.entityDao().findByKindsNow(campaignId, kinds);
     }
 
     /** Офлайн-поиск по локальной базе — работает без сети (docs/api.md, раздел 8). */
-    public LiveData<List<EntityRoom>> search(String campaignId, @Nullable EntityType type, String query) {
+    public LiveData<List<EntityRoom>> search(String campaignId, @Nullable EntityType kind, String query) {
         String pattern = "%" + (query == null ? "" : query.trim()) + "%";
-        if (type == null) {
+        if (kind == null) {
             return db.entityDao().search(campaignId, pattern);
         }
-        return db.entityDao().searchByType(campaignId, type.name(), pattern);
+        return db.entityDao().searchByKinds(campaignId, single(kind), pattern);
     }
 
-    /** Поиск по вкладке с несколькими видами: «Персонажи» ищет и героев, и НПС. */
-    public LiveData<List<EntityRoom>> searchByTypes(String campaignId, @Nullable List<String> types,
-                                                    String query) {
+    /** Поиск по вкладке с несколькими классами: «Персонажи» ищет героев и НПС. */
+    public LiveData<List<EntityRoom>> searchByKinds(String campaignId, @Nullable List<String> kinds,
+                                                   String query) {
         String pattern = "%" + (query == null ? "" : query.trim()) + "%";
-        if (types == null || types.isEmpty()) {
+        if (kinds == null || kinds.isEmpty()) {
             return db.entityDao().search(campaignId, pattern);
         }
-        return db.entityDao().searchByTypes(campaignId, types, pattern);
+        return db.entityDao().searchByKinds(campaignId, kinds, pattern);
     }
 
-    /** Новый объект: id и clientId генерирует клиент, в базу он ещё не записан. */
-    public EntityRoom createDraft(String campaignId, EntityType type) {
+    /** Новый объект: id генерирует клиент, в базу он ещё не записан. */
+    public EntityRoom createDraft(String campaignId, EntityType kind) {
         EntityRoom room = new EntityRoom();
         room.id = Ids.uuid();
-        room.clientId = room.id;
         room.campaignId = campaignId;
-        room.type = (type == null ? EntityType.NPC : type).name();
+        room.kind = (kind == null ? EntityType.CHARACTER : kind).name();
         room.name = "";
-        room.summary = "";
         room.description = "";
+        room.items = new ArrayList<>();
+        room.links = new ArrayList<>();
         room.createdAt = DateFormats.nowIso();
         room.updatedAt = room.createdAt;
         room.revision = 0L;
@@ -127,11 +135,8 @@ public class EntityRepository {
             if (room.createdAt == null || room.createdAt.isEmpty()) {
                 room.createdAt = room.updatedAt;
             }
-            if (room.clientId == null || room.clientId.isEmpty()) {
-                room.clientId = room.id;
-            }
             room.dirty = true;
-            room.links = resolveLinks(room.campaignId, room.description, room.summary);
+            room.links = resolveLinks(room.campaignId, room.description, room.shortDescription);
             db.entityDao().upsert(room);
             writer.entity(room, ChangeOp.UPSERT);
             return room;
@@ -161,8 +166,12 @@ public class EntityRepository {
                 throw ru.dndmemory.data.remote.ApiException.unexpected(
                         new IllegalStateException("Объект не найден локально"));
             }
-            EntityDto dto = ApiCall.execute(api.entity(local.campaignId, entityId));
-            EntityRoom fresh = Mappers.toRoom(dto, local.campaignId);
+            EntityType kind = EntityType.fromOrCharacter(local.kind);
+            EntityDto dto = fetchOne(local.campaignId, kind, entityId);
+            EntityRoom fresh = Mappers.toRoom(dto, kind, local.campaignId);
+            if (fresh.id == null || fresh.id.isEmpty()) {
+                fresh.id = entityId;
+            }
             fresh.dirty = false;
             fresh.conflictJson = null;
             db.entityDao().upsert(fresh);
@@ -194,22 +203,25 @@ public class EntityRepository {
     }
 
     /**
-     * Перезагрузка объектов вкладки: сервер фильтрует по {@code types}, например
-     * {@code HERO,NPC} (docs/api.md, раздел 6).
+     * Перезагрузка объектов вкладки: сервер опрашивается по каждому классу
+     * отдельным эндпоинтом ({@code /heroes}, {@code /characters}, …).
      */
-    public void refresh(String campaignId, @Nullable List<String> types,
+    public void refresh(String campaignId, @Nullable List<String> kinds,
                         RepoCallback<List<EntityRoom>> callback) {
-        String typeFilter = types == null || types.isEmpty() ? null : join(types);
         exec.io(() -> {
-            List<EntityDto> remote = ApiCall.execute(
-                    api.entities(campaignId, typeFilter, null, null, 500, null));
+            List<EntityType> wanted = kinds == null || kinds.isEmpty()
+                    ? EntityType.ALL : kindsOf(kinds);
             List<EntityRoom> rooms = new ArrayList<>();
-            if (remote != null) {
+            for (EntityType kind : wanted) {
+                List<? extends EntityDto> remote = fetchList(campaignId, kind);
+                if (remote == null) {
+                    continue;
+                }
                 for (EntityDto dto : remote) {
                     if (dto == null || dto.id == null) {
                         continue;
                     }
-                    EntityRoom incoming = Mappers.toRoom(dto, campaignId);
+                    EntityRoom incoming = Mappers.toRoom(dto, kind, campaignId);
                     EntityRoom local = db.entityDao().find(incoming.id);
                     if (local != null && local.dirty) {
                         // Локальные неотправленные правки не затираем.
@@ -228,31 +240,92 @@ public class EntityRepository {
         exec.io(() -> db.entityDao().findAllNow(campaignId), callback);
     }
 
-    /** {@code types=HERO,NPC} — так фильтрует сервер. */
+    /** Герои кампании: нужны участникам и приглашениям (привязка к герою). */
+    public void loadHeroes(String campaignId, RepoCallback<List<EntityRoom>> callback) {
+        exec.io(() -> db.entityDao().findByKindNow(campaignId, EntityType.HERO.name()), callback);
+    }
+
+    /**
+     * Поиск на сервере (docs/api.md, раздел 8). Локальный поиск работает всегда,
+     * серверный дополняет его, когда есть сеть.
+     */
+    public void searchRemote(String campaignId, String query, @Nullable List<String> kinds,
+                             RepoCallback<SearchResponse> callback) {
+        String kindsCsv = kinds == null || kinds.isEmpty() ? null : join(kinds);
+        exec.io(() -> ApiCall.execute(api.search(campaignId, query, kindsCsv, 50)), callback);
+    }
+
+    /** {@code kinds=HERO,CHARACTER} — так фильтрует сервер. */
     @NonNull
-    public static String join(@NonNull List<String> types) {
+    public static String join(@NonNull List<String> kinds) {
         StringBuilder out = new StringBuilder();
-        for (String type : types) {
-            if (type == null || type.isEmpty()) {
+        for (String kind : kinds) {
+            if (kind == null || kind.isEmpty()) {
                 continue;
             }
             if (out.length() > 0) {
                 out.append(',');
             }
-            out.append(type);
+            out.append(kind);
         }
         return out.toString();
     }
 
-    /** Обратные ссылки на объект (GET …/backlinks). */
-    public void loadBacklinks(String campaignId, String entityId,
-                              RepoCallback<List<ru.dndmemory.data.remote.dto.BacklinkDto>> callback) {
-        exec.io(() -> ApiCall.execute(api.backlinks(campaignId, entityId)), callback);
+    private static List<String> single(EntityType kind) {
+        List<String> out = new ArrayList<>();
+        out.add(kind.name());
+        return out;
+    }
+
+    @NonNull
+    private static List<EntityType> kindsOf(@NonNull List<String> kinds) {
+        List<EntityType> out = new ArrayList<>();
+        for (String kind : kinds) {
+            EntityType type = EntityType.from(kind);
+            if (type != null && !out.contains(type)) {
+                out.add(type);
+            }
+        }
+        return out.isEmpty() ? EntityType.ALL : out;
+    }
+
+    /** Список класса: у каждого класса кампании свой эндпоинт (docs/api.md, раздел 6). */
+    @Nullable
+    private List<? extends EntityDto> fetchList(String campaignId, EntityType kind)
+            throws ru.dndmemory.data.remote.ApiException {
+        switch (kind) {
+            case HERO:
+                return ApiCall.execute(api.heroes(campaignId, null, null, 500, null));
+            case LOCATION:
+                return ApiCall.execute(api.locations(campaignId, null, null, 500, null));
+            case ITEM:
+                return ApiCall.execute(api.items(campaignId, null, null, 500, null));
+            case CHARACTER:
+            default:
+                return ApiCall.execute(api.characters(campaignId, null, null, 500, null));
+        }
+    }
+
+    /** Чтение одного объекта: {@code GET .../heroes/{id}} и аналоги. */
+    @Nullable
+    private EntityDto fetchOne(String campaignId, EntityType kind, String entityId)
+            throws ru.dndmemory.data.remote.ApiException {
+        switch (kind) {
+            case HERO:
+                return ApiCall.execute(api.hero(campaignId, entityId));
+            case LOCATION:
+                return ApiCall.execute(api.location(campaignId, entityId));
+            case ITEM:
+                return ApiCall.execute(api.item(campaignId, entityId));
+            case CHARACTER:
+            default:
+                return ApiCall.execute(api.character(campaignId, entityId));
+        }
     }
 
     /**
      * Локальное разрешение ссылок {@code [[Имя]]} по своей базе — правило то же,
-     * что у сервера (docs/sync.md, раздел 7).
+     * что у сервера (docs/sync.md, раздел 8). Имена ищутся по всем четырём классам.
      */
     public List<EntityLink> resolveLinks(String campaignId, String... texts) {
         return LinkResolver.resolve(db.entityDao(), campaignId, texts);

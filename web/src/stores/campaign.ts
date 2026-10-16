@@ -3,53 +3,64 @@ import { computed, ref } from 'vue'
 
 import {
   ApiError,
-  devicesApi,
-  entitiesApi,
   errorMessage,
   invitesApi,
   membersApi,
+  objectsApi,
   type AcceptInviteResponse,
   type AddMemberRequest,
   type AddMemberResponse,
-  type CreateEnrollmentRequest,
+  type CampaignObjectDto,
   type CreateInviteRequest,
-  type DeviceDto,
+  type CharacterDto,
   type EntityLinkDto,
-  type EntityType,
-  type InviteDto,
+  type HeroDto,
+  type ItemDto,
+  type LocationDto,
   type MemberRole,
+  type ObjectClass,
+  type ObjectListQuery,
+  type PageDto,
   type PatchMemberRequest,
+  type InviteDto,
   type Permission,
+  type RetellingBriefDto,
   type RetellingStatus,
 } from '@/api'
 import {
   deleteDraft,
-  deleteEntityRecord,
   deleteMemberRecord,
+  deleteObjectRecord,
   deleteRetellingRecord,
   draftToRetelling,
-  entityFromDto,
-  entityToPayload,
   getDraft,
-  getEntity,
+  getObject,
   getRetelling,
+  isLocalObjectOf,
   listDrafts,
-  listEntities,
   listMembers,
+  listObjects,
   listRetellings,
   memberFromDto,
   nowIso,
+  objectFromDto,
+  objectToPayload,
+  objectTombstone,
   onDatabaseChanged,
   pruneMembers,
   putDraft,
-  putEntities,
-  putEntity,
   putMember,
   putMembers,
+  putObject,
+  putObjects,
   putRetelling,
   retellingToPayload,
   type CampaignRecord,
-  type LocalEntity,
+  type LocalCharacter,
+  type LocalHero,
+  type LocalItem,
+  type LocalLocation,
+  type LocalObject,
   type LocalRetelling,
   type LocalRetellingDraft,
   type MemberRecord,
@@ -60,14 +71,13 @@ import {
   resolveConflictUseServer as applyConflictUseServer,
 } from '@/sync/engine'
 import { enqueueChange } from '@/sync/queue'
-import { normalizeAttrs } from '@/utils/attrs'
 import { formatRelative } from '@/utils/datetime'
 import {
-  canCreateEntity,
+  canCreateObject,
   canCreateRetelling,
-  canDeleteEntity,
+  canDeleteObject,
   canDeleteRetelling,
-  canEditEntity,
+  canEditObject,
   canEditRetelling,
   hasPermission,
   type PermissionSubject,
@@ -77,9 +87,9 @@ import { createUuid } from '@/utils/uuid'
 import { useAuthStore } from './auth'
 import { useCampaignsStore } from './campaigns'
 import { useUiStore } from './ui'
-import type { EntityFormValues, RetellingFormValues } from '@/types/forms'
+import type { HeroItemFormValue, ObjectFormValues, RetellingFormValues } from '@/types/forms'
 
-export type { EntityFormValues, RetellingFormValues }
+export type { ObjectFormValues, RetellingFormValues }
 
 /** Строка объединённого списка пересказов: черновики и публикации вместе. */
 export interface RetellingListItem {
@@ -107,18 +117,18 @@ export const useCampaignStore = defineStore('campaign', () => {
 
   const campaignId = ref<string | null>(null)
   const campaign = ref<CampaignRecord | null>(null)
-  const entities = ref<LocalEntity[]>([])
+  /** Все четыре класса объектов кампании в одной коллекции — с полем `objectType`. */
+  const objects = ref<LocalObject[]>([])
   const retellings = ref<LocalRetelling[]>([])
   const drafts = ref<LocalRetellingDraft[]>([])
   const members = ref<MemberRecord[]>([])
   const invites = ref<InviteDto[]>([])
-  const devices = ref<DeviceDto[]>([])
   /**
-   * Объекты активной вкладки: читаются из IndexedDB с фильтром видов
-   * (`listEntities(id, { types })`) — поэтому список работает и без сети.
+   * Объекты активной вкладки: читаются из IndexedDB с фильтром классов
+   * (`listObjects(id, { classes })`) — поэтому список работает и без сети.
    */
-  const tabEntities = ref<LocalEntity[]>([])
-  const tabTypes = ref<EntityType[]>([])
+  const tabObjects = ref<LocalObject[]>([])
+  const tabClasses = ref<ObjectClass[]>([])
   /** Идёт постраничная подгрузка вкладки с сервера (локальный список уже показан). */
   const tabLoading = ref(false)
   /** Сколько объектов вкладки уже получено с сервера (для индикатора). */
@@ -138,11 +148,11 @@ export const useCampaignStore = defineStore('campaign', () => {
   const myMembership = computed<MemberRecord | null>(
     () => members.value.find((member) => member.userId === userId.value) ?? null,
   )
-  const linkedEntityId = computed(() => myMembership.value?.linkedEntityId ?? null)
+  const linkedHeroId = computed(() => myMembership.value?.linkedHeroId ?? null)
   const subject = computed<PermissionSubject>(() => ({
     userId: userId.value,
     permissions: permissions.value,
-    linkedEntityId: linkedEntityId.value,
+    linkedHeroId: linkedHeroId.value,
     role: campaign.value?.myRole ?? null,
   }))
 
@@ -153,18 +163,23 @@ export const useCampaignStore = defineStore('campaign', () => {
   const canWriteHeroes = computed(() => hasPermission(permissions.value, 'hero.write'))
   const canWriteRetellings = computed(() => canCreateRetelling(subject.value))
 
-  const activeEntities = computed(() => entities.value.filter((entity) => !entity.deleted))
-  const heroes = computed(() => activeEntities.value.filter((entity) => entity.type === 'HERO'))
-  const npcs = computed(() => activeEntities.value.filter((entity) => entity.type === 'NPC'))
-  const locations = computed(() =>
-    activeEntities.value.filter((entity) => entity.type === 'LOCATION'),
+  const activeObjects = computed(() => objects.value.filter((object) => !object.deleted))
+  const heroes = computed(() => activeObjects.value.filter((object) => isLocalObjectOf(object, 'HERO')))
+  const characters = computed(() =>
+    activeObjects.value.filter((object) => isLocalObjectOf(object, 'CHARACTER')),
   )
-  const items = computed(() => activeEntities.value.filter((entity) => entity.type === 'ITEM'))
+  const locations = computed(() =>
+    activeObjects.value.filter((object) => isLocalObjectOf(object, 'LOCATION')),
+  )
+  const items = computed(() => activeObjects.value.filter((object) => isLocalObjectOf(object, 'ITEM')))
+
+  /** Краткие пересказы из карточки кампании (`api.md` §4) — без отдельного запроса. */
+  const retellingBriefs = computed<RetellingBriefDto[]>(() => campaign.value?.retellingBriefs ?? [])
 
   /** Все объекты, на которые можно ссылаться из разметки `[[…]]`. */
   const linkResolver = computed(() =>
-    activeEntities.value.length > 0
-      ? createLinkResolver(activeEntities.value.map((entity) => ({ id: entity.id, name: entity.name })))
+    activeObjects.value.length > 0
+      ? createLinkResolver(activeObjects.value.map((object) => ({ id: object.id, name: object.name })))
       : emptyLinkResolver,
   )
 
@@ -210,25 +225,23 @@ export const useCampaignStore = defineStore('campaign', () => {
     })
   })
 
+  /** Герои партии — для привязки участника и приглашения (`members.linkedHeroId`). */
   const heroOptions = computed(() =>
-    [...heroes.value, ...npcs.value].map((entity) => ({
-      id: entity.id,
-      name: entity.name,
-      type: entity.type,
-    })),
+    heroes.value.map((hero) => ({ id: hero.id, name: hero.name, objectClass: 'HERO' as ObjectClass })),
   )
 
-  const entityOptions = computed(() =>
-    activeEntities.value.map((entity) => ({
-      id: entity.id,
-      name: entity.name,
-      type: entity.type,
+  /** Все объекты — для «от лица кого» и ссылок в предметах. */
+  const objectOptions = computed(() =>
+    activeObjects.value.map((object) => ({
+      id: object.id,
+      name: object.name,
+      objectClass: object.objectType,
     })),
   )
 
   const hasConflicts = computed(
     () =>
-      entities.value.some((entity) => entity.conflict !== null) ||
+      objects.value.some((object) => object.conflict !== null) ||
       retellings.value.some((retelling) => retelling.conflict !== null),
   )
 
@@ -244,88 +257,121 @@ export const useCampaignStore = defineStore('campaign', () => {
   async function reload(): Promise<void> {
     const id = campaignId.value
     if (!id) return
-    const [record, entityList, retellingList, draftList, memberList] = await Promise.all([
+    const [record, objectList, retellingList, draftList, memberList] = await Promise.all([
       campaigns.getRecord(id),
-      listEntities(id),
+      listObjects(id),
       listRetellings(id),
       listDrafts(id),
       listMembers(id),
     ])
     campaign.value = record
-    entities.value = entityList
+    objects.value = objectList
     retellings.value = retellingList
     drafts.value = draftList
     members.value = memberList
-    await readTabEntities()
+    await readTabObjects()
   }
 
-  /** Локальное чтение вкладки: тот же фильтр видов, что уходит на сервер. */
-  async function readTabEntities(): Promise<void> {
+  /** Локальное чтение вкладки: тот же фильтр классов, что уходит на сервер. */
+  async function readTabObjects(): Promise<void> {
     const id = campaignId.value
-    if (!id || tabTypes.value.length === 0) {
-      tabEntities.value = []
+    if (!id || tabClasses.value.length === 0) {
+      tabObjects.value = []
       return
     }
-    tabEntities.value = await listEntities(id, { types: tabTypes.value })
+    tabObjects.value = await listObjects(id, { classes: tabClasses.value })
   }
 
-  /** Сливаем свежие страницы в общий список объектов: ссылки `[[…]]` видят их сразу. */
-  function mergeEntities(incoming: LocalEntity[]): void {
+  /** Сливаем свежие страницы в общий список: ссылки `[[…]]` видят их сразу. */
+  function mergeObjects(incoming: LocalObject[]): void {
     if (incoming.length === 0) return
-    const byId = new Map(entities.value.map((entity) => [entity.id, entity]))
-    for (const entity of incoming) byId.set(entity.id, entity)
-    entities.value = [...byId.values()]
+    const byId = new Map(objects.value.map((object) => [object.id, object]))
+    for (const object of incoming) byId.set(object.id, object)
+    objects.value = [...byId.values()]
   }
 
   /** Предел страниц вкладки: сервер отдаёт максимум 500 за раз (`api.md` §1). */
   const TAB_PAGE_LIMIT = 500
   const TAB_MAX_PAGES = 20
 
+  /** Запрос страницы одного класса: тип ответа сужается по классу. */
+  function listClassPage(
+    id: string,
+    objectClass: ObjectClass,
+    query: ObjectListQuery,
+  ): Promise<PageDto<CampaignObjectDto>> {
+    switch (objectClass) {
+      case 'HERO':
+        return objectsApi.list(id, 'HERO', query)
+      case 'CHARACTER':
+        return objectsApi.list(id, 'CHARACTER', query)
+      case 'ITEM':
+        return objectsApi.list(id, 'ITEM', query)
+      default:
+        return objectsApi.list(id, 'LOCATION', query)
+    }
+  }
+
+  /** DTO класса → локальная запись: класс известен из цикла загрузки. */
+  function localFromDto(objectClass: ObjectClass, dto: CampaignObjectDto): LocalObject {
+    switch (objectClass) {
+      case 'HERO':
+        return objectFromDto('HERO', dto as HeroDto, { conflict: null })
+      case 'CHARACTER':
+        return objectFromDto('CHARACTER', dto as CharacterDto, { conflict: null })
+      case 'ITEM':
+        return objectFromDto('ITEM', dto as ItemDto, { conflict: null })
+      default:
+        return objectFromDto('LOCATION', dto as LocationDto, { conflict: null })
+    }
+  }
+
   /**
-   * Постраничная загрузка вкладки: `GET /entities?types=…&limit=500&offset=…`
-   * (`api.md` §1, §6). Первая страница применяется сразу, дальше — по мере
-   * поступления, поэтому список наполняется постепенно, без блокирующего ожидания.
+   * Постраничная загрузка вкладки: `GET .../heroes?limit=500&offset=…` и аналоги
+   * (`api.md` §6). Вкладка «Персонажи» делает два запроса — герои и персонажи.
    * Записи с неотправленными правками не перетираем — их версия уйдёт push'ем.
    * Без сети цикл не стартует: вкладка остаётся на данных IndexedDB.
    */
-  async function refreshEntitiesFromServer(types: EntityType[], token: number): Promise<void> {
+  async function refreshObjectsFromServer(classes: ObjectClass[], token: number): Promise<void> {
     const id = campaignId.value
     if (!id || !ui.online) return
     tabLoading.value = true
     tabLoaded.value = 0
     tabTotal.value = 0
     try {
-      let offset = 0
-      let total: number | null = null
-      for (let page = 0; page < TAB_MAX_PAGES; page += 1) {
-        if (token !== tabLoadToken) return
-        const response = await entitiesApi.list(id, { types, limit: TAB_PAGE_LIMIT, offset })
-        if (token !== tabLoadToken) return
-        const items = response.items
-        if (typeof response.total === 'number') total = response.total
+      for (const objectClass of classes) {
+        let offset = 0
+        for (let page = 0; page < TAB_MAX_PAGES; page += 1) {
+          if (token !== tabLoadToken) return
+          const response = await listClassPage(id, objectClass, {
+            limit: TAB_PAGE_LIMIT,
+            offset,
+          })
+          if (token !== tabLoadToken) return
+          const items = response.items
+          const total = typeof response.total === 'number' ? response.total : null
 
-        // Не перетираем «грязные» записи: у них есть неотправленная правка.
-        const local = await listEntities(id, { types, includeDeleted: true })
-        const dirtyIds = new Set(
-          local.filter((entity) => entity.dirty === 1).map((entity) => entity.id),
-        )
-        const incoming = items
-          .filter((dto) => !dirtyIds.has(dto.id))
-          .map((dto) => entityFromDto(dto, { conflict: null }))
-        await putEntities(incoming)
-        if (token !== tabLoadToken) return
+          // Не перетираем «грязные» записи: у них есть неотправленная правка.
+          const local = await listObjects(id, { classes: [objectClass], includeDeleted: true })
+          const dirtyIds = new Set(local.filter((object) => object.dirty === 1).map((object) => object.id))
+          const incoming = items
+            .filter((dto) => !dirtyIds.has(dto.id))
+            .map((dto) => localFromDto(objectClass, dto))
+          await putObjects(incoming)
+          if (token !== tabLoadToken) return
 
-        // Обновляем то, что видит пользователь, сразу после каждой страницы.
-        mergeEntities(incoming)
-        tabLoaded.value += items.length
-        if (total !== null) tabTotal.value = total
-        await readTabEntities()
+          // Обновляем то, что видит пользователь, сразу после каждой страницы.
+          mergeObjects(incoming)
+          tabLoaded.value += items.length
+          if (total !== null) tabTotal.value += total
+          await readTabObjects()
 
-        if (items.length === 0) break
-        offset += items.length
-        if (total !== null && offset >= total) break
-        // Сервер не сообщил `total` — последняя страница короче лимита.
-        if (items.length < TAB_PAGE_LIMIT) break
+          if (items.length === 0) break
+          offset += items.length
+          if (total !== null && offset >= total) break
+          // Сервер не сообщил `total` — последняя страница короче лимита.
+          if (items.length < TAB_PAGE_LIMIT) break
+        }
       }
     } catch (caught) {
       if (caught instanceof ApiError && caught.isOffline) return
@@ -336,15 +382,15 @@ export const useCampaignStore = defineStore('campaign', () => {
   }
 
   /**
-   * Открытие вкладки: сначала локальная база с фильтром видов (работает офлайн),
+   * Открытие вкладки: сначала локальная база с фильтром классов (работает офлайн),
    * затем постраничная подгрузка с сервера и перечитывание стора на финал.
    */
-  async function loadTabEntities(types: EntityType[]): Promise<void> {
+  async function loadTabObjects(classes: ObjectClass[]): Promise<void> {
     const token = tabLoadToken + 1
     tabLoadToken = token
-    tabTypes.value = [...types]
-    await readTabEntities()
-    await refreshEntitiesFromServer(types, token)
+    tabClasses.value = [...classes]
+    await readTabObjects()
+    await refreshObjectsFromServer(classes, token)
     if (token !== tabLoadToken) return
     // Перечитываем стор целиком: свежие записи нужны и общим ссылкам `[[…]]`.
     await reload()
@@ -363,6 +409,8 @@ export const useCampaignStore = defineStore('campaign', () => {
     })
     try {
       await reload()
+      // `GET /api/campaigns/{id}` отдаёт `members` и `retellings` — сохраняем их,
+      // чтобы не делать отдельные запросы за участниками и пересказами.
       const details = await campaigns.loadDetails(id)
       if (details) campaign.value = details
       await reload()
@@ -380,14 +428,13 @@ export const useCampaignStore = defineStore('campaign', () => {
     }
     campaignId.value = null
     campaign.value = null
-    entities.value = []
+    objects.value = []
     retellings.value = []
     drafts.value = []
     members.value = []
     invites.value = []
-    devices.value = []
-    tabEntities.value = []
-    tabTypes.value = []
+    tabObjects.value = []
+    tabClasses.value = []
     // Гасим возможную незавершённую подгрузку вкладки.
     tabLoadToken += 1
     tabLoading.value = false
@@ -395,13 +442,13 @@ export const useCampaignStore = defineStore('campaign', () => {
     tabTotal.value = 0
   }
 
-  function entityById(id: string): LocalEntity | null {
-    return entities.value.find((entity) => entity.id === id) ?? null
+  function objectById(id: string): LocalObject | null {
+    return objects.value.find((object) => object.id === id) ?? null
   }
 
-  function entityName(id: string | null | undefined): string {
+  function objectName(id: string | null | undefined): string {
     if (!id) return ''
-    return entityById(id)?.name ?? ''
+    return objectById(id)?.name ?? ''
   }
 
   function retellingById(id: string): LocalRetelling | null {
@@ -412,17 +459,48 @@ export const useCampaignStore = defineStore('campaign', () => {
     return drafts.value.find((draft) => draft.id === id) ?? null
   }
 
-  /** Значения формы по объекту — для экрана правки. */
-  function entityFormValues(entity: LocalEntity): EntityFormValues {
-    return {
-      type: entity.type,
-      name: entity.name,
-      summary: entity.summary,
-      description: entity.description,
-      attrs: { ...entity.attrs },
-      tags: [...entity.tags],
-      imageFileId: entity.imageFileId,
+  /** Значения формы по объекту — для экрана правки: только поля своего класса. */
+  function objectFormValues(object: LocalObject): ObjectFormValues {
+    const base: ObjectFormValues = {
+      name: object.name,
+      description: object.description,
+      imageFileId: object.imageFileId,
+      race: '',
+      klass: '',
+      playerUserId: null,
+      items: [],
+      shortDescription: '',
+      ownerName: '',
+      ownerHeroId: null,
+      ownerCharacterId: null,
     }
+    if (object.objectType === 'HERO') {
+      return {
+        ...base,
+        race: object.race ?? '',
+        klass: object.klass ?? '',
+        playerUserId: object.playerUserId,
+        items: object.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          itemId: item.itemId,
+          quantity: item.quantity,
+          notes: item.notes ?? '',
+        })),
+      }
+    }
+    if (object.objectType === 'CHARACTER') {
+      return { ...base, race: object.race ?? '', shortDescription: object.shortDescription ?? '' }
+    }
+    if (object.objectType === 'ITEM') {
+      return {
+        ...base,
+        ownerName: object.ownerName ?? '',
+        ownerHeroId: object.ownerHeroId,
+        ownerCharacterId: object.ownerCharacterId,
+      }
+    }
+    return base
   }
 
   /** Значения формы по пересказу или черновику. */
@@ -444,7 +522,7 @@ export const useCampaignStore = defineStore('campaign', () => {
 
   function authorEntityName(id: string | null, fallback: string | null): string | null {
     if (id) {
-      const name = entityName(id)
+      const name = objectName(id)
       if (name) return name
     }
     return fallback
@@ -459,16 +537,21 @@ export const useCampaignStore = defineStore('campaign', () => {
 
   /* ----------------------------- Права ------------------------------- */
 
-  function canCreate(type: EntityType): boolean {
-    return canCreateEntity(subject.value, type)
+  function canCreate(objectClass: ObjectClass): boolean {
+    return canCreateObject(subject.value, objectClass)
   }
 
-  function canEdit(entity: LocalEntity): boolean {
-    return canEditEntity(subject.value, entity)
+  function canEdit(object: LocalObject): boolean {
+    return canEditObject(subject.value, object.objectType)
   }
 
-  function canDelete(entity: LocalEntity): boolean {
-    return canDeleteEntity(subject.value, entity)
+  function canDelete(object: LocalObject): boolean {
+    return canDeleteObject(subject.value, object.objectType)
+  }
+
+  function canEditObjectId(id: string): boolean {
+    const object = objectById(id)
+    return object ? canEdit(object) : false
   }
 
   function canEditRetellingItem(id: string): boolean {
@@ -488,114 +571,183 @@ export const useCampaignStore = defineStore('campaign', () => {
     return canDeleteRetelling(subject.value, retelling)
   }
 
-  function canEditEntityId(id: string): boolean {
-    const entity = entityById(id)
-    return entity ? canEdit(entity) : false
-  }
-
   /* --------------------------- Объекты ------------------------------- */
 
-  function localLinks(values: { summary: string; description: string }): EntityLinkDto[] {
-    return collectLinks([values.summary, values.description], linkResolver.value)
+  function linksFor(texts: Array<string | null | undefined>): EntityLinkDto[] {
+    return collectLinks(texts, linkResolver.value)
   }
 
-  /** Новый объект: сразу локально + в очередь синхронизации (`sync.md` §4). */
-  async function createEntity(values: EntityFormValues): Promise<LocalEntity> {
-    const cid = requireCampaignId()
-    const now = nowIso()
-    const entityId = createUuid()
-    const entity: LocalEntity = {
-      id: entityId,
-      campaignId: cid,
-      clientId: entityId,
-      type: values.type,
+  /** Предмет котомки: `itemId` подставляем, если имя нашлось среди предметов кампании. */
+  function resolveItemId(name: string): string | null {
+    const normalized = name.trim().toLowerCase()
+    if (normalized === '') return null
+    const match = items.value.find((item) => item.name.trim().toLowerCase() === normalized)
+    return match?.id ?? null
+  }
+
+  function buildHeroItems(values: HeroItemFormValue[]) {
+    return values
+      .filter((item) => item.name.trim() !== '')
+      .map((item, index) => ({
+        id: item.id ?? `${index + 1}`,
+        name: item.name.trim(),
+        itemId: item.itemId ?? resolveItemId(item.name),
+        quantity: item.quantity,
+        notes: item.notes.trim() === '' ? null : item.notes.trim(),
+      }))
+  }
+
+  function optional(value: string): string | null {
+    const trimmed = value.trim()
+    return trimmed === '' ? null : trimmed
+  }
+
+  function playerNameFor(id: string | null): string | null {
+    if (!id) return null
+    return members.value.find((member) => member.userId === id)?.displayName ?? null
+  }
+
+  /**
+   * Собирает локальную запись нужного класса из формы (`api.md` §6). Класс объекта
+   * при правке не меняется: у каждого класса свои поля и свой эндпоинт.
+   */
+  function buildLocalObject(
+    objectClass: ObjectClass,
+    id: string,
+    values: ObjectFormValues,
+    existing: LocalObject | null,
+    now: string,
+  ): LocalObject {
+    const actor = userId.value ?? ''
+    const actorName = auth.user?.displayName ?? ''
+    const base = {
+      id,
+      campaignId: requireCampaignId(),
       name: values.name.trim(),
-      summary: values.summary.trim(),
       description: values.description,
-      attrs: normalizeAttrs(values.type, values.attrs),
-      tags: values.tags,
       imageFileId: values.imageFileId,
-      links: [],
-      createdBy: userId.value ?? '',
-      updatedBy: userId.value ?? '',
-      revision: 0,
-      createdAt: now,
+      links: [] as EntityLinkDto[],
+      createdBy: existing?.createdBy ?? actor,
+      createdByName: existing?.createdByName ?? actorName,
+      updatedBy: actor,
+      updatedByName: actorName,
+      revision: existing?.revision ?? 0,
+      createdAt: existing?.createdAt ?? now,
       updatedAt: now,
       deleted: false,
-      dirty: 1,
+      dirty: 1 as const,
       conflict: null,
     }
-    entity.links = localLinks(entity)
-    await putEntity(entity)
+    if (objectClass === 'HERO') {
+      const hero: LocalHero = {
+        ...base,
+        objectType: 'HERO',
+        race: optional(values.race),
+        klass: optional(values.klass),
+        playerUserId: values.playerUserId,
+        playerName: playerNameFor(values.playerUserId),
+        items: buildHeroItems(values.items),
+      }
+      hero.links = linksFor([hero.description])
+      return hero
+    }
+    if (objectClass === 'CHARACTER') {
+      const character: LocalCharacter = {
+        ...base,
+        objectType: 'CHARACTER',
+        race: optional(values.race),
+        shortDescription: optional(values.shortDescription),
+      }
+      character.links = linksFor([character.description, character.shortDescription])
+      return character
+    }
+    if (objectClass === 'ITEM') {
+      // Ссылка не более чем на одного владельца (`roles.md` §2, правило 5).
+      const ownerHeroId = values.ownerHeroId
+      const ownerCharacterId = ownerHeroId ? null : values.ownerCharacterId
+      const item: LocalItem = {
+        ...base,
+        objectType: 'ITEM',
+        ownerName: optional(values.ownerName),
+        ownerHeroId,
+        ownerHeroName: ownerHeroId ? (objectById(ownerHeroId)?.name ?? null) : null,
+        ownerCharacterId,
+        ownerCharacterName: ownerCharacterId
+          ? (objectById(ownerCharacterId)?.name ?? null)
+          : null,
+      }
+      item.links = linksFor([item.description])
+      return item
+    }
+    const location: LocalLocation = { ...base, objectType: 'LOCATION' }
+    location.links = linksFor([location.description])
+    return location
+  }
+
+  /** Новый объект: сразу локально + в очередь синхронизации (`sync.md` §5). */
+  async function createObject(
+    objectClass: ObjectClass,
+    values: ObjectFormValues,
+  ): Promise<LocalObject> {
+    const cid = requireCampaignId()
+    const now = nowIso()
+    const object = buildLocalObject(objectClass, createUuid(), values, null, now)
+    await putObject(object)
     await enqueueChange({
       campaignId: cid,
-      objectType: 'ENTITY',
-      objectId: entity.id,
+      objectType: object.objectType,
+      objectId: object.id,
       op: 'UPSERT',
       baseRevision: null,
-      payload: entityToPayload(entity),
+      payload: objectToPayload(object),
     })
     await reload()
     notifyLocalChange(cid)
-    return entity
+    return object
   }
 
-  async function updateEntity(id: string, values: EntityFormValues): Promise<LocalEntity | null> {
+  async function updateObject(id: string, values: ObjectFormValues): Promise<LocalObject | null> {
     const cid = requireCampaignId()
-    const existing = await getEntity(id)
+    const existing = await getObject(id)
     if (!existing) return null
-    const updated: LocalEntity = {
-      ...existing,
-      type: values.type,
-      name: values.name.trim(),
-      summary: values.summary.trim(),
-      description: values.description,
-      attrs: normalizeAttrs(values.type, values.attrs),
-      tags: values.tags,
-      imageFileId: values.imageFileId,
-      updatedBy: userId.value ?? '',
-      updatedAt: nowIso(),
-      dirty: 1,
-      conflict: null,
-    }
-    updated.links = localLinks(updated)
-    await putEntity(updated)
+    const updated = buildLocalObject(existing.objectType, id, values, existing, nowIso())
+    await putObject(updated)
     await enqueueChange({
       campaignId: cid,
-      objectType: 'ENTITY',
+      objectType: updated.objectType,
       objectId: updated.id,
       op: 'UPSERT',
       baseRevision: existing.revision > 0 ? existing.revision : null,
-      payload: entityToPayload(updated),
+      payload: objectToPayload(updated),
     })
     await reload()
     notifyLocalChange(cid)
     return updated
   }
 
-  async function deleteEntity(id: string): Promise<void> {
+  async function deleteObject(id: string): Promise<void> {
     const cid = requireCampaignId()
-    const existing = await getEntity(id)
+    const existing = await getObject(id)
     if (!existing) return
-    const updated: LocalEntity = {
+    const removed: LocalObject = {
       ...existing,
       deleted: true,
       updatedBy: userId.value ?? '',
       updatedAt: nowIso(),
       dirty: 1,
     }
-    await putEntity(updated)
+    await putObject(removed)
     const result = await enqueueChange({
       campaignId: cid,
-      objectType: 'ENTITY',
+      objectType: existing.objectType,
       objectId: id,
       op: 'DELETE',
       baseRevision: existing.revision > 0 ? existing.revision : null,
-      payload: { id, deleted: true, updatedAt: updated.updatedAt },
+      payload: objectTombstone(removed),
     })
     if (result.dropped) {
       // Объект существовал только на устройстве.
-      await deleteEntityRecord(id)
+      await deleteObjectRecord(id)
     }
     await reload()
     notifyLocalChange(cid)
@@ -605,7 +757,7 @@ export const useCampaignStore = defineStore('campaign', () => {
 
   /**
    * Сохранение черновика. Черновик живёт только в `retelling_drafts` и никогда
-   * не попадает ни в `pending_changes`, ни в push (`sync.md` §4).
+   * не попадает ни в `pending_changes`, ни в push (`sync.md` §5).
    */
   async function saveDraft(
     draftId: string | null,
@@ -668,6 +820,8 @@ export const useCampaignStore = defineStore('campaign', () => {
     const retelling = draftToRetelling(base, {
       createdBy: userId.value ?? '',
       updatedBy: userId.value ?? '',
+      createdByName: auth.user?.displayName ?? '',
+      updatedByName: auth.user?.displayName ?? '',
     })
     retelling.links = collectLinks([retelling.title, retelling.body], linkResolver.value)
     await putRetelling(retelling)
@@ -703,7 +857,9 @@ export const useCampaignStore = defineStore('campaign', () => {
       links: [],
       revision: 0,
       createdBy: userId.value ?? '',
+      createdByName: auth.user?.displayName ?? '',
       updatedBy: userId.value ?? '',
+      updatedByName: auth.user?.displayName ?? '',
       createdAt: now,
       updatedAt: now,
       deleted: false,
@@ -741,6 +897,7 @@ export const useCampaignStore = defineStore('campaign', () => {
       sessionDate: values.sessionDate,
       status: 'PUBLISHED',
       updatedBy: userId.value ?? '',
+      updatedByName: auth.user?.displayName ?? '',
       updatedAt: nowIso(),
       dirty: 1,
       conflict: null,
@@ -857,8 +1014,9 @@ export const useCampaignStore = defineStore('campaign', () => {
     await updateMember(memberId, { role })
   }
 
-  async function linkMemberToHero(memberId: string, linkedEntityId: string | null): Promise<void> {
-    await updateMember(memberId, { linkedEntityId })
+  /** Привязка участника к герою: `linkedHeroId` вместо прежнего `linkedEntityId`. */
+  async function linkMemberToHero(memberId: string, linkedHeroId: string | null): Promise<void> {
+    await updateMember(memberId, { linkedHeroId })
   }
 
   /* ---------------------------- Приглашения -------------------------- */
@@ -890,39 +1048,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     invites.value = invites.value.filter((invite) => invite.id !== inviteId)
   }
 
-  /* ---------------------- Устройства (QR-регистрация) ---------------- */
-
-  /** Список устройств кампании (`api.md` §3.1, право `members.manage`). */
-  async function reloadDevices(): Promise<void> {
-    const id = requireCampaignId()
-    try {
-      devices.value = await devicesApi.list(id)
-    } catch (caught) {
-      if (caught instanceof ApiError && caught.isOffline) {
-        ui.pushToast('warning', 'Список устройств доступен только при наличии сети')
-        devices.value = []
-        return
-      }
-      throw caught
-    }
-  }
-
-  /** Выпуск QR-кода для регистрации устройства: возвращает его же для показа. */
-  async function createDeviceEnrollment(body: CreateEnrollmentRequest): Promise<InviteDto> {
-    const id = requireCampaignId()
-    const enrollment = await devicesApi.createEnrollment(id, body)
-    await reloadDevices()
-    return enrollment
-  }
-
-  /** Отзыв устройства: сессии гасятся, человек в кампании остаётся. */
-  async function revokeDevice(deviceId: string): Promise<void> {
-    const id = requireCampaignId()
-    await devicesApi.revoke(id, deviceId)
-    devices.value = devices.value.filter((device) => device.id !== deviceId)
-  }
-
-  /** Принятие приглашения по токену (`/join/:token`). */
+  /** Принятие приглашения по токену (`/join/:token`); приглашение одноразовое. */
   async function acceptInvite(token: string): Promise<AcceptInviteResponse> {
     const response = await invitesApi.accept(token)
     await campaigns.load()
@@ -932,14 +1058,13 @@ export const useCampaignStore = defineStore('campaign', () => {
   return {
     campaignId,
     campaign,
-    entities,
+    objects,
     retellings,
     drafts,
     members,
     invites,
-    devices,
-    tabEntities,
-    tabTypes,
+    tabObjects,
+    tabClasses,
     tabLoading,
     tabLoaded,
     tabTotal,
@@ -948,43 +1073,44 @@ export const useCampaignStore = defineStore('campaign', () => {
     permissions,
     subject,
     myMembership,
-    linkedEntityId,
+    linkedHeroId,
     canManageCampaign,
     canManageMembers,
     canInvite,
     canWriteEntities,
     canWriteHeroes,
     canWriteRetellings,
-    activeEntities,
+    activeObjects,
     heroes,
-    npcs,
+    characters,
     locations,
     items,
     heroOptions,
-    entityOptions,
+    objectOptions,
+    retellingBriefs,
     retellingItems,
     linkResolver,
     hasConflicts,
     open,
     close,
     reload,
-    entityById,
-    entityName,
+    objectById,
+    objectName,
     retellingById,
     draftById,
-    entityFormValues,
+    objectFormValues,
     retellingFormValues,
     userName,
     changeSummary,
     canCreate,
     canEdit,
     canDelete,
-    canEditEntityId,
+    canEditObjectId,
     canEditRetellingItem,
     canDeleteRetellingItem,
-    createEntity,
-    updateEntity,
-    deleteEntity,
+    createObject,
+    updateObject,
+    deleteObject,
     saveDraft,
     publishDraft,
     createPublishedRetelling,
@@ -1001,10 +1127,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     reloadInvites,
     createInvite,
     revokeInvite,
-    reloadDevices,
-    createDeviceEnrollment,
-    revokeDevice,
-    loadTabEntities,
+    loadTabObjects,
     acceptInvite,
   }
 })

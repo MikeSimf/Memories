@@ -13,30 +13,28 @@ import ru.dndmemory.App;
 import ru.dndmemory.R;
 import ru.dndmemory.data.remote.ApiException;
 import ru.dndmemory.data.remote.dto.AcceptInviteResponse;
-import ru.dndmemory.data.remote.dto.EnrollResponse;
 import ru.dndmemory.data.remote.dto.InvitePreviewDto;
 import ru.dndmemory.data.repo.AuthRepository;
 import ru.dndmemory.data.repo.InviteRepository;
 import ru.dndmemory.databinding.ActivityInviteAcceptBinding;
-import ru.dndmemory.ui.auth.EnrollActivity;
 import ru.dndmemory.ui.common.ErrorMessages;
 import ru.dndmemory.ui.common.Extras;
 import ru.dndmemory.ui.common.Labels;
 import ru.dndmemory.ui.common.Nav;
 import ru.dndmemory.ui.common.ViewUtils;
 import ru.dndmemory.util.DateFormats;
-import ru.dndmemory.util.DeviceInfo;
 import ru.dndmemory.util.QrUtils;
 import ru.dndmemory.util.RepoCallback;
 
 /**
- * Принятие QR-кода. Открывается по deep link {@code dndmemory://join?token=…},
- * из сканера QR или после входа.
+ * Принятие одноразового приглашения. Открывается по deep link
+ * {@code dndmemory://join?token=…}, из сканера QR или после входа.
  *
- * <p>Правило контракта (docs/api.md, раздел 3.1): <b>есть сессия → accept,
- * сессии нет → enroll</b>. QR-код регистрации устройства ({@code mode: DEVICE})
- * принимается только через {@code POST /api/devices/enroll}: токен участника этот
- * эндпоинт не принимает, и тогда экран предлагает войти или создать аккаунт.
+ * <p>Правило простое: <b>есть сессия → accept</b>; сессии нет — предлагаем
+ * зарегистрироваться (логин, почта, пароль, имя — {@code inviteToken} уходит
+ * в {@code POST /api/auth/register}) или войти, после чего приглашение
+ * принимается. Повторное или просроченное приглашение даёт {@code 409
+ * invite_invalid} (docs/api.md, раздел 5).
  */
 public class InviteAcceptActivity extends AppCompatActivity {
 
@@ -45,10 +43,6 @@ public class InviteAcceptActivity extends AppCompatActivity {
     private AuthRepository auth;
     private String token;
     private String campaignIdToOpen;
-    /** Предпросмотр показал QR-код регистрации устройства. */
-    private boolean deviceQr;
-    /** enroll отказал: это обычное приглашение, дальше нужен вход в аккаунт. */
-    private boolean loginRequired;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -59,7 +53,9 @@ public class InviteAcceptActivity extends AppCompatActivity {
         invites = App.container(this).inviteRepository();
         auth = App.container(this).authRepository();
 
-        binding.inviteAcceptButton.setOnClickListener(v -> onPrimaryAction());
+        binding.inviteAcceptButton.setOnClickListener(v -> accept());
+        binding.inviteAcceptRegister.setOnClickListener(v -> openAuth(Extras.AUTH_TAB_REGISTER));
+        binding.inviteAcceptLogin.setOnClickListener(v -> openAuth(Extras.AUTH_TAB_LOGIN));
 
         handleIntent(getIntent());
     }
@@ -131,18 +127,16 @@ public class InviteAcceptActivity extends AppCompatActivity {
             return;
         }
         campaignIdToOpen = preview.campaignId;
-        deviceQr = preview.isDevice();
-        binding.inviteAcceptTitle.setText(deviceQr
-                ? R.string.enroll_title : R.string.invite_accept_title);
+        binding.inviteAcceptTitle.setText(R.string.invite_accept_title);
         binding.inviteAcceptCampaign.setText(getString(R.string.invite_accept_campaign,
                 preview.campaignTitle == null ? "" : preview.campaignTitle));
         binding.inviteAcceptRole.setText(getString(R.string.invite_accept_role,
                 Labels.roleText(this, preview.role)));
-        if (TextUtils.isEmpty(preview.linkedEntityName)) {
+        if (TextUtils.isEmpty(preview.linkedHeroName)) {
             ViewUtils.show(binding.inviteAcceptLinked, false);
         } else {
             binding.inviteAcceptLinked.setText(getString(R.string.invite_accept_linked,
-                    preview.linkedEntityName));
+                    preview.linkedHeroName));
             ViewUtils.show(binding.inviteAcceptLinked, true);
         }
         if (TextUtils.isEmpty(preview.expiresAt)) {
@@ -152,77 +146,24 @@ public class InviteAcceptActivity extends AppCompatActivity {
                     DateFormats.formatIso(preview.expiresAt)));
             ViewUtils.show(binding.inviteAcceptExpires, true);
         }
-        binding.inviteAcceptButton.setText(buttonLabel());
-        binding.inviteAcceptButton.setEnabled(true);
+        bindActions();
     }
 
-    private int buttonLabel() {
-        if (deviceQr) {
-            return R.string.enroll_submit;
-        }
-        return auth.isLoggedIn() ? R.string.action_accept : R.string.action_accept_login;
+    /** Есть сессия — одна кнопка «Принять»; нет — регистрация или вход. */
+    private void bindActions() {
+        boolean loggedIn = auth.isLoggedIn();
+        ViewUtils.show(binding.inviteAcceptButton, loggedIn);
+        binding.inviteAcceptButton.setEnabled(loggedIn);
+        ViewUtils.show(binding.inviteAcceptHint, !loggedIn);
+        ViewUtils.show(binding.inviteAcceptRegister, !loggedIn);
+        ViewUtils.show(binding.inviteAcceptLogin, !loggedIn);
     }
 
-    private void onPrimaryAction() {
-        if (token == null || token.isEmpty()) {
-            finish();
-            return;
-        }
-        if (loginRequired) {
-            openLogin();
-            return;
-        }
-        if (deviceQr) {
-            // QR устройства: входа ещё нет по определению — ведём на экран регистрации.
-            startActivity(enrollIntent());
-            finish();
-            return;
-        }
-        if (!auth.isLoggedIn()) {
-            // Контракт: сессии нет → enroll.
-            tryEnroll();
-            return;
-        }
-        accept();
-    }
-
-    @NonNull
-    private Intent enrollIntent() {
-        Intent intent = EnrollActivity.intent(this, null);
-        intent.putExtra(Extras.INVITE_TOKEN, token);
-        return intent;
-    }
-
-    /** Обмен токена из QR на сессию — так входит новый игрок без пароля. */
-    private void tryEnroll() {
-        ViewUtils.show(binding.inviteAcceptProgress, true);
-        binding.inviteAcceptButton.setEnabled(false);
-        auth.enrollDevice(token, DeviceInfo.label(), new RepoCallback<EnrollResponse>() {
-            @Override
-            public void onSuccess(@Nullable EnrollResponse value) {
-                ViewUtils.show(binding.inviteAcceptProgress, false);
-                String name = value == null || value.user == null ? "" : value.user.displayName;
-                ViewUtils.toast(InviteAcceptActivity.this, getString(R.string.auth_welcome, name));
-                String id = value != null && value.campaignId != null
-                        ? value.campaignId : campaignIdToOpen;
-                openCampaignOrList(id);
-            }
-
-            @Override
-            public void onError(@NonNull ApiException error) {
-                ViewUtils.show(binding.inviteAcceptProgress, false);
-                binding.inviteAcceptButton.setEnabled(true);
-                if (error.isNetwork()) {
-                    showError(getString(R.string.enroll_error_network));
-                    return;
-                }
-                // Токен участника enroll не принимает: предлагаем войти или создать аккаунт.
-                loginRequired = true;
-                binding.inviteAcceptError.setText(R.string.invite_accept_login_required);
-                ViewUtils.show(binding.inviteAcceptError, true);
-                binding.inviteAcceptButton.setText(R.string.action_accept_login);
-            }
-        });
+    private void openAuth(@NonNull String tab) {
+        Intent intent = Nav.auth(this, token);
+        intent.putExtra(Extras.AUTH_TAB, tab);
+        startActivity(intent);
+        finish();
     }
 
     private void accept() {
@@ -243,7 +184,8 @@ public class InviteAcceptActivity extends AppCompatActivity {
                 ViewUtils.show(binding.inviteAcceptProgress, false);
                 binding.inviteAcceptButton.setEnabled(true);
                 if (error.isConflict() || error.isNotFound() || error.isForbidden()) {
-                    showError(getString(R.string.invite_accept_invalid));
+                    // 409 invite_invalid: приглашение уже использовано или просрочено.
+                    showError(getString(R.string.error_invite_invalid));
                 } else {
                     showError(ErrorMessages.text(InviteAcceptActivity.this, error).toString());
                 }
@@ -260,15 +202,12 @@ public class InviteAcceptActivity extends AppCompatActivity {
         finish();
     }
 
-    /** Вход по почте или телефону: после него приглашение примется автоматически. */
-    private void openLogin() {
-        startActivity(Nav.auth(this, token));
-        finish();
-    }
-
     private void showError(@NonNull String message) {
         binding.inviteAcceptError.setText(message);
         ViewUtils.show(binding.inviteAcceptError, true);
-        binding.inviteAcceptButton.setEnabled(false);
+        ViewUtils.show(binding.inviteAcceptButton, false);
+        ViewUtils.show(binding.inviteAcceptRegister, false);
+        ViewUtils.show(binding.inviteAcceptLogin, false);
+        ViewUtils.show(binding.inviteAcceptHint, false);
     }
 }

@@ -1,6 +1,10 @@
 import { openDatabase, nowIso, STORE, type CampaignRecord } from './schema'
 import type { CampaignDto, CampaignListItem } from '@/api/types'
 
+/**
+ * Карточка кампании: из `GET /api/campaigns` (кратко) или
+ * `GET /api/campaigns/{id}` (детали с `members` и `retellings`, `api.md` §4).
+ */
 export function campaignRecordFromDto(
   dto: CampaignDto | CampaignListItem,
   options: {
@@ -16,13 +20,17 @@ export function campaignRecordFromDto(
     id: dto.id,
     title: dto.title,
     description: dto.description ?? '',
+    ownerUserId: details.ownerUserId ?? null,
     myRole: dto.myRole,
     myPermissions: options.permissions ?? details.myPermissions ?? [],
     memberCount: options.counts?.memberCount ?? listItem.memberCount ?? 0,
     entityCount: options.counts?.entityCount ?? listItem.entityCount ?? 0,
     retellingCount: options.counts?.retellingCount ?? listItem.retellingCount ?? 0,
     latestRevision: options.counts?.latestRevision ?? listItem.latestRevision ?? 0,
-    createdBy: details.createdBy ?? null,
+    // Краткие списки приходят только в деталях кампании — сохраняем их,
+    // чтобы участники и пересказы открывались без лишних запросов.
+    members: Array.isArray(details.members) ? details.members : [],
+    retellingBriefs: Array.isArray(details.retellings) ? details.retellings : [],
     createdAt: details.createdAt ?? null,
     updatedAt: dto.updatedAt ?? nowIso(),
     cachedAt: nowIso(),
@@ -56,7 +64,7 @@ export async function clearCampaignData(campaignId: string): Promise<void> {
   const db = await openDatabase()
   const tx = db.transaction(
     [
-      STORE.entities,
+      STORE.objects,
       STORE.retellings,
       STORE.retellingDrafts,
       STORE.pendingChanges,
@@ -66,9 +74,9 @@ export async function clearCampaignData(campaignId: string): Promise<void> {
     'readwrite',
   )
 
-  const entityStore = tx.objectStore(STORE.entities)
-  const entityKeys = await entityStore.index('by-campaign').getAllKeys(campaignId)
-  await Promise.all(entityKeys.map((key) => entityStore.delete(key)))
+  const objectStore = tx.objectStore(STORE.objects)
+  const objectKeys = await objectStore.index('by-campaign').getAllKeys(campaignId)
+  await Promise.all(objectKeys.map((key) => objectStore.delete(key)))
 
   const retellingStore = tx.objectStore(STORE.retellings)
   const retellingKeys = await retellingStore.index('by-campaign').getAllKeys(campaignId)

@@ -99,7 +99,7 @@ public class RetellingEditViewModel extends ViewModel {
             draft = found;
 
             List<EntityRoom> all = entities.findAllNow(campaignId);
-            List<EntityRoom> heroes = entities.findByTypeNow(campaignId, EntityType.HERO);
+            List<EntityRoom> heroes = entities.findByKindNow(campaignId, EntityType.HERO);
             return new EditState(found, NameIndex.of(all), heroes);
         }, new RepoCallback<EditState>() {
             @Override

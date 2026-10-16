@@ -1,22 +1,16 @@
 import { apiClient } from './client'
+import { OBJECT_CLASS_PATHS } from './types'
 import type {
   AcceptInviteResponse,
   AddMemberRequest,
   AddMemberResponse,
   AuthResponse,
-  BacklinkDto,
   CampaignDto,
   CampaignListItem,
   CreateCampaignRequest,
-  CreateEntityRequest,
-  CreateEnrollmentRequest,
   CreateInviteRequest,
+  CreateObjectMap,
   CreateRetellingRequest,
-  DeviceDto,
-  EntityDto,
-  EntityListQuery,
-  EnrollRequest,
-  EnrollResponse,
   FileDto,
   HealthDto,
   InviteDto,
@@ -24,20 +18,22 @@ import type {
   LoginRequest,
   LogoutRequest,
   MemberDto,
-  OAuthCallbackRequest,
-  OAuthProvider,
-  OAuthProvidersResponse,
+  ObjectClass,
+  ObjectDtoOf,
+  ObjectListQuery,
   PageDto,
   PatchCampaignRequest,
-  PatchEntityRequest,
   PatchMeRequest,
   PatchMemberRequest,
   PatchRetellingRequest,
+  PasswordResetConfirmBody,
+  PasswordResetRequestBody,
   RefreshRequest,
   RefreshResponse,
   RegisterRequest,
   RetellingDto,
   RetellingListQuery,
+  SearchKind,
   SearchResponse,
   SetPasswordRequest,
   SyncPullResponse,
@@ -45,11 +41,12 @@ import type {
   SyncPushResponse,
   SyncSnapshotResponse,
   SyncStateDto,
+  UpdateObjectMap,
   UserDto,
   VersionDto,
 } from './types'
 
-/** Список приходит либо страницей, либо «сырым» массивом — приводим к странице. */
+/** Список приходит страницей; «сырой» массив приводим к странице на всякий случай. */
 function toPage<T>(value: PageDto<T> | T[] | null): PageDto<T> {
   if (Array.isArray(value)) {
     return { items: value, total: value.length }
@@ -57,7 +54,11 @@ function toPage<T>(value: PageDto<T> | T[] | null): PageDto<T> {
   if (!value || !Array.isArray(value.items)) {
     return { items: [], total: 0 }
   }
-  return value
+  return { items: value.items, total: typeof value.total === 'number' ? value.total : value.items.length }
+}
+
+function classPath(objectClass: ObjectClass): string {
+  return OBJECT_CLASS_PATHS[objectClass]
 }
 
 /* ----------------------------- Аутентификация ----------------------------- */
@@ -102,6 +103,33 @@ export const authApi = {
     })
   },
 
+  /**
+   * `POST /api/auth/password-reset/request` (`api.md` §3): отвечает `202` всегда,
+   * поэтому по ответу нельзя узнать, есть ли такой адрес. Ссылку пишет в лог сервер.
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    const body: PasswordResetRequestBody = { email }
+    await apiClient.request<void>({
+      method: 'POST',
+      path: '/api/auth/password-reset/request',
+      body,
+      auth: false,
+      skipRefresh: true,
+    })
+  },
+
+  /** `POST /api/auth/password-reset/confirm`: меняет пароль и гасит все сессии. */
+  async confirmPasswordReset(token: string, newPassword: string): Promise<void> {
+    const body: PasswordResetConfirmBody = { token, newPassword }
+    await apiClient.request<void>({
+      method: 'POST',
+      path: '/api/auth/password-reset/confirm',
+      body,
+      auth: false,
+      skipRefresh: true,
+    })
+  },
+
   me(): Promise<UserDto> {
     return apiClient.request<UserDto>({ path: '/api/me' })
   },
@@ -110,35 +138,9 @@ export const authApi = {
     return apiClient.request<UserDto>({ method: 'PATCH', path: '/api/me', body })
   },
 
-  /**
-   * Задать или сменить пароль (`api.md` §3). `currentPassword` обязателен только
-   * при `hasPassword: true`. После запроса аккаунт устройства становится полноценным.
-   */
+  /** Смена пароля: `currentPassword` обязателен — пароль есть всегда. */
   async setPassword(body: SetPasswordRequest): Promise<void> {
     await apiClient.request<void>({ method: 'POST', path: '/api/me/password', body })
-  },
-
-  providers(): Promise<OAuthProvidersResponse> {
-    return apiClient.request<OAuthProvidersResponse>({ path: '/api/auth/providers', auth: false })
-  },
-
-  /**
-   * Адрес начала OAuth-входа (`api.md` §3): переход по нему отдаёт 302 на страницу
-   * провайдера, а тот возвращает код на `redirectUri` — для веба это `/oauth/callback`.
-   */
-  oauthAuthorizeUrl(provider: OAuthProvider, redirectUri: string, state: string): string {
-    const base = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '')
-    const params = new URLSearchParams({ redirectUri, state })
-    return `${base}/api/auth/oauth/${provider}/authorize?${params.toString()}`
-  },
-
-  oauthCallback(provider: OAuthProvider, body: OAuthCallbackRequest): Promise<AuthResponse> {
-    return apiClient.request<AuthResponse>({
-      method: 'POST',
-      path: `/api/auth/oauth/${provider}/callback`,
-      body,
-      auth: false,
-    })
   },
 }
 
@@ -204,6 +206,13 @@ export const membersApi = {
     })
   },
 
+  transferOwnership(campaignId: string, memberId: string): Promise<MemberDto> {
+    return apiClient.request<MemberDto>({
+      method: 'POST',
+      path: `/api/campaigns/${encodeURIComponent(campaignId)}/members/${encodeURIComponent(memberId)}/transfer-ownership`,
+    })
+  },
+
   async remove(campaignId: string, memberId: string): Promise<void> {
     await apiClient.request<void>({
       method: 'DELETE',
@@ -243,6 +252,7 @@ export const invitesApi = {
     })
   },
 
+  /** Принятие приглашения: нужна авторизация, приглашение строго одноразовое. */
   accept(token: string): Promise<AcceptInviteResponse> {
     return apiClient.request<AcceptInviteResponse>({
       method: 'POST',
@@ -251,55 +261,21 @@ export const invitesApi = {
   },
 }
 
-/* --------------------- Регистрация устройства по QR ----------------------- */
-
-export const devicesApi = {
-  /** Шаг админа: выпуск QR-кода для устройства (`api.md` §3.1, право `members.manage`). */
-  createEnrollment(campaignId: string, body: CreateEnrollmentRequest): Promise<InviteDto> {
-    return apiClient.request<InviteDto>({
-      method: 'POST',
-      path: `/api/campaigns/${encodeURIComponent(campaignId)}/devices/enrollments`,
-      body,
-    })
-  },
-
-  /** Список устройств кампании (`members.manage`). */
-  async list(campaignId: string): Promise<DeviceDto[]> {
-    const page = await apiClient.request<PageDto<DeviceDto> | DeviceDto[]>({
-      path: `/api/campaigns/${encodeURIComponent(campaignId)}/devices`,
-    })
-    return toPage(page).items
-  },
-
-  /** Отзыв устройства: его сессии гасятся, человек остаётся в кампании. */
-  async revoke(campaignId: string, deviceId: string): Promise<void> {
-    await apiClient.request<void>({
-      method: 'DELETE',
-      path: `/api/campaigns/${encodeURIComponent(campaignId)}/devices/${encodeURIComponent(deviceId)}`,
-    })
-  },
-
-  /** Шаг телефона: единственный эндпоинт без авторизации (кроме входа и `/health`). */
-  enroll(body: EnrollRequest): Promise<EnrollResponse> {
-    return apiClient.request<EnrollResponse>({
-      method: 'POST',
-      path: '/api/devices/enroll',
-      body,
-      auth: false,
-    })
-  },
-}
-
 /* --------------------------------- Объекты -------------------------------- */
 
-export const entitiesApi = {
-  async list(campaignId: string, query: EntityListQuery = {}): Promise<PageDto<EntityDto>> {
-    // `types` — список видов через запятую: `?types=HERO,NPC` (`api.md` §6).
-    const types = query.types && query.types.length > 0 ? query.types.join(',') : undefined
-    const page = await apiClient.request<PageDto<EntityDto> | EntityDto[]>({
-      path: `/api/campaigns/${encodeURIComponent(campaignId)}/entities`,
+/**
+ * Четыре набора эндпоинтов вместо прежнего `/entities` (`api.md` §6):
+ * `/heroes`, `/characters`, `/locations`, `/items`. Форма ответа — своя на класс.
+ */
+export const objectsApi = {
+  async list<C extends ObjectClass>(
+    campaignId: string,
+    objectClass: C,
+    query: ObjectListQuery = {},
+  ): Promise<PageDto<ObjectDtoOf<C>>> {
+    const page = await apiClient.request<PageDto<ObjectDtoOf<C>> | ObjectDtoOf<C>[]>({
+      path: `/api/campaigns/${encodeURIComponent(campaignId)}/${classPath(objectClass)}`,
       query: {
-        types,
         q: query.q,
         updatedSince: query.updatedSince,
         limit: query.limit,
@@ -309,41 +285,48 @@ export const entitiesApi = {
     return toPage(page)
   },
 
-  get(campaignId: string, entityId: string): Promise<EntityDto> {
-    return apiClient.request<EntityDto>({
-      path: `/api/campaigns/${encodeURIComponent(campaignId)}/entities/${encodeURIComponent(entityId)}`,
+  get<C extends ObjectClass>(
+    campaignId: string,
+    objectClass: C,
+    objectId: string,
+  ): Promise<ObjectDtoOf<C>> {
+    return apiClient.request<ObjectDtoOf<C>>({
+      path: `/api/campaigns/${encodeURIComponent(campaignId)}/${classPath(objectClass)}/${encodeURIComponent(objectId)}`,
     })
   },
 
-  create(campaignId: string, body: CreateEntityRequest): Promise<EntityDto> {
-    return apiClient.request<EntityDto>({
+  create<C extends ObjectClass>(
+    campaignId: string,
+    objectClass: C,
+    body: CreateObjectMap[C],
+  ): Promise<ObjectDtoOf<C>> {
+    return apiClient.request<ObjectDtoOf<C>>({
       method: 'POST',
-      path: `/api/campaigns/${encodeURIComponent(campaignId)}/entities`,
+      path: `/api/campaigns/${encodeURIComponent(campaignId)}/${classPath(objectClass)}`,
       body,
     })
   },
 
-  patch(campaignId: string, entityId: string, body: PatchEntityRequest, revision?: number): Promise<EntityDto> {
-    return apiClient.request<EntityDto>({
+  patch<C extends ObjectClass>(
+    campaignId: string,
+    objectClass: C,
+    objectId: string,
+    body: UpdateObjectMap[C],
+    revision?: number,
+  ): Promise<ObjectDtoOf<C>> {
+    return apiClient.request<ObjectDtoOf<C>>({
       method: 'PATCH',
-      path: `/api/campaigns/${encodeURIComponent(campaignId)}/entities/${encodeURIComponent(entityId)}`,
+      path: `/api/campaigns/${encodeURIComponent(campaignId)}/${classPath(objectClass)}/${encodeURIComponent(objectId)}`,
       body,
       headers: revision === undefined ? undefined : { 'If-Match': String(revision) },
     })
   },
 
-  async remove(campaignId: string, entityId: string): Promise<void> {
+  async remove(campaignId: string, objectClass: ObjectClass, objectId: string): Promise<void> {
     await apiClient.request<void>({
       method: 'DELETE',
-      path: `/api/campaigns/${encodeURIComponent(campaignId)}/entities/${encodeURIComponent(entityId)}`,
+      path: `/api/campaigns/${encodeURIComponent(campaignId)}/${classPath(objectClass)}/${encodeURIComponent(objectId)}`,
     })
-  },
-
-  async backlinks(campaignId: string, entityId: string): Promise<BacklinkDto[]> {
-    const page = await apiClient.request<PageDto<BacklinkDto> | BacklinkDto[]>({
-      path: `/api/campaigns/${encodeURIComponent(campaignId)}/entities/${encodeURIComponent(entityId)}/backlinks`,
-    })
-    return toPage(page).items
   },
 }
 
@@ -396,10 +379,12 @@ export const retellingsApi = {
 /* ---------------------------------- Поиск --------------------------------- */
 
 export const searchApi = {
-  search(campaignId: string, q: string, types?: string, limit = 50): Promise<SearchResponse> {
+  /** `kinds` — список видов через запятую (`api.md` §8); пусто — по всем классам. */
+  search(campaignId: string, q: string, kinds?: readonly SearchKind[], limit = 50): Promise<SearchResponse> {
+    const value = kinds && kinds.length > 0 ? kinds.join(',') : undefined
     return apiClient.request<SearchResponse>({
       path: `/api/campaigns/${encodeURIComponent(campaignId)}/search`,
-      query: { q, types, limit },
+      query: { q, kinds: value, limit },
     })
   },
 }
@@ -466,8 +451,7 @@ export const api = {
   campaigns: campaignsApi,
   members: membersApi,
   invites: invitesApi,
-  devices: devicesApi,
-  entities: entitiesApi,
+  objects: objectsApi,
   retellings: retellingsApi,
   search: searchApi,
   sync: syncApi,

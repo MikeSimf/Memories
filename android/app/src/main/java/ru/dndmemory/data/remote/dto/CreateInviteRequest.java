@@ -1,21 +1,23 @@
 package ru.dndmemory.data.remote.dto;
 
-/** POST /api/campaigns/{id}/invites */
+/**
+ * POST /api/campaigns/{id}/invites.
+ * Приглашение всегда одноразовое, поэтому {@code maxUses} в запросе нет.
+ */
 public class CreateInviteRequest {
 
     public String role;
-    public String linkedEntityId;
+    public String linkedHeroId;
     public int expiresInHours;
-    public int maxUses;
 
-    public CreateInviteRequest(String role, String linkedEntityId, int expiresInHours, int maxUses) {
+    public CreateInviteRequest(String role, String linkedHeroId, int expiresInHours) {
         this.role = role;
-        this.linkedEntityId = linkedEntityId;
+        this.linkedHeroId = linkedHeroId;
         this.expiresInHours = expiresInHours;
-        this.maxUses = maxUses;
     }
 
-    public static CreateInviteRequest of(String role, String linkedEntityId) {
-        return new CreateInviteRequest(role, linkedEntityId, 168, 1);
+    /** Срок по умолчанию — 7 дней (docs/api.md, раздел 5). */
+    public static CreateInviteRequest of(String role, String linkedHeroId) {
+        return new CreateInviteRequest(role, linkedHeroId, 168);
     }
 }

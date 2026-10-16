@@ -2,8 +2,8 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { searchApi, type EntityType, type SearchResultItem } from '@/api'
-import { ENTITY_TYPE_LABELS, ENTITY_TYPES } from '@/api/types'
+import { searchApi, type SearchResultItem } from '@/api'
+import { OBJECT_CLASSES, SEARCH_KIND_LABELS, SEARCH_KINDS, type SearchKind } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import MarkupText from '@/components/MarkupText.vue'
 import SearchBox from '@/components/SearchBox.vue'
@@ -17,14 +17,18 @@ const sync = useSyncStore()
 const ui = useUiStore()
 
 const query = ref('')
-const selectedTypes = ref<EntityType[]>([...ENTITY_TYPES])
-const includeRetellings = ref(true)
+/** Фильтр по видам (`api.md` §8): четыре класса объектов и пересказы. */
+const selectedKinds = ref<SearchKind[]>([...SEARCH_KINDS])
 const localResults = ref<LocalSearchItem[]>([])
 const localTotal = ref(0)
 const serverResults = ref<SearchResultItem[]>([])
 const searching = ref(false)
 
 const campaignId = computed(() => String(route.params.campaignId ?? ''))
+
+/** Виды, которые уходят в локальный поиск (`classes`) и на сервер (`kinds`). */
+const selectedClasses = computed(() => OBJECT_CLASSES.filter((cls) => selectedKinds.value.includes(cls)))
+const includeRetellings = computed(() => selectedKinds.value.includes('RETELLING'))
 
 /** Результаты сервера, которых ещё нет на устройстве. */
 const serverOnly = computed(() => {
@@ -43,18 +47,16 @@ async function run(): Promise<void> {
   searching.value = true
   try {
     const local = await searchLocal(campaignId.value, q, {
-      types: selectedTypes.value,
+      classes: selectedClasses.value,
       includeRetellings: includeRetellings.value,
       limit: 100,
     })
     localResults.value = local.items
     localTotal.value = local.total
 
-    if (ui.online) {
-      const types = [...selectedTypes.value]
-      if (includeRetellings.value) types.push('RETELLING' as EntityType)
+    if (ui.online && selectedKinds.value.length > 0) {
       try {
-        const response = await searchApi.search(campaignId.value, q, types.join(','), 50)
+        const response = await searchApi.search(campaignId.value, q, selectedKinds.value, 50)
         serverResults.value = response.items
       } catch {
         serverResults.value = []
@@ -67,20 +69,20 @@ async function run(): Promise<void> {
   }
 }
 
-watch([query, selectedTypes, includeRetellings], () => void run(), { deep: true })
+watch([query, selectedKinds], () => void run(), { deep: true })
 
 onMounted(() => {
   void run()
 })
 
-function toggleType(type: EntityType): void {
-  selectedTypes.value = selectedTypes.value.includes(type)
-    ? selectedTypes.value.filter((item) => item !== type)
-    : [...selectedTypes.value, type]
+function toggleKind(kind: SearchKind): void {
+  selectedKinds.value = selectedKinds.value.includes(kind)
+    ? selectedKinds.value.filter((item) => item !== kind)
+    : [...selectedKinds.value, kind]
 }
 
-function typeLabel(type: EntityType | null): string {
-  return type ? ENTITY_TYPE_LABELS[type] : 'Пересказ'
+function kindLabel(kind: SearchKind): string {
+  return SEARCH_KIND_LABELS[kind]
 }
 
 async function syncNow(): Promise<void> {
@@ -103,21 +105,17 @@ async function syncNow(): Promise<void> {
       </button>
     </div>
 
-    <SearchBox v-model="query" placeholder="Имя, описание, тег, текст пересказа…" />
+    <SearchBox v-model="query" placeholder="Имя, описание, раса, текст пересказа…" />
 
     <div class="row">
-      <span class="faint">Типы:</span>
-      <label v-for="type in ENTITY_TYPES" :key="type" class="chip" style="cursor: pointer">
+      <span class="faint">Искать среди:</span>
+      <label v-for="kind in SEARCH_KINDS" :key="kind" class="chip" style="cursor: pointer">
         <input
           type="checkbox"
-          :checked="selectedTypes.includes(type)"
-          @change="toggleType(type)"
+          :checked="selectedKinds.includes(kind)"
+          @change="toggleKind(kind)"
         />
-        {{ ENTITY_TYPE_LABELS[type] }}
-      </label>
-      <label class="chip" style="cursor: pointer">
-        <input v-model="includeRetellings" type="checkbox" />
-        Пересказы
+        {{ SEARCH_KIND_LABELS[kind] }}
       </label>
     </div>
 
@@ -127,7 +125,7 @@ async function syncNow(): Promise<void> {
       <EmptyState
         v-if="query.trim() === ''"
         title="Введите запрос"
-        hint="Например: «Лира», «подземелье», тег «союзник»."
+        hint="Например: «Лира», «подземелье», «полуэльф»."
       />
       <template v-else>
         <div class="row row--between">
@@ -150,15 +148,15 @@ async function syncNow(): Promise<void> {
             :key="`${item.kind}-${item.id}`"
             class="list-row"
             :to="
-              item.kind === 'ENTITY'
-                ? { name: 'entity-detail', params: { campaignId, entityId: item.id } }
-                : { name: 'retelling-detail', params: { campaignId, retellingId: item.id } }
+              item.kind === 'RETELLING'
+                ? { name: 'retelling-detail', params: { campaignId, retellingId: item.id } }
+                : { name: 'entity-detail', params: { campaignId, entityId: item.id } }
             "
           >
             <div class="list-row__main">
               <div class="list-row__title">
                 {{ item.title }}
-                <span class="badge">{{ item.kind === 'ENTITY' ? typeLabel(item.type) : 'Пересказ' }}</span>
+                <span class="badge">{{ kindLabel(item.kind) }}</span>
                 <span v-if="item.isDraft" class="badge badge--warning">черновик</span>
               </div>
               <MarkupText :text="item.snippet" snippet />
@@ -174,7 +172,7 @@ async function syncNow(): Promise<void> {
               <div class="list-row__main">
                 <div class="list-row__title">
                   {{ item.title }}
-                  <span class="badge badge--info">{{ item.kind === 'ENTITY' ? typeLabel(item.type) : 'Пересказ' }}</span>
+                  <span class="badge badge--info">{{ kindLabel(item.kind) }}</span>
                 </div>
                 <MarkupText :text="item.snippet" snippet />
                 <div class="faint">ревизия {{ item.revision }} · {{ formatRelative(item.updatedAt) }}</div>

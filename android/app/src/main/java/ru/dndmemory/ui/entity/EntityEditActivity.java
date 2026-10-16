@@ -1,12 +1,8 @@
 package ru.dndmemory.ui.entity;
 
-import android.content.Context;
 import android.os.Bundle;
-import android.text.InputType;
 import android.text.TextUtils;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,98 +10,59 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.textfield.MaterialAutoCompleteTextView;
-import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
-
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import ru.dndmemory.App;
 import ru.dndmemory.AppContainer;
 import ru.dndmemory.R;
+import ru.dndmemory.data.local.entity.CampaignRoom;
 import ru.dndmemory.data.local.entity.EntityRoom;
+import ru.dndmemory.data.local.entity.MemberRoom;
 import ru.dndmemory.data.model.EntityType;
+import ru.dndmemory.data.model.HeroItem;
 import ru.dndmemory.databinding.ActivityEntityEditBinding;
-import ru.dndmemory.ui.common.Attrs;
+import ru.dndmemory.databinding.ItemHeroItemEditBinding;
+import ru.dndmemory.ui.campaign.CampaignViewModel;
 import ru.dndmemory.ui.common.ErrorMessages;
 import ru.dndmemory.ui.common.Extras;
 import ru.dndmemory.ui.common.Labels;
 import ru.dndmemory.ui.common.NameIndex;
+import ru.dndmemory.ui.common.Rights;
 import ru.dndmemory.ui.common.ViewModelFactory;
 import ru.dndmemory.ui.common.ViewUtils;
 import ru.dndmemory.util.AppExecutors;
 
 /**
- * Редактор объекта. Набор полей характеристик строится по типу
- * (см. {@link Attrs}): герой, НПС, локация и предмет имеют разные attrs.
+ * Редактор объекта. Набор полей зависит от класса (docs/api.md, раздел 6):
+ * у героя — раса, класс, игрок и котомка; у персонажа — раса и краткое описание;
+ * у локации своих полей нет; у предмета — владелец и необязательная ссылка.
+ *
+ * <p>Героя заводит и правит только владелец кампании: остальным редактор
+ * не открывается (docs/roles.md).
  */
 public class EntityEditActivity extends AppCompatActivity {
 
-    /** Строка формы: либо текстовое поле, либо выпадающий список. */
-    private static final class AttrRow {
-
-        final Attrs.Field field;
-        @Nullable
-        final TextInputEditText text;
-        @Nullable
-        final MaterialAutoCompleteTextView dropdown;
-
-        AttrRow(Attrs.Field field, @Nullable TextInputEditText text,
-                @Nullable MaterialAutoCompleteTextView dropdown) {
-            this.field = field;
-            this.text = text;
-            this.dropdown = dropdown;
-        }
-
-        @NonNull
-        String value(@NonNull Context context, @NonNull NameIndex index) {
-            if (text != null) {
-                CharSequence raw = text.getText();
-                return raw == null ? "" : raw.toString().trim();
-            }
-            if (dropdown == null) {
-                return "";
-            }
-            CharSequence raw = dropdown.getText();
-            String shown = raw == null ? "" : raw.toString().trim();
-            if (shown.isEmpty()) {
-                return "";
-            }
-            if (field.kind == Attrs.Kind.ENUM && field.values != null && field.valueLabels != null) {
-                for (int i = 0; i < field.values.length && i < field.valueLabels.length; i++) {
-                    if (context.getString(field.valueLabels[i]).equals(shown)) {
-                        return field.values[i];
-                    }
-                }
-                return "";
-            }
-            if (field.kind == Attrs.Kind.ENTITY_REF) {
-                if (shown.equals(context.getString(R.string.attr_not_set))) {
-                    return "";
-                }
-                String id = index.idFor(shown);
-                return id == null ? "" : id;
-            }
-            return shown;
-        }
-    }
-
     private ActivityEntityEditBinding binding;
     private EntityEditViewModel viewModel;
+    private CampaignViewModel campaignViewModel;
+
     private String campaignId;
     private boolean creating;
+    private boolean rightsBlocked;
 
-    private final List<AttrRow> attrRows = new ArrayList<>();
     private NameIndex nameIndex = NameIndex.of(null);
     private List<EntityRoom> candidates = new ArrayList<>();
-    private EntityType currentType = EntityType.NPC;
+    private List<MemberRoom> members = new ArrayList<>();
+
+    private EntityType currentKind = EntityType.CHARACTER;
+    private String selectedPlayerUserId;
+    private String selectedOwnerId;
+
+    private final List<ItemHeroItemEditBinding> itemRows = new ArrayList<>();
 
     private static final EntityType[] TYPE_VALUES = {
-            EntityType.HERO, EntityType.NPC, EntityType.LOCATION, EntityType.ITEM};
+            EntityType.HERO, EntityType.CHARACTER, EntityType.LOCATION, EntityType.ITEM};
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -115,22 +72,30 @@ public class EntityEditActivity extends AppCompatActivity {
 
         campaignId = getIntent() == null ? null : getIntent().getStringExtra(Extras.CAMPAIGN_ID);
         String entityId = getIntent() == null ? null : getIntent().getStringExtra(Extras.ENTITY_ID);
-        String typeExtra = getIntent() == null ? null : getIntent().getStringExtra(Extras.ENTITY_TYPE);
+        String kindExtra = getIntent() == null ? null : getIntent().getStringExtra(Extras.ENTITY_TYPE);
         creating = getIntent() != null && getIntent().getBooleanExtra(Extras.CREATE_NEW, false);
         if (campaignId == null) {
             finish();
             return;
         }
-        EntityType requested = EntityType.from(typeExtra);
+        EntityType requested = EntityType.from(kindExtra);
         if (requested != null) {
-            currentType = requested;
+            currentKind = requested;
         }
 
         AppContainer container = App.container(this);
         viewModel = new ViewModelProvider(this, ViewModelFactory.of(
-                () -> new EntityEditViewModel(container.entityRepository(), AppExecutors.get())))
+                () -> new EntityEditViewModel(container.entityRepository(),
+                        container.memberRepository(), AppExecutors.get())))
                 .get(EntityEditViewModel.class);
-        viewModel.start(campaignId, entityId, currentType, creating);
+        viewModel.start(campaignId, entityId, currentKind, creating);
+
+        campaignViewModel = new ViewModelProvider(this, ViewModelFactory.of(
+                () -> new CampaignViewModel(container.campaignRepository(),
+                        container.authRepository(), container.syncEngine(),
+                        container.syncScheduler())))
+                .get(CampaignViewModel.class);
+        campaignViewModel.setCampaignId(campaignId);
 
         setSupportActionBar(binding.entityEditToolbar);
         if (getSupportActionBar() != null) {
@@ -142,12 +107,15 @@ public class EntityEditActivity extends AppCompatActivity {
         binding.entityEditType.setSimpleItems(typeLabels());
         binding.entityEditType.setOnItemClickListener((parent, view, position, id) -> {
             EntityType selected = selectedType();
-            if (selected != currentType) {
+            if (selected != currentKind) {
                 collect();
-                currentType = selected;
-                rebuildAttrRows();
+                currentKind = selected;
+                bindFieldsForKind();
             }
         });
+        // Класс существующего объекта не меняется: у каждого класса свой эндпоинт.
+        binding.entityEditType.setEnabled(creating);
+        binding.entityEditTypeGroup.setEnabled(creating);
 
         binding.entityEditSave.setOnClickListener(v -> {
             collect();
@@ -156,28 +124,54 @@ public class EntityEditActivity extends AppCompatActivity {
         binding.entityEditDelete.setOnClickListener(v -> confirmDelete());
         ViewUtils.show(binding.entityEditDelete, !creating);
 
+        binding.entityEditAddItem.setOnClickListener(v -> addItemRow(null));
+        binding.entityEditPlayer.setOnItemClickListener((parent, view, position, id) ->
+                selectedPlayerUserId = playerIdAt(position));
+        binding.entityEditOwnerLink.setOnItemClickListener((parent, view, position, id) ->
+                selectedOwnerId = ownerIdAt(position));
+
         observe();
     }
 
     private String[] typeLabels() {
-        String[] labels = new String[TYPE_VALUES.length];
-        for (int i = 0; i < TYPE_VALUES.length; i++) {
-            labels[i] = getString(Labels.entityType(TYPE_VALUES[i]));
+        List<String> labels = new ArrayList<>();
+        for (EntityType type : allowedTypes()) {
+            labels.add(getString(Labels.entityType(type)));
         }
-        return labels;
+        return labels.toArray(new String[0]);
+    }
+
+    /** При создании список классов ограничен правами: герой — только владельцу. */
+    @NonNull
+    private List<EntityType> allowedTypes() {
+        List<EntityType> out = new ArrayList<>();
+        if (!creating) {
+            out.add(currentKind);
+            return out;
+        }
+        CampaignRoom campaign = campaignViewModel.campaign().getValue();
+        for (EntityType type : TYPE_VALUES) {
+            if (Rights.canWrite(campaign, type)) {
+                out.add(type);
+            }
+        }
+        if (!out.contains(currentKind)) {
+            out.add(currentKind);
+        }
+        return out;
     }
 
     @NonNull
     private EntityType selectedType() {
         CharSequence shown = binding.entityEditType.getText();
         if (shown != null) {
-            for (int i = 0; i < TYPE_VALUES.length; i++) {
-                if (getString(Labels.entityType(TYPE_VALUES[i])).contentEquals(shown)) {
-                    return TYPE_VALUES[i];
+            for (EntityType type : allowedTypes()) {
+                if (getString(Labels.entityType(type)).contentEquals(shown)) {
+                    return type;
                 }
             }
         }
-        return currentType;
+        return currentKind;
     }
 
     private void observe() {
@@ -187,16 +181,25 @@ public class EntityEditActivity extends AppCompatActivity {
             }
             nameIndex = state.nameIndex;
             candidates = state.candidates;
-            currentType = EntityType.fromOrNpc(state.entity.type);
+            members = state.members;
+            currentKind = EntityType.fromOrCharacter(state.entity.kind);
 
             binding.entityEditNameInput.setText(state.entity.name);
-            binding.entityEditSummaryInput.setText(state.entity.summary);
             binding.entityEditDescriptionInput.setText(state.entity.description);
-            binding.entityEditTagsInput.setText(state.entity.tags == null
-                    ? "" : TextUtils.join(", ", state.entity.tags));
-            binding.entityEditType.setText(getString(Labels.entityType(currentType)), false);
+            binding.entityEditType.setText(getString(Labels.entityType(currentKind)), false);
+            selectedPlayerUserId = state.entity.playerUserId;
+            selectedOwnerId = state.entity.ownerHeroId != null
+                    ? state.entity.ownerHeroId : state.entity.ownerCharacterId;
 
-            rebuildAttrRows();
+            bindFieldsForKind();
+            checkRights();
+        });
+
+        campaignViewModel.campaign().observe(this, campaign -> {
+            if (creating) {
+                binding.entityEditType.setSimpleItems(typeLabels());
+            }
+            checkRights();
         });
 
         viewModel.actionState().observe(this, resource -> {
@@ -219,128 +222,283 @@ public class EntityEditActivity extends AppCompatActivity {
         });
     }
 
-    /** Пересобирает блок характеристик под текущий тип объекта. */
-    private void rebuildAttrRows() {
-        binding.entityEditAttrs.removeAllViews();
-        attrRows.clear();
-
-        Map<String, String> values = currentAttrValues();
-        for (Attrs.Field field : Attrs.fieldsFor(currentType)) {
-            binding.entityEditAttrs.addView(buildRow(field, values.get(field.key)));
+    /**
+     * Героя ведёт только владелец: если прав нет, редактор закрывается, чтобы
+     * объект нельзя было даже открыть на изменение (docs/roles.md).
+     */
+    private void checkRights() {
+        CampaignRoom campaign = campaignViewModel.campaign().getValue();
+        if (campaign == null || rightsBlocked) {
+            return;
+        }
+        if (!Rights.canWrite(campaign, currentKind)) {
+            rightsBlocked = true;
+            ViewUtils.toast(this, currentKind.requiresHeroPermission()
+                    ? R.string.entity_hero_owner_only : R.string.error_forbidden);
+            finish();
         }
     }
 
-    /** Значения, которые сейчас в форме (чтобы не потерять их при смене типа). */
-    private Map<String, String> currentAttrValues() {
-        Map<String, String> values = new LinkedHashMap<>();
-        for (AttrRow row : attrRows) {
-            String value = row.value(this, nameIndex);
-            if (!value.isEmpty()) {
-                values.put(row.field.key, value);
-            }
+    /** Показывает поля текущего класса и заполняет их значениями объекта. */
+    private void bindFieldsForKind() {
+        EntityRoom draft = currentDraft();
+
+        boolean hero = currentKind == EntityType.HERO;
+        boolean character = currentKind == EntityType.CHARACTER;
+        boolean item = currentKind == EntityType.ITEM;
+
+        ViewUtils.show(binding.entityEditRaceGroup, hero || character);
+        ViewUtils.show(binding.entityEditKlassGroup, hero);
+        ViewUtils.show(binding.entityEditPlayerGroup, hero);
+        ViewUtils.show(binding.entityEditShortGroup, character);
+        ViewUtils.show(binding.entityEditOwnerNameGroup, item);
+        ViewUtils.show(binding.entityEditOwnerLinkGroup, item);
+        ViewUtils.show(binding.entityEditItemsGroup, hero);
+        ViewUtils.show(binding.entityEditFieldsTitle, hero || character || item);
+
+        if (draft != null) {
+            binding.entityEditRaceInput.setText(draft.race);
+            binding.entityEditKlassInput.setText(draft.klass);
+            binding.entityEditShortInput.setText(draft.shortDescription);
+            binding.entityEditOwnerNameInput.setText(draft.ownerName);
+            binding.entityEditNameInput.setText(draft.name);
+            binding.entityEditDescriptionInput.setText(draft.description);
         }
-        return values;
+
+        bindPlayerDropdown();
+        bindOwnerDropdown();
+        bindItems();
     }
 
-    private View buildRow(@NonNull Attrs.Field field, @Nullable String value) {
-        TextInputLayout layout = new TextInputLayout(this);
-        layout.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
-        layout.setHint(Labels.attrLabelText(this, field.key));
-
-        if (field.kind == Attrs.Kind.ENUM || field.kind == Attrs.Kind.ENTITY_REF) {
-            MaterialAutoCompleteTextView dropdown = new MaterialAutoCompleteTextView(this);
-            dropdown.setLayoutParams(new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT));
-            dropdown.setInputType(InputType.TYPE_NULL);
-            dropdown.setSimpleItems(dropdownItems(field));
-            dropdown.setText(displayValue(field, value), false);
-            layout.addView(dropdown);
-            attrRows.add(new AttrRow(field, null, dropdown));
-        } else {
-            TextInputEditText input = new TextInputEditText(this);
-            input.setLayoutParams(new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT));
-            input.setInputType(field.kind == Attrs.Kind.NUMBER
-                    ? InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL
-                    : InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
-            input.setText(value == null ? "" : value);
-            layout.addView(input);
-            attrRows.add(new AttrRow(field, input, null));
-        }
-        return layout;
+    @Nullable
+    private EntityRoom currentDraft() {
+        EntityEditViewModel.EditState state = viewModel.state().getValue();
+        return state == null ? null : state.entity;
     }
 
-    @NonNull
-    private String[] dropdownItems(@NonNull Attrs.Field field) {
-        List<String> items = new ArrayList<>();
-        if (field.kind == Attrs.Kind.ENUM && field.valueLabels != null) {
-            for (int label : field.valueLabels) {
-                items.add(getString(label));
-            }
-            return items.toArray(new String[0]);
-        }
-        items.add(getString(R.string.attr_not_set));
-        for (EntityRoom candidate : candidates) {
-            if (field.refType != null && !field.refType.name().equalsIgnoreCase(candidate.type)) {
+    private void bindPlayerDropdown() {
+        List<String> labels = new ArrayList<>();
+        labels.add(getString(R.string.entity_player_none));
+        for (MemberRoom member : members) {
+            if (member.status != null && "REMOVED".equalsIgnoreCase(member.status)) {
                 continue;
             }
-            if (!TextUtils.isEmpty(candidate.name)) {
-                items.add(candidate.name);
+            labels.add(TextUtils.isEmpty(member.displayName)
+                    ? getString(R.string.attr_not_set) : member.displayName);
+        }
+        binding.entityEditPlayer.setSimpleItems(labels.toArray(new String[0]));
+        EntityRoom draft = currentDraft();
+        String currentId = selectedPlayerUserId != null ? selectedPlayerUserId
+                : (draft == null ? null : draft.playerUserId);
+        String shown = labels.get(0);
+        for (int i = 1; i < labels.size(); i++) {
+            if (playerIdAt(i) != null && playerIdAt(i).equals(currentId)) {
+                shown = labels.get(i);
+                break;
             }
         }
-        return items.toArray(new String[0]);
+        binding.entityEditPlayer.setText(shown, false);
+        selectedPlayerUserId = playerIdAt(indexOf(labels, shown));
+    }
+
+    @Nullable
+    private String playerIdAt(int position) {
+        if (position <= 0) {
+            return null;
+        }
+        List<MemberRoom> active = activeMembers();
+        int index = position - 1;
+        return index < active.size() ? active.get(index).userId : null;
     }
 
     @NonNull
-    private String displayValue(@NonNull Attrs.Field field, @Nullable String value) {
-        if (value == null || value.isEmpty()) {
-            return field.kind == Attrs.Kind.ENTITY_REF ? getString(R.string.attr_not_set) : "";
-        }
-        if (field.kind == Attrs.Kind.ENUM && field.values != null && field.valueLabels != null) {
-            for (int i = 0; i < field.values.length && i < field.valueLabels.length; i++) {
-                if (field.values[i].equals(value)) {
-                    return getString(field.valueLabels[i]);
-                }
+    private List<MemberRoom> activeMembers() {
+        List<MemberRoom> out = new ArrayList<>();
+        for (MemberRoom member : members) {
+            if (member.status == null || !"REMOVED".equalsIgnoreCase(member.status)) {
+                out.add(member);
             }
-            return value;
         }
-        if (field.kind == Attrs.Kind.ENTITY_REF) {
-            String name = nameIndex.nameFor(value);
-            return name == null ? getString(R.string.attr_not_set) : name;
-        }
-        return value;
+        return out;
     }
+
+    private void bindOwnerDropdown() {
+        List<String> labels = new ArrayList<>();
+        labels.add(getString(R.string.entity_owner_none));
+        for (EntityRoom hero : ownerCandidates(EntityType.HERO)) {
+            labels.add(getString(R.string.entity_owner_hero, displayName(hero)));
+        }
+        for (EntityRoom character : ownerCandidates(EntityType.CHARACTER)) {
+            labels.add(getString(R.string.entity_owner_character, displayName(character)));
+        }
+        binding.entityEditOwnerLink.setSimpleItems(labels.toArray(new String[0]));
+        EntityRoom draft = currentDraft();
+        String currentId = selectedOwnerId != null ? selectedOwnerId
+                : (draft == null ? null : (draft.ownerHeroId != null
+                        ? draft.ownerHeroId : draft.ownerCharacterId));
+        String shown = labels.get(0);
+        for (int i = 1; i < labels.size(); i++) {
+            if (currentId != null && currentId.equals(ownerIdAt(i))) {
+                shown = labels.get(i);
+                break;
+            }
+        }
+        binding.entityEditOwnerLink.setText(shown, false);
+        selectedOwnerId = ownerIdAt(indexOf(labels, shown));
+    }
+
+    @NonNull
+    private List<EntityRoom> ownerCandidates(EntityType kind) {
+        List<EntityRoom> out = new ArrayList<>();
+        for (EntityRoom candidate : candidates) {
+            if (kind.name().equalsIgnoreCase(candidate.kind)
+                    && !TextUtils.isEmpty(candidate.name)) {
+                out.add(candidate);
+            }
+        }
+        return out;
+    }
+
+    @Nullable
+    private String ownerIdAt(int position) {
+        if (position <= 0) {
+            return null;
+        }
+        List<EntityRoom> all = new ArrayList<>();
+        all.addAll(ownerCandidates(EntityType.HERO));
+        all.addAll(ownerCandidates(EntityType.CHARACTER));
+        int index = position - 1;
+        return index < all.size() ? all.get(index).id : null;
+    }
+
+    @Nullable
+    private EntityRoom ownerById(@Nullable String id) {
+        if (id == null) {
+            return null;
+        }
+        for (EntityRoom candidate : candidates) {
+            if (id.equals(candidate.id)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private static int indexOf(@NonNull List<String> labels, @NonNull String value) {
+        for (int i = 0; i < labels.size(); i++) {
+            if (labels.get(i).equals(value)) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    private static String displayName(@NonNull EntityRoom room) {
+        return TextUtils.isEmpty(room.name) ? "" : room.name;
+    }
+
+    // --- Котомка героя --------------------------------------------------------
+
+    private void bindItems() {
+        binding.entityEditItems.removeAllViews();
+        itemRows.clear();
+        EntityRoom draft = currentDraft();
+        if (draft == null || draft.items == null) {
+            return;
+        }
+        for (HeroItem item : draft.items) {
+            addItemRow(item);
+        }
+    }
+
+    private void addItemRow(@Nullable HeroItem item) {
+        ItemHeroItemEditBinding row = ItemHeroItemEditBinding.inflate(
+                getLayoutInflater(), binding.entityEditItems, false);
+        if (item != null) {
+            row.heroItemName.setText(item.name);
+            if (item.quantity != null) {
+                row.heroItemQuantity.setText(String.valueOf(item.quantity));
+            }
+            row.heroItemNotes.setText(item.notes);
+        }
+        row.heroItemRemove.setOnClickListener(v -> {
+            binding.entityEditItems.removeView(row.getRoot());
+            itemRows.remove(row);
+        });
+        binding.entityEditItems.addView(row.getRoot());
+        itemRows.add(row);
+    }
+
+    @NonNull
+    private List<HeroItem> collectItems() {
+        List<HeroItem> out = new ArrayList<>();
+        for (ItemHeroItemEditBinding row : itemRows) {
+            HeroItem item = new HeroItem();
+            item.name = text(row.heroItemName.getText());
+            if (item.name.isEmpty()) {
+                continue;
+            }
+            item.quantity = parseInt(row.heroItemQuantity.getText());
+            String notes = text(row.heroItemNotes.getText());
+            item.notes = notes.isEmpty() ? null : notes;
+            out.add(item);
+        }
+        return out;
+    }
+
+    @Nullable
+    private static Integer parseInt(@Nullable CharSequence value) {
+        String raw = value == null ? "" : value.toString().trim();
+        if (raw.isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(raw);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    // --- Сохранение -----------------------------------------------------------
 
     /** Переносит значения формы в ViewModel перед сохранением. */
     private void collect() {
-        viewModel.setType(selectedType());
-        CharSequence name = binding.entityEditNameInput.getText();
-        viewModel.setName(name == null ? "" : name.toString());
-        CharSequence summary = binding.entityEditSummaryInput.getText();
-        viewModel.setSummary(summary == null ? "" : summary.toString());
-        CharSequence description = binding.entityEditDescriptionInput.getText();
-        viewModel.setDescription(description == null ? "" : description.toString());
-        CharSequence tags = binding.entityEditTagsInput.getText();
-        viewModel.setTagsCsv(tags == null ? "" : tags.toString());
+        viewModel.setKind(selectedType());
+        viewModel.setName(text(binding.entityEditNameInput.getText()));
+        viewModel.setDescription(text(binding.entityEditDescriptionInput.getText()));
 
-        Map<String, String> attrs = new HashMap<>();
-        for (AttrRow row : attrRows) {
-            String value = row.value(this, nameIndex);
-            if (!value.isEmpty()) {
-                attrs.put(row.field.key, value);
+        if (currentKind == EntityType.HERO) {
+            viewModel.setRace(text(binding.entityEditRaceInput.getText()));
+            viewModel.setKlass(text(binding.entityEditKlassInput.getText()));
+            MemberRoom player = memberById(selectedPlayerUserId);
+            viewModel.setPlayerUserId(selectedPlayerUserId,
+                    player == null ? null : player.displayName);
+            viewModel.setItems(collectItems());
+        } else if (currentKind == EntityType.CHARACTER) {
+            viewModel.setRace(text(binding.entityEditRaceInput.getText()));
+            viewModel.setShortDescription(text(binding.entityEditShortInput.getText()));
+        } else if (currentKind == EntityType.ITEM) {
+            viewModel.setOwnerName(text(binding.entityEditOwnerNameInput.getText()));
+            viewModel.setOwnerLink(ownerById(selectedOwnerId));
+        }
+    }
+
+    @Nullable
+    private MemberRoom memberById(@Nullable String userId) {
+        if (userId == null) {
+            return null;
+        }
+        for (MemberRoom member : members) {
+            if (userId.equals(member.userId)) {
+                return member;
             }
         }
-        viewModel.setAttrs(attrs);
+        return null;
     }
 
     private void confirmDelete() {
-        CharSequence name = binding.entityEditNameInput.getText();
-        String title = name == null || name.toString().trim().isEmpty()
-                ? getString(R.string.entity_detail_title) : name.toString().trim();
+        String name = text(binding.entityEditNameInput.getText());
+        String title = name.isEmpty() ? getString(R.string.entity_detail_title) : name;
         new MaterialAlertDialogBuilder(this)
                 .setMessage(getString(R.string.entity_edit_delete_confirm, title))
                 .setPositiveButton(R.string.action_delete, (dialog, which) -> viewModel.delete())
@@ -361,5 +519,9 @@ public class EntityEditActivity extends AppCompatActivity {
     public boolean onSupportNavigateUp() {
         finish();
         return true;
+    }
+
+    private static String text(@Nullable CharSequence value) {
+        return value == null ? "" : value.toString().trim();
     }
 }

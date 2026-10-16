@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { errorMessage } from '@/api'
-import type { OAuthProvider, OAuthProviderInfo } from '@/api/types'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
 
@@ -12,6 +11,7 @@ const router = useRouter()
 const auth = useAuthStore()
 const ui = useUiStore()
 
+const login = ref('')
 const email = ref('')
 const password = ref('')
 const passwordAgain = ref('')
@@ -19,16 +19,10 @@ const displayName = ref('')
 const submitting = ref(false)
 const localError = ref<string | null>(null)
 
-const oauthProviders = computed(() => {
-  const providers = auth.providers
-  if (!providers) return []
-  return (Object.entries(providers) as Array<[OAuthProvider, OAuthProviderInfo]>)
-    .filter(([, info]) => info && info.enabled)
-    .map(([key]) => ({ key, label: key === 'yandex' ? 'Зарегистрироваться через Яндекс' : 'Через VK' }))
-})
-
-onMounted(() => {
-  void auth.loadProviders()
+/** Приглашение из QR: приходит в `?invite=` и уходит в `POST /api/auth/register`. */
+const inviteToken = computed(() => {
+  const value = route.query.invite
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : null
 })
 
 function redirectTarget(): string | { name: string } {
@@ -38,6 +32,14 @@ function redirectTarget(): string | { name: string } {
 
 async function submit(): Promise<void> {
   localError.value = null
+  if (!/^[A-Za-z0-9_.-]{3,32}$/.test(login.value.trim())) {
+    localError.value = 'Логин: 3–32 символа из латинских букв, цифр, «_», «.» и «-»'
+    return
+  }
+  if (email.value.trim() === '') {
+    localError.value = 'Укажите почту — она нужна для сброса пароля'
+    return
+  }
   if (password.value.length < 8) {
     localError.value = 'Пароль должен быть не короче 8 символов'
     return
@@ -48,19 +50,20 @@ async function submit(): Promise<void> {
   }
   submitting.value = true
   try {
-    await auth.register(email.value.trim(), password.value, displayName.value.trim())
-    ui.pushToast('success', 'Аккаунт создан')
+    await auth.register({
+      login: login.value.trim(),
+      email: email.value.trim(),
+      password: password.value,
+      displayName: displayName.value.trim(),
+      ...(inviteToken.value ? { inviteToken: inviteToken.value } : {}),
+    })
+    ui.pushToast('success', inviteToken.value ? 'Аккаунт создан, вы в кампании' : 'Аккаунт создан')
     await router.replace(redirectTarget())
   } catch (caught) {
     localError.value = errorMessage(caught)
   } finally {
     submitting.value = false
   }
-}
-
-async function startOAuth(provider: OAuthProvider): Promise<void> {
-  const url = await auth.startOAuth(provider)
-  window.location.href = url
 }
 </script>
 
@@ -72,9 +75,37 @@ async function startOAuth(provider: OAuthProvider): Promise<void> {
         <h1 style="margin: 0">Регистрация</h1>
       </div>
 
+      <p v-if="inviteToken" class="notice notice--accent">
+        Вы регистрируетесь по приглашению в кампанию — после создания аккаунта сразу окажетесь в ней.
+      </p>
+
       <form class="stack" @submit.prevent="submit">
         <div class="field">
-          <label class="field__label" for="reg-name">Как вас зовут</label>
+          <label class="field__label" for="reg-login">Логин</label>
+          <input
+            id="reg-login"
+            v-model="login"
+            class="input"
+            type="text"
+            autocomplete="username"
+            autocapitalize="none"
+            spellcheck="false"
+            required
+            minlength="3"
+            maxlength="32"
+            placeholder="gm"
+          />
+          <span class="field__hint">
+            Для входа: 3–32 символа из латинских a–z, цифр, «_», «.» и «-». Регистр не важен.
+          </span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="reg-email">Почта</label>
+          <input id="reg-email" v-model="email" class="input" type="email" autocomplete="email" required />
+          <span class="field__hint">Обязательна: на неё оформляется сброс пароля.</span>
+        </div>
+        <div class="field">
+          <label class="field__label" for="reg-name">Имя</label>
           <input
             id="reg-name"
             v-model="displayName"
@@ -84,10 +115,6 @@ async function startOAuth(provider: OAuthProvider): Promise<void> {
             required
             placeholder="Мастер"
           />
-        </div>
-        <div class="field">
-          <label class="field__label" for="reg-email">Почта</label>
-          <input id="reg-email" v-model="email" class="input" type="email" autocomplete="email" required />
         </div>
         <div class="field">
           <label class="field__label" for="reg-password">Пароль</label>
@@ -121,21 +148,6 @@ async function startOAuth(provider: OAuthProvider): Promise<void> {
           Создать аккаунт
         </button>
       </form>
-
-      <template v-if="oauthProviders.length > 0">
-        <div class="divider">или</div>
-        <div class="stack stack--sm">
-          <button
-            v-for="provider in oauthProviders"
-            :key="provider.key"
-            class="btn btn--block"
-            type="button"
-            @click="startOAuth(provider.key)"
-          >
-            {{ provider.label }}
-          </button>
-        </div>
-      </template>
 
       <p class="muted center" style="margin-top: 1rem">
         Уже есть аккаунт?

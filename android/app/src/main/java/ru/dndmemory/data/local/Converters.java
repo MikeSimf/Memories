@@ -7,11 +7,10 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import ru.dndmemory.data.model.EntityLink;
+import ru.dndmemory.data.model.HeroItem;
 
 /** JSON-сериализация составных полей через Gson. */
 public class Converters {
@@ -21,13 +20,13 @@ public class Converters {
     private static final Type STRING_LIST = new TypeToken<List<String>>() {
     }.getType();
 
-    private static final Type STRING_MAP = new TypeToken<Map<String, String>>() {
-    }.getType();
-
     private static final Type LINK_LIST = new TypeToken<List<EntityLink>>() {
     }.getType();
 
-    // --- tags / myPermissions -------------------------------------------------
+    private static final Type HERO_ITEM_LIST = new TypeToken<List<HeroItem>>() {
+    }.getType();
+
+    // --- строковые списки (myPermissions) ------------------------------------
 
     @TypeConverter
     public static String fromStringList(List<String> value) {
@@ -43,22 +42,6 @@ public class Converters {
         return parsed == null ? new ArrayList<>() : parsed;
     }
 
-    // --- attrs ---------------------------------------------------------------
-
-    @TypeConverter
-    public static String fromStringMap(Map<String, String> value) {
-        return value == null ? null : GSON.toJson(value, STRING_MAP);
-    }
-
-    @TypeConverter
-    public static Map<String, String> toStringMap(String value) {
-        if (value == null || value.isEmpty()) {
-            return new HashMap<>();
-        }
-        Map<String, String> parsed = GSON.fromJson(value, STRING_MAP);
-        return parsed == null ? new HashMap<>() : parsed;
-    }
-
     // --- links ---------------------------------------------------------------
 
     @TypeConverter
@@ -72,6 +55,22 @@ public class Converters {
             return new ArrayList<>();
         }
         List<EntityLink> parsed = GSON.fromJson(value, LINK_LIST);
+        return parsed == null ? new ArrayList<>() : parsed;
+    }
+
+    // --- котомка героя (hero_items) ------------------------------------------
+
+    @TypeConverter
+    public static String fromHeroItemList(List<HeroItem> value) {
+        return value == null ? null : GSON.toJson(value, HERO_ITEM_LIST);
+    }
+
+    @TypeConverter
+    public static List<HeroItem> toHeroItemList(String value) {
+        if (value == null || value.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<HeroItem> parsed = GSON.fromJson(value, HERO_ITEM_LIST);
         return parsed == null ? new ArrayList<>() : parsed;
     }
 }

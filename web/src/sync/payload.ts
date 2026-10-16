@@ -1,22 +1,26 @@
 import type {
   ChangeOp,
-  EntityAttrs,
-  EntityDto,
+  CharacterDto,
   EntityLinkDto,
-  EntityType,
+  HeroDto,
+  HeroItemDto,
+  ItemDto,
+  LocationDto,
   MemberDto,
   MemberRole,
   MemberStatus,
+  ObjectClass,
   RetellingStatus,
 } from '@/api/types'
-import { ENTITY_TYPES, MEMBER_ROLES, MEMBER_STATUSES } from '@/api/types'
-import { entityFromDto, memberFromDto, retellingFromDto } from '@/db'
-import type { LocalEntity, LocalRetelling, MemberRecord } from '@/db/schema'
+import { MEMBER_ROLES, MEMBER_STATUSES, OBJECT_CLASSES } from '@/api/types'
+import { memberFromDto, objectFromDto, retellingFromDto } from '@/db'
+import type { LocalObject, LocalRetelling, MemberRecord } from '@/db/schema'
 import { nowIso } from '@/db/schema'
 
 /**
  * Разбор `payload` из журнала синхронизации (`sync.md` §1): сервер присылает
- * полное состояние объекта, для `DELETE` — надгробие `{ id, deleted, updatedAt }`.
+ * полное состояние объекта в форме DTO своего класса, для `DELETE` — надгробие
+ * `{ id, objectType, deleted, updatedAt }`.
  */
 
 function asString(value: unknown, fallback = ''): string {
@@ -31,18 +35,12 @@ function asNumber(value: unknown, fallback = 0): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
 }
 
+function asOptionalNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
 function asBoolean(value: unknown, fallback = false): boolean {
   return typeof value === 'boolean' ? value : fallback
-}
-
-function asStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return []
-  return value.filter((item): item is string => typeof item === 'string')
-}
-
-function asAttrs(value: unknown): EntityAttrs {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return {}
-  return value as EntityAttrs
 }
 
 function asLinks(value: unknown): EntityLinkDto[] {
@@ -60,63 +58,113 @@ function asLinks(value: unknown): EntityLinkDto[] {
   return links
 }
 
-function isEntityType(value: unknown): value is EntityType {
-  return typeof value === 'string' && (ENTITY_TYPES as readonly string[]).includes(value)
+function asHeroItems(value: unknown): HeroItemDto[] {
+  if (!Array.isArray(value)) return []
+  return value.map((item, index) => {
+    const record = (typeof item === 'object' && item !== null ? item : {}) as Record<string, unknown>
+    return {
+      id: asString(record.id, String(index)),
+      name: asString(record.name),
+      itemId: asOptionalString(record.itemId),
+      quantity: asOptionalNumber(record.quantity),
+      notes: asOptionalString(record.notes),
+    }
+  })
 }
 
-/** Объект из `payload`; `null`, если это надгробие или данные неполные. */
-export function entityFromPayload(
+export function isObjectClass(value: unknown): value is ObjectClass {
+  return typeof value === 'string' && (OBJECT_CLASSES as readonly string[]).includes(value)
+}
+
+/** Общие поля DTO из `payload`. */
+function commonPayload(
   campaignId: string,
   payload: Record<string, unknown>,
-  op: ChangeOp,
-): LocalEntity | null {
-  const id = asOptionalString(payload.id)
-  if (!id) return null
-  const timestamp = asString(payload.updatedAt, nowIso())
-  if (op === 'DELETE' || asBoolean(payload.deleted)) {
-    return {
-      id,
-      campaignId,
-      clientId: asString(payload.clientId, id),
-      type: isEntityType(payload.type) ? payload.type : 'NPC',
-      name: asString(payload.name),
-      summary: asString(payload.summary),
-      description: asString(payload.description),
-      attrs: asAttrs(payload.attrs),
-      tags: asStringArray(payload.tags),
-      imageFileId: asOptionalString(payload.imageFileId),
-      links: asLinks(payload.links),
-      createdBy: asString(payload.createdBy),
-      updatedBy: asString(payload.updatedBy),
-      revision: asNumber(payload.revision),
-      createdAt: asString(payload.createdAt, timestamp),
-      updatedAt: timestamp,
-      deleted: true,
-      dirty: 0,
-      conflict: null,
-    }
-  }
-  if (!isEntityType(payload.type)) return null
-  const dto: EntityDto = {
+  id: string,
+  timestamp: string,
+  deleted: boolean,
+): {
+  id: string
+  campaignId: string
+  name: string
+  description: string
+  imageFileId: string | null
+  links: EntityLinkDto[]
+  createdBy: string
+  createdByName: string
+  updatedBy: string
+  updatedByName: string
+  revision: number
+  createdAt: string
+  updatedAt: string
+  deleted: boolean
+} {
+  return {
     id,
     campaignId,
-    clientId: asString(payload.clientId, id),
-    type: payload.type,
     name: asString(payload.name),
-    summary: asString(payload.summary),
     description: asString(payload.description),
-    attrs: asAttrs(payload.attrs),
-    tags: asStringArray(payload.tags),
     imageFileId: asOptionalString(payload.imageFileId),
     links: asLinks(payload.links),
     createdBy: asString(payload.createdBy),
+    createdByName: asString(payload.createdByName),
     updatedBy: asString(payload.updatedBy),
+    updatedByName: asString(payload.updatedByName),
     revision: asNumber(payload.revision),
     createdAt: asString(payload.createdAt, timestamp),
     updatedAt: timestamp,
-    deleted: false,
+    deleted,
   }
-  return entityFromDto(dto)
+}
+
+/**
+ * Объект из `payload` журнала по классу и операции. `null`, если данных не хватает
+ * или тип не поддержан (`ENTITY` из журналов прежней версии — `sync.md` §3.1).
+ */
+export function objectFromPayload(
+  campaignId: string,
+  objectClass: ObjectClass,
+  payload: Record<string, unknown>,
+  op: ChangeOp,
+): LocalObject | null {
+  const id = asOptionalString(payload.id)
+  if (!id) return null
+  const timestamp = asString(payload.updatedAt, nowIso())
+  const deleted = op === 'DELETE' || asBoolean(payload.deleted)
+  const common = commonPayload(campaignId, payload, id, timestamp, deleted)
+
+  if (objectClass === 'HERO') {
+    const dto: HeroDto = {
+      ...common,
+      race: asOptionalString(payload.race),
+      klass: asOptionalString(payload.klass),
+      playerUserId: asOptionalString(payload.playerUserId),
+      playerName: asOptionalString(payload.playerName),
+      items: deleted ? [] : asHeroItems(payload.items),
+    }
+    return objectFromDto('HERO', dto)
+  }
+  if (objectClass === 'CHARACTER') {
+    const dto: CharacterDto = {
+      ...common,
+      race: asOptionalString(payload.race),
+      shortDescription: asOptionalString(payload.shortDescription),
+    }
+    return objectFromDto('CHARACTER', dto)
+  }
+  if (objectClass === 'ITEM') {
+    const dto: ItemDto = {
+      ...common,
+      ownerName: asOptionalString(payload.ownerName),
+      ownerHeroId: asOptionalString(payload.ownerHeroId),
+      ownerHeroName: asOptionalString(payload.ownerHeroName),
+      ownerCharacterId: asOptionalString(payload.ownerCharacterId),
+      ownerCharacterName: asOptionalString(payload.ownerCharacterName),
+    }
+    return objectFromDto('ITEM', dto)
+  }
+  const dto: LocationDto = { ...common }
+  return objectFromDto('LOCATION', dto)
 }
 
 function isRetellingStatus(value: unknown): value is RetellingStatus {
@@ -131,45 +179,26 @@ export function retellingFromPayload(
   const id = asOptionalString(payload.id)
   if (!id) return null
   const timestamp = asString(payload.updatedAt, nowIso())
-  if (op === 'DELETE' || asBoolean(payload.deleted)) {
-    return {
-      id,
-      campaignId,
-      clientId: asString(payload.clientId, id),
-      title: asString(payload.title),
-      body: asString(payload.body),
-      authorEntityId: asOptionalString(payload.authorEntityId),
-      authorEntityName: asOptionalString(payload.authorEntityName),
-      sessionDate: asOptionalString(payload.sessionDate),
-      status: 'PUBLISHED',
-      links: asLinks(payload.links),
-      revision: asNumber(payload.revision),
-      createdBy: asString(payload.createdBy),
-      updatedBy: asString(payload.updatedBy),
-      createdAt: asString(payload.createdAt, timestamp),
-      updatedAt: timestamp,
-      deleted: true,
-      dirty: 0,
-      conflict: null,
-    }
-  }
+  const deleted = op === 'DELETE' || asBoolean(payload.deleted)
   const dto = {
     id,
     campaignId,
-    clientId: asString(payload.clientId, id),
+    clientId: asOptionalString(payload.clientId),
     title: asString(payload.title),
     body: asString(payload.body),
     authorEntityId: asOptionalString(payload.authorEntityId),
     authorEntityName: asOptionalString(payload.authorEntityName),
     sessionDate: asOptionalString(payload.sessionDate),
-    status: isRetellingStatus(payload.status) ? payload.status : 'PUBLISHED',
+    status: isRetellingStatus(payload.status) ? payload.status : ('PUBLISHED' as RetellingStatus),
     links: asLinks(payload.links),
     revision: asNumber(payload.revision),
     createdBy: asString(payload.createdBy),
+    createdByName: asString(payload.createdByName),
     updatedBy: asString(payload.updatedBy),
+    updatedByName: asString(payload.updatedByName),
     createdAt: asString(payload.createdAt, timestamp),
     updatedAt: timestamp,
-    deleted: false,
+    deleted,
   }
   return retellingFromDto(dto)
 }
@@ -196,8 +225,8 @@ export function memberFromPayload(
     displayName: asString(payload.displayName),
     email: asString(payload.email),
     role: isMemberRole(payload.role) ? payload.role : 'VIEWER',
-    linkedEntityId: asOptionalString(payload.linkedEntityId),
-    linkedEntityName: asOptionalString(payload.linkedEntityName),
+    linkedHeroId: asOptionalString(payload.linkedHeroId),
+    linkedHeroName: asOptionalString(payload.linkedHeroName),
     status: isMemberStatus(payload.status) ? payload.status : 'ACTIVE',
     createdAt: asString(payload.createdAt, nowIso()),
   }

@@ -2,25 +2,27 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 
 import type {
   ChangeOp,
-  EntityAttrs,
   EntityLinkDto,
-  EntityType,
+  HeroItemDto,
   MemberDto,
   MemberRole,
+  ObjectClass,
   ObjectType,
+  RetellingBriefDto,
   RetellingStatus,
   SyncConflictDto,
 } from '@/api/types'
 
 export const DB_NAME = 'dnd-memory'
-export const DB_VERSION = 1
+/** Схема v2: четыре класса объектов вместо общего хранилища `entities` (`sync.md` §5). */
+export const DB_VERSION = 2
 
 /**
- * Имена хранилищ — по `sync.md` §4 («Локальное состояние клиента»).
+ * Имена хранилищ — по `sync.md` §5 («Локальное состояние клиента»).
  * `retelling_drafts` существует только на устройстве: черновики не покидают его.
  */
 export const STORE = {
-  entities: 'entities',
+  objects: 'objects',
   retellings: 'retellings',
   retellingDrafts: 'retelling_drafts',
   pendingChanges: 'pending_changes',
@@ -30,31 +32,86 @@ export const STORE = {
   meta: 'meta',
 } as const
 
+/** Хранилища прежней схемы — удаляются при обновлении до v2. */
+const LEGACY_STORES = ['entities'] as const
+
 export type StoreName = (typeof STORE)[keyof typeof STORE]
 
-/** Локальная запись объекта: полное состояние сущности + служебные поля офлайна. */
-export interface LocalEntity {
+/**
+ * Общие поля локальной записи объекта плюс служебные поля офлайна.
+ * Поля своего класса добавляются в наследниках, различает их `objectType`.
+ */
+interface LocalObjectBase {
   id: string
   campaignId: string
-  clientId: string
-  type: EntityType
   name: string
-  summary: string
   description: string
-  attrs: EntityAttrs
-  tags: string[]
   imageFileId: string | null
   links: EntityLinkDto[]
   createdBy: string
+  createdByName: string
   updatedBy: string
+  updatedByName: string
   revision: number
   createdAt: string
   updatedAt: string
   deleted: boolean
-  /** 1 — есть неотправленная локальная правка (`sync.md` §4). */
+  /** 1 — есть неотправленная локальная правка (`sync.md` §5). */
   dirty: 0 | 1
   /** Расхождение с сервером после `REJECTED`. */
   conflict: SyncConflictDto | null
+}
+
+/** Герой: раса, класс, игрок и предметы в котомке. */
+export interface LocalHero extends LocalObjectBase {
+  objectType: 'HERO'
+  race: string | null
+  klass: string | null
+  playerUserId: string | null
+  playerName: string | null
+  items: HeroItemDto[]
+}
+
+/** Персонаж (НПС): раса и краткое описание. */
+export interface LocalCharacter extends LocalObjectBase {
+  objectType: 'CHARACTER'
+  race: string | null
+  shortDescription: string | null
+}
+
+/** Локация: своих полей нет. */
+export interface LocalLocation extends LocalObjectBase {
+  objectType: 'LOCATION'
+}
+
+/** Предмет: владелец строкой и необязательная ссылка на героя или персонажа. */
+export interface LocalItem extends LocalObjectBase {
+  objectType: 'ITEM'
+  ownerName: string | null
+  ownerHeroId: string | null
+  ownerHeroName: string | null
+  ownerCharacterId: string | null
+  ownerCharacterName: string | null
+}
+
+export type LocalObject = LocalHero | LocalCharacter | LocalLocation | LocalItem
+
+/** Локальная запись конкретного класса — по значению `ObjectClass`. */
+export interface LocalObjectMap {
+  HERO: LocalHero
+  CHARACTER: LocalCharacter
+  LOCATION: LocalLocation
+  ITEM: LocalItem
+}
+
+export type LocalObjectOf<C extends ObjectClass> = LocalObjectMap[C]
+
+/** Сужает запись до класса — удобно в интерфейсе. */
+export function isLocalObjectOf<C extends ObjectClass>(
+  object: LocalObject,
+  objectClass: C,
+): object is LocalObjectOf<C> {
+  return object.objectType === objectClass
 }
 
 /** Локальная запись пересказа: только `PUBLISHED` (или отправляемый на сервер). */
@@ -71,7 +128,9 @@ export interface LocalRetelling {
   links: EntityLinkDto[]
   revision: number
   createdBy: string
+  createdByName: string
   updatedBy: string
+  updatedByName: string
   createdAt: string
   updatedAt: string
   deleted: boolean
@@ -93,7 +152,7 @@ export interface LocalRetellingDraft {
   status: 'DRAFT'
 }
 
-/** Очередь неотправленных правок (`sync.md` §4, `pending_changes`). */
+/** Очередь неотправленных правок (`sync.md` §5, `pending_changes`). */
 export interface PendingChange {
   clientChangeId: string
   campaignId: string
@@ -101,7 +160,8 @@ export interface PendingChange {
   objectId: string
   op: ChangeOp
   baseRevision: number | null
-  payload: Record<string, unknown>
+  /** Объект в форме DTO своего класса либо надгробие при `DELETE`. */
+  payload: Record<string, unknown> | null
   createdAt: string
   attempts: number
 }
@@ -114,7 +174,7 @@ export interface SyncStateRecord {
   /** Заполняется после первичной загрузки snapshot. */
   snapshotLoaded: boolean
   counts: {
-    entities: number
+    objects: number
     retellings: number
     members: number
   } | null
@@ -129,13 +189,17 @@ export interface CampaignRecord {
   id: string
   title: string
   description: string
+  ownerUserId: string | null
   myRole: MemberRole
   myPermissions: string[]
   memberCount: number
+  /** Сумма объектов всех четырёх классов. */
   entityCount: number
   retellingCount: number
   latestRevision: number
-  createdBy: string | null
+  /** Краткие списки из `GET /api/campaigns/{id}` (`api.md` §4) — без лишних запросов. */
+  members: MemberDto[]
+  retellingBriefs: RetellingBriefDto[]
   createdAt: string | null
   updatedAt: string
   cachedAt: string
@@ -147,12 +211,12 @@ export interface MetaRecord {
 }
 
 export interface DndMemoryDB extends DBSchema {
-  entities: {
+  objects: {
     key: string
-    value: LocalEntity
+    value: LocalObject
     indexes: {
       'by-campaign': string
-      'by-campaign-type': [string, EntityType]
+      'by-campaign-class': [string, ObjectClass]
     }
   }
   retellings: {
@@ -205,11 +269,21 @@ let dbPromise: Promise<IDBPDatabase<DndMemoryDB>> | null = null
 export function openDatabase(): Promise<IDBPDatabase<DndMemoryDB>> {
   if (!dbPromise) {
     dbPromise = openDB<DndMemoryDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains(STORE.entities)) {
-          const entities = db.createObjectStore(STORE.entities, { keyPath: 'id' })
-          entities.createIndex('by-campaign', 'campaignId')
-          entities.createIndex('by-campaign-type', ['campaignId', 'type'])
+      upgrade(db, oldVersion) {
+        // Схема v1 хранила объекты в общем `entities`; в v2 у класса своя запись
+        // и свой индекс `[campaignId, objectType]`.
+        if (oldVersion < 2) {
+          // `entities` есть только в схеме v1, поэтому имена хранилищ прежней версии
+          // не входят в тип актуальной схемы и приводятся к нему явно.
+          const names: readonly string[] = Array.from(db.objectStoreNames)
+          for (const legacy of LEGACY_STORES) {
+            if (names.includes(legacy)) db.deleteObjectStore(legacy as never)
+          }
+        }
+        if (!db.objectStoreNames.contains(STORE.objects)) {
+          const objects = db.createObjectStore(STORE.objects, { keyPath: 'id' })
+          objects.createIndex('by-campaign', 'campaignId')
+          objects.createIndex('by-campaign-class', ['campaignId', 'objectType'])
         }
         if (!db.objectStoreNames.contains(STORE.retellings)) {
           const retellings = db.createObjectStore(STORE.retellings, { keyPath: 'id' })
@@ -255,7 +329,7 @@ export function openDatabase(): Promise<IDBPDatabase<DndMemoryDB>> {
 export async function clearDatabase(): Promise<void> {
   const db = await openDatabase()
   const stores: StoreName[] = [
-    STORE.entities,
+    STORE.objects,
     STORE.retellings,
     STORE.retellingDrafts,
     STORE.pendingChanges,

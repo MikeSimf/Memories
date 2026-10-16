@@ -12,7 +12,6 @@ import java.util.List;
 
 import ru.dndmemory.data.local.entity.EntityRoom;
 import ru.dndmemory.data.local.entity.MemberRoom;
-import ru.dndmemory.data.model.EntityType;
 import ru.dndmemory.data.remote.ApiException;
 import ru.dndmemory.data.remote.dto.AddMemberResponse;
 import ru.dndmemory.data.repo.EntityRepository;
@@ -82,19 +81,22 @@ public class MembersViewModel extends ViewModel {
         return messageRes;
     }
 
+    /** Привязка участника идёт к герою, поэтому нужен только список героев. */
     private void loadHeroes() {
+        entities.loadHeroes(campaignId, new RepoCallback<List<EntityRoom>>() {
+            @Override
+            public void onSuccess(@Nullable List<EntityRoom> value) {
+                heroes.setValue(value == null ? new ArrayList<>() : value);
+            }
+
+            @Override
+            public void onError(@NonNull ApiException error) {
+                heroes.setValue(new ArrayList<>());
+            }
+        });
         entities.loadEntities(campaignId, new RepoCallback<List<EntityRoom>>() {
             @Override
             public void onSuccess(@Nullable List<EntityRoom> value) {
-                List<EntityRoom> result = new ArrayList<>();
-                if (value != null) {
-                    for (EntityRoom entity : value) {
-                        if (EntityType.HERO.name().equalsIgnoreCase(entity.type)) {
-                            result.add(entity);
-                        }
-                    }
-                }
-                heroes.setValue(result);
                 nameIndex.setValue(NameIndex.of(value));
             }
 
@@ -110,9 +112,9 @@ public class MembersViewModel extends ViewModel {
         loadHeroes();
     }
 
-    public void add(@NonNull String email, @NonNull String role, @Nullable String linkedEntityId) {
+    public void add(@NonNull String email, @NonNull String role, @Nullable String linkedHeroId) {
         actionState.setValue(Resource.loading());
-        members.add(campaignId, email, role, linkedEntityId, new RepoCallback<AddMemberResponse>() {
+        members.add(campaignId, email, role, linkedHeroId, new RepoCallback<AddMemberResponse>() {
             @Override
             public void onSuccess(@Nullable AddMemberResponse value) {
                 actionState.setValue(Resource.success(null));
@@ -130,9 +132,9 @@ public class MembersViewModel extends ViewModel {
     }
 
     public void changeRole(@NonNull String memberId, @NonNull String role,
-                           @Nullable String linkedEntityId) {
+                           @Nullable String linkedHeroId) {
         actionState.setValue(Resource.loading());
-        members.changeRole(campaignId, memberId, role, linkedEntityId, new RepoCallback<MemberRoom>() {
+        members.changeRole(campaignId, memberId, role, linkedHeroId, new RepoCallback<MemberRoom>() {
             @Override
             public void onSuccess(@Nullable MemberRoom value) {
                 actionState.setValue(Resource.success(null));

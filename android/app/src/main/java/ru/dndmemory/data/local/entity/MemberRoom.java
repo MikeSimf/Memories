@@ -27,8 +27,9 @@ public class MemberRoom {
     /** OWNER | EDITOR_MASTER | EDITOR_HERO | VIEWER */
     public String role;
 
-    public String linkedEntityId;
-    public String linkedEntityName;
+    /** Герой, за которого играет участник (docs/api.md, раздел 5). */
+    public String linkedHeroId;
+    public String linkedHeroName;
 
     /** INVITED | ACTIVE | REMOVED */
     public String status;

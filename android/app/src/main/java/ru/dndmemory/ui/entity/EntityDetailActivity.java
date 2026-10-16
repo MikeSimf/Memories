@@ -1,6 +1,7 @@
 package ru.dndmemory.ui.entity;
 
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -9,8 +10,6 @@ import android.text.method.LinkMovementMethod;
 import android.text.style.StyleSpan;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -20,9 +19,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import ru.dndmemory.App;
 import ru.dndmemory.AppContainer;
@@ -31,10 +28,9 @@ import ru.dndmemory.data.local.entity.CampaignRoom;
 import ru.dndmemory.data.local.entity.EntityRoom;
 import ru.dndmemory.data.model.EntityLink;
 import ru.dndmemory.data.model.EntityType;
-import ru.dndmemory.data.remote.dto.BacklinkDto;
+import ru.dndmemory.data.model.HeroItem;
 import ru.dndmemory.databinding.ActivityEntityDetailBinding;
 import ru.dndmemory.ui.campaign.CampaignViewModel;
-import ru.dndmemory.ui.common.Attrs;
 import ru.dndmemory.ui.common.ErrorMessages;
 import ru.dndmemory.ui.common.Extras;
 import ru.dndmemory.ui.common.Labels;
@@ -46,7 +42,12 @@ import ru.dndmemory.ui.common.ViewUtils;
 import ru.dndmemory.util.DateFormats;
 import ru.dndmemory.util.WikiMarkdown;
 
-/** Карточка объекта: описание со ссылками [[Имя]], характеристики, обратные ссылки. */
+/**
+ * Карточка объекта: описание со ссылками {@code [[Имя]]}, поля своего класса
+ * и список упоминаний. Набор полей — настоящие поля вместо {@code attrs}:
+ * у героя раса, класс, игрок и котомка; у персонажа раса и краткое описание;
+ * у предмета владелец со ссылкой (docs/api.md, раздел 6).
+ */
 public class EntityDetailActivity extends AppCompatActivity {
 
     private ActivityEntityDetailBinding binding;
@@ -87,6 +88,9 @@ public class EntityDetailActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
+        binding.entityConflictAccept.setOnClickListener(v -> viewModel.acceptServerVersion());
+        binding.entityConflictOverwrite.setOnClickListener(v -> viewModel.overwriteWithLocal());
+
         observe();
     }
 
@@ -113,8 +117,6 @@ public class EntityDetailActivity extends AppCompatActivity {
             }
         });
 
-        viewModel.backlinks().observe(this, this::bindBacklinks);
-
         viewModel.actionState().observe(this, resource -> {
             if (resource == null) {
                 return;
@@ -140,20 +142,14 @@ public class EntityDetailActivity extends AppCompatActivity {
         binding.entityTitle.setText(TextUtils.isEmpty(entity.name)
                 ? getString(R.string.attr_not_set) : entity.name);
         binding.entitySubtitle.setText(getString(R.string.entity_detail_type,
-                Labels.entityTypeText(this, entity.type)));
+                Labels.entityTypeText(this, entity.kind)));
         binding.entityUpdated.setText(getString(R.string.entity_detail_updated,
                 DateFormats.formatIso(entity.updatedAt)));
 
-        if (entity.tags == null || entity.tags.isEmpty()) {
-            ViewUtils.show(binding.entityTags, false);
-        } else {
-            binding.entityTags.setText(TextUtils.join(" · ", entity.tags));
-            ViewUtils.show(binding.entityTags, true);
-        }
-
-        renderWiki(binding.entitySummary, entity.summary);
         renderWiki(binding.entityDescription, entity.description);
-        bindAttrs(entity);
+        ViewUtils.show(binding.entityDescriptionTitle,
+                !TextUtils.isEmpty(entity.description));
+        bindFields(entity);
         bindLinks(entity);
 
         ViewUtils.show(binding.entityConflictBar, entity.hasConflict());
@@ -178,63 +174,105 @@ public class EntityDetailActivity extends AppCompatActivity {
             Nav.openEntity(this, campaignId, targetId);
             return;
         }
-        // «Битая» ссылка: предлагаем создать объект с таким именем (docs/sync.md, раздел 7).
+        // «Битая» ссылка: предлагаем создать объект с таким именем (docs/sync.md, раздел 8).
         new MaterialAlertDialogBuilder(this)
                 .setMessage(getString(R.string.wiki_create_suggestion, name))
                 .setPositiveButton(R.string.action_create, (dialog, which) ->
-                        Nav.createEntity(this, campaignId, EntityType.NPC.name()))
+                        Nav.createEntity(this, campaignId, EntityType.CHARACTER.name()))
                 .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }
 
-    private void bindAttrs(@NonNull EntityRoom entity) {
-        binding.entityAttrs.removeAllViews();
-        if (entity.attrs == null || entity.attrs.isEmpty()) {
-            ViewUtils.show(binding.entityAttrsTitle, false);
+    /** Поля своего класса — вместо прежних attrs (docs/redesign-v2.md, раздел 5). */
+    private void bindFields(@NonNull EntityRoom entity) {
+        binding.entityFields.removeAllViews();
+        EntityType kind = EntityType.from(entity.kind);
+        if (kind != null) {
+            switch (kind) {
+                case HERO:
+                    addFieldRow(getString(R.string.attr_race), entity.race);
+                    addFieldRow(getString(R.string.attr_klass), entity.klass);
+                    addFieldRow(getString(R.string.attr_player_name), entity.playerName);
+                    break;
+                case CHARACTER:
+                    addFieldRow(getString(R.string.attr_race), entity.race);
+                    addFieldRow(getString(R.string.attr_short_description), entity.shortDescription);
+                    break;
+                case ITEM:
+                    addFieldRow(getString(R.string.attr_owner), ownerText(entity));
+                    break;
+                case LOCATION:
+                default:
+                    break;
+            }
+        }
+        bindHeroItems(entity);
+        ViewUtils.show(binding.entityFieldsTitle,
+                binding.entityFields.getChildCount() > 0);
+    }
+
+    /** Владелец предмета: ссылка важнее строки «как написано в мире». */
+    @Nullable
+    private String ownerText(@NonNull EntityRoom entity) {
+        String linkedName = entity.ownerHeroId != null
+                ? nameIndex.nameFor(entity.ownerHeroId) : null;
+        if (linkedName == null && entity.ownerCharacterId != null) {
+            linkedName = nameIndex.nameFor(entity.ownerCharacterId);
+        }
+        if (linkedName != null) {
+            return linkedName;
+        }
+        if (entity.ownerHeroName != null) {
+            return entity.ownerHeroName;
+        }
+        if (entity.ownerCharacterName != null) {
+            return entity.ownerCharacterName;
+        }
+        return entity.ownerName;
+    }
+
+    private void bindHeroItems(@NonNull EntityRoom entity) {
+        binding.entityItems.removeAllViews();
+        List<HeroItem> items = entity.items;
+        if (items == null || items.isEmpty()) {
+            ViewUtils.show(binding.entityItemsTitle, false);
             return;
         }
-        EntityType type = EntityType.from(entity.type);
-        List<Attrs.Field> fields = Attrs.fieldsFor(type);
-        Set<String> shown = new HashSet<>();
-
-        for (Attrs.Field field : fields) {
-            String value = entity.attrs.get(field.key);
-            if (value == null || value.isEmpty()) {
+        ViewUtils.show(binding.entityItemsTitle, true);
+        for (final HeroItem item : items) {
+            CharSequence text = Labels.heroItemText(this, item);
+            if (text == null) {
                 continue;
             }
-            addAttrRow(Labels.attrLabelText(this, field.key), attrValueText(field, value));
-            shown.add(field.key);
+            addFieldRow(getString(R.string.attr_items), text, item.itemId);
         }
-        for (java.util.Map.Entry<String, String> entry : entity.attrs.entrySet()) {
-            if (shown.contains(entry.getKey()) || entry.getValue() == null
-                    || entry.getValue().isEmpty()) {
-                continue;
-            }
-            addAttrRow(Labels.attrLabelText(this, entry.getKey()), entry.getValue());
-        }
-        ViewUtils.show(binding.entityAttrsTitle, binding.entityAttrs.getChildCount() > 0);
     }
 
-    private CharSequence attrValueText(@NonNull Attrs.Field field, @NonNull String value) {
-        if (field.kind == Attrs.Kind.ENTITY_REF) {
-            String name = nameIndex.nameFor(value);
-            return name == null ? value : name;
-        }
-        return Labels.attrValue(this, field.key, value);
+    private void addFieldRow(@NonNull CharSequence label, @Nullable CharSequence value) {
+        addFieldRow(label, value, null);
     }
 
-    private void addAttrRow(CharSequence label, CharSequence value) {
+    /** Строка «Подпись: значение»; при {@code linkId} строка открывает объект. */
+    private void addFieldRow(@NonNull CharSequence label, @Nullable CharSequence value,
+                             @Nullable final String linkId) {
+        if (value == null || value.length() == 0) {
+            return;
+        }
         SpannableStringBuilder line = new SpannableStringBuilder();
         line.append(label);
-        line.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 0, line.length(),
+        line.setSpan(new StyleSpan(Typeface.BOLD), 0, line.length(),
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         line.append(": ");
-        line.append(value == null ? "" : value);
+        line.append(value);
 
         TextView row = new TextView(this);
         row.setText(line);
         row.setPadding(0, 4, 0, 4);
-        binding.entityAttrs.addView(row);
+        if (linkId != null) {
+            row.setTextColor(getResources().getColor(R.color.wiki_link, getTheme()));
+            row.setOnClickListener(v -> Nav.openEntity(this, campaignId, linkId));
+        }
+        binding.entityFields.addView(row);
     }
 
     private void bindLinks(@NonNull EntityRoom entity) {
@@ -258,35 +296,6 @@ public class EntityDetailActivity extends AppCompatActivity {
         }
     }
 
-    private void bindBacklinks(@Nullable List<BacklinkDto> items) {
-        binding.entityBacklinks.removeAllViews();
-        if (items == null || items.isEmpty()) {
-            ViewUtils.show(binding.entityBacklinksEmpty, true);
-            return;
-        }
-        ViewUtils.show(binding.entityBacklinksEmpty, false);
-        for (final BacklinkDto item : items) {
-            TextView row = new TextView(this);
-            CharSequence title = item.title == null ? "" : item.title;
-            String snippet = WikiMarkdown.plainText(item.snippet);
-            row.setText(snippet.isEmpty() ? title : title + " — " + snippet);
-            row.setPadding(0, 6, 0, 6);
-            row.setOnClickListener(v -> openBacklink(item));
-            binding.entityBacklinks.addView(row);
-        }
-    }
-
-    private void openBacklink(@NonNull BacklinkDto item) {
-        if (item.id == null) {
-            return;
-        }
-        if ("RETELLING".equalsIgnoreCase(item.kind)) {
-            Nav.openRetelling(this, campaignId, item.id);
-        } else {
-            Nav.openEntity(this, campaignId, item.id);
-        }
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_entity_detail, menu);
@@ -300,7 +309,9 @@ public class EntityDetailActivity extends AppCompatActivity {
             CampaignRoom campaign = campaignViewModel.campaign().getValue();
             String userId = campaignViewModel.currentUserId();
             if (current == null || !Rights.canWriteEntity(campaign, current, userId)) {
-                ViewUtils.toast(this, R.string.error_forbidden);
+                ViewUtils.toast(this, current != null
+                        && EntityType.HERO.name().equalsIgnoreCase(current.kind)
+                        ? R.string.entity_hero_owner_only : R.string.error_forbidden);
                 return true;
             }
             Nav.editEntity(this, campaignId, current.id);
@@ -320,7 +331,8 @@ public class EntityDetailActivity extends AppCompatActivity {
         CampaignRoom campaign = campaignViewModel.campaign().getValue();
         String userId = campaignViewModel.currentUserId();
         if (!Rights.canDeleteEntity(campaign, current, userId)) {
-            ViewUtils.toast(this, R.string.error_forbidden);
+            ViewUtils.toast(this, EntityType.HERO.name().equalsIgnoreCase(current.kind)
+                    ? R.string.entity_hero_owner_only : R.string.error_forbidden);
             return;
         }
         final String name = TextUtils.isEmpty(current.name)

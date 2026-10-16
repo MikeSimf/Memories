@@ -7,14 +7,7 @@ public class InvitePreviewDto {
     public String campaignId;
     public String campaignTitle;
     public String role;
-    /** MEMBER — приглашение человеку, DEVICE — регистрация устройства. */
-    public String mode;
-    public String displayName;
-    public String linkedEntityId;
-    public String linkedEntityName;
+    public String linkedHeroId;
+    public String linkedHeroName;
     public String expiresAt;
-
-    public boolean isDevice() {
-        return "DEVICE".equalsIgnoreCase(mode);
-    }
 }

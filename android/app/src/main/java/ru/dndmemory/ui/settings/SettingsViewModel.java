@@ -64,6 +64,13 @@ public class SettingsViewModel extends ViewModel {
         return profile;
     }
 
+    /** Логин — только для чтения, он же имя для входа. */
+    @NonNull
+    public String login() {
+        String value = auth.login();
+        return value == null ? "" : value;
+    }
+
     @NonNull
     public String email() {
         String value = auth.email();

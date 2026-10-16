@@ -4,10 +4,10 @@ package ru.dndmemory.data.remote.dto;
 public class PatchMemberRequest {
 
     public String role;
-    public String linkedEntityId;
+    public String linkedHeroId;
 
-    public PatchMemberRequest(String role, String linkedEntityId) {
+    public PatchMemberRequest(String role, String linkedHeroId) {
         this.role = role;
-        this.linkedEntityId = linkedEntityId;
+        this.linkedHeroId = linkedHeroId;
     }
 }

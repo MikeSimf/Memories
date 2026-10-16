@@ -19,7 +19,7 @@ public final class ApiClient {
 
     /**
      * {@code serializeNulls()} нужен для PATCH: явный {@code null} очищает поле
-     * ({@code linkedEntityId}, {@code imageFileId}).
+     * ({@code ownerHeroId}, {@code imageFileId}).
      */
     public static Gson gson() {
         return new GsonBuilder().serializeNulls().create();

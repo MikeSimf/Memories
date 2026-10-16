@@ -11,13 +11,12 @@ import java.util.List;
 
 import ru.dndmemory.data.local.entity.EntityRoom;
 import ru.dndmemory.data.remote.ApiException;
-import ru.dndmemory.data.remote.dto.BacklinkDto;
 import ru.dndmemory.data.repo.EntityRepository;
 import ru.dndmemory.ui.common.NameIndex;
 import ru.dndmemory.util.RepoCallback;
 import ru.dndmemory.util.Resource;
 
-/** Карточка объекта: данные, указатель имён для ссылок и обратные ссылки. */
+/** Карточка объекта: данные и указатель имён для ссылок {@code [[Имя]]}. */
 public class EntityDetailViewModel extends ViewModel {
 
     private final EntityRepository entities;
@@ -26,7 +25,6 @@ public class EntityDetailViewModel extends ViewModel {
     private final MediatorLiveData<EntityRoom> entity = new MediatorLiveData<>();
     private LiveData<EntityRoom> entitySource;
     private final MutableLiveData<NameIndex> nameIndex = new MutableLiveData<>();
-    private final MutableLiveData<List<BacklinkDto>> backlinks = new MutableLiveData<>();
     private final MutableLiveData<Resource<Void>> actionState = new MutableLiveData<>();
     private final MutableLiveData<Boolean> finishRequested = new MutableLiveData<>(false);
 
@@ -45,7 +43,6 @@ public class EntityDetailViewModel extends ViewModel {
         entitySource = entities.observe(entityId);
         entity.addSource(entitySource, entity::setValue);
         loadIndex();
-        loadBacklinks();
     }
 
     @NonNull
@@ -56,11 +53,6 @@ public class EntityDetailViewModel extends ViewModel {
     @NonNull
     public LiveData<NameIndex> nameIndex() {
         return nameIndex;
-    }
-
-    @NonNull
-    public LiveData<List<BacklinkDto>> backlinks() {
-        return backlinks;
     }
 
     @NonNull
@@ -88,25 +80,6 @@ public class EntityDetailViewModel extends ViewModel {
             @Override
             public void onError(@NonNull ApiException error) {
                 nameIndex.setValue(NameIndex.of(null));
-            }
-        });
-    }
-
-    /** Обратные ссылки есть только на сервере — офлайн раздел остаётся пустым. */
-    public void loadBacklinks() {
-        String id = entityId.getValue();
-        if (id == null) {
-            return;
-        }
-        entities.loadBacklinks(campaignId, id, new RepoCallback<List<BacklinkDto>>() {
-            @Override
-            public void onSuccess(@Nullable List<BacklinkDto> value) {
-                backlinks.setValue(value);
-            }
-
-            @Override
-            public void onError(@NonNull ApiException error) {
-                // Нет сети — просто не показываем раздел.
             }
         });
     }

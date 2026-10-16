@@ -2,6 +2,7 @@ package ru.dndmemory.ui.settings;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Patterns;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,12 +23,12 @@ import ru.dndmemory.ui.common.ViewUtils;
 import ru.dndmemory.util.AppExecutors;
 
 /**
- * Настройки: профиль (имя, почта, телефон), пароль для входа в веб-версию,
- * режим синхронизации и выход из аккаунта.
+ * Настройки: профиль (логин только для чтения, имя, почта, телефон), смена
+ * пароля, режим синхронизации и выход из аккаунта.
  *
- * <p>Аккаунт, созданный по QR устройства, начинается без пароля: подсказка в
- * интерфейсе объясняет, что почта или телефон плюс пароль открывают вход в
- * веб-версию (docs/api.md, раздел 3).
+ * <p>Логин изменить нельзя, почта обязательна — на неё придёт ссылка
+ * восстановления пароля (docs/api.md, раздел 3). Про устройства и отзыв доступа
+ * в приложении больше ничего нет.
  */
 public class SettingsActivity extends AppCompatActivity {
 
@@ -109,27 +110,25 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
-    /** Имя, контакты и статус пароля. {@code user == null} — показываем данные сессии. */
+    /** Логин только для чтения, остальное — из профиля или из сессии. */
     private void bindProfile(@Nullable UserDto user) {
         String name = user != null && !TextUtils.isEmpty(user.displayName)
                 ? user.displayName : viewModel.userName();
+        String login = user != null && !TextUtils.isEmpty(user.login)
+                ? user.login : viewModel.login();
         String email = user != null && user.email != null ? user.email : viewModel.email();
         String phone = user != null && user.phone != null ? user.phone : viewModel.phone();
-        boolean hasPassword = user == null ? viewModel.hasPassword() : user.hasPassword;
 
         binding.settingsUser.setText(getString(R.string.settings_user,
                 TextUtils.isEmpty(name) ? getString(R.string.attr_not_set) : name));
+        binding.settingsLogin.setText(getString(R.string.settings_login_display,
+                TextUtils.isEmpty(login) ? getString(R.string.attr_not_set) : login));
         binding.settingsEmail.setText(getString(R.string.settings_email_display,
                 TextUtils.isEmpty(email) ? getString(R.string.attr_not_set) : email));
         binding.settingsPhone.setText(getString(R.string.settings_phone_display,
                 TextUtils.isEmpty(phone) ? getString(R.string.attr_not_set) : phone));
 
-        binding.settingsPasswordStatus.setText(hasPassword
-                ? R.string.settings_password_set : R.string.settings_password_not_set);
-        binding.settingsPasswordButton.setText(hasPassword
-                ? R.string.settings_password_change_action : R.string.settings_password_set_action);
-        // Подсказка нужна, пока пароля нет: именно она объясняет пользу контактов.
-        ViewUtils.show(binding.settingsPasswordHint, !hasPassword);
+        binding.settingsPasswordButton.setText(R.string.settings_password_change_action);
 
         // Поля заполняем из ответа сервера (он нормализует телефон), а до ответа —
         // из сохранённой сессии, чтобы форма не была пустой.
@@ -155,18 +154,18 @@ public class SettingsActivity extends AppCompatActivity {
             return;
         }
         binding.settingsNameInput.setError(null);
-        viewModel.saveProfile(name, text(binding.settingsEmailInput.getText()),
-                text(binding.settingsPhoneInput.getText()));
+        String email = text(binding.settingsEmailInput.getText());
+        if (email.isEmpty() || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            binding.settingsEmailInput.setError(getString(R.string.error_email_required));
+            return;
+        }
+        binding.settingsEmailInput.setError(null);
+        viewModel.saveProfile(name, email, text(binding.settingsPhoneInput.getText()));
     }
 
-    /**
-     * Пароль: если он уже задан, сервер требует текущий — поле показываем только
-     * в этом случае (docs/api.md, раздел 3).
-     */
+    /** Смена пароля: вход только по паролю, поэтому текущий спрашиваем всегда. */
     private void showPasswordDialog() {
         final DialogPasswordBinding dialog = DialogPasswordBinding.inflate(getLayoutInflater());
-        boolean hasPassword = viewModel.hasPassword();
-        ViewUtils.show(dialog.passwordCurrentGroup, hasPassword);
         dialog.passwordHint.setText(R.string.settings_password_hint);
 
         new MaterialAlertDialogBuilder(this)
@@ -175,7 +174,7 @@ public class SettingsActivity extends AppCompatActivity {
                     String current = text(dialog.passwordCurrent.getText());
                     String fresh = text(dialog.passwordNew.getText());
                     String repeat = text(dialog.passwordRepeat.getText());
-                    if (hasPassword && current.isEmpty()) {
+                    if (current.isEmpty()) {
                         ViewUtils.toast(this, R.string.settings_password_current_required);
                         return;
                     }
@@ -187,7 +186,7 @@ public class SettingsActivity extends AppCompatActivity {
                         ViewUtils.toast(this, R.string.settings_password_mismatch);
                         return;
                     }
-                    viewModel.changePassword(hasPassword ? current : null, fresh);
+                    viewModel.changePassword(current, fresh);
                 })
                 .setNegativeButton(R.string.action_cancel, null)
                 .show();
