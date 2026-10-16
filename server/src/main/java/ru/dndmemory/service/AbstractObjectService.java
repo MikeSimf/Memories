@@ -8,7 +8,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import ru.dndmemory.domain.Campaign;
 import ru.dndmemory.domain.ChangeOp;
-import ru.dndmemory.domain.ImageExtender;
+import ru.dndmemory.domain.extender.GameEntityExtender;
+import ru.dndmemory.domain.extender.ImageExtender;
+import ru.dndmemory.domain.extender.NamedExtender;
+import ru.dndmemory.domain.extender.SyncExtended;
 import ru.dndmemory.domain.Member;
 import ru.dndmemory.domain.ObjectType;
 import ru.dndmemory.repo.CampaignRepository;
@@ -37,7 +40,9 @@ import java.util.UUID;
  * поэтому форма payload в синхронизации совпадает с формой DTO своего класса
  * (docs/redesign-v2.md, раздел 3).</p>
  */
-public abstract class AbstractObjectService<E extends ImageExtender, D> implements ObjectSyncHandler {
+public abstract class AbstractObjectService<
+        E extends GameEntityExtender & NamedExtender & SyncExtended & ImageExtender, D>
+        implements ObjectSyncHandler {
 
     protected static final int DEFAULT_LIMIT = 50;
     protected static final int MAX_LIMIT = 500;

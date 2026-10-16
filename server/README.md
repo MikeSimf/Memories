@@ -59,7 +59,7 @@ Flyway при первом запуске.
 
 `check-schema.mjs` читает миграции по порядку (учитывая `DROP TABLE`,
 `DROP COLUMN` и `RENAME COLUMN`) и собирает колонки листовых `@Entity` вместе с
-цепочкой `@MappedSuperclass` — иначе общие поля четырёх классов выглядели бы как
+базовым `@MappedSuperclass` — иначе общие поля четырёх классов выглядели бы как
 незамапленные.
 
 ## Настройки (переменные окружения)
@@ -89,8 +89,9 @@ Flyway при первом запуске.
 
 ```
 src/main/java/ru/dndmemory/
-  domain/     JPA-сущности и перечисления: цепочка @MappedSuperclass
-              (GameEntityExtender -> NamedExtender -> SyncExtender -> ImageExtender),
+  domain/     JPA-сущности и перечисления: экстендеры-интерфейсы в domain/extender
+              (GameEntityExtender, NamedExtender, SyncExtended, ImageExtender),
+              база GameEntitySupport (@MappedSuperclass, общее состояние),
               листовые Hero, Character, Location, Item, HeroItem, а также
               User, Campaign, Member, Invite, RefreshToken, PasswordResetRequest,
               Retelling, ChangeLog, SyncConflict, StoredFile, ObjectType
@@ -119,11 +120,16 @@ src/test/java/ru/dndmemory/    юнит-тесты
 
 ## Как устроены ключевые места
 
-* **Четыре класса вместо одной таблицы.** Общая часть (`id`, `campaignId`, `name`,
-  `description`, `imageFileId`, `deleted`, `createdAt`, `updatedAt`, `createdBy`,
-  `updatedBy`, `revision`) вынесена в цепочку `@MappedSuperclass`, листовые классы —
-  обычные `@Entity` со своей таблицей. Поэтому новое поле типа не затрагивает
-  остальные, а общая логика REST и синхронизации живёт в `AbstractObjectService`.
+* **Четыре класса вместо одной таблицы.** Контракты разделены на независимые
+  интерфейсы-экстендеры (`GameEntityExtender`, `NamedExtender`, `SyncExtended`,
+  `ImageExtender` — ни один не наследует другой), а общее состояние (`id`,
+  `campaignId`, `name`, `description`, `imageFileId`, `deleted`, `createdAt`,
+  `updatedAt`, `createdBy`, `updatedBy`, `revision`) объявлено один раз в
+  `@MappedSuperclass GameEntitySupport`, который эти интерфейсы реализует: Java не
+  позволяет наследовать поля от нескольких классов. Листовые классы — обычные
+  `@Entity` со своей таблицей и явным списком реализуемых интерфейсов, поэтому новое
+  поле типа не затрагивает остальные, а общая логика REST и синхронизации живёт в
+  `AbstractObjectService`.
 * **Ключ сопоставления** — метод самого класса (`Hero.matchKey()` и т.д.), по нему
   синхронизация находит уже существующий объект вместо создания дубля: `Hero`,
   `Location` и `Item` — по имени, `Character` — по имени и расе.

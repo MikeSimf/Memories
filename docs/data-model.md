@@ -68,9 +68,10 @@ erDiagram
 Четыре класса справочника — своя таблица на каждый. Общие колонки одинаковы:
 `id`, `campaign_id`, `name`, `description`, `image_file_id`, `deleted`, `created_at`,
 `updated_at`, `created_by`, `updated_by`, `revision`. В коде они объявлены один раз
-в цепочке `@MappedSuperclass`
-(`GameEntityExtender → NamedExtender → SyncExtender → ImageExtender`), поэтому новое
-поле одного класса не затрагивает остальные.
+в базовом классе `@MappedSuperclass GameEntitySupport`, который реализует четыре
+независимых интерфейса-экстендера (`GameEntityExtender`, `NamedExtender`,
+`SyncExtended`, `ImageExtender`), поэтому новое поле одного класса не затрагивает
+остальные.
 
 | Таблица | Свои колонки |
 |---|---|
@@ -118,7 +119,8 @@ erDiagram
 ## Почему так
 
 * **Своя таблица на каждый класс.** Новое поле типа не затрагивает остальные, а
-  общая часть объявлена один раз в `@MappedSuperclass`; ссылки, поиск и
+  общая часть объявлена один раз в `@MappedSuperclass` и разделена на независимые
+  интерфейсы; ссылки, поиск и
   синхронизация при этом остаются общими — их ведёт `AbstractObjectService` и
   сводный индекс `ObjectIndexService`.
 * **Ключ сопоставления в классе.** Дубли при офлайн-создании ловятся по имени

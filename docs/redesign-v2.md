@@ -79,25 +79,27 @@ users: id, login (уникальный), email (уникальный, обяза
 
 ## 2. Классы объектов
 
-Вместо одной таблицы `entities` — четыре класса с общими частями через
-`@MappedSuperclass`. Каждый класс лежит в своей таблице, поэтому новое поле типа не
-затрагивает остальные.
+Вместо одной таблицы `entities` — четыре класса, каждый в своей таблице. Общие части
+описаны **независимыми интерфейсами-экстендерами**, а не цепочкой наследования:
+класс объявляет ровно те контракты, которые ему нужны.
 
 ```
-@MappedSuperclass GameEntityExtender   id, campaignId
-@MappedSuperclass NamedExtender        name, description
-@MappedSuperclass SyncExtender         deleted, createdAt, updatedAt, createdBy, updatedBy, revision
-@MappedSuperclass ImageExtender        imageFileId
+interface GameEntityExtender   id, campaignId
+interface NamedExtender        name, description, matchKey(), matchReason()
+interface SyncExtended         deleted, createdAt, updatedAt, createdBy, updatedBy, revision
+interface ImageExtender        imageFileId
 
-@Entity heroes      extends ImageExtender  + race, klass, playerUserId
-@Entity characters  extends ImageExtender  + race, shortDescription
-@Entity locations   extends ImageExtender  (ничего своего)
-@Entity items       extends ImageExtender  + ownerName, ownerHeroId, ownerCharacterId
+@Entity Hero       extends GameEntitySupport implements все четыре + race, klass, playerUserId
+@Entity Character  extends GameEntitySupport implements все четыре + race, shortDescription
+@Entity Location   extends GameEntitySupport implements все четыре (ничего своего)
+@Entity Item       extends GameEntitySupport implements все четыре + ownerName, ownerHeroId, ownerCharacterId
 ```
 
-Порядок миксинов в цепочке: `ImageExtender → SyncExtender → NamedExtender →
-GameEntityExtender` (каждый следующий наследует предыдущий), листовые классы —
-`@Entity`.
+Java не поддерживает множественное наследование полей, поэтому общее состояние
+объявлено один раз в `@MappedSuperclass GameEntitySupport`, который реализует все
+четыре интерфейса. Контракты при этом остаются раздельными: новый класс может
+реализовать любое подмножество, а новое общее поле добавляется одной правкой в
+`GameEntitySupport` и одной миграцией.
 
 ### Ключ сопоставления (защита от дублей при синхронизации)
 

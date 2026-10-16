@@ -4,7 +4,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.NoRepositoryBean;
-import ru.dndmemory.domain.ImageExtender;
+import ru.dndmemory.domain.extender.GameEntityExtender;
+import ru.dndmemory.domain.extender.ImageExtender;
+import ru.dndmemory.domain.extender.NamedExtender;
+import ru.dndmemory.domain.extender.SyncExtended;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +22,8 @@ import java.util.UUID;
  * самого класса, поэтому кандидаты берутся списком кампании.</p>
  */
 @NoRepositoryBean
-public interface GameEntityRepository<T extends ImageExtender> extends JpaRepository<T, UUID> {
+public interface GameEntityRepository<T extends GameEntityExtender & NamedExtender & SyncExtended & ImageExtender>
+        extends JpaRepository<T, UUID> {
 
     Optional<T> findByIdAndCampaignId(UUID id, UUID campaignId);
 

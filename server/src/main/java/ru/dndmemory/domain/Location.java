@@ -4,6 +4,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import ru.dndmemory.domain.extender.GameEntityExtender;
+import ru.dndmemory.domain.extender.ImageExtender;
+import ru.dndmemory.domain.extender.NamedExtender;
+import ru.dndmemory.domain.extender.SyncExtended;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
@@ -13,7 +17,8 @@ import javax.persistence.Table;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Location extends ImageExtender {
+public class Location extends GameEntitySupport
+        implements GameEntityExtender, NamedExtender, SyncExtended, ImageExtender {
 
     @Override
     public String matchKey() {

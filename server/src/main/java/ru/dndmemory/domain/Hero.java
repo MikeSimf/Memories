@@ -4,6 +4,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import ru.dndmemory.domain.extender.GameEntityExtender;
+import ru.dndmemory.domain.extender.ImageExtender;
+import ru.dndmemory.domain.extender.NamedExtender;
+import ru.dndmemory.domain.extender.SyncExtended;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -18,7 +22,8 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Hero extends ImageExtender {
+public class Hero extends GameEntitySupport
+        implements GameEntityExtender, NamedExtender, SyncExtended, ImageExtender {
 
     /** Раса героя, как написано в мире. */
     @Column(length = 120)
