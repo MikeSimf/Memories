@@ -11,7 +11,10 @@ import javax.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Refresh-токен хранится в виде SHA-256 хеша, сам токен нигде не сохраняется. */
+/**
+ * Refresh-токен хранится в виде SHA-256 хеша, сам токен нигде не сохраняется.
+ * {@code platform} отличает приложение от веба: у приложения сессия живёт год.
+ */
 @Entity
 @Table(name = "refresh_tokens")
 @Getter
@@ -38,9 +41,9 @@ public class RefreshToken {
     @Column(name = "user_agent", length = 255)
     private String userAgent;
 
-    /** Заполнен у сессий, выданных устройству по QR-коду: по нему устройство отзывается. */
-    @Column(name = "device_id")
-    private UUID deviceId;
+    /** android или web: по нему выбирается срок жизни новой сессии. */
+    @Column(length = 20)
+    private String platform;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();

@@ -32,7 +32,7 @@ public final class RetellingDtos {
         private String authorEntityName;
         private LocalDate sessionDate;
         private RetellingStatus status;
-        private List<EntityDtos.LinkDto> links;
+        private List<LinkDto> links;
         private UUID createdBy;
         private String createdByName;
         private UUID updatedBy;
@@ -54,6 +54,7 @@ public final class RetellingDtos {
 
         private String body;
 
+        /** Герой или персонаж, от лица которого ведётся пересказ. */
         private UUID authorEntityId;
 
         private LocalDate sessionDate;

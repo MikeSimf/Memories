@@ -2,8 +2,6 @@ package ru.dndmemory.security;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.dndmemory.domain.EntityType;
-import ru.dndmemory.domain.GameEntity;
 import ru.dndmemory.domain.Member;
 import ru.dndmemory.domain.MemberRole;
 import ru.dndmemory.domain.MemberStatus;
@@ -14,7 +12,12 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
-/** Единая точка проверки прав участника кампании (матрица — docs/roles.md). */
+/**
+ * Единая точка проверки прав участника кампании (матрица — docs/roles.md).
+ *
+ * <p>Героев партии создаёт, правит и удаляет только владелец; персонажей, локации и
+ * предметы — владелец, редактор-мастер и редактор-герой; читают все, включая гостя.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class PermissionService {
@@ -34,12 +37,11 @@ public class PermissionService {
                 permissions.add(Permissions.CAMPAIGN_MANAGE);
                 permissions.add(Permissions.MEMBERS_MANAGE);
                 permissions.add(Permissions.INVITE_CREATE);
+                permissions.add(Permissions.HERO_WRITE);
                 // fall through
             case EDITOR_MASTER:
                 permissions.add(Permissions.ENTITY_READ);
                 permissions.add(Permissions.ENTITY_WRITE);
-                permissions.add(Permissions.ENTITY_WRITE_OWN);
-                permissions.add(Permissions.HERO_WRITE);
                 permissions.add(Permissions.RETELLING_READ);
                 permissions.add(Permissions.RETELLING_WRITE);
                 permissions.add(Permissions.RETELLING_WRITE_OWN);
@@ -48,7 +50,6 @@ public class PermissionService {
             case EDITOR_HERO:
                 permissions.add(Permissions.ENTITY_READ);
                 permissions.add(Permissions.ENTITY_WRITE);
-                permissions.add(Permissions.ENTITY_WRITE_OWN);
                 permissions.add(Permissions.RETELLING_READ);
                 permissions.add(Permissions.RETELLING_WRITE);
                 permissions.add(Permissions.RETELLING_WRITE_OWN);
@@ -68,38 +69,11 @@ public class PermissionService {
         }
     }
 
-    /**
-     * Может ли участник править этот объект.
-     * Героев партии ведёт мастер; игрок с ролью EDITOR_HERO правит только своего героя.
-     */
-    public boolean canWriteEntity(Member member, UUID entityId, EntityType type) {
-        if (member.getRole() == MemberRole.OWNER || member.getRole() == MemberRole.EDITOR_MASTER) {
-            return true;
-        }
-        if (member.getRole() != MemberRole.EDITOR_HERO) {
+    /** Может ли участник править объект этого класса. */
+    public boolean canWriteClass(Member member, boolean hero) {
+        if (!member.canEditObjects()) {
             return false;
         }
-        if (type == EntityType.HERO) {
-            return entityId != null && entityId.equals(member.getLinkedEntityId());
-        }
-        return true;
-    }
-
-    public void requireEntityWrite(Member member, GameEntity entity) {
-        if (!canWriteEntity(member, entity.getId(), entity.getType())) {
-            throw ApiException.forbidden(entity.getType() == EntityType.HERO
-                    ? "Героев партии ведёт мастер; вы можете править только своего героя"
-                    : "Недостаточно прав для правки объекта");
-        }
-    }
-
-    public void requireEntityCreate(Member member, EntityType type) {
-        if (member.getRole() == MemberRole.VIEWER) {
-            throw ApiException.forbidden("Режим просмотра: создание недоступно");
-        }
-        if (type == EntityType.HERO && member.getRole() == MemberRole.EDITOR_HERO
-                && member.getLinkedEntityId() != null) {
-            throw ApiException.forbidden("У вас уже есть свой герой; создать второго может мастер кампании");
-        }
+        return !hero || member.getRole() == MemberRole.OWNER;
     }
 }

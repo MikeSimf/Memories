@@ -10,6 +10,9 @@ import ru.dndmemory.domain.ChangeOp;
 import ru.dndmemory.domain.ObjectType;
 import ru.dndmemory.repo.ChangeLogRepository;
 
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -50,5 +53,16 @@ public class ChangeRecorder {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Не удалось сериализовать объект журнала", e);
         }
+    }
+
+    /** Надгробие для журнала: объект удалён, развёрнутых данных в записи нет. */
+    public Map<String, Object> tombstone(UUID id, ObjectType type, long revision, Instant updatedAt) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("id", id);
+        payload.put("objectType", type);
+        payload.put("deleted", true);
+        payload.put("revision", revision);
+        payload.put("updatedAt", updatedAt);
+        return payload;
     }
 }

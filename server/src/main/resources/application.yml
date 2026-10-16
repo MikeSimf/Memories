@@ -46,6 +46,8 @@ dnd:
   public-url: ${DND_PUBLIC_URL:http://localhost:8080}
   files-dir: ${DND_FILES_DIR:/var/lib/dnd-memory/files}
   cors-origins: ${DND_CORS_ORIGINS:http://localhost:5173,http://localhost:8081}
+  # Токен админ-панели сброса пароля. Если не задан, GET /api/admin/password-resets отвечает 404
+  admin-token: ${DND_ADMIN_TOKEN:}
   retention:
     change-log-days: ${DND_CHANGE_LOG_DAYS:90}
     change-log-max-rows: ${DND_CHANGE_LOG_MAX_ROWS:50000}
@@ -53,22 +55,10 @@ dnd:
     # В продакшене ОБЯЗАТЕЛЬНО задать свой секрет (минимум 32 символа)
     secret: ${DND_JWT_SECRET:dnd-memory-dev-secret-change-me-please-32}
     access-token-minutes: ${DND_ACCESS_TOKEN_MINUTES:15}
+    # Веб-сессия — месяц
     refresh-token-days: ${DND_REFRESH_TOKEN_DAYS:30}
-    # Сессия устройства живёт год: телефон не должен разлогиниваться
-    device-refresh-token-days: ${DND_DEVICE_REFRESH_TOKEN_DAYS:365}
-  oauth:
-    yandex:
-      client-id: ${DND_YANDEX_CLIENT_ID:}
-      client-secret: ${DND_YANDEX_CLIENT_SECRET:}
-      authorize-url: https://oauth.yandex.ru/authorize
-      token-url: https://oauth.yandex.ru/token
-      profile-url: https://login.yandex.ru/info?format=json
-    vk:
-      client-id: ${DND_VK_CLIENT_ID:}
-      client-secret: ${DND_VK_CLIENT_SECRET:}
-      authorize-url: https://id.vk.com/authorize
-      token-url: https://id.vk.com/oauth2/auth
-      profile-url: https://id.vk.com/oauth2/user_info
+    # Сессия приложения живёт год: телефон не должен разлогиниваться
+    android-refresh-token-days: ${DND_ANDROID_REFRESH_TOKEN_DAYS:365}
 
 logging:
   level:

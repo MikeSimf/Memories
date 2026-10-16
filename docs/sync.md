@@ -6,32 +6,35 @@
 ## 1. Модель ревизий
 
 * У каждой кампании на сервере есть счётчик `campaign.revision` (bigint, начинается с 0).
-* Каждое изменение объекта (создание, правка, удаление) увеличивает его на 1 и
-  добавляет строку в журнал `change_log`:
+* Каждое изменение объекта увеличивает его на 1 и добавляет строку в журнал
+  `change_log`:
 
 ```
-change_log(campaign_id, revision, object_type, object_id, op, payload, actor_user_id, client_change_id, created_at)
-  PRIMARY KEY (campaign_id, revision)
+change_log(campaign_id, revision, object_type, object_id, op, payload,
+           actor_user_id, client_change_id, device_id, created_at)
+  UNIQUE (campaign_id, revision)
   UNIQUE (campaign_id, client_change_id)   -- идемпотентность
 ```
 
-* `payload` — полное состояние объекта после операции (для `DELETE` — «надгробие»:
-  `{ "id": "…", "deleted": true, "updatedAt": "…" }`).
+* `object_type` — конкретный класс: `HERO`, `CHARACTER`, `LOCATION`, `ITEM`,
+  `RETELLING`, `CAMPAIGN`, `MEMBER`. Общего `ENTITY` больше нет.
+* `payload` — объект **в форме DTO своего класса**: те же поля, что отдаёт REST
+  (`GET /api/campaigns/{id}/heroes/{heroId}` и его аналоги). Для `DELETE` —
+  «надгробие»: `{ "id": "…", "objectType": "HERO", "deleted": true, "revision": …,
+  "updatedAt": "…" }`.
 * Клиент хранит `lastPulledRevision` и очередь своих неотправленных правок.
 
 ## 2. Идентификаторы
 
 * Клиент генерирует UUID объекта сам (`objectId`) — тогда офлайн-созданная запись
   сразу имеет окончательный идентификатор, а сервер просто принимает его.
-* Дополнительно клиент шлёт `clientId` объекта (UUID создания): если запись
-  случайно создана дважды на двух устройствах, сервер увидит одинаковый
-  `clientId` и не продублирует (второй раз вернёт первый `objectId`).
 * `clientChangeId` — UUID конкретной правки, ключ идемпотентности: повторная
   отправка того же изменения после таймаута не создаёт вторую ревизию.
-* `clientId` устройства (поле `clientId` в теле запроса синхронизации) —
-  идентификатор установки приложения. Сервер не отдаёт клиенту его собственные
-  изменения (он их уже применил), но отдаёт изменения других устройств того же
-  пользователя.
+* `clientId` (поле в теле `push` и параметр `pull`) — идентификатор установки
+  приложения. Сервер не отдаёт клиенту его собственные изменения (он их уже
+  применил), но отдаёт изменения других устройств того же пользователя.
+* Дубли ловятся не по `clientId` объекта (его в DTO v2 нет), а по **ключу
+  сопоставления класса** — см. раздел 4.
 
 ## 3. Цикл синхронизации
 
@@ -55,19 +58,32 @@ POST /api/campaigns/{id}/sync/changes
 ```
 ```json
 {
-  "clientId": "device-8f2c…",
+  "clientId": "install-8f2c…",
   "changes": [
     {
       "clientChangeId": "c-1111",
-      "objectType": "ENTITY",
+      "objectType": "ITEM",
       "objectId": "e-aaaa",
       "op": "UPSERT",
       "baseRevision": 41,
       "payload": {
-        "id": "e-aaaa", "campaignId": "…", "clientId": "e-aaaa",
-        "type": "ITEM", "name": "Меч справедливости", "summary": "…",
-        "description": "Найден в [[Подземелье волн]]…", "attrs": {}, "tags": [],
+        "id": "e-aaaa", "campaignId": "…", "name": "Меч справедливости",
+        "description": "Найден в [[Подземелье волн]]…", "imageFileId": null,
+        "ownerName": "гильдия воров", "ownerHeroId": null, "ownerCharacterId": null,
         "createdAt": "2025-10-15T10:00:00.000Z", "updatedAt": "2025-10-15T11:30:00.000Z"
+      }
+    },
+    {
+      "clientChangeId": "c-1112",
+      "objectType": "HERO",
+      "objectId": "h-bbbb",
+      "op": "UPSERT",
+      "baseRevision": 42,
+      "payload": {
+        "id": "h-bbbb", "campaignId": "…", "name": "Лира Ксенофонт",
+        "race": "полуэльф", "klass": "следопыт", "playerUserId": null,
+        "items": [ { "name": "Меч справедливости", "quantity": 1 } ],
+        "updatedAt": "2025-10-15T11:31:00.000Z"
       }
     }
   ]
@@ -79,7 +95,10 @@ POST /api/campaigns/{id}/sync/changes
   "latestRevision": 43,
   "results": [
     { "clientChangeId": "c-1111", "objectId": "e-aaaa", "revision": 43,
-      "status": "APPLIED", "conflict": null }
+      "status": "APPLIED", "conflict": null },
+    { "clientChangeId": "c-1112", "objectId": "h-bbbb", "revision": 44,
+      "status": "CONFLICT_RESOLVED",
+      "conflict": { "reason": "matched_by_name", "serverRevision": 44 } }
   ]
 }
 ```
@@ -89,8 +108,8 @@ POST /api/campaigns/{id}/sync/changes
 | Значение | Смысл | Что делает клиент |
 |---|---|---|
 | `APPLIED` | правка принята как есть (или повтор — идемпотентность) | снять флаг «грязный» |
-| `CONFLICT_RESOLVED` | была конфликтная база, но наша версия новее (`updatedAt`) — принята | снять флаг, показать уведомление «победа над версией другого» |
-| `REJECTED` | версия сервера новее — правка отклонена | записать `conflict.server`, пометить локальную запись как «требует внимания», дать пользователю выбрать |
+| `CONFLICT_RESOLVED` | объект найден по ключу либо наша версия новее (`updatedAt`) | снять флаг, подменить локальный id серверным `objectId` |
+| `REJECTED` | версия сервера новее или нет прав — правка отклонена | записать `conflict.server`, пометить локальную запись как «требует внимания», дать пользователю выбрать |
 
 В `conflict` приходит состояние сервера:
 ```json
@@ -100,21 +119,32 @@ POST /api/campaigns/{id}/sync/changes
 
 Правила конфликтов:
 
-1. **Сравнение по `updatedAt`** (ISO-8601, UTC). Кто позже — тот прав
-   (last-write-wins на уровне объекта, без слияния полей).
-2. **Удаление сильнее старой правки.** Если на сервере надгробие, а у клиента
+1. **Сначала по `id`, потом по ключу сопоставления.** Если объекта с таким `id` в
+   кампании нет, сервер ищет объект того же класса с тем же ключом (раздел 4).
+   Нашёл — новый **не создаётся**, правки ложатся в существующий, ответ получает
+   `CONFLICT_RESOLVED` и `conflict.reason = "matched_by_name"` (для персонажа —
+   `"matched_by_name_and_race"`). Клиент должен заменить свой локальный id на
+   серверный `objectId` из ответа.
+2. **Сравнение по `updatedAt`** (ISO-8601, UTC). Если база правки устарела
+   (`baseRevision` меньше серверной ревизии), побеждает тот, чей `updatedAt` позже
+   (last-write-wins на уровне объекта, без слияния полей): позже — `CONFLICT_RESOLVED`
+   с `conflict.reason = "client_wins"`, раньше — `REJECTED` с `"stale_base"`.
+3. **Удаление сильнее старой правки.** Если на сервере надгробие, а у клиента
    `updatedAt` старше — `REJECTED`, объект остаётся удалённым.
-3. **Воскрешение.** Если правка новее надгробия — объект восстанавливается
+4. **Воскрешение.** Если правка новее надгробия — объект восстанавливается
    (`CONFLICT_RESOLVED`).
-4. **Права проверяются до записи.** Нет прав → `REJECTED` с
-   `conflict.reason = "forbidden"`, изменение не попадает в журнал.
-5. Все конфликты дополнительно пишутся в таблицу `sync_conflict` для разбора
+5. **Права проверяются до записи.** Нет прав → `REJECTED` с
+   `conflict.reason = "forbidden"`, изменение не попадает в журнал. Героя может
+   пушить только владелец кампании, поэтому push героя от игрока отклоняется.
+6. **Неизвестный тип** (например, старый `ENTITY` из журналов прежней версии) →
+   `REJECTED` с `conflict.reason = "unsupported_type"`.
+7. Все конфликты дополнительно пишутся в таблицу `sync_conflicts` для разбора
    владельцем (диагностика, ручное разрешение).
 
 ### 3.2. Pull
 
 ```http
-GET /api/campaigns/{id}/sync/changes?since=41&limit=500&clientId=device-8f2c
+GET /api/campaigns/{id}/sync/changes?since=41&limit=500&clientId=install-8f2c
 ```
 
 `clientId` (необязательный) — идентификатор установки, тот же, что в push. По нему
@@ -125,11 +155,11 @@ GET /api/campaigns/{id}/sync/changes?since=41&limit=500&clientId=device-8f2c
 {
   "since": 41, "latestRevision": 43, "hasMore": false,
   "changes": [
-    { "revision": 42, "objectType": "ENTITY", "objectId": "e-bbbb", "op": "UPSERT",
-      "payload": { "…": "полное состояние объекта с revision 42" },
+    { "revision": 42, "objectType": "LOCATION", "objectId": "l-cccc", "op": "UPSERT",
+      "payload": { "…": "полное состояние объекта в форме DTO локации" },
       "actorUserId": "…", "clientChangeId": "c-2222",
       "createdAt": "2025-10-15T11:10:00.000Z" },
-    { "revision": 43, "objectType": "ENTITY", "objectId": "e-aaaa", "op": "UPSERT",
+    { "revision": 43, "objectType": "ITEM", "objectId": "e-aaaa", "op": "UPSERT",
       "payload": { "…": "…" }, "actorUserId": "…", "clientChangeId": "c-1111",
       "createdAt": "2025-10-15T11:30:00.000Z" }
   ]
@@ -149,17 +179,42 @@ GET /api/campaigns/{id}/sync/snapshot?limit=500&cursor=<opaque>
 ```
 ```json
 { "latestRevision": 128, "nextCursor": "…" | null,
-  "entities": [ … ], "retellings": [ … ], "members": [ … ], "campaign": { … } }
+  "heroes": [ … ], "characters": [ … ], "locations": [ … ], "items": [ … ],
+  "retellings": [ … ], "members": [ … ], "campaign": { … } }
 ```
-Клиент проходит по курсорам, затем сохраняет `lastPulledRevision = latestRevision`
-и очищает очередь (её содержимое уже ушло на сервер, поэтому перед snapshot
-выполняется push).
 
-## 4. Локальное состояние клиента
+Страницы идут по порядку классов: герои, персонажи, локации, предметы, пересказы.
+За одну страницу отдаётся один класс (до `limit` объектов), `nextCursor` указывает
+следующую позицию. Клиент проходит по курсорам, затем сохраняет
+`lastPulledRevision = latestRevision` и очищает очередь (её содержимое уже ушло на
+сервер, поэтому перед snapshot выполняется push).
+
+## 4. Ключ сопоставления (защита от дублей)
+
+Каждый класс умеет отвечать, по какому признаку он сопоставляется с существующим
+объектом:
+
+| Класс | Ключ | `conflict.reason` при совпадении |
+|---|---|---|
+| `Hero` | имя | `matched_by_name` |
+| `Character` | имя + раса | `matched_by_name_and_race` |
+| `Location` | имя | `matched_by_name` |
+| `Item` | имя | `matched_by_name` |
+
+Сравнение — без учёта регистра, лишние пробелы схлопываются. Правило задано методом
+самого класса, поэтому меняется одной строкой.
+
+Зачем: два устройства офлайн заводят «Лиру Ксенофонт» — каждое со своим UUID.
+При push второй объект не создаётся: сервер находит первого по имени, применяет
+правки к нему и просит клиента заменить идентификатор.
+
+## 5. Локальное состояние клиента
 
 ```
-table objects (entities)  : id, type, name, summary, description, attrs, tags, revision,
-                            updated_at, deleted, dirty(0/1), conflict_json(null)
+table heroes / characters / locations / items
+                          : id, name, description, image_file_id, <свои поля>,
+                            revision, updated_at, deleted, dirty(0/1), conflict_json(null)
+table hero_items          : id, hero_id, name, item_id, quantity, notes, position
 table retellings          : … + status(PUBLISHED)
 table retelling_drafts    : только локально, в синхронизацию не попадает
 table pending_changes     : client_change_id, object_type, object_id, op, base_revision,
@@ -175,13 +230,14 @@ table sync_state          : campaign_id, last_pulled_revision, last_sync_at, las
   с `status: "PUBLISHED"`. Сервер, получив `DRAFT`, отвечает `422 draft_not_synced`.
 * Локальная правка: сразу пишется в объект, ставится `dirty = 1`, в
   `pending_changes` добавляется запись с `base_revision = revision` объекта.
-* После `APPLIED`/`CONFLICT_RESOLVED` запись `pending_changes` удаляется, `dirty = 0`.
+* После `APPLIED`/`CONFLICT_RESOLVED` запись `pending_changes` удаляется, `dirty = 0`
+  (при `matched_by_*` ещё и локальный id заменяется на серверный `objectId`).
 * При `REJECTED` правка удаляется из очереди, объект помечается
   `conflict_json`, интерфейс показывает «есть расхождение с сервером» и даёт
   выбрать: оставить серверную версию или перезаписать своей (повторный push
   с новым `updatedAt`).
 
-## 5. Когда запускается синхронизация
+## 6. Когда запускается синхронизация
 
 | Событие | Android | Веб |
 |---|---|---|
@@ -194,21 +250,27 @@ table sync_state          : campaign_id, last_pulled_revision, last_sync_at, las
 Веб-версия дополнительно регистрирует Service Worker (`vite-plugin-pwa`),
 чтобы приложение открывалось и без сети (app shell + данные из IndexedDB).
 
-## 6. Компактация журнала
+## 7. Компактация журнала
 
 * Журнал изменений кампании хранится 90 дней и не более 50 000 записей.
-* Фоновая задача сервера (`SyncCompactionJob`) раз в сутки удаляет старые записи;
-  порог минимальной сохранённой ревизии публикуется в `GET /api/campaigns/{id}/sync/state`.
+* Фоновая задача сервера (`MaintenanceJob`) раз в сутки удаляет старые записи;
+  порог минимальной сохранённой ревизии публикуется в
+  `GET /api/campaigns/{id}/sync/state`.
 * Клиент, который не выходил на связь дольше этого срока, получает `resync_required`
   и перезагружается через snapshot — это нормальный сценарий, не ошибка.
 
-## 7. Разрешение ссылок `[[…]]`
+## 8. Разрешение ссылок `[[…]]`
 
-При каждом сохранении объекта сервер пересчитывает `links`, разбирая `summary`
-и `description`. Имена ищутся по всей кампании (регистр не важен). Если имя не
-найдено — ссылка остаётся в тексте, но в `links` попадает с `resolved: false`
-и `targetId: null`; клиент рисует её как «битую» (пунктирное подчёркивание) и
-предлагает создать объект с таким именем.
+При каждом сохранении сервер пересчитывает `links`, разбирая `description` (у
+персонажа — ещё и `shortDescription`, у пересказа — `body`). Имена ищутся по всем
+четырём классам кампании: герои, персонажи, локации, предметы. Регистр не важен; при
+неоднозначности берётся первый объект по алфавиту. Если имя не найдено — ссылка
+остаётся в тексте, но в `links` попадает с `resolved: false` и `targetId: null`;
+клиент рисует её как «битую» (пунктирное подчёркивание) и предлагает создать объект с
+таким именем (`GET /api/campaigns/{id}/missing-names`).
+
+Тем же сопоставлением по имени пользуется список предметов героя: `itemId`
+заполняется, если название нашлось среди предметов кампании.
 
 Клиенты офлайн разрешают ссылки по своей локальной базе — правило то же, поэтому
 поведение без сети и с сетью совпадает.

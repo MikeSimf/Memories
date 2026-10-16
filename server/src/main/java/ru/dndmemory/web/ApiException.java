@@ -49,6 +49,16 @@ public class ApiException extends RuntimeException {
         return new ApiException(HttpStatus.CONFLICT, "email_taken", "Пользователь с такой почтой уже существует");
     }
 
+    public static ApiException loginTaken() {
+        return new ApiException(HttpStatus.CONFLICT, "login_taken", "Такой логин уже занят");
+    }
+
+    /** Токен сброса пароля не найден, использован или просрочен. */
+    public static ApiException resetInvalid() {
+        return new ApiException(HttpStatus.CONFLICT, "reset_invalid",
+                "Ссылка сброса пароля недействительна или устарела");
+    }
+
     public static ApiException inviteInvalid() {
         return new ApiException(HttpStatus.CONFLICT, "invite_invalid", "Приглашение недействительно или просрочено");
     }

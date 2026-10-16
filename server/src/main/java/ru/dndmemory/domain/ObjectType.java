@@ -1,8 +1,15 @@
 package ru.dndmemory.domain;
 
-/** Тип объекта в журнале синхронизации. */
+/**
+ * Тип объекта в журнале синхронизации. Каждый класс справочника — своё значение:
+ * общего {@code ENTITY} больше нет, у каждого типа своя форма payload
+ * (docs/redesign-v2.md, раздел 3).
+ */
 public enum ObjectType {
-    ENTITY,
+    HERO,
+    CHARACTER,
+    LOCATION,
+    ITEM,
     RETELLING,
     CAMPAIGN,
     MEMBER

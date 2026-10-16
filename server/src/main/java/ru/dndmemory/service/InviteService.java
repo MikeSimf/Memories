@@ -6,15 +6,14 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.dndmemory.config.AppProperties;
 import ru.dndmemory.domain.Campaign;
 import ru.dndmemory.domain.ChangeOp;
-import ru.dndmemory.domain.GameEntity;
+import ru.dndmemory.domain.Hero;
 import ru.dndmemory.domain.Invite;
-import ru.dndmemory.domain.InviteMode;
 import ru.dndmemory.domain.Member;
 import ru.dndmemory.domain.MemberRole;
 import ru.dndmemory.domain.MemberStatus;
 import ru.dndmemory.domain.ObjectType;
 import ru.dndmemory.repo.CampaignRepository;
-import ru.dndmemory.repo.GameEntityRepository;
+import ru.dndmemory.repo.HeroRepository;
 import ru.dndmemory.repo.InviteRepository;
 import ru.dndmemory.repo.MemberRepository;
 import ru.dndmemory.security.PermissionService;
@@ -29,6 +28,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Приглашения в кампанию. Приглашение строго одноразовое: {@code max_uses} всегда 1,
+ * принятие его гасит. Режима «устройство» больше нет — новый игрок придумывает
+ * логин и пароль при регистрации (docs/redesign-v2.md, раздел 1).
+ */
 @Service
 @RequiredArgsConstructor
 public class InviteService {
@@ -36,13 +40,10 @@ public class InviteService {
     private static final String ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int DEFAULT_HOURS = 168;
-    /** QR устройства живёт сутки: его сканируют сразу, а не через неделю. */
-    private static final int DEFAULT_DEVICE_HOURS = 24;
-    private static final int DEFAULT_USES = 1;
 
     private final InviteRepository inviteRepository;
     private final CampaignRepository campaignRepository;
-    private final GameEntityRepository entityRepository;
+    private final HeroRepository heroRepository;
     private final PermissionService permissionService;
     private final MemberRepository memberRepository;
     private final ChangeRecorder changeRecorder;
@@ -55,29 +56,14 @@ public class InviteService {
         permissionService.require(actor, Permissions.INVITE_CREATE);
         Campaign campaign = campaignRepository.findByIdAndDeletedFalse(campaignId)
                 .orElseThrow(() -> ApiException.notFound("Кампания"));
-        return createInternal(campaign, actorId, request.getRole(), request.getLinkedEntityId(),
-                request.getExpiresInHours(), request.getMaxUses());
+        return createInternal(campaign, actorId, request.getRole(), request.getLinkedHeroId(),
+                request.getExpiresInHours());
     }
 
-    /** Приглашение участника — обычный режим. */
+    /** Создание приглашения из сервиса участников и из QR-кода. */
     @Transactional
     public InviteDtos.InviteDto createInternal(Campaign campaign, UUID actorId, MemberRole role,
-                                               UUID linkedEntityId, Integer expiresInHours, Integer maxUses) {
-        return createInternal(campaign, actorId, role, linkedEntityId, expiresInHours, maxUses,
-                InviteMode.MEMBER, null, null);
-    }
-
-    /**
-     * Общий случай: MEMBER — приглашение человеку, DEVICE — регистрация устройства
-     * по QR-коду (тогда displayName задаёт админ, а пароль не нужен).
-     */
-    @Transactional
-    public InviteDtos.InviteDto createInternal(Campaign campaign, UUID actorId, MemberRole role,
-                                               UUID linkedEntityId, Integer expiresInHours, Integer maxUses,
-                                               InviteMode mode, String displayName, String label) {
-        if (mode == InviteMode.DEVICE && (displayName == null || displayName.trim().isEmpty())) {
-            throw ApiException.validation("Для регистрации устройства укажите имя игрока");
-        }
+                                               UUID linkedHeroId, Integer expiresInHours) {
         if (role == MemberRole.OWNER) {
             throw ApiException.validation("Нельзя пригласить второго владельца — выберите другую роль");
         }
@@ -87,19 +73,15 @@ public class InviteService {
         invite.setCampaignId(campaign.getId());
         invite.setToken(newToken());
         invite.setRole(role);
-        invite.setMode(mode);
-        invite.setDisplayName(displayName);
-        invite.setLabel(label);
-        invite.setLinkedEntityId(linkedEntityId);
+        invite.setLinkedHeroId(linkedHeroId);
         invite.setCreatedBy(actorId);
-        int hours = expiresInHours != null ? expiresInHours
-                : (mode == InviteMode.DEVICE ? DEFAULT_DEVICE_HOURS : DEFAULT_HOURS);
+        int hours = expiresInHours != null ? expiresInHours : DEFAULT_HOURS;
         invite.setExpiresAt(now.plus(hours, ChronoUnit.HOURS));
-        invite.setMaxUses(maxUses == null ? DEFAULT_USES : maxUses);
+        invite.setMaxUses(Invite.MAX_USES);
         invite.setUses(0);
         invite.setCreatedAt(now);
         inviteRepository.save(invite);
-        return toDto(invite, campaign.getId());
+        return toDto(invite);
     }
 
     @Transactional(readOnly = true)
@@ -108,7 +90,7 @@ public class InviteService {
         permissionService.require(member, Permissions.INVITE_CREATE);
         List<InviteDtos.InviteDto> result = new ArrayList<>();
         for (Invite invite : inviteRepository.findAllByCampaignIdOrderByCreatedAtDesc(campaignId)) {
-            result.add(toDto(invite, campaignId));
+            result.add(toDto(invite));
         }
         return result;
     }
@@ -135,45 +117,43 @@ public class InviteService {
                 .campaignId(campaign.getId())
                 .campaignTitle(campaign.getTitle())
                 .role(invite.getRole())
-                .mode(invite.getMode())
-                .displayName(invite.getDisplayName())
-                .linkedEntityId(invite.getLinkedEntityId())
-                .linkedEntityName(linkedName(invite.getCampaignId(), invite.getLinkedEntityId()))
+                .linkedHeroId(invite.getLinkedHeroId())
+                .linkedHeroName(linkedHeroName(invite.getLinkedHeroId()))
                 .expiresAt(invite.getExpiresAt())
                 .build();
     }
 
+    /** Принятие приглашения: участник активируется, приглашение гасится. */
     @Transactional
     public InviteDtos.AcceptInviteResponse accept(String token, UUID userId) {
+        if (token == null || token.trim().isEmpty()) {
+            throw ApiException.inviteInvalid();
+        }
         Invite invite = inviteRepository.findByToken(token.trim().toUpperCase())
                 .orElseThrow(ApiException::inviteInvalid);
-        if (invite.getMode() == InviteMode.DEVICE) {
-            throw new ApiException(org.springframework.http.HttpStatus.CONFLICT, "invite_invalid",
-                    "Это QR-код для регистрации устройства — отсканируйте его в мобильном приложении");
-        }
         if (!invite.isValid()) {
             throw ApiException.inviteInvalid();
         }
         Campaign campaign = campaignRepository.findForUpdate(invite.getCampaignId())
                 .orElseThrow(ApiException::inviteInvalid);
 
-        Member existing = activate(campaign.getId(), userId, invite.getRole(), invite.getLinkedEntityId());
-        invite.setUses(invite.getUses() + 1);
+        Member member = activate(campaign.getId(), userId, invite.getRole(), invite.getLinkedHeroId());
+        invite.consume();
         inviteRepository.save(invite);
-        changeRecorder.record(campaign, ObjectType.MEMBER, existing.getId(), ChangeOp.UPSERT,
-                MemberPayloads.of(existing), userId, null, null);
+        changeRecorder.record(campaign, ObjectType.MEMBER, member.getId(), ChangeOp.UPSERT,
+                MemberPayloads.of(member), userId, null, null);
 
         return InviteDtos.AcceptInviteResponse.builder()
                 .campaignId(campaign.getId())
                 .campaignTitle(campaign.getTitle())
-                .memberId(existing.getId())
-                .role(existing.getRole())
-                .linkedEntityId(existing.getLinkedEntityId())
+                .memberId(member.getId())
+                .role(member.getRole())
+                .linkedHeroId(member.getLinkedHeroId())
                 .build();
     }
 
     /** Участник становится активным: строка либо создаётся, либо возвращается из состояния REMOVED. */
-    private Member activate(UUID campaignId, UUID userId, MemberRole role, UUID linkedEntityId) {
+    private Member activate(UUID campaignId, UUID userId, MemberRole role, UUID linkedHeroId) {
         Member member = memberRepository.findByCampaignIdAndUserId(campaignId, userId).orElse(null);
         if (member == null) {
             member = new Member();
@@ -183,15 +163,15 @@ public class InviteService {
             member.setCreatedAt(Instant.now());
         }
         member.setRole(role);
-        if (linkedEntityId != null) {
-            member.setLinkedEntityId(linkedEntityId);
+        if (linkedHeroId != null) {
+            member.setLinkedHeroId(linkedHeroId);
         }
         member.setStatus(MemberStatus.ACTIVE);
         member.setUpdatedAt(Instant.now());
         return memberRepository.save(member);
     }
 
-    private InviteDtos.InviteDto toDto(Invite invite, UUID campaignId) {
+    private InviteDtos.InviteDto toDto(Invite invite) {
         String webUrl = trimSlash(properties.getPublicUrl()) + "/join/" + invite.getToken();
         String deepLink = "dndmemory://join?token=" + invite.getToken();
         return InviteDtos.InviteDto.builder()
@@ -201,25 +181,22 @@ public class InviteService {
                 .deepLink(deepLink)
                 .qrPngBase64(qrCodeGenerator.toPngBase64(webUrl))
                 .role(invite.getRole())
-                .mode(invite.getMode())
-                .displayName(invite.getDisplayName())
-                .label(invite.getLabel())
-                .linkedEntityId(invite.getLinkedEntityId())
-                .linkedEntityName(linkedName(campaignId, invite.getLinkedEntityId()))
+                .linkedHeroId(invite.getLinkedHeroId())
+                .linkedHeroName(linkedHeroName(invite.getLinkedHeroId()))
                 .expiresAt(invite.getExpiresAt())
                 .maxUses(invite.getMaxUses())
                 .uses(invite.getUses())
                 .revoked(invite.isRevoked())
+                .valid(invite.isValid())
                 .createdAt(invite.getCreatedAt())
                 .build();
     }
 
-    private String linkedName(UUID campaignId, UUID entityId) {
-        if (entityId == null) {
+    private String linkedHeroName(UUID heroId) {
+        if (heroId == null) {
             return null;
         }
-        return entityRepository.findByIdAndCampaignId(entityId, campaignId)
-                .map(GameEntity::getName).orElse(null);
+        return heroRepository.findById(heroId).map(Hero::getName).orElse(null);
     }
 
     private String newToken() {

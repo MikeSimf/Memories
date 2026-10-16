@@ -13,13 +13,19 @@ import javax.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Приглашение в кампанию: ссылка и QR-код содержат token. */
+/**
+ * Приглашение в кампанию: ссылка и QR-код содержат {@code token}.
+ * Приглашение строго одноразовое — {@code maxUses} всегда 1, принятие его гасит.
+ */
 @Entity
 @Table(name = "invites")
 @Getter
 @Setter
 @NoArgsConstructor
 public class Invite {
+
+    /** Приглашение одноразовое: второго использования не бывает. */
+    public static final int MAX_USES = 1;
 
     @Id
     @Column(name = "id", nullable = false)
@@ -35,21 +41,9 @@ public class Invite {
     @Column(nullable = false, length = 20)
     private MemberRole role;
 
-    /** MEMBER — обычное приглашение, DEVICE — регистрация устройства по QR. */
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private InviteMode mode = InviteMode.MEMBER;
-
-    /** Имя пользователя, который будет создан при регистрации устройства. */
-    @Column(name = "display_name", length = 120)
-    private String displayName;
-
-    /** Подпись устройства: «Телефон Ани», «Планшет мастера». */
-    @Column(length = 120)
-    private String label;
-
-    @Column(name = "linked_entity_id")
-    private UUID linkedEntityId;
+    /** Герой, к которому привяжется приглашённый (герой — отдельная таблица). */
+    @Column(name = "linked_hero_id")
+    private UUID linkedHeroId;
 
     @Column(name = "created_by", nullable = false)
     private UUID createdBy;
@@ -58,7 +52,7 @@ public class Invite {
     private Instant expiresAt;
 
     @Column(name = "max_uses", nullable = false)
-    private int maxUses = 1;
+    private int maxUses = MAX_USES;
 
     @Column(nullable = false)
     private int uses;
@@ -71,5 +65,10 @@ public class Invite {
 
     public boolean isValid() {
         return !revoked && uses < maxUses && expiresAt.isAfter(Instant.now());
+    }
+
+    /** Погасить приглашение: использований больше не будет. */
+    public void consume() {
+        this.uses = this.maxUses;
     }
 }

@@ -12,6 +12,7 @@ import ru.dndmemory.domain.ChangeLog;
 import ru.dndmemory.repo.CampaignRepository;
 import ru.dndmemory.repo.ChangeLogRepository;
 import ru.dndmemory.repo.InviteRepository;
+import ru.dndmemory.repo.PasswordResetRepository;
 import ru.dndmemory.repo.RefreshTokenRepository;
 import ru.dndmemory.repo.SyncConflictRepository;
 
@@ -33,6 +34,7 @@ public class MaintenanceJob {
     private final ChangeLogRepository changeLogRepository;
     private final InviteRepository inviteRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final PasswordResetRepository passwordResetRepository;
     private final SyncConflictRepository conflictRepository;
     private final AppProperties properties;
 
@@ -42,6 +44,7 @@ public class MaintenanceJob {
         Instant now = Instant.now();
         int revokedInvites = inviteRepository.revokeExpired(now);
         int expiredTokens = refreshTokenRepository.deleteExpired(now);
+        int expiredResets = passwordResetRepository.deleteExpired(now);
         int oldConflicts = conflictRepository.deleteOlderThan(now.minus(180, ChronoUnit.DAYS));
 
         Instant logThreshold = now.minus(properties.getRetention().getChangeLogDays(), ChronoUnit.DAYS);
@@ -52,8 +55,9 @@ public class MaintenanceJob {
             compacted += compactByRows(campaign.getId(), properties.getRetention().getChangeLogMaxRows());
         }
         log.info("Обслуживание завершено: приглашений отозвано {}, refresh-токенов удалено {}, "
-                        + "старых записей журнала {}, записей компактизовано {}, старых конфликтов {}",
-                revokedInvites, expiredTokens, deletedOldChanges, compacted, oldConflicts);
+                        + "запросов сброса удалено {}, старых записей журнала {}, записей компактизовано {}, "
+                        + "старых конфликтов {}",
+                revokedInvites, expiredTokens, expiredResets, deletedOldChanges, compacted, oldConflicts);
     }
 
     private int compactByRows(java.util.UUID campaignId, int maxRows) {

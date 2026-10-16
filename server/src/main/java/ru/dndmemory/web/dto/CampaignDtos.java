@@ -11,6 +11,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,6 +47,7 @@ public final class CampaignDtos {
         private String description;
         private MemberRole myRole;
         private long memberCount;
+        /** Сумма объектов всех четырёх классов. */
         private long entityCount;
         private long retellingCount;
         private long latestRevision;
@@ -64,10 +66,27 @@ public final class CampaignDtos {
         private MemberRole myRole;
         private List<String> myPermissions;
         private long memberCount;
+        /** Сумма героев, персонажей, локаций и предметов. */
         private long entityCount;
         private long retellingCount;
         private long latestRevision;
+        /** Краткий список участников — чтобы карточка кампании открывалась одним запросом. */
+        private List<MemberDto> members;
+        /** Краткий список пересказов рядом со счётчиками. */
+        private List<RetellingBriefDto> retellings;
         private Instant createdAt;
+        private Instant updatedAt;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RetellingBriefDto {
+        private UUID id;
+        private String title;
+        private LocalDate sessionDate;
+        private long revision;
         private Instant updatedAt;
     }
 
@@ -81,8 +100,9 @@ public final class CampaignDtos {
         private String displayName;
         private String email;
         private MemberRole role;
-        private UUID linkedEntityId;
-        private String linkedEntityName;
+        /** Герой, который закреплён за участником (герой — отдельная таблица). */
+        private UUID linkedHeroId;
+        private String linkedHeroName;
         private String status;
         private Instant createdAt;
     }
@@ -96,14 +116,14 @@ public final class CampaignDtos {
         @NotNull(message = "Укажите роль")
         private MemberRole role;
 
-        private UUID linkedEntityId;
+        private UUID linkedHeroId;
     }
 
     @Data
     public static class UpdateMemberRequest {
         private MemberRole role;
 
-        private UUID linkedEntityId;
+        private UUID linkedHeroId;
     }
 
     @Data

@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.dndmemory.domain.EntityType;
+import ru.dndmemory.domain.ObjectType;
 
 import java.time.Instant;
 import java.util.List;
@@ -20,10 +20,9 @@ public final class SearchDtos {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class SearchItemDto {
-        /** ENTITY или RETELLING. */
-        private String kind;
+        /** HERO, CHARACTER, LOCATION, ITEM или RETELLING. */
+        private ObjectType kind;
         private UUID id;
-        private EntityType type;
         private String title;
         private String snippet;
         private long revision;

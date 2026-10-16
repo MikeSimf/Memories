@@ -11,23 +11,22 @@ import ru.dndmemory.config.AppProperties;
 import ru.dndmemory.domain.Campaign;
 import ru.dndmemory.domain.ChangeLog;
 import ru.dndmemory.domain.ChangeOp;
-import ru.dndmemory.domain.EntityType;
-import ru.dndmemory.domain.GameEntity;
 import ru.dndmemory.domain.Member;
 import ru.dndmemory.domain.ObjectType;
 import ru.dndmemory.domain.Retelling;
 import ru.dndmemory.domain.RetellingStatus;
-import ru.dndmemory.domain.SyncConflict;
 import ru.dndmemory.repo.CampaignRepository;
 import ru.dndmemory.repo.ChangeLogRepository;
-import ru.dndmemory.repo.GameEntityRepository;
 import ru.dndmemory.repo.MemberRepository;
 import ru.dndmemory.repo.RetellingRepository;
 import ru.dndmemory.repo.SyncConflictRepository;
 import ru.dndmemory.security.PermissionService;
 import ru.dndmemory.web.ApiException;
 import ru.dndmemory.web.dto.CampaignDtos;
-import ru.dndmemory.web.dto.EntityDtos;
+import ru.dndmemory.web.dto.CharacterDtos;
+import ru.dndmemory.web.dto.HeroDtos;
+import ru.dndmemory.web.dto.ItemDtos;
+import ru.dndmemory.web.dto.LocationDtos;
 import ru.dndmemory.web.dto.RetellingDtos;
 import ru.dndmemory.web.dto.SyncDtos;
 
@@ -37,13 +36,16 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 /**
  * Офлайн-синхронизация по журналу ревизий. Алгоритм и правила конфликтов — docs/sync.md.
+ *
+ * <p>Правки объектов применяют сервисы четырёх классов: {@link SyncService} только
+ * разбирает журнал и отдаёт их нужному обработчику. У каждого класса своя форма payload.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -53,17 +55,32 @@ public class SyncService {
 
     private final CampaignRepository campaignRepository;
     private final ChangeLogRepository changeLogRepository;
-    private final GameEntityRepository entityRepository;
     private final RetellingRepository retellingRepository;
     private final MemberRepository memberRepository;
     private final SyncConflictRepository conflictRepository;
     private final PermissionService permissionService;
-    private final EntityService entityService;
+    private final CampaignService campaignService;
     private final RetellingService retellingService;
+    private final ObjectIndexService objectIndexService;
     private final ChangeRecorder changeRecorder;
-    private final DtoMapper dtoMapper;
+    private final ConflictRecorder conflictRecorder;
     private final ObjectMapper objectMapper;
     private final AppProperties properties;
+    /** Четыре сервиса классов: ключ — значение ObjectType. */
+    private final List<ObjectSyncHandler> handlers;
+
+    private Map<ObjectType, ObjectSyncHandler> handlerMap;
+
+    private Map<ObjectType, ObjectSyncHandler> handlers() {
+        if (handlerMap == null) {
+            Map<ObjectType, ObjectSyncHandler> map = new EnumMap<>(ObjectType.class);
+            for (ObjectSyncHandler handler : handlers) {
+                map.put(handler.objectType(), handler);
+            }
+            handlerMap = map;
+        }
+        return handlerMap;
+    }
 
     // ---------------------------------------------------------------- push
 
@@ -85,7 +102,7 @@ public class SyncService {
     }
 
     private SyncDtos.PushResultDto applyOne(Campaign campaign, Member member, UUID userId,
-                                            String deviceId, SyncDtos.PushChangeDto change) {
+                                            String clientId, SyncDtos.PushChangeDto change) {
         if (change.getClientChangeId() != null) {
             ChangeLog seen = changeLogRepository
                     .findByCampaignIdAndClientChangeId(campaign.getId(), change.getClientChangeId())
@@ -94,145 +111,19 @@ public class SyncService {
                 return result(change, seen.getObjectId(), seen.getRevision(), "APPLIED", null);
             }
         }
-        if (change.getObjectType() == ObjectType.ENTITY) {
-            return applyEntity(campaign, member, userId, deviceId, change);
-        }
         if (change.getObjectType() == ObjectType.RETELLING) {
-            return applyRetelling(campaign, member, userId, deviceId, change);
+            return applyRetelling(campaign, member, userId, clientId, change);
         }
-        return rejected(campaign, userId, change, "unsupported_type", null);
-    }
-
-    private SyncDtos.PushResultDto applyEntity(Campaign campaign, Member member, UUID userId,
-                                               String deviceId, SyncDtos.PushChangeDto change) {
-        JsonNode payload = change.getPayload();
-        UUID objectId = change.getObjectId();
-        GameEntity server = entityRepository.findByIdAndCampaignId(objectId, campaign.getId()).orElse(null);
-        if (server == null && payload != null && payload.hasNonNull("clientId")) {
-            server = entityRepository.findByCampaignIdAndClientId(campaign.getId(),
-                    UUID.fromString(payload.get("clientId").asText())).orElse(null);
+        ObjectSyncHandler handler = handlers().get(change.getObjectType());
+        if (handler == null) {
+            // CAMPAIGN и MEMBER клиент не пушит; старый ENTITY больше не поддерживается
+            return rejected(campaign, userId, change, "unsupported_type", null);
         }
-
-        if (change.getOp() == ChangeOp.DELETE) {
-            if (server == null || server.isDeleted()) {
-                return result(change, objectId, server == null ? null : server.getRevision(), "APPLIED", null);
-            }
-            if (!permissionService.canWriteEntity(member, server.getId(), server.getType())) {
-                return rejected(campaign, userId, change, "forbidden", objectMapper.valueToTree(
-                        dtoMapper.toEntity(server, entityService.nameIndex(campaign.getId()), Collections.emptyMap())));
-            }
-            server.setDeleted(true);
-            server.setUpdatedBy(userId);
-            server.setUpdatedAt(Instant.now());
-            server.setRevision(campaign.getRevision() + 1);
-            entityRepository.save(server);
-            long revision = changeRecorder.record(campaign, ObjectType.ENTITY, server.getId(), ChangeOp.DELETE,
-                    entityService.tombstone(server.getId(), ObjectType.ENTITY, server.getRevision(), server.getUpdatedAt()),
-                    userId, change.getClientChangeId(), deviceId);
-            return result(change, server.getId(), revision, "APPLIED", null);
-        }
-
-        EntityType type = server != null ? server.getType()
-                : parseEnum(payload, "type", EntityType.class, EntityType.ITEM);
-        boolean created = server == null;
-        if (created) {
-            if (member.getRole() == ru.dndmemory.domain.MemberRole.VIEWER) {
-                return rejected(campaign, userId, change, "forbidden", null);
-            }
-            if (type == EntityType.HERO && member.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_HERO
-                    && member.getLinkedEntityId() != null) {
-                return rejected(campaign, userId, change, "forbidden", null);
-            }
-            server = new GameEntity();
-            server.setId(objectId);
-            server.setCampaignId(campaign.getId());
-            server.setClientId(payload != null && payload.hasNonNull("clientId")
-                    ? UUID.fromString(payload.get("clientId").asText()) : objectId);
-            server.setCreatedBy(userId);
-            server.setCreatedAt(parseInstant(payload, "createdAt", Instant.now()));
-        } else if (!permissionService.canWriteEntity(member, server.getId(), server.getType())) {
-            return rejected(campaign, userId, change, "forbidden", objectMapper.valueToTree(
-                        dtoMapper.toEntity(server, entityService.nameIndex(campaign.getId()), Collections.emptyMap())));
-        }
-
-        String status = "APPLIED";
-        Instant clientUpdatedAt = parseInstant(payload, "updatedAt", null);
-        if (!created && change.getBaseRevision() != null && change.getBaseRevision() < server.getRevision()) {
-            boolean clientWins = clientUpdatedAt != null && clientUpdatedAt.isAfter(server.getUpdatedAt());
-            if (!clientWins) {
-                JsonNode serverPayload = objectMapper.valueToTree(dtoMapper.toEntity(server,
-                        entityService.nameIndex(campaign.getId()), Collections.emptyMap()));
-                recordConflict(campaign, userId, change, "stale_base", serverPayload);
-                SyncDtos.ConflictInfoDto conflict = SyncDtos.ConflictInfoDto.builder()
-                        .reason("stale_base")
-                        .serverRevision(server.getRevision())
-                        .server(serverPayload)
-                        .build();
-                return result(change, server.getId(), server.getRevision(), "REJECTED", conflict);
-            }
-            status = "CONFLICT_RESOLVED";
-            recordConflict(campaign, userId, change, "client_wins",
-                    objectMapper.valueToTree(dtoMapper.toEntity(server, entityService.nameIndex(campaign.getId()),
-                            Collections.emptyMap())));
-        }
-
-        if (payload != null) {
-            if (payload.hasNonNull("name")) {
-                server.setName(payload.get("name").asText());
-            }
-            if (payload.has("summary")) {
-                server.setSummary(text(payload.get("summary")));
-            }
-            if (payload.has("description")) {
-                server.setDescription(text(payload.get("description")));
-            }
-            if (payload.has("attrs")) {
-                server.setAttrs(payload.get("attrs").isNull() ? "{}" : payload.get("attrs").toString());
-            }
-            if (payload.has("tags") && payload.get("tags").isArray()) {
-                server.setTags(payload.get("tags").toString());
-            }
-            if (payload.hasNonNull("type")) {
-                server.setType(EntityType.valueOf(payload.get("type").asText()));
-            }
-            if (payload.hasNonNull("imageFileId")) {
-                server.setImageFileId(UUID.fromString(payload.get("imageFileId").asText()));
-            }
-        }
-        if (server.getAttrs() == null) {
-            server.setAttrs("{}");
-        }
-        if (server.getTags() == null) {
-            server.setTags("[]");
-        }
-        if (server.getName() == null || server.getName().trim().isEmpty()) {
-            return rejected(campaign, userId, change, "validation_failed", null);
-        }
-        server.setUpdatedBy(userId);
-        server.setUpdatedAt(clientUpdatedAt != null ? clientUpdatedAt : Instant.now());
-        server.setDeleted(false);
-        server.setRevision(campaign.getRevision() + 1);
-        entityRepository.save(server);
-
-        if (created && server.getType() == EntityType.HERO
-                && member.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_HERO
-                && member.getLinkedEntityId() == null) {
-            member.setLinkedEntityId(server.getId());
-            member.setUpdatedAt(Instant.now());
-            memberRepository.save(member);
-            changeRecorder.record(campaign, ObjectType.MEMBER, member.getId(), ChangeOp.UPSERT,
-                    MemberPayloads.of(member), userId, null, deviceId);
-        }
-
-        EntityDtos.EntityDto dto = dtoMapper.toEntity(server, entityService.nameIndex(campaign.getId()),
-                entityService.userNames(Collections.singletonList(server)));
-        long revision = changeRecorder.record(campaign, ObjectType.ENTITY, server.getId(), ChangeOp.UPSERT,
-                dto, userId, change.getClientChangeId(), deviceId);
-        return result(change, server.getId(), revision, status, null);
+        return handler.applySync(campaign, member, userId, clientId, change);
     }
 
     private SyncDtos.PushResultDto applyRetelling(Campaign campaign, Member member, UUID userId,
-                                                  String deviceId, SyncDtos.PushChangeDto change) {
+                                                  String clientId, SyncDtos.PushChangeDto change) {
         JsonNode payload = change.getPayload();
         UUID objectId = change.getObjectId();
         Retelling server = retellingRepository.findByIdAndCampaignId(objectId, campaign.getId()).orElse(null);
@@ -252,8 +143,9 @@ public class SyncService {
             server.setRevision(campaign.getRevision() + 1);
             retellingRepository.save(server);
             long revision = changeRecorder.record(campaign, ObjectType.RETELLING, server.getId(), ChangeOp.DELETE,
-                    entityService.tombstone(server.getId(), ObjectType.RETELLING, server.getRevision(), server.getUpdatedAt()),
-                    userId, change.getClientChangeId(), deviceId);
+                    changeRecorder.tombstone(server.getId(), ObjectType.RETELLING,
+                            server.getRevision(), server.getUpdatedAt()),
+                    userId, change.getClientChangeId(), clientId);
             return result(change, server.getId(), revision, "APPLIED", null);
         }
 
@@ -288,7 +180,7 @@ public class SyncService {
             boolean clientWins = clientUpdatedAt != null && clientUpdatedAt.isAfter(server.getUpdatedAt());
             if (!clientWins) {
                 JsonNode serverPayload = objectMapper.valueToTree(server);
-                recordConflict(campaign, userId, change, "stale_base", serverPayload);
+                conflictRecorder.record(campaign, userId, change, "stale_base", serverPayload);
                 return result(change, server.getId(), server.getRevision(), "REJECTED",
                         SyncDtos.ConflictInfoDto.builder().reason("stale_base")
                                 .serverRevision(server.getRevision()).server(serverPayload).build());
@@ -320,19 +212,17 @@ public class SyncService {
         server.setRevision(campaign.getRevision() + 1);
         retellingRepository.save(server);
 
-        RetellingDtos.RetellingDto dto = dtoMapper.toRetelling(server, entityService.nameIndex(campaign.getId()),
-                retellingService.userNames(campaign.getId()),
-                server.getAuthorEntityId() == null ? null : entityRepository.findById(server.getAuthorEntityId())
-                        .map(GameEntity::getName).orElse(null));
+        RetellingDtos.RetellingDto dto = retellingService.toDto(server,
+                objectIndexService.context(campaign.getId()), retellingService.userNames(campaign.getId()));
         long revision = changeRecorder.record(campaign, ObjectType.RETELLING, server.getId(), ChangeOp.UPSERT,
-                dto, userId, change.getClientChangeId(), deviceId);
+                dto, userId, change.getClientChangeId(), clientId);
         return result(change, server.getId(), revision, status, null);
     }
 
     // ---------------------------------------------------------------- pull
 
     @Transactional(readOnly = true)
-    public SyncDtos.PullResponse pull(UUID campaignId, UUID userId, long since, int limit, String deviceId) {
+    public SyncDtos.PullResponse pull(UUID campaignId, UUID userId, long since, int limit, String clientId) {
         permissionService.requireMember(campaignId, userId);
         Campaign campaign = campaignRepository.findByIdAndDeletedFalse(campaignId)
                 .orElseThrow(() -> ApiException.notFound("Кампания"));
@@ -352,7 +242,7 @@ public class SyncService {
         for (ChangeLog entry : page) {
             lastRevision = Math.max(lastRevision, entry.getRevision());
             // свои же изменения клиенту не возвращаем — он их уже применил локально
-            if (deviceId != null && deviceId.equals(entry.getDeviceId())) {
+            if (clientId != null && clientId.equals(entry.getDeviceId())) {
                 continue;
             }
             changes.add(SyncDtos.ChangeDto.builder()
@@ -376,58 +266,147 @@ public class SyncService {
 
     // ------------------------------------------------------------ snapshot
 
+    /**
+     * Полная выгрузка кампании страницами по 500 объектов. Порядок классов:
+     * герои, персонажи, локации, предметы, пересказы; курсор — «класс:смещение».
+     */
     @Transactional(readOnly = true)
     public SyncDtos.SnapshotDto snapshot(UUID campaignId, UUID userId, String cursor, int limit) {
         Member member = permissionService.requireMember(campaignId, userId);
         Campaign campaign = campaignRepository.findByIdAndDeletedFalse(campaignId)
                 .orElseThrow(() -> ApiException.notFound("Кампания"));
         int pageSize = limit <= 0 ? DEFAULT_LIMIT : Math.min(limit, DEFAULT_LIMIT);
-        int[] offsets = decodeCursor(cursor);
+        int kindIndex = decodeKind(cursor);
+        int offset = decodeOffset(cursor);
+        ObjectIndexService.ObjectContext context = objectIndexService.context(campaignId);
 
-        // Сортировка обязательна: без неё страницы snapshot могли бы пересекаться
-        List<GameEntity> entities = entityRepository
-                .findAllByCampaignIdAndDeletedFalse(campaignId,
-                        PageRequest.of(offsets[0], pageSize, Sort.by(Sort.Direction.ASC, "name")))
-                .getContent();
-        List<Retelling> retellings = offsets[0] == 0
-                ? retellingRepository.findAllByCampaignIdAndDeletedFalse(campaignId,
-                        PageRequest.of(offsets[1], pageSize, Sort.by(Sort.Direction.DESC, "createdAt")))
-                .getContent()
-                : Collections.emptyList();
+        List<HeroDtos.HeroDto> heroes = Collections.emptyList();
+        List<CharacterDtos.CharacterDto> characters = Collections.emptyList();
+        List<LocationDtos.LocationDto> locations = Collections.emptyList();
+        List<ItemDtos.ItemDto> items = Collections.emptyList();
+        List<RetellingDtos.RetellingDto> retellings = Collections.emptyList();
+        boolean more = false;
 
-        Map<String, UUID> nameIndex = entityService.nameIndex(campaignId);
-        Map<UUID, String> userNames = entityService.userNames(
-                entityRepository.findAllByCampaignIdAndDeletedFalseOrderByNameAsc(campaignId));
-
-        List<EntityDtos.EntityDto> entityDtos = new ArrayList<>();
-        for (GameEntity entity : entities) {
-            entityDtos.add(dtoMapper.toEntity(entity, nameIndex, userNames));
+        while (true) {
+            List<?> page;
+            switch (kindIndex) {
+                case 0:
+                    page = pageOf(ObjectType.HERO, campaignId, offset, pageSize, context);
+                    heroes = cast(page);
+                    break;
+                case 1:
+                    page = pageOf(ObjectType.CHARACTER, campaignId, offset, pageSize, context);
+                    characters = cast(page);
+                    break;
+                case 2:
+                    page = pageOf(ObjectType.LOCATION, campaignId, offset, pageSize, context);
+                    locations = cast(page);
+                    break;
+                case 3:
+                    page = pageOf(ObjectType.ITEM, campaignId, offset, pageSize, context);
+                    items = cast(page);
+                    break;
+                default:
+                    page = retellingPage(campaignId, offset, pageSize, context);
+                    retellings = cast(page);
+                    break;
+            }
+            if (!page.isEmpty() || kindIndex >= 4) {
+                more = page.size() == pageSize
+                        || (kindIndex < 4 && hasAnythingAfter(campaignId, kindIndex, offset + page.size(), pageSize));
+                break;
+            }
+            kindIndex++;
+            offset = 0;
         }
-        List<RetellingDtos.RetellingDto> retellingDtos = new ArrayList<>();
-        for (Retelling retelling : retellings) {
-            String authorName = retelling.getAuthorEntityId() == null ? null
-                    : entityRepository.findById(retelling.getAuthorEntityId()).map(GameEntity::getName).orElse(null);
-            retellingDtos.add(dtoMapper.toRetelling(retelling, nameIndex, retellingService.userNames(campaignId), authorName));
-        }
 
-        int nextEntityOffset = offsets[0] + entities.size();
-        long totalEntities = entityRepository.countByCampaignIdAndDeletedFalse(campaignId);
-        boolean more = nextEntityOffset < totalEntities;
-
-        List<CampaignDtos.MemberDto> members = offsets[0] == 0
-                ? memberDtos(campaignId) : Collections.emptyList();
-
+        CampaignDtos.CampaignDetailDto detail = campaignService.detail(campaign, member);
         return SyncDtos.SnapshotDto.builder()
                 .latestRevision(campaign.getRevision())
-                .nextCursor(more ? encodeCursor(nextEntityOffset, 0, 0) : null)
-                                .campaign(dtoMapper.toCampaignDetail(campaign, member, permissionService.permissionSet(member),
-                        memberRepository.countByCampaignId(campaignId),
-                        entityRepository.countByCampaignIdAndDeletedFalse(campaignId),
-                        retellingRepository.countByCampaignIdAndDeletedFalse(campaignId)))
-                .entities(entityDtos)
-                .retellings(retellingDtos)
-                .members(members)
+                .nextCursor(more ? encodeCursor(kindIndex, offset + pageSizeOf(kindIndex, heroes, characters,
+                        locations, items, retellings)) : null)
+                .campaign(detail)
+                .heroes(heroes)
+                .characters(characters)
+                .locations(locations)
+                .items(items)
+                .retellings(retellings)
+                .members(detail.getMembers())
                 .build();
+    }
+
+    private List<?> pageOf(ObjectType type, UUID campaignId, int offset, int limit,
+                           ObjectIndexService.ObjectContext context) {
+        ObjectSyncHandler handler = handlers().get(type);
+        return handler == null ? Collections.emptyList() : handler.snapshotPage(campaignId, offset, limit, context);
+    }
+
+    private List<RetellingDtos.RetellingDto> retellingPage(UUID campaignId, int offset, int limit,
+                                                           ObjectIndexService.ObjectContext context) {
+        List<Retelling> page = retellingRepository
+                .findAllByCampaignIdAndDeletedFalse(campaignId,
+                        PageRequest.of(Math.max(offset, 0), limit, Sort.by(Sort.Direction.DESC, "createdAt")))
+                .getContent();
+        List<RetellingDtos.RetellingDto> result = new ArrayList<>();
+        Map<UUID, String> userNames = retellingService.userNames(campaignId);
+        for (Retelling retelling : page) {
+            result.add(retellingService.toDto(retelling, context, userNames));
+        }
+        return result;
+    }
+
+    /** Есть ли ещё объекты после текущей страницы — чтобы не отдавать пустой курсор. */
+    private boolean hasAnythingAfter(UUID campaignId, int kindIndex, int nextOffset, int pageSize) {
+        for (int index = kindIndex + 1; index <= 4; index++) {
+            ObjectType type = kindOf(index);
+            if (type == ObjectType.RETELLING) {
+                if (retellingRepository.countByCampaignIdAndDeletedFalse(campaignId) > 0) {
+                    return true;
+                }
+            } else {
+                ObjectSyncHandler handler = handlers().get(type);
+                if (handler != null && handler.count(campaignId) > 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static ObjectType kindOf(int kindIndex) {
+        switch (kindIndex) {
+            case 0:
+                return ObjectType.HERO;
+            case 1:
+                return ObjectType.CHARACTER;
+            case 2:
+                return ObjectType.LOCATION;
+            case 3:
+                return ObjectType.ITEM;
+            default:
+                return ObjectType.RETELLING;
+        }
+    }
+
+    private int pageSizeOf(int kindIndex, List<?> heroes, List<?> characters, List<?> locations,
+                           List<?> items, List<?> retellings) {
+        switch (kindIndex) {
+            case 0:
+                return heroes.size();
+            case 1:
+                return characters.size();
+            case 2:
+                return locations.size();
+            case 3:
+                return items.size();
+            default:
+                return retellings.size();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> List<T> cast(List<?> page) {
+        return (List<T>) page;
     }
 
     @Transactional(readOnly = true)
@@ -435,54 +414,30 @@ public class SyncService {
         permissionService.requireMember(campaignId, userId);
         Campaign campaign = campaignRepository.findByIdAndDeletedFalse(campaignId)
                 .orElseThrow(() -> ApiException.notFound("Кампания"));
+        long heroes = count(ObjectType.HERO, campaignId);
+        long characters = count(ObjectType.CHARACTER, campaignId);
+        long locations = count(ObjectType.LOCATION, campaignId);
+        long items = count(ObjectType.ITEM, campaignId);
         return SyncDtos.SyncStateDto.builder()
                 .latestRevision(campaign.getRevision())
                 .minRetainedRevision(changeLogRepository.findMinRevision(campaignId))
-                .entityCount(entityRepository.countByCampaignIdAndDeletedFalse(campaignId))
+                .entityCount(heroes + characters + locations + items)
+                .heroCount(heroes)
+                .characterCount(characters)
+                .locationCount(locations)
+                .itemCount(items)
                 .retellingCount(retellingRepository.countByCampaignIdAndDeletedFalse(campaignId))
                 .memberCount(memberRepository.countByCampaignId(campaignId))
                 .pendingConflicts(conflictRepository.countByCampaignId(campaignId))
                 .build();
     }
 
+    private long count(ObjectType type, UUID campaignId) {
+        ObjectSyncHandler handler = handlers().get(type);
+        return handler == null ? 0 : handler.count(campaignId);
+    }
+
     // ------------------------------------------------------------- helpers
-
-    private List<CampaignDtos.MemberDto> memberDtos(UUID campaignId) {
-        List<CampaignDtos.MemberDto> members = new ArrayList<>();
-        Map<UUID, String> names = new HashMap<>();
-        for (Member member : memberRepository.findAllByCampaignIdOrderByCreatedAtAsc(campaignId)) {
-            names.putIfAbsent(member.getUserId(), null);
-            String linkedName = member.getLinkedEntityId() == null ? null
-                    : entityRepository.findByIdAndCampaignId(member.getLinkedEntityId(), campaignId)
-                    .map(GameEntity::getName).orElse(null);
-            CampaignDtos.MemberDto dto = CampaignDtos.MemberDto.builder()
-                    .id(member.getId())
-                    .userId(member.getUserId())
-                    .role(member.getRole())
-                    .linkedEntityId(member.getLinkedEntityId())
-                    .linkedEntityName(linkedName)
-                    .status(member.getStatus().name())
-                    .createdAt(member.getCreatedAt())
-                    .build();
-            members.add(dto);
-        }
-        return members;
-    }
-
-    private void recordConflict(Campaign campaign, UUID userId, SyncDtos.PushChangeDto change,
-                                String reason, JsonNode serverPayload) {
-        SyncConflict conflict = new SyncConflict();
-        conflict.setId(UUID.randomUUID());
-        conflict.setCampaignId(campaign.getId());
-        conflict.setObjectType(change.getObjectType());
-        conflict.setObjectId(change.getObjectId());
-        conflict.setClientChangeId(change.getClientChangeId());
-        conflict.setActorUserId(userId);
-        conflict.setReason(reason);
-        conflict.setServerPayload(serverPayload == null ? null : serverPayload.toString());
-        conflict.setClientPayload(change.getPayload() == null ? null : change.getPayload().toString());
-        conflictRepository.save(conflict);
-    }
 
     private SyncDtos.PushResultDto result(SyncDtos.PushChangeDto change, UUID objectId, Long revision,
                                           String status, SyncDtos.ConflictInfoDto conflict) {
@@ -497,7 +452,7 @@ public class SyncService {
 
     private SyncDtos.PushResultDto rejected(Campaign campaign, UUID userId, SyncDtos.PushChangeDto change,
                                             String reason, JsonNode serverPayload) {
-        recordConflict(campaign, userId, change, reason, serverPayload);
+        conflictRecorder.record(campaign, userId, change, reason, serverPayload);
         return result(change, change.getObjectId(), null, "REJECTED",
                 SyncDtos.ConflictInfoDto.builder().reason(reason).server(serverPayload).build());
     }
@@ -525,32 +480,30 @@ public class SyncService {
         }
     }
 
-    private <T extends Enum<T>> T parseEnum(JsonNode payload, String field, Class<T> type, T fallback) {
-        if (payload == null || !payload.hasNonNull(field)) {
-            return fallback;
-        }
-        try {
-            return Enum.valueOf(type, payload.get(field).asText());
-        } catch (Exception e) {
-            return fallback;
-        }
+    private String encodeCursor(int kindIndex, int offset) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(
+                (kindIndex + ":" + offset).getBytes(StandardCharsets.UTF_8));
     }
 
-    private String encodeCursor(int entityOffset, int retellingOffset, int memberOffset) {
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(
-                (entityOffset + ":" + retellingOffset + ":" + memberOffset).getBytes(StandardCharsets.UTF_8));
+    private int decodeKind(String cursor) {
+        int[] decoded = decodeCursor(cursor);
+        return Math.min(Math.max(decoded[0], 0), 4);
+    }
+
+    private int decodeOffset(String cursor) {
+        return Math.max(decodeCursor(cursor)[1], 0);
     }
 
     private int[] decodeCursor(String cursor) {
         if (cursor == null || cursor.trim().isEmpty()) {
-            return new int[]{0, 0, 0};
+            return new int[]{0, 0};
         }
         try {
             String decoded = new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8);
             String[] parts = decoded.split(":");
-            return new int[]{Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2])};
+            return new int[]{Integer.parseInt(parts[0]), Integer.parseInt(parts[1])};
         } catch (Exception e) {
-            return new int[]{0, 0, 0};
+            return new int[]{0, 0};
         }
     }
 

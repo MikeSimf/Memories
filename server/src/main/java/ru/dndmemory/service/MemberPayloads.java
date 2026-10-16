@@ -18,7 +18,7 @@ public final class MemberPayloads {
         payload.put("campaignId", member.getCampaignId());
         payload.put("userId", member.getUserId());
         payload.put("role", member.getRole());
-        payload.put("linkedEntityId", member.getLinkedEntityId());
+        payload.put("linkedHeroId", member.getLinkedHeroId());
         payload.put("status", member.getStatus());
         payload.put("deleted", member.getStatus() == MemberStatus.REMOVED);
         payload.put("updatedAt", member.getUpdatedAt());

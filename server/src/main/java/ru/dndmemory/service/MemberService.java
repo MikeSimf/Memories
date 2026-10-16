@@ -5,14 +5,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.dndmemory.domain.Campaign;
 import ru.dndmemory.domain.ChangeOp;
-import ru.dndmemory.domain.GameEntity;
 import ru.dndmemory.domain.Member;
 import ru.dndmemory.domain.MemberRole;
 import ru.dndmemory.domain.MemberStatus;
 import ru.dndmemory.domain.ObjectType;
 import ru.dndmemory.domain.User;
 import ru.dndmemory.repo.CampaignRepository;
-import ru.dndmemory.repo.GameEntityRepository;
+import ru.dndmemory.repo.HeroRepository;
 import ru.dndmemory.repo.MemberRepository;
 import ru.dndmemory.repo.UserRepository;
 import ru.dndmemory.security.PermissionService;
@@ -23,7 +22,6 @@ import ru.dndmemory.web.dto.InviteDtos;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,7 +34,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final CampaignRepository campaignRepository;
     private final UserRepository userRepository;
-    private final GameEntityRepository entityRepository;
+    private final HeroRepository heroRepository;
     private final PermissionService permissionService;
     private final InviteService inviteService;
     private final ChangeRecorder changeRecorder;
@@ -49,14 +47,14 @@ public class MemberService {
         List<CampaignDtos.MemberDto> result = new ArrayList<>();
         for (Member member : members) {
             User user = userRepository.findById(member.getUserId()).orElse(null);
-            result.add(dtoMapper.toMember(member, user, linkedName(campaignId, member.getLinkedEntityId())));
+            result.add(dtoMapper.toMember(member, user, linkedHeroName(member.getLinkedHeroId())));
         }
         return result;
     }
 
     /**
      * Добавляет участника. Если пользователь с такой почтой уже зарегистрирован — он сразу
-     * становится участником, иначе создаётся приглашение (в ответе поле invite).
+     * становится участником, иначе создаётся одноразовое приглашение (в ответе поле invite).
      */
     @Transactional
     public CampaignDtos.AddMemberResponse add(UUID campaignId, UUID actorId, CampaignDtos.AddMemberRequest request) {
@@ -71,7 +69,7 @@ public class MemberService {
         Optional<User> existing = userRepository.findByEmailIgnoreCase(request.getEmail().trim());
         if (existing.isEmpty()) {
             InviteDtos.InviteDto invite = inviteService.createInternal(campaign, actorId, request.getRole(),
-                    request.getLinkedEntityId(), null, null);
+                    request.getLinkedHeroId(), null);
             return CampaignDtos.AddMemberResponse.builder()
                     .invite(invite)
                     .note("Пользователь ещё не зарегистрирован — отправьте ему ссылку или QR-код")
@@ -91,7 +89,7 @@ public class MemberService {
             member.setCreatedAt(Instant.now());
         }
         member.setRole(request.getRole());
-        member.setLinkedEntityId(request.getLinkedEntityId());
+        member.setLinkedHeroId(request.getLinkedHeroId());
         member.setStatus(MemberStatus.ACTIVE);
         member.setUpdatedAt(Instant.now());
         memberRepository.save(member);
@@ -99,7 +97,7 @@ public class MemberService {
         long revision = changeRecorder.record(campaign, ObjectType.MEMBER, member.getId(), ChangeOp.UPSERT,
                 MemberPayloads.of(member), actorId, null, null);
         return CampaignDtos.AddMemberResponse.builder()
-                .member(dtoMapper.toMember(member, user, linkedName(campaignId, member.getLinkedEntityId())))
+                .member(dtoMapper.toMember(member, user, linkedHeroName(member.getLinkedHeroId())))
                 .note("Участник добавлен (ревизия " + revision + ")")
                 .build();
     }
@@ -121,8 +119,8 @@ public class MemberService {
             guardLastOwner(campaignId, member, "понизить");
             member.setRole(request.getRole());
         }
-        if (request.getLinkedEntityId() != null) {
-            member.setLinkedEntityId(request.getLinkedEntityId());
+        if (request.getLinkedHeroId() != null) {
+            member.setLinkedHeroId(request.getLinkedHeroId());
         }
         member.setUpdatedAt(Instant.now());
         memberRepository.save(member);
@@ -130,7 +128,7 @@ public class MemberService {
                 MemberPayloads.of(member), actorId, null, null);
 
         User user = userRepository.findById(member.getUserId()).orElse(null);
-        return dtoMapper.toMember(member, user, linkedName(campaignId, member.getLinkedEntityId()));
+        return dtoMapper.toMember(member, user, linkedHeroName(member.getLinkedHeroId()));
     }
 
     /** Передача владения: текущий владелец делает другого участника OWNER и становится мастером. */
@@ -162,7 +160,7 @@ public class MemberService {
                 MemberPayloads.of(actor), actorId, null, null);
 
         User user = userRepository.findById(target.getUserId()).orElse(null);
-        return dtoMapper.toMember(target, user, linkedName(campaignId, target.getLinkedEntityId()));
+        return dtoMapper.toMember(target, user, linkedHeroName(target.getLinkedHeroId()));
     }
 
     @Transactional
@@ -183,54 +181,17 @@ public class MemberService {
                 MemberPayloads.of(member), actorId, null, null);
     }
 
-    /** Снимает участие по идентификатору пользователя — используется при отзыве устройства. */
-    @Transactional
-    public void removeMemberFromCampaign(UUID campaignId, UUID targetUserId, UUID actorId) {
-        Member target = memberRepository.findByCampaignIdAndUserId(campaignId, targetUserId).orElse(null);
-        if (target == null || target.getStatus() == MemberStatus.REMOVED) {
-            return;
-        }
-        guardLastOwner(campaignId, target, "удалить");
-        Campaign campaign = campaignRepository.findForUpdate(campaignId)
-                .orElseThrow(() -> ApiException.notFound("Кампания"));
-        target.setStatus(MemberStatus.REMOVED);
-        target.setUpdatedAt(Instant.now());
-        memberRepository.save(target);
-        changeRecorder.record(campaign, ObjectType.MEMBER, target.getId(), ChangeOp.DELETE,
-                MemberPayloads.of(target), actorId, null, null);
-    }
-
-    @Transactional
-    public Member activate(UUID campaignId, UUID userId, MemberRole role, UUID linkedEntityId) {
-        Member member = memberRepository.findByCampaignIdAndUserId(campaignId, userId).orElse(null);
-        if (member == null) {
-            member = new Member();
-            member.setId(UUID.randomUUID());
-            member.setCampaignId(campaignId);
-            member.setUserId(userId);
-            member.setCreatedAt(Instant.now());
-        }
-        member.setRole(role);
-        if (linkedEntityId != null) {
-            member.setLinkedEntityId(linkedEntityId);
-        }
-        member.setStatus(MemberStatus.ACTIVE);
-        member.setUpdatedAt(Instant.now());
-        return memberRepository.save(member);
-    }
-
     private void guardLastOwner(UUID campaignId, Member member, String action) {
         if (member.isOwner() && memberRepository.countByCampaignIdAndRole(campaignId, MemberRole.OWNER) <= 1) {
             throw ApiException.conflict("Нельзя " + action + " единственного владельца кампании");
         }
     }
 
-    private String linkedName(UUID campaignId, UUID entityId) {
-        if (entityId == null) {
+    private String linkedHeroName(UUID heroId) {
+        if (heroId == null) {
             return null;
         }
-        return entityRepository.findByIdAndCampaignId(entityId, campaignId)
-                .map(GameEntity::getName).orElse(null);
+        return heroRepository.findById(heroId).map(hero -> hero.getName()).orElse(null);
     }
 
     public Map<String, Object> memberPayload(Member member) {

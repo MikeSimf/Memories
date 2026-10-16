@@ -17,10 +17,10 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
 
     List<RefreshToken> findAllByUserIdAndRevokedFalse(UUID userId);
 
-    /** Гасит все сессии конкретного устройства — используется при его отзыве. */
+    /** Гасит все сессии пользователя — при смене и сбросе пароля. */
     @Modifying
-    @Query("update RefreshToken t set t.revoked = true where t.deviceId = :deviceId and t.revoked = false")
-    int revokeByDeviceId(@Param("deviceId") UUID deviceId);
+    @Query("update RefreshToken t set t.revoked = true where t.userId = :userId and t.revoked = false")
+    int revokeAllForUser(@Param("userId") UUID userId);
 
     @Modifying
     @Query("delete from RefreshToken t where t.expiresAt < :before")

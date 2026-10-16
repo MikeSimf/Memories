@@ -1,7 +1,6 @@
 package ru.dndmemory.repo;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import ru.dndmemory.domain.AuthProvider;
 import ru.dndmemory.domain.User;
 
 import java.util.Optional;
@@ -13,10 +12,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByEmailIgnoreCase(String email);
 
+    /** Логин хранится в нижнем регистре, поэтому поиск точный. */
+    Optional<User> findByLogin(String login);
+
+    boolean existsByLogin(String login);
+
     /** Телефон хранится в нормализованном виде (+7XXXXXXXXXX). */
-    java.util.Optional<User> findByPhone(String phone);
+    Optional<User> findByPhone(String phone);
 
     boolean existsByPhone(String phone);
-
-    Optional<User> findByProviderAndProviderUserId(AuthProvider provider, String providerUserId);
 }

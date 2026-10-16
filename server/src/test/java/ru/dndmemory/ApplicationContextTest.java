@@ -6,14 +6,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import ru.dndmemory.service.AuthService;
-import ru.dndmemory.service.EntityService;
+import ru.dndmemory.service.CharacterService;
+import ru.dndmemory.service.HeroService;
 import ru.dndmemory.service.InviteService;
+import ru.dndmemory.service.ItemService;
+import ru.dndmemory.service.LocationService;
 import ru.dndmemory.service.MemberService;
+import ru.dndmemory.service.PasswordResetService;
 import ru.dndmemory.service.RetellingService;
 import ru.dndmemory.service.SyncService;
+import ru.dndmemory.web.AdminController;
 import ru.dndmemory.web.CampaignController;
-import ru.dndmemory.web.EntityController;
+import ru.dndmemory.web.CharacterController;
+import ru.dndmemory.web.HeroController;
 import ru.dndmemory.web.InviteController;
+import ru.dndmemory.web.ItemController;
+import ru.dndmemory.web.LocationController;
+import ru.dndmemory.web.SearchController;
 import ru.dndmemory.web.SyncController;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -42,7 +51,19 @@ class ApplicationContextTest {
     private AuthService authService;
 
     @Autowired
-    private EntityService entityService;
+    private PasswordResetService passwordResetService;
+
+    @Autowired
+    private HeroService heroService;
+
+    @Autowired
+    private CharacterService characterService;
+
+    @Autowired
+    private LocationService locationService;
+
+    @Autowired
+    private ItemService itemService;
 
     @Autowired
     private RetellingService retellingService;
@@ -60,26 +81,50 @@ class ApplicationContextTest {
     private CampaignController campaignController;
 
     @Autowired
-    private EntityController entityController;
+    private HeroController heroController;
+
+    @Autowired
+    private CharacterController characterController;
+
+    @Autowired
+    private LocationController locationController;
+
+    @Autowired
+    private ItemController itemController;
 
     @Autowired
     private InviteController inviteController;
 
     @Autowired
+    private SearchController searchController;
+
+    @Autowired
     private SyncController syncController;
+
+    @Autowired
+    private AdminController adminController;
 
     @Test
     @DisplayName("Контекст приложения собирается полностью, без циклических зависимостей")
     void contextLoads() {
         assertNotNull(authService);
-        assertNotNull(entityService);
+        assertNotNull(passwordResetService);
+        assertNotNull(heroService);
+        assertNotNull(characterService);
+        assertNotNull(locationService);
+        assertNotNull(itemService);
         assertNotNull(retellingService);
         assertNotNull(syncService);
         assertNotNull(memberService);
         assertNotNull(inviteService);
         assertNotNull(campaignController);
-        assertNotNull(entityController);
+        assertNotNull(heroController);
+        assertNotNull(characterController);
+        assertNotNull(locationController);
+        assertNotNull(itemController);
         assertNotNull(inviteController);
+        assertNotNull(searchController);
         assertNotNull(syncController);
+        assertNotNull(adminController);
     }
 }

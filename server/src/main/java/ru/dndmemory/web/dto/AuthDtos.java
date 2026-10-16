@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import java.time.Instant;
 import java.util.UUID;
@@ -16,8 +17,15 @@ public final class AuthDtos {
     private AuthDtos() {
     }
 
+    /** Платформа, с которой пришёл клиент: у приложения сессия живёт год. */
+    public static final String PLATFORM_ANDROID = "android";
+
     @Data
     public static class RegisterRequest {
+        @NotBlank(message = "Укажите логин")
+        @Pattern(regexp = "[A-Za-z0-9_.\\-]{3,32}", message = "Логин: 3–32 символа из a–z, 0–9, _ . -")
+        private String login;
+
         @NotBlank(message = "Укажите почту")
         @Email(message = "Некорректная почта")
         private String email;
@@ -29,15 +37,23 @@ public final class AuthDtos {
         @NotBlank(message = "Укажите имя")
         @Size(max = 120, message = "Не длиннее 120 символов")
         private String displayName;
+
+        /** Токен приглашения из QR: пользователь сразу становится участником кампании. */
+        private String inviteToken;
+
+        /** android — долгая сессия (365 дней); иначе 30 дней. */
+        private String platform;
     }
 
     @Data
     public static class LoginRequest {
-        @NotBlank(message = "Укажите почту")
-        private String email;
+        @NotBlank(message = "Укажите логин")
+        private String login;
 
         @NotBlank(message = "Укажите пароль")
         private String password;
+
+        private String platform;
     }
 
     @Data
@@ -53,17 +69,20 @@ public final class AuthDtos {
     }
 
     @Data
-    public static class OAuthCallbackRequest {
-        @NotBlank(message = "Не передан код авторизации")
-        private String code;
+    public static class PasswordResetRequestDto {
+        @NotBlank(message = "Укажите почту")
+        @Email(message = "Некорректная почта")
+        private String email;
+    }
 
-        @NotBlank(message = "Не передан redirectUri")
-        private String redirectUri;
+    @Data
+    public static class PasswordResetConfirmRequest {
+        @NotBlank(message = "Не передан токен")
+        private String token;
 
-        private String state;
-
-        /** Нужен для VK ID: провайдер требует PKCE, код-верификатор генерирует клиент. */
-        private String codeVerifier;
+        @NotBlank(message = "Укажите новый пароль")
+        @Size(min = 8, max = 100, message = "Пароль от 8 до 100 символов")
+        private String newPassword;
     }
 
     @Data
@@ -73,10 +92,11 @@ public final class AuthDtos {
 
         private UUID avatarFileId;
 
-        /** Почта и телефон — контакты, по которым можно войти в веб-версию. */
+        /** Почта — контакт для восстановления пароля. */
         @Email(message = "Некорректная почта")
         private String email;
 
+        /** Телефон необязателен; пароль на него не сбрасывается. */
         private String phone;
     }
 
@@ -96,7 +116,9 @@ public final class AuthDtos {
     @AllArgsConstructor
     public static class UserDto {
         private UUID id;
+        private String login;
         private String email;
+        private boolean emailVerified;
         private String displayName;
         private String avatarUrl;
         private UUID avatarFileId;
@@ -104,7 +126,6 @@ public final class AuthDtos {
         /** Телефон в формате +7XXXXXXXXXX, если указан в профиле. */
         private String phone;
 
-        /** false у аккаунта, созданного по QR устройства: пароль ещё не задан. */
         private boolean hasPassword;
 
         private Instant createdAt;
@@ -119,23 +140,5 @@ public final class AuthDtos {
         private String accessToken;
         private String refreshToken;
         private long expiresIn;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ProviderDto {
-        private boolean enabled;
-        private String authorizeUrl;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ProvidersResponse {
-        private ProviderDto yandex;
-        private ProviderDto vk;
     }
 }

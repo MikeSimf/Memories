@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.dndmemory.domain.InviteMode;
 import ru.dndmemory.domain.MemberRole;
 
 import javax.validation.constraints.Max;
@@ -18,20 +17,18 @@ public final class InviteDtos {
     private InviteDtos() {
     }
 
+    /** Приглашение всегда одноразовое, поэтому {@code maxUses} в запросе больше нет. */
     @Data
     public static class CreateInviteRequest {
         @NotNull(message = "Укажите роль")
         private MemberRole role;
 
-        private UUID linkedEntityId;
+        /** Герой, к которому привяжется приглашённый. */
+        private UUID linkedHeroId;
 
         @Min(value = 1, message = "Минимум 1 час")
         @Max(value = 8760, message = "Максимум 8760 часов")
         private Integer expiresInHours;
-
-        @Min(value = 1, message = "Минимум 1 использование")
-        @Max(value = 1000, message = "Максимум 1000 использований")
-        private Integer maxUses;
     }
 
     @Data
@@ -45,18 +42,15 @@ public final class InviteDtos {
         private String deepLink;
         private String qrPngBase64;
         private MemberRole role;
-        /** MEMBER — приглашение человеку, DEVICE — QR для регистрации устройства. */
-        private InviteMode mode;
-        /** Имя, которое получит пользователь при регистрации устройства. */
-        private String displayName;
-        /** Подпись устройства: «Телефон Ани». */
-        private String label;
-        private UUID linkedEntityId;
-        private String linkedEntityName;
+        private UUID linkedHeroId;
+        private String linkedHeroName;
         private Instant expiresAt;
+        /** Всегда 1: приглашение одноразовое. */
         private int maxUses;
         private int uses;
         private boolean revoked;
+        /** false — приглашение погашено или просрочено. */
+        private boolean valid;
         private Instant createdAt;
     }
 
@@ -69,10 +63,8 @@ public final class InviteDtos {
         private UUID campaignId;
         private String campaignTitle;
         private MemberRole role;
-        private UUID linkedEntityId;
-        private String linkedEntityName;
-        private InviteMode mode;
-        private String displayName;
+        private UUID linkedHeroId;
+        private String linkedHeroName;
         private Instant expiresAt;
     }
 
@@ -85,6 +77,6 @@ public final class InviteDtos {
         private String campaignTitle;
         private UUID memberId;
         private MemberRole role;
-        private UUID linkedEntityId;
+        private UUID linkedHeroId;
     }
 }

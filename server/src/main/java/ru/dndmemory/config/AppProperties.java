@@ -15,9 +15,15 @@ public class AppProperties {
     private String publicUrl = "http://localhost:8080";
     private String filesDir = "/var/lib/dnd-memory/files";
     private List<String> corsOrigins = new ArrayList<>();
+
+    /**
+     * Токен админ-панели сброса пароля. Если не задан, {@code GET /api/admin/password-resets}
+     * отвечает 404 — отдельной роли администратора в проекте нет.
+     */
+    private String adminToken;
+
     private Retention retention = new Retention();
     private Jwt jwt = new Jwt();
-    private Oauth oauth = new Oauth();
 
     @Data
     public static class Retention {
@@ -29,38 +35,9 @@ public class AppProperties {
     public static class Jwt {
         private String secret;
         private int accessTokenMinutes = 15;
+        /** Веб-сессия: месяц. */
         private int refreshTokenDays = 30;
-        /** Сессия устройства живёт год: телефон не должен разлогиниваться. */
-        private int deviceRefreshTokenDays = 365;
-    }
-
-    @Data
-    public static class Oauth {
-        private Provider yandex = new Provider();
-        private Provider vk = new Provider();
-
-        public Provider byName(String name) {
-            if ("yandex".equalsIgnoreCase(name)) {
-                return yandex;
-            }
-            if ("vk".equalsIgnoreCase(name)) {
-                return vk;
-            }
-            return null;
-        }
-    }
-
-    @Data
-    public static class Provider {
-        private String clientId;
-        private String clientSecret;
-        private String authorizeUrl;
-        private String tokenUrl;
-        private String profileUrl;
-
-        public boolean isConfigured() {
-            return clientId != null && !clientId.trim().isEmpty()
-                    && clientSecret != null && !clientSecret.trim().isEmpty();
-        }
+        /** Сессия приложения: год, чтобы телефон не разлогинивался. */
+        private int androidRefreshTokenDays = 365;
     }
 }

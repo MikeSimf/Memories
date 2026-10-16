@@ -46,8 +46,8 @@ public class SecurityConfig {
                 .authorizeRequests()
                 .antMatchers("/api/auth/**", "/api/health", "/api/version").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/invites/*").permitAll()
-                // Регистрация устройства: пропуск — сам токен из QR-кода
-                .antMatchers(HttpMethod.POST, "/api/devices/enroll").permitAll()
+                // Админ-панель сброса пароля: пропускаем запрос, доступ проверяет X-Admin-Token
+                .antMatchers(HttpMethod.GET, "/api/admin/password-resets").permitAll()
                 .antMatchers("/api/**").authenticated()
                 .anyRequest().permitAll().and()
                 .exceptionHandling()
@@ -77,7 +77,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(properties.getCorsOrigins());
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "If-Match", "X-Request-Id"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "If-Match",
+                "X-Request-Id", "X-Admin-Token"));
         configuration.setExposedHeaders(List.of("X-Request-Id"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);

@@ -13,7 +13,7 @@ import javax.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Участник кампании: роль плюс необязательная связь с героем. */
+/** Участник кампании: роль плюс необязательная привязка к герою (герой — отдельная таблица). */
 @Entity
 @Table(name = "members")
 @Getter
@@ -35,8 +35,8 @@ public class Member {
     @Column(nullable = false, length = 20)
     private MemberRole role;
 
-    @Column(name = "linked_entity_id")
-    private UUID linkedEntityId;
+    @Column(name = "linked_hero_id")
+    private UUID linkedHeroId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -52,7 +52,7 @@ public class Member {
         return role == MemberRole.OWNER;
     }
 
-    public boolean canEditAnything() {
+    public boolean canEditObjects() {
         return role == MemberRole.OWNER || role == MemberRole.EDITOR_MASTER || role == MemberRole.EDITOR_HERO;
     }
 }

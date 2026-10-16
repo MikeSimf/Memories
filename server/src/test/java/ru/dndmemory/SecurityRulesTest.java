@@ -12,13 +12,13 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 /**
- * Правила доступа к API. Проверяем главное: без токена открыты ровно вход,
- * health и регистрация устройства — и ничего больше.
+ * Правила доступа к API. Без токена открыты ровно вход (с регистрацией и сбросом
+ * пароля), health, версия, предпросмотр приглашения и админ-эндпоинт сброса
+ * (его защищает заголовок X-Admin-Token, а не сессия) — и больше ничего.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -50,19 +50,6 @@ class SecurityRulesTest {
     }
 
     @Test
-    @DisplayName("Регистрация устройства доступна без токена: пропуск — сам код из QR")
-    void enrollIsOpenWithoutToken() throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/devices/enroll")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"token\":\"AAAAAAAA\",\"platform\":\"android\"}"))
-                .andReturn();
-        // Дальше сервер ответит «приглашение недействительно» или ошибкой базы,
-        // но авторизация не должна требоваться
-        assertNotEquals(401, status(result), "регистрация устройства не должна требовать вход");
-        assertNotEquals(403, status(result));
-    }
-
-    @Test
     @DisplayName("Health и версия открыты: по ним проверяют живость сервиса")
     void healthIsOpen() throws Exception {
         assertEquals(200, status(mockMvc.perform(get("/api/health")).andReturn()));
@@ -70,32 +57,53 @@ class SecurityRulesTest {
     }
 
     @Test
-    @DisplayName("Вход и регистрация открыты, но проверяют тело запроса")
+    @DisplayName("Вход, регистрация и сброс пароля открыты, но проверяют тело запроса")
     void authEndpointsAreOpen() throws Exception {
         assertEquals(400, status(mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn()));
         assertEquals(400, status(mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn()));
+        assertEquals(400, status(mockMvc.perform(post("/api/auth/password-reset/request")
+                .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn()));
+        assertEquals(400, status(mockMvc.perform(post("/api/auth/password-reset/confirm")
+                .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn()));
     }
 
     @Test
-    @DisplayName("Всё остальное без токена закрыто")
-    void everythingElseRequiresToken() throws Exception {
+    @DisplayName("Провайдеров больше нет: эндпоинты OAuth удалены")
+    void oauthEndpointsAreGone() throws Exception {
+        // /api/auth/** открыт, но обработчика нет — значит 404, а не вход через провайдера
+        assertEquals(404, status(mockMvc.perform(get("/api/auth/providers")).andReturn()));
+        assertEquals(404, status(mockMvc.perform(get("/api/auth/oauth/yandex/authorize")
+                .param("redirectUri", "dndmemory://oauth")).andReturn()));
+    }
+
+    @Test
+    @DisplayName("Все четыре набора объектов без токена закрыты")
+    void objectEndpointsRequireToken() throws Exception {
         assertEquals(401, status(mockMvc.perform(get("/api/me")).andReturn()));
         assertEquals(401, status(mockMvc.perform(get("/api/campaigns")).andReturn()));
+        assertEquals(401, status(mockMvc.perform(get("/api/campaigns/" + UUID + "/heroes")).andReturn()));
+        assertEquals(401, status(mockMvc.perform(get("/api/campaigns/" + UUID + "/characters")).andReturn()));
+        assertEquals(401, status(mockMvc.perform(get("/api/campaigns/" + UUID + "/locations")).andReturn()));
+        assertEquals(401, status(mockMvc.perform(get("/api/campaigns/" + UUID + "/items")).andReturn()));
+        assertEquals(401, status(mockMvc.perform(get("/api/campaigns/" + UUID + "/search")
+                .param("q", "лира")).andReturn()));
+        // старый общий /entities удалён вместе с EntityController
         assertEquals(401, status(mockMvc.perform(get("/api/campaigns/" + UUID + "/entities")).andReturn()));
-        // список устройств кампании виден только авторизованному участнику
-        assertEquals(401, status(mockMvc.perform(get("/api/campaigns/" + UUID + "/devices")).andReturn()));
-        assertEquals(401, status(mockMvc.perform(post("/api/campaigns/" + UUID + "/devices/enrollments")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"displayName\":\"Аня\",\"role\":\"VIEWER\"}")).andReturn()));
-        assertEquals(401, status(mockMvc.perform(delete("/api/campaigns/" + UUID + "/devices/" + UUID))
-                .andReturn()));
     }
 
     @Test
     @DisplayName("Предпросмотр приглашения открыт — страница /join работает до входа")
     void invitePreviewIsOpen() throws Exception {
         assertNotEquals(401, status(mockMvc.perform(get("/api/invites/AAAAAAAA")).andReturn()));
+    }
+
+    @Test
+    @DisplayName("Админ-панель сброса пароля без DND_ADMIN_TOKEN не существует")
+    void adminPanelIsAbsentWithoutToken() throws Exception {
+        assertEquals(404, status(mockMvc.perform(get("/api/admin/password-resets")).andReturn()));
+        assertEquals(404, status(mockMvc.perform(get("/api/admin/password-resets")
+                .header("X-Admin-Token", "whatever")).andReturn()));
     }
 }

@@ -3,27 +3,31 @@ package ru.dndmemory.repo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import ru.dndmemory.domain.EntityType;
-import ru.dndmemory.domain.GameEntity;
+import org.springframework.data.repository.NoRepositoryBean;
+import ru.dndmemory.domain.ImageExtender;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface GameEntityRepository extends JpaRepository<GameEntity, UUID> {
+/**
+ * Общие запросы всех четырёх классов справочника. Конкретные репозитории объявляют
+ * тип: {@code HeroRepository extends GameEntityRepository<Hero>} — так Spring Data
+ * разрешает параметр в листовой класс.
+ *
+ * <p>Поиска «по ключу сопоставления» здесь нет намеренно: ключ вычисляется методом
+ * самого класса, поэтому кандидаты берутся списком кампании.</p>
+ */
+@NoRepositoryBean
+public interface GameEntityRepository<T extends ImageExtender> extends JpaRepository<T, UUID> {
 
-    Optional<GameEntity> findByIdAndCampaignId(UUID id, UUID campaignId);
+    Optional<T> findByIdAndCampaignId(UUID id, UUID campaignId);
 
-    Optional<GameEntity> findByCampaignIdAndClientId(UUID campaignId, UUID clientId);
+    List<T> findAllByCampaignIdAndDeletedFalseOrderByNameAsc(UUID campaignId);
 
-    List<GameEntity> findAllByCampaignIdAndDeletedFalseOrderByNameAsc(UUID campaignId);
+    List<T> findAllByCampaignIdAndDeletedFalse(UUID campaignId);
 
-    List<GameEntity> findAllByCampaignIdAndDeletedFalseAndTypeOrderByNameAsc(UUID campaignId, EntityType type);
-
-    List<GameEntity> findAllByCampaignIdAndIdIn(UUID campaignId, Collection<UUID> ids);
-
-    Page<GameEntity> findAllByCampaignIdAndDeletedFalse(UUID campaignId, Pageable pageable);
+    Page<T> findAllByCampaignIdAndDeletedFalse(UUID campaignId, Pageable pageable);
 
     long countByCampaignIdAndDeletedFalse(UUID campaignId);
 }

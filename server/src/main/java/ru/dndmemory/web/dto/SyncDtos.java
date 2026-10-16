@@ -38,7 +38,7 @@ public final class SyncDtos {
 
         private Long baseRevision;
 
-        /** Полное состояние объекта (для DELETE достаточно id/updatedAt). */
+        /** Полное состояние объекта в форме DTO своего класса (для DELETE достаточно id/updatedAt). */
         private JsonNode payload;
     }
 
@@ -55,6 +55,7 @@ public final class SyncDtos {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ConflictInfoDto {
+        /** matched_by_name, matched_by_name_and_race, stale_base, client_wins, forbidden, ... */
         private String reason;
         private Long serverRevision;
         private JsonNode server;
@@ -68,6 +69,7 @@ public final class SyncDtos {
         private String clientChangeId;
         private UUID objectId;
         private Long revision;
+        /** APPLIED, CONFLICT_RESOLVED или REJECTED. */
         private String status;
         private ConflictInfoDto conflict;
     }
@@ -107,6 +109,10 @@ public final class SyncDtos {
         private List<ChangeDto> changes;
     }
 
+    /**
+     * Полная выгрузка кампании. Страницы идут по порядку классов: герои, персонажи,
+     * локации, предметы, пересказы. {@code nextCursor} — позиция следующей страницы.
+     */
     @Data
     @Builder
     @NoArgsConstructor
@@ -115,7 +121,10 @@ public final class SyncDtos {
         private long latestRevision;
         private String nextCursor;
         private CampaignDtos.CampaignDetailDto campaign;
-        private List<EntityDtos.EntityDto> entities;
+        private List<HeroDtos.HeroDto> heroes;
+        private List<CharacterDtos.CharacterDto> characters;
+        private List<LocationDtos.LocationDto> locations;
+        private List<ItemDtos.ItemDto> items;
         private List<RetellingDtos.RetellingDto> retellings;
         private List<CampaignDtos.MemberDto> members;
     }
@@ -127,7 +136,12 @@ public final class SyncDtos {
     public static class SyncStateDto {
         private long latestRevision;
         private Long minRetainedRevision;
+        /** Сумма объектов всех четырёх классов. */
         private long entityCount;
+        private long heroCount;
+        private long characterCount;
+        private long locationCount;
+        private long itemCount;
         private long retellingCount;
         private long memberCount;
         private long pendingConflicts;

@@ -5,22 +5,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.dndmemory.domain.Campaign;
 import ru.dndmemory.domain.ChangeOp;
-import ru.dndmemory.domain.GameEntity;
 import ru.dndmemory.domain.Member;
 import ru.dndmemory.domain.ObjectType;
 import ru.dndmemory.domain.Retelling;
 import ru.dndmemory.domain.RetellingStatus;
 import ru.dndmemory.repo.CampaignRepository;
-import ru.dndmemory.repo.GameEntityRepository;
 import ru.dndmemory.repo.RetellingRepository;
 import ru.dndmemory.repo.UserRepository;
 import ru.dndmemory.security.PermissionService;
 import ru.dndmemory.security.Permissions;
 import ru.dndmemory.web.ApiException;
+import ru.dndmemory.web.dto.LinkDto;
 import ru.dndmemory.web.dto.RetellingDtos;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -28,34 +29,38 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Пересказы сессий. Ссылки {@code [[Имя]]} разрешаются по всем четырём классам
+ * справочника, поэтому имена берутся из общего индекса кампании.
+ */
 @Service
 @RequiredArgsConstructor
 public class RetellingService {
 
     private final RetellingRepository retellingRepository;
     private final CampaignRepository campaignRepository;
-    private final GameEntityRepository entityRepository;
     private final UserRepository userRepository;
     private final PermissionService permissionService;
-    private final EntityService entityService;
+    private final ObjectIndexService objectIndexService;
     private final ChangeRecorder changeRecorder;
     private final DtoMapper dtoMapper;
 
     @Transactional(readOnly = true)
     public List<RetellingDtos.RetellingDto> list(UUID campaignId, UUID userId, String query, UUID authorEntityId) {
         permissionService.requireMember(campaignId, userId);
-        Map<String, UUID> index = entityService.nameIndex(campaignId);
-        Map<UUID, String> userNames = userNames(campaignId);
+        ObjectIndexService.ObjectContext context = objectIndexService.context(campaignId);
+        List<Retelling> retellings = retellingRepository
+                .findAllByCampaignIdAndDeletedFalseOrderByCreatedAtDesc(campaignId);
+        Map<UUID, String> userNames = userNames(retellings);
         List<RetellingDtos.RetellingDto> result = new ArrayList<>();
-        for (Retelling retelling : retellingRepository
-                .findAllByCampaignIdAndDeletedFalseOrderByCreatedAtDesc(campaignId)) {
+        for (Retelling retelling : retellings) {
             if (authorEntityId != null && !authorEntityId.equals(retelling.getAuthorEntityId())) {
                 continue;
             }
             if (query != null && !query.trim().isEmpty() && !matches(retelling, query)) {
                 continue;
             }
-            result.add(toDto(retelling, index, userNames));
+            result.add(toDto(retelling, context, userNames));
         }
         return result;
     }
@@ -64,7 +69,8 @@ public class RetellingService {
     public RetellingDtos.RetellingDto get(UUID campaignId, UUID retellingId, UUID userId) {
         permissionService.requireMember(campaignId, userId);
         Retelling retelling = require(campaignId, retellingId);
-        return toDto(retelling, entityService.nameIndex(campaignId), userNames(campaignId));
+        return toDto(retelling, objectIndexService.context(campaignId),
+                userNames(Collections.singletonList(retelling)));
     }
 
     @Transactional
@@ -97,8 +103,10 @@ public class RetellingService {
         retelling.setRevision(campaign.getRevision() + 1);
         retellingRepository.save(retelling);
 
-        RetellingDtos.RetellingDto dto = toDto(retelling, entityService.nameIndex(campaignId), userNames(campaignId));
-        changeRecorder.record(campaign, ObjectType.RETELLING, retelling.getId(), ChangeOp.UPSERT, dto, userId, null, null);
+        RetellingDtos.RetellingDto dto = toDto(retelling, objectIndexService.context(campaignId),
+                userNames(Collections.singletonList(retelling)));
+        changeRecorder.record(campaign, ObjectType.RETELLING, retelling.getId(), ChangeOp.UPSERT, dto,
+                userId, null, null);
         return dto;
     }
 
@@ -129,8 +137,10 @@ public class RetellingService {
         retelling.setRevision(campaign.getRevision() + 1);
         retellingRepository.save(retelling);
 
-        RetellingDtos.RetellingDto dto = toDto(retelling, entityService.nameIndex(campaignId), userNames(campaignId));
-        changeRecorder.record(campaign, ObjectType.RETELLING, retelling.getId(), ChangeOp.UPSERT, dto, userId, null, null);
+        RetellingDtos.RetellingDto dto = toDto(retelling, objectIndexService.context(campaignId),
+                userNames(Collections.singletonList(retelling)));
+        changeRecorder.record(campaign, ObjectType.RETELLING, retelling.getId(), ChangeOp.UPSERT, dto,
+                userId, null, null);
         return dto;
     }
 
@@ -147,7 +157,7 @@ public class RetellingService {
         retelling.setRevision(campaign.getRevision() + 1);
         retellingRepository.save(retelling);
         changeRecorder.record(campaign, ObjectType.RETELLING, retelling.getId(), ChangeOp.DELETE,
-                entityService.tombstone(retelling.getId(), ObjectType.RETELLING,
+                changeRecorder.tombstone(retelling.getId(), ObjectType.RETELLING,
                         retelling.getRevision(), retelling.getUpdatedAt()),
                 userId, null, null);
     }
@@ -167,6 +177,31 @@ public class RetellingService {
         permissionService.require(member, Permissions.RETELLING_PUBLISH);
     }
 
+    public RetellingDtos.RetellingDto toDto(Retelling retelling, ObjectIndexService.ObjectContext context,
+                                            Map<UUID, String> userNames) {
+        List<LinkDto> links = objectIndexService.links(context, retelling.getBody());
+        return dtoMapper.toRetelling(retelling, links, userNames, context.nameOf(retelling.getAuthorEntityId()));
+    }
+
+    /** Имена авторов правок всех пересказов кампании. */
+    @Transactional(readOnly = true)
+    public Map<UUID, String> userNames(UUID campaignId) {
+        return userNames(retellingRepository.findAllByCampaignIdAndDeletedFalseOrderByCreatedAtDesc(campaignId));
+    }
+
+    private Map<UUID, String> userNames(List<Retelling> retellings) {
+        Set<UUID> ids = new HashSet<>();
+        for (Retelling retelling : retellings) {
+            ids.add(retelling.getCreatedBy());
+            ids.add(retelling.getUpdatedBy());
+        }
+        Map<UUID, String> names = new HashMap<>();
+        if (!ids.isEmpty()) {
+            userRepository.findAllById(ids).forEach(user -> names.put(user.getId(), user.getDisplayName()));
+        }
+        return names;
+    }
+
     private void rejectDraft(RetellingStatus status) {
         if (status == RetellingStatus.DRAFT) {
             throw ApiException.draftNotSynced();
@@ -180,27 +215,5 @@ public class RetellingService {
 
     private boolean contains(String value, String query) {
         return value != null && value.toLowerCase(Locale.ROOT).contains(query);
-    }
-
-    private RetellingDtos.RetellingDto toDto(Retelling retelling, Map<String, UUID> index,
-                                             Map<UUID, String> userNames) {
-        String authorName = retelling.getAuthorEntityId() == null ? null
-                : entityRepository.findById(retelling.getAuthorEntityId()).map(GameEntity::getName).orElse(null);
-        return dtoMapper.toRetelling(retelling, index, userNames, authorName);
-    }
-
-    @Transactional(readOnly = true)
-    public Map<UUID, String> userNames(UUID campaignId) {
-        List<Retelling> retellings = retellingRepository.findAllByCampaignIdAndDeletedFalseOrderByCreatedAtDesc(campaignId);
-        Set<UUID> ids = new HashSet<>();
-        for (Retelling retelling : retellings) {
-            ids.add(retelling.getCreatedBy());
-            ids.add(retelling.getUpdatedBy());
-        }
-        Map<UUID, String> names = new java.util.HashMap<>();
-        if (!ids.isEmpty()) {
-            userRepository.findAllById(ids).forEach(user -> names.put(user.getId(), user.getDisplayName()));
-        }
-        return names;
     }
 }

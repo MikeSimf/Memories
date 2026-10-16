@@ -9,9 +9,13 @@ import ru.dndmemory.domain.Member;
 import ru.dndmemory.domain.MemberRole;
 import ru.dndmemory.domain.MemberStatus;
 import ru.dndmemory.domain.ObjectType;
+import ru.dndmemory.domain.Retelling;
 import ru.dndmemory.domain.User;
 import ru.dndmemory.repo.CampaignRepository;
-import ru.dndmemory.repo.GameEntityRepository;
+import ru.dndmemory.repo.CharacterRepository;
+import ru.dndmemory.repo.HeroRepository;
+import ru.dndmemory.repo.ItemRepository;
+import ru.dndmemory.repo.LocationRepository;
 import ru.dndmemory.repo.MemberRepository;
 import ru.dndmemory.repo.RetellingRepository;
 import ru.dndmemory.repo.UserRepository;
@@ -24,12 +28,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,12 +41,16 @@ public class CampaignService {
 
     private final CampaignRepository campaignRepository;
     private final MemberRepository memberRepository;
-    private final GameEntityRepository entityRepository;
+    private final HeroRepository heroRepository;
+    private final CharacterRepository characterRepository;
+    private final LocationRepository locationRepository;
+    private final ItemRepository itemRepository;
     private final RetellingRepository retellingRepository;
     private final UserRepository userRepository;
     private final PermissionService permissionService;
     private final ChangeRecorder changeRecorder;
     private final DtoMapper dtoMapper;
+    private final ObjectIndexService objectIndexService;
 
     @Transactional(readOnly = true)
     public List<CampaignDtos.CampaignSummaryDto> list(UUID userId) {
@@ -61,7 +69,7 @@ public class CampaignService {
         for (Campaign campaign : campaigns) {
             result.add(dtoMapper.toCampaignSummary(campaign, membership.get(campaign.getId()),
                     memberRepository.countByCampaignId(campaign.getId()),
-                    entityRepository.countByCampaignIdAndDeletedFalse(campaign.getId()),
+                    entityCount(campaign.getId()),
                     retellingRepository.countByCampaignIdAndDeletedFalse(campaign.getId())));
         }
         return result;
@@ -137,12 +145,16 @@ public class CampaignService {
                 .orElseThrow(() -> ApiException.notFound("Кампания"));
     }
 
+    /** Карточка кампании: счётчики, краткий список участников и краткий список пересказов. */
     public CampaignDtos.CampaignDetailDto detail(Campaign campaign, Member member) {
         Set<String> permissions = permissionService.permissionSet(member);
+        ObjectIndexService.ObjectContext context = objectIndexService.context(campaign.getId());
         return dtoMapper.toCampaignDetail(campaign, member, permissions,
                 memberRepository.countByCampaignId(campaign.getId()),
-                entityRepository.countByCampaignIdAndDeletedFalse(campaign.getId()),
-                retellingRepository.countByCampaignIdAndDeletedFalse(campaign.getId()));
+                entityCount(campaign.getId()),
+                retellingRepository.countByCampaignIdAndDeletedFalse(campaign.getId()),
+                memberDtos(campaign.getId(), context),
+                retellingBriefs(campaign.getId()));
     }
 
     public Map<String, Object> campaignPayload(Campaign campaign) {
@@ -156,11 +168,55 @@ public class CampaignService {
         return payload;
     }
 
+    /** Участники кампании кратким списком для карточки. */
+    @Transactional(readOnly = true)
+    public List<CampaignDtos.MemberDto> memberDtos(UUID campaignId, ObjectIndexService.ObjectContext context) {
+        List<Member> members = memberRepository.findAllByCampaignIdOrderByCreatedAtAsc(campaignId);
+        Set<UUID> userIds = new HashSet<>();
+        members.forEach(m -> userIds.add(m.getUserId()));
+        Map<UUID, User> users = new HashMap<>();
+        if (!userIds.isEmpty()) {
+            userRepository.findAllById(userIds).forEach(user -> users.put(user.getId(), user));
+        }
+        List<CampaignDtos.MemberDto> result = new ArrayList<>();
+        for (Member member : members) {
+            result.add(dtoMapper.toMember(member, users.get(member.getUserId()),
+                    context.nameOf(member.getLinkedHeroId())));
+        }
+        return result;
+    }
+
+    /** Пересказы кратким списком: полный текст в карточке кампании не нужен. */
+    @Transactional(readOnly = true)
+    public List<CampaignDtos.RetellingBriefDto> retellingBriefs(UUID campaignId) {
+        List<CampaignDtos.RetellingBriefDto> result = new ArrayList<>();
+        for (Retelling retelling : retellingRepository
+                .findAllByCampaignIdAndDeletedFalseOrderByCreatedAtDesc(campaignId)) {
+            result.add(CampaignDtos.RetellingBriefDto.builder()
+                    .id(retelling.getId())
+                    .title(retelling.getTitle())
+                    .sessionDate(retelling.getSessionDate())
+                    .revision(retelling.getRevision())
+                    .updatedAt(retelling.getUpdatedAt())
+                    .build());
+        }
+        return result;
+    }
+
+    /** Сколько всего объектов четырёх классов в кампании. */
+    public long entityCount(UUID campaignId) {
+        return heroRepository.countByCampaignIdAndDeletedFalse(campaignId)
+                + characterRepository.countByCampaignIdAndDeletedFalse(campaignId)
+                + locationRepository.countByCampaignIdAndDeletedFalse(campaignId)
+                + itemRepository.countByCampaignIdAndDeletedFalse(campaignId);
+    }
+
     @Transactional(readOnly = true)
     public Map<UUID, String> memberNames(UUID campaignId) {
         Map<UUID, String> names = new HashMap<>();
         List<Member> members = memberRepository.findAllByCampaignIdOrderByCreatedAtAsc(campaignId);
-        List<UUID> userIds = members.stream().map(Member::getUserId).collect(Collectors.toList());
+        List<UUID> userIds = new ArrayList<>();
+        members.forEach(member -> userIds.add(member.getUserId()));
         if (!userIds.isEmpty()) {
             for (User user : userRepository.findAllById(userIds)) {
                 names.put(user.getId(), user.getDisplayName());
@@ -168,5 +224,4 @@ public class CampaignService {
         }
         return names;
     }
-
 }
