@@ -30,6 +30,12 @@ java -jar target/dnd-memory-server.jar
 
 Проверка: `curl http://localhost:8080/api/health` → `{"status":"UP", ...}`.
 
+## Запуск на сервере без Docker
+
+Готовый шаблон настроек — [`application.example.yml`](application.example.yml), юнит
+systemd — [`scripts/dnd-memory.service`](../scripts/dnd-memory.service), пошаговая
+инструкция — [`docs/run-without-docker.md`](../docs/run-without-docker.md).
+
 ## Если у вас рабочее зеркало Maven
 
 Если в `~/.m2/settings.xml` прописано рабочее зеркало (обычно с `<mirrorOf>*</mirrorOf>`),

@@ -1,0 +1,33 @@
+# Юнит systemd для запуска сервера без Docker.
+#
+#   sudo cp scripts/dnd-memory.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now dnd-memory
+#   systemctl status dnd-memory
+#   journalctl -u dnd-memory -f
+#
+# Предполагается: jar лежит в /opt/dnd-memory/dnd-memory-server.jar, рядом
+# application.yml с настройками, есть системный пользователь dnd и каталог файлов.
+[Unit]
+Description=DnD Memory server
+Documentation=https://github.com/MikeSimf/Memories
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=dnd
+Group=dnd
+WorkingDirectory=/opt/dnd-memory
+# -Dfile.encoding=UTF-8 нужен, чтобы русский текст в логах не превращался в знаки вопроса
+ExecStart=/usr/bin/java -Dfile.encoding=UTF-8 -Xmx768m -jar /opt/dnd-memory/dnd-memory-server.jar
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=143
+NoNewPrivileges=true
+PrivateTmp=true
+# Настройки можно задавать и здесь, вместо application.yml:
+# EnvironmentFile=-/etc/dnd-memory.env
+
+[Install]
+WantedBy=multi-user.target
