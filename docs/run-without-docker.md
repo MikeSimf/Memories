@@ -20,13 +20,49 @@ Jar — это **сервер приложений**: он отдаёт API по
 
 ## Шаг 1. База данных
 
+Сначала убедитесь, что вы работаете с тем же PostgreSQL, к которому подключается
+приложение: `sudo -u postgres psql` идёт через unix-сокет и может попасть в другой
+кластер (особенно если PostgreSQL поднят в Docker).
+
 ```bash
-sudo -u postgres psql -c "CREATE USER dnd WITH PASSWORD 'придумайте-пароль';"
-sudo -u postgres psql -c "CREATE DATABASE dnd OWNER dnd;"
+sudo ss -ltnp | grep 5432                       # кто слушает порт: postgres или docker-proxy
+sudo -u postgres psql -c "select current_setting('port'), current_setting('data_directory');"
+sudo -u postgres psql -c "\l"                   # какие базы есть в этом кластере
+sudo -u postgres psql -c "\du"                  # какие роли есть
+```
+
+Дальше — идемпотентная настройка (можно запускать повторно, ничего не сломается):
+
+```bash
+# роль: создаётся, если её нет, иначе просто задаётся пароль
+sudo -u postgres psql <<SQL
+DO \$\$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'dnd') THEN
+    CREATE ROLE dnd LOGIN PASSWORD 'придумайте-пароль';
+  ELSE
+    ALTER ROLE dnd WITH LOGIN PASSWORD 'придумайте-пароль';
+  END IF;
+END \$\$;
+SQL
+
+# база: создаётся, только если её ещё нет
+sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='dnd'" | grep -q 1 \
+  || sudo -u postgres psql -c "CREATE DATABASE dnd OWNER dnd;"
+```
+
+Проверка ровно тем же способом, что и у приложения — по TCP с паролем:
+
+```bash
+PGPASSWORD=придумайте-пароль psql -h 127.0.0.1 -p 5432 -U dnd -d dnd -c "select current_user, current_database();"
 ```
 
 Таблицы создаст сам сервер при первом запуске (Flyway, миграции V1–V3). Проверено на
 PostgreSQL 15.19: `Successfully applied 3 migrations`.
+
+**Порядок проверок в PostgreSQL** (проверено): сначала аутентификация, потом наличие
+базы. Поэтому при неверном пароле и отсутствующей базе вы увидите именно
+`password authentication failed` — а про базу узнаете только после того, как пароль
+подойдёт (`database "dnd" does not exist`, SQLState `3D000`).
 
 ## Шаг 2. Настройки
 
