@@ -28,6 +28,17 @@ public class ChangeRecorder {
 
     public long record(Campaign campaign, ObjectType objectType, UUID objectId, ChangeOp op, Object payload,
                        UUID actorUserId, String clientChangeId, String deviceId) {
+        return record(campaign, objectType, objectId, op, () -> payload, actorUserId, clientChangeId, deviceId);
+    }
+
+    /**
+     * Вариант с отложенным payload: он собирается ПОСЛЕ увеличения ревизии, поэтому
+     * в запись журнала попадает уже новое значение (иначе, например, payload кампании
+     * содержал бы revision предыдущего изменения).
+     */
+    public long record(Campaign campaign, ObjectType objectType, UUID objectId, ChangeOp op,
+                       java.util.function.Supplier<Object> payload, UUID actorUserId,
+                       String clientChangeId, String deviceId) {
         long revision = campaign.getRevision() + 1;
         campaign.setRevision(revision);
         campaign.touch();
@@ -39,7 +50,7 @@ public class ChangeRecorder {
         entry.setObjectType(objectType);
         entry.setObjectId(objectId);
         entry.setOp(op);
-        entry.setPayload(toJson(payload));
+        entry.setPayload(toJson(payload.get()));
         entry.setActorUserId(actorUserId);
         entry.setClientChangeId(clientChangeId);
         entry.setDeviceId(deviceId);

@@ -305,8 +305,11 @@ public abstract class AbstractObjectService<
                                 .build());
             }
             status = "CONFLICT_RESOLVED";
-            matchReason = "client_wins";
-            conflictRecorder.record(campaign, userId, change, "client_wins", serverPayload(server, campaign.getId()));
+            // Объект мог быть найден по ключу сопоставления (то есть дубль не создан) —
+            // эта причина важнее и не должна теряться. Запись в журнал делается ниже, один раз.
+            if (matchReason == null) {
+                matchReason = "client_wins";
+            }
         }
 
         applyPayload(server, payload);

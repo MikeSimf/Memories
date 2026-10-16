@@ -84,7 +84,10 @@ public class CampaignService {
         campaign.setOwnerUserId(userId);
         campaign.setCreatedAt(Instant.now());
         campaign.setUpdatedAt(Instant.now());
-        campaignRepository.save(campaign);
+        // ВАЖНО: у сущности уже задан @Id, поэтому Spring Data вызывает merge и возвращает
+        // УПРАВЛЯЕМУЮ копию. Исходный объект остаётся отсоединённым, и правки после save()
+        // (в частности увеличение revision в ChangeRecorder) до базы не доходят.
+        campaign = campaignRepository.save(campaign);
 
         Member owner = new Member();
         owner.setId(UUID.randomUUID());
@@ -94,12 +97,14 @@ public class CampaignService {
         owner.setStatus(MemberStatus.ACTIVE);
         owner.setCreatedAt(Instant.now());
         owner.setUpdatedAt(Instant.now());
-        memberRepository.save(owner);
+        owner = memberRepository.save(owner);
 
-        changeRecorder.record(campaign, ObjectType.CAMPAIGN, campaign.getId(), ChangeOp.UPSERT,
-                campaignPayload(campaign), userId, null, null);
+        // ссылка нужна финальной: payload для журнала собирается в лямбде
+        Campaign created = campaign;
+        changeRecorder.record(created, ObjectType.CAMPAIGN, created.getId(), ChangeOp.UPSERT,
+                () -> campaignPayload(created), userId, null, null);
 
-        return detail(campaign, owner);
+        return detail(created, owner);
     }
 
     @Transactional(readOnly = true)
@@ -123,7 +128,7 @@ public class CampaignService {
         }
         campaign.setUpdatedAt(Instant.now());
         changeRecorder.record(campaign, ObjectType.CAMPAIGN, campaign.getId(), ChangeOp.UPSERT,
-                campaignPayload(campaign), userId, null, null);
+                () -> campaignPayload(campaign), userId, null, null);
         return detail(campaign, member);
     }
 
