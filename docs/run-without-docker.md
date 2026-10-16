@@ -137,42 +137,61 @@ journalctl -u dnd-memory -f          # логи
 
 ### Пароль к базе не подходит
 
-Ошибка `FATAL: password authentication failed for user "dnd"` означает, что роль есть,
-но пароль другой (если бы роли не было, текст был бы `role "dnd" does not exist`).
-Проверяйте **тем же способом, каким подключается приложение** — по TCP с паролем:
+Важная тонкость, проверенная на PostgreSQL 15.19: сервер отвечает
+`FATAL: password authentication failed for user "…"` (SQLState `28P01`) **и когда пароль
+неверный, и когда такой роли в базе вообще нет** — намеренно, чтобы нельзя было
+подбирать имена пользователей. Поэтому сначала убеждаемся, что роль есть, и только
+потом разбираемся с паролем.
 
 ```bash
-PGPASSWORD=masterkey psql -h 127.0.0.1 -p 5432 -U dnd -d dnd -c "select current_user, current_database();"
+# 1. Кто слушает 5432 и где живёт этот PostgreSQL
+sudo ss -ltnp | grep 5432
+
+# 2. Есть ли роль и база (через unix-сокет, от суперпользователя)
+sudo -u postgres psql -c "SELECT rolname, rolcanlogin FROM pg_roles WHERE rolname='dnd';"
+sudo -u postgres psql -c "SELECT datname FROM pg_database WHERE datname='dnd';"
+
+# 3. Роли нет — создать; есть — задать пароль заново
+sudo -u postgres psql -c "CREATE ROLE dnd LOGIN PASSWORD 'masterkey';"
+sudo -u postgres psql -c "ALTER ROLE dnd WITH LOGIN PASSWORD 'masterkey';"
+sudo -u postgres psql -c "ALTER DATABASE dnd OWNER TO dnd;"
+
+# 4. Проверить ровно так, как подключается приложение: по TCP и с паролем
+PGPASSWORD=masterkey psql -h 127.0.0.1 -p 5432 -U dnd -d dnd -c "select current_user;"
 ```
 
-* **Та же ошибка** → пароль в базе другой или вы попали в другой кластер. Задайте пароль заново
-  (команда `sudo -u postgres psql` идёт через unix-сокет — убедитесь, что это тот же сервер,
-  что слушает 5432):
+**Быстро развести две причины.** Передайте пароль переменной окружения — она перекрывает
+файл настроек (проверено: с верным паролем в переменной приложение стартует, даже когда
+в `application.yml` записан неверный):
 
-  ```bash
-  sudo -u postgres psql -c "\du"                                     # какие роли есть
-  sudo -u postgres psql -c "ALTER ROLE dnd WITH LOGIN PASSWORD 'masterkey';"
-  sudo -u postgres psql -c "ALTER DATABASE dnd OWNER TO dnd;"
-  ```
+```bash
+SPRING_DATASOURCE_PASSWORD='masterkey' java -Dfile.encoding=UTF-8 -jar dnd-memory-server.jar
+```
 
-  Если `role "dnd" does not exist` — создайте: `CREATE ROLE dnd LOGIN PASSWORD 'masterkey';`
+Стартовало → правьте строку пароля в `application.yml` (лишний символ, неразрывный
+пробел после копирования, кавычки). Не стартовало → дело в базе, возвращайтесь к шагам 2–3.
 
-* **Команда прошла, а приложение всё равно падает** → в строке пароля в `application.yml`
-  лишний символ: пробел в конце, неразрывный пробел после копирования или кавычки.
-  Пароль без спецсимволов пишется без кавычек, со спецсимволами — в двойных:
-  `password: "p@ss:word"`.
+**Если PostgreSQL в Docker.** Тогда `ss` покажет `docker-proxy`, а не `postgres`, и
+`sudo -u postgres psql` попадёт в **другой** сервер — вы поменяете пароль не там, где
+нужно. Команды выполняйте внутри контейнера:
 
-* **Проверить, нет ли второго кластера** на том же порту (частая причина, когда ставили
-  PostgreSQL раньше и уже позже):
+```bash
+docker ps | grep -i postgres
+docker exec -it <контейнер> psql -U postgres -c "ALTER ROLE dnd WITH LOGIN PASSWORD 'masterkey';"
+```
 
-  ```bash
-  sudo ss -ltnp | grep 5432
-  sudo -u postgres psql -c "show port; show hba_file; select version();"
-  ```
+Переменная `POSTGRES_PASSWORD` в compose действует **только при создании тома**: если
+контейнер уже запускался, её смена ничего не меняет — нужен `ALTER ROLE`.
 
-После правки пароля в базе перезапустите приложение: `Ctrl+C` и снова
-`java -Dfile.encoding=UTF-8 -jar dnd-memory-server.jar`. При успешном подключении в логе
-появится `Successfully applied 3 migrations` и `Started DndMemoryApplication`.
+**Если в `pg_hba.conf` для TCP стоит `scram-sha-256`, а пароль роли сохранён как `md5`**
+(так бывает, если роль создавали при `password_encryption = md5`), верный пароль всё
+равно не подойдёт. Лечится тем же `ALTER ROLE … PASSWORD` — пароль перевыпускается
+текущим способом. Посмотреть, что хранится:
+
+```sql
+SELECT rolname, substring(rolpassword, 1, 10) FROM pg_authid WHERE rolname = 'dnd';
+-- SCRAM-SHA-256$ — порядок;  md5…  — перевыпустите пароль
+```
 
 ## Если нужна веб-версия
 
