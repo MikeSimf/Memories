@@ -16,7 +16,7 @@ Wants=network-online.target
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/opt/dnd-memory
-ExecStart=/opt/dnd-memory/bin/start-all.sh
+ExecStart=/bin/bash /opt/dnd-memory/bin/start-all.sh
 ExecStop=/usr/bin/docker compose -p dnd-prod --env-file /opt/dnd-memory/prod/.env -f /opt/dnd-memory/prod/docker-compose.yml down
 ExecStop=/usr/bin/docker compose -p dnd-test --env-file /opt/dnd-memory/test/.env -f /opt/dnd-memory/test/docker-compose.yml down
 

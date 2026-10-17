@@ -6,7 +6,7 @@ rc=0
 for inst in prod test; do
   if [ -f "$ROOT/$inst/.env" ] && [ -f "$ROOT/$inst/app.jar" ]; then
     echo "==> $inst"
-    "$ROOT/bin/dnd.sh" "$inst" up || rc=1
+    bash "$ROOT/bin/dnd.sh" "$inst" up || rc=1
   else
     echo "==> $inst пропущен (нет .env или app.jar)"
   fi

@@ -88,6 +88,9 @@ sudo tar xzf dnd-memory-deploy-kit.tar.gz -C /opt/dnd-memory
 sudo chown -R $USER:$USER /opt/dnd-memory
 cd /opt/dnd-memory
 
+# права на скрипты (нужны, если файлы попали на сервер не через tar)
+chmod +x bin/*.sh prod/*.sh test/*.sh
+
 # секреты для рабочего экземпляра
 cp prod/.env.example prod/.env
 nano prod/.env          # DB_PASSWORD, JWT_SECRET (openssl rand -base64 48), ADMIN_TOKEN
@@ -245,6 +248,7 @@ tar czf ~/dnd-files-$(date +%F).tar.gz -C /opt/dnd-memory/prod/data files
 
 | Симптом | Причина и решение |
 |---|---|
+| `Permission denied` на `./prod/start.sh` | у скриптов нет бита исполнения (файлы копировали не через `tar`): `chmod +x bin/*.sh prod/*.sh test/*.sh` |
 | `Нет prod/app.jar` | положите jar в папку экземпляра |
 | `Задайте DB_PASSWORD в .env` | не заполнен `.env` |
 | `bind: address already in use` | порт 8090/8091 занят — поменяйте `APP_PORT` в `.env` |
