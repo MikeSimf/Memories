@@ -1,0 +1,59 @@
+# Тестовый экземпляр DnD Memory: приложение + своя база + раздача веб-версии.
+# Отдельные тома и порт — с рабочим экземпляром ничего не делит.
+# Запуск: ./start.sh   (или ../bin/dnd.sh test up)
+name: dnd-test
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: dnd-test-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dnd
+      POSTGRES_USER: dnd
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Задайте DB_PASSWORD в .env}
+      TZ: UTC
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dnd -d dnd"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  app:
+    image: eclipse-temurin:11-jre
+    container_name: dnd-test-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    working_dir: /app
+    command: ["java", "-Dfile.encoding=UTF-8", "-Xmx${SERVER_HEAP_MB:-512}m", "-jar", "/app/app.jar"]
+    volumes:
+      - ./:/app:ro
+      - ./data/files:/var/lib/dnd-memory/files
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD:?Задайте DB_PASSWORD в .env}
+      JWT_SECRET: ${JWT_SECRET:?Задайте JWT_SECRET в .env}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      PUBLIC_URL: ${PUBLIC_URL:?Задайте PUBLIC_URL в .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:?Задайте CORS_ORIGINS в .env}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+  # Веб-версия (готовая статика из папки web) и прокси /api на приложение.
+  # Наружу смотрит только этот контейнер — на 127.0.0.1, дальше nginx сервера.
+  web:
+    image: nginx:1.27-alpine
+    container_name: dnd-test-web
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "127.0.0.1:${APP_PORT:-8091}:80"
+    volumes:
+      - ../web:/usr/share/nginx/html:ro
+      - ./web.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  pg-data:

@@ -1,0 +1,24 @@
+# Автозапуск обоих экземпляров при загрузке сервера.
+#
+#   sudo cp bin/dnd-memory.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now dnd-memory
+#
+# Контейнеры и так имеют restart: unless-stopped и поднимаются вместе с Docker,
+# этот юнит дополнительно гарантирует, что после перезагрузки применён compose-файл.
+[Unit]
+Description=DnD Memory (Docker: prod и test)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/dnd-memory
+ExecStart=/opt/dnd-memory/bin/start-all.sh
+ExecStop=/usr/bin/docker compose -p dnd-prod --env-file /opt/dnd-memory/prod/.env -f /opt/dnd-memory/prod/docker-compose.yml down
+ExecStop=/usr/bin/docker compose -p dnd-test --env-file /opt/dnd-memory/test/.env -f /opt/dnd-memory/test/docker-compose.yml down
+
+[Install]
+WantedBy=multi-user.target

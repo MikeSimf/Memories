@@ -26,3 +26,8 @@ backups/
 
 # Логи
 *.log
+
+# Комплект развёртывания: секреты, jar и данные экземпляров не коммитим
+deploy-kit/*/.env
+deploy-kit/*/data/
+deploy-kit/*/*.bak

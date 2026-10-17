@@ -1,0 +1,23 @@
+# Настройки рабочего экземпляра. Секреты берутся из окружения (файл .env),
+# поэтому пароли в этом файле не хранятся.
+server:
+  port: 8080
+
+spring:
+  datasource:
+    # stringtype=unspecified обязателен: без него не работают JSON-колонки
+    url: jdbc:postgresql://db:5432/dnd?stringtype=unspecified
+    username: dnd
+    password: ${DB_PASSWORD}
+
+dnd:
+  jwt:
+    secret: ${JWT_SECRET}
+  public-url: ${PUBLIC_URL}
+  cors-origins: ${CORS_ORIGINS}
+  files-dir: /var/lib/dnd-memory/files
+  admin-token: ${ADMIN_TOKEN:}
+
+logging:
+  level:
+    ru.dndmemory: ${LOG_LEVEL:INFO}
