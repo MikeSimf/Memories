@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Версия ТОЛЬКО для отладочных сборок (app/src/debug перекрывает основной ресурс).
+
+  В release открытый HTTP запрещён: там ожидается HTTPS. Но при проверке на своём
+  сервере адрес часто выглядит как http://81.177.139.30:8081, и без этого файла
+  приложение падало бы с «Cleartext HTTP traffic not permitted».
+
+  Здесь cleartext разрешён для всех адресов — только в debug, в собранный release
+  этот файл не попадает.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
