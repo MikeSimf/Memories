@@ -36,6 +36,35 @@ npm run preview   # локальный просмотр собранной ст�
 запросы `/api` уходят на `VITE_DEV_PROXY_TARGET` (по умолчанию
 `http://localhost:8080`).
 
+## Если npm смотрит в корпоративное зеркало
+
+На рабочих машинах npm часто настроен на Nexus/Artifactory, который знает не все
+пакеты. Тогда `npm install` падает с `404 Not Found` и `… is not in the npm registry`,
+хотя нужный пакет в официальном реестре есть.
+
+В проекте уже лежит [`web/.npmrc`](.npmrc) с официальным реестром. Он перекрывает
+`~/.npmrc` и `/etc/npmrc`, ничего не меняя в системе, — ровно как
+`.mvn/settings.xml` для Maven.
+
+Проверить, что применятся именно он:
+
+```bash
+npm config get registry        # https://registry.npmjs.org/
+```
+
+Если всё равно печатает зеркало, значит реестр подменён переменной окружения — она
+сильнее файла:
+
+```bash
+echo "$npm_config_registry $NPM_CONFIG_REGISTRY"
+unset npm_config_registry NPM_CONFIG_REGISTRY
+```
+
+Разово, без правки настроек: `npm install --registry=https://registry.npmjs.org/`.
+
+`package-lock.json` в проекте уже указывает на `registry.npmjs.org`, так что версии
+пакетов и контрольные суммы берутся оттуда же, откуда и настройка.
+
 ## Переменные окружения
 
 | Переменная | Назначение | По умолчанию |

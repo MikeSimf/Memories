@@ -215,6 +215,11 @@ npm run dev      # http://localhost:5173, запросы /api уходят на 
 npm run build    # проверка типов + сборка статики в dist/
 ```
 
+Если `npm install` падает с `… is not in the npm registry` — на машине настроено
+корпоративное зеркало. В проекте есть `web/.npmrc` с официальным реестром, он
+перекрывает `~/.npmrc`; проверить: `npm config get registry`. Подробнее — в
+[`web/README.md`](../web/README.md).
+
 Адрес API для сборки задаётся переменной `VITE_API_BASE_URL` (файл `.env`), по
 умолчанию запросы идут относительным путём `/api` — это правильный вариант для
 работы за nginx в Docker.

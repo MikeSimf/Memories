@@ -78,6 +78,10 @@ npm run dev              # разработка, ждёт сервер на /api
 npm run build            # статика в web/dist
 ```
 
+Если npm настроен на корпоративное зеркало и `npm install` пишет
+`… is not in the npm registry` — в проекте уже есть `web/.npmrc` с официальным
+реестром; проверка: `npm config get registry`.
+
 ### Android
 
 Открыть каталог `android/` в Android Studio (JDK 17, Android SDK 34) — подробности в
