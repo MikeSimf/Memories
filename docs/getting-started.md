@@ -208,6 +208,10 @@ $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks dnd.jks \
 
 ## 4. Веб-версия (VS Code, WebStorm или IDEA)
 
+Нужен **Node 20 или новее** (проверка: `node -v`). На старом Node Vite 6 падает с
+`SyntaxError: … node:fs/promises … does not provide an export named constants` —
+это версия Node, а не код.
+
 ```bash
 cd web
 npm install

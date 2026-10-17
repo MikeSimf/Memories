@@ -36,6 +36,51 @@ npm run preview   # локальный просмотр собранной ст�
 запросы `/api` уходят на `VITE_DEV_PROXY_TARGET` (по умолчанию
 `http://localhost:8080`).
 
+## Какая версия Node нужна
+
+**Node 20 или новее** (проверено на 20 и 24). Версия зафиксирована в `package.json`
+(`engines`) и в `.npmrc` (`engine-strict=true`), поэтому npm откажется ставить
+зависимости на старом Node и скажет прямо, чего не хватает.
+
+Проверить:
+
+```bash
+node -v      # v20.x или выше
+npm -v       # 10.x или выше
+```
+
+Если видите `v16.x`/`v18.x`, установка не пройдёт — и это лучше, чем ошибка на
+сборке. Симптом старого Node при запуске сборки:
+
+```
+SyntaxError: The requested module 'node:fs/promises'
+does not provide an export named 'constants'
+```
+
+Это сообщение выдаёт сам Vite 6, а не код проекта: `fs/promises.constants`
+появился в Node 20.
+
+Как обновить:
+
+```bash
+# вариант 1: nvm (macOS/Linux) — в папке проекта есть .nvmrc
+nvm install 20 && nvm use 20
+
+# вариант 2: nvm-windows (в PowerShell/cmd)
+nvm install 20.11.0
+nvm use 20.11.0
+
+# вариант 3: установщик с nodejs.org — взять LTS (20 или 22)
+```
+
+После смены версии пересоберите зависимости, затем сборку:
+
+```bash
+rm -rf node_modules      # в cmd: rmdir /s /q node_modules
+npm ci
+npm run build
+```
+
 ## Если npm смотрит в корпоративное зеркало
 
 На рабочих машинах npm часто настроен на Nexus/Artifactory, который знает не все

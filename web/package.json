@@ -5,7 +5,8 @@
   "type": "module",
   "description": "DnD Memory — веб-версия (PWA) справочника настольной сессии D&D",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.11.0",
+    "npm": ">=10"
   },
   "scripts": {
     "dev": "vite",
