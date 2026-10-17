@@ -36,14 +36,11 @@ services:
       DND_DB_USER: dnd
       DND_DB_PASSWORD: ${DB_PASSWORD}
       DND_JWT_SECRET: ${JWT_SECRET:?Задайте JWT_SECRET (не короче 32 символов)}
+      DND_ADMIN_TOKEN: ${ADMIN_TOKEN:-}
       DND_PUBLIC_URL: https://${DOMAIN:?Задайте DOMAIN в docker/env.prod}
       DND_CORS_ORIGINS: ${CORS_ORIGINS:?Задайте CORS_ORIGINS в docker/env.prod}
       DND_FILES_DIR: /var/lib/dnd-memory/files
       DND_LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      DND_YANDEX_CLIENT_ID: ${YANDEX_CLIENT_ID:-}
-      DND_YANDEX_CLIENT_SECRET: ${YANDEX_CLIENT_SECRET:-}
-      DND_VK_CLIENT_ID: ${VK_CLIENT_ID:-}
-      DND_VK_CLIENT_SECRET: ${VK_CLIENT_SECRET:-}
       JAVA_TOOL_OPTIONS: -Xmx${SERVER_HEAP_MB:-768}m
     volumes:
       - files:/var/lib/dnd-memory/files
