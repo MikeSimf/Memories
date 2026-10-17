@@ -20,7 +20,7 @@ COMPOSE_FILE="$DIR/docker-compose.yml"
 command -v docker >/dev/null || { echo "Docker не установлен: sudo bash $ROOT/bin/install-docker.sh" >&2; exit 1; }
 [ -f "$ENV_FILE" ] || { echo "Нет файла $ENV_FILE" >&2; echo "Скопируйте: cp $DIR/.env.example $ENV_FILE && nano $ENV_FILE" >&2; exit 1; }
 [ -f "$DIR/app.jar" ] || { echo "Нет $DIR/app.jar — положите сюда собранный jar" >&2; exit 1; }
-[ -f "$ROOT/web/index.html" ] || echo "Внимание: нет $ROOT/web/index.html — веб-версия не откроется (в комплекте папка web уже есть)" >&2
+[ -f "$ROOT/web-$INSTANCE/index.html" ] || echo "Внимание: нет $ROOT/web-$INSTANCE/index.html — веб-версия не откроется (в комплекте папки web-prod и web-test уже есть)" >&2
 mkdir -p "$DIR/data/files"
 
 compose() { docker compose -p "dnd-$INSTANCE" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"; }

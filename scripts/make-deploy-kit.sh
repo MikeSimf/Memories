@@ -9,11 +9,12 @@ cd "$ROOT/deploy-kit"
 OUT="$ROOT/release/dnd-memory-deploy-kit.tar.gz"
 mkdir -p "$ROOT/release"
 
-# В архив кладём ровно то, что нужно на сервере: prod/, test/, bin/, web/ и README.
+# В архив кладём ровно то, что нужно на сервере: prod/, test/, bin/,
+# собранные веб-версии web-prod/ и web-test/ и README.
 # Секреты (.env), jar (app.jar) и данные (data/) сюда не попадают — они gitignore.
-tar czf "$OUT" README.md prod test bin web
+tar czf "$OUT" README.md prod test bin web-prod web-test
 
 echo "готово: $OUT ($(du -h "$OUT" | cut -f1))"
 echo
-echo "Содержимое:"
-tar tzf "$OUT" | grep -v '^web/assets/' | sed 's/^/  /'
+echo "Содержимое (без файлов в assets/):"
+tar tzf "$OUT" | grep -v '/assets/' | sed 's/^/  /'
