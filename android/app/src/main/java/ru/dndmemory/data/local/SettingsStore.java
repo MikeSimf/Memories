@@ -20,8 +20,8 @@ public class SettingsStore {
     public SettingsStore(Context context) {
         this.prefs = context.getApplicationContext()
                 .getSharedPreferences(FILE, Context.MODE_PRIVATE);
-        wifiOnly.setValue(prefs.getBoolean(KEY_WIFI_ONLY, false));
-        lastSyncAt.setValue(prefs.getString(KEY_LAST_SYNC, null));
+        wifiOnly.postValue(prefs.getBoolean(KEY_WIFI_ONLY, false));
+        lastSyncAt.postValue(prefs.getString(KEY_LAST_SYNC, null));
     }
 
     public boolean isWifiOnly() {
@@ -34,7 +34,8 @@ public class SettingsStore {
 
     public void setWifiOnly(boolean value) {
         prefs.edit().putBoolean(KEY_WIFI_ONLY, value).apply();
-        wifiOnly.setValue(value);
+        // вызывается и из синхронизации в фоне — setValue там запрещён
+        wifiOnly.postValue(value);
     }
 
     public String lastSyncAt() {
@@ -47,6 +48,7 @@ public class SettingsStore {
 
     public void setLastSyncAt(String iso) {
         prefs.edit().putString(KEY_LAST_SYNC, iso).apply();
-        lastSyncAt.setValue(iso);
+        // SyncEngine пишет время из фонового потока
+        lastSyncAt.postValue(iso);
     }
 }

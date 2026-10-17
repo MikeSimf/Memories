@@ -59,8 +59,10 @@ public class SessionStore {
         this.prefs = context.getApplicationContext()
                 .getSharedPreferences(FILE, Context.MODE_PRIVATE);
         ensureDeviceClientId();
-        loggedIn.setValue(isLoggedIn());
-        displayName.setValue(prefs.getString(KEY_DISPLAY_NAME, null));
+        // postValue, а не setValue: контейнер приложения может быть собран
+        // и с фонового потока (WorkManager), где setValue запрещён.
+        loggedIn.postValue(isLoggedIn());
+        displayName.postValue(prefs.getString(KEY_DISPLAY_NAME, null));
     }
 
     public boolean isLoggedIn() {
@@ -218,9 +220,15 @@ public class SessionStore {
                 .putBoolean(KEY_HAS_PASSWORD, user.hasPassword);
     }
 
+    /**
+     * Публикует состояние сессии. Вызывается из {@code save()}, {@code clear()}
+     * и {@code markRevoked()} — то есть с фонового потока, где идут сетевые
+     * вызовы. {@code setValue} там запрещён ({@code IllegalStateException:
+     * Cannot invoke setValue on a background thread}), поэтому {@code postValue}.
+     */
     private void publish(String name) {
-        loggedIn.setValue(isLoggedIn());
-        displayName.setValue(name);
+        loggedIn.postValue(isLoggedIn());
+        displayName.postValue(name);
     }
 
     private String ensureDeviceClientId() {
