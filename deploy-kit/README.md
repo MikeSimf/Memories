@@ -24,11 +24,11 @@ sha256sum /tmp/kit.tar.gz /tmp/dnd-memory-server.jar   # сверить с ре�
 
 ```
 Интернет ──► Apache или nginx сервера (уже стоит, сертификат хостера)
-                 │  :443  ──► 127.0.0.1:8090 ──► dnd-prod-web ──┬─► dnd-prod-app ──► dnd-prod-db
+                 │  :80   ──► dnd-prod-web ──┬─► dnd-prod-app ──► dnd-prod-db
                  │                                              └─ статика веб-версии
-                 │  :8443 ──► 127.0.0.1:8091 ──► dnd-test-web ──┬─► dnd-test-app ──► dnd-test-db
+                 │  :8091 ──► dnd-test-web ──┬─► dnd-test-app ──► dnd-test-db
                  │                                              └─ статика веб-версии
-                 └─ :80   ──► redirect на https
+                 └─ TLS снимает фронт провайдера (или ваш веб-сервер, вариант B)
 ```
 
 ## Структура папок
@@ -128,7 +128,7 @@ cp /путь/к/dnd-memory-server.jar test/app.jar
 ./test/start.sh
 
 # проверка
-./bin/dnd.sh prod health    # или: curl http://127.0.0.1:8090/api/health
+./bin/dnd.sh prod health    # или: curl http://127.0.0.1/api/health
 ./bin/dnd.sh test health
 ```
 
@@ -161,36 +161,72 @@ rm -rf /opt/dnd-memory/web/* && tar xzf web-dist.tar.gz -C /opt/dnd-memory/web
 
 ## Шаг 3. HTTPS
 
-Сертификат выпускать не нужно: на сервере уже есть действующий (у Jino это
-wildcard `*.vps.myjino.ru`), и он покрывает `7f6a7dc97a7c.vps.myjino.ru`.
-
-Сначала посмотрите, кто держит порты 80 и 443:
+Сначала выясните, как устроен вход на сервер — от этого зависит, нужен ли вообще
+веб-сервер на VPS:
 
 ```bash
 sudo ss -ltnp | grep -E ':(80|443)\b'
+curl -sI http://127.0.0.1/api/health    # отвечает ли уже наш контейнер
 ```
 
-**Если это Apache** (на серверах Jino стоит он, Ubuntu 22.04 → `Apache/2.4.52`):
+### Вариант A. TLS делает провайдер, а 443 занят другим сервисом
+
+Так на VPS у Джино: домен `*.vps.myjino.ru` обслуживает их фронт, он же держит
+сертификат Let's Encrypt и ходит на **порт 80** вашей машины. Порт 443 при этом
+может быть занят чем угодно — например, VPN (`amnezia-xray`), и трогать его нельзя.
+
+В этом случае **ничего настраивать не нужно**: рабочий экземпляр уже опубликован на
+`80` (в `prod/.env` стоит `APP_PORT=80`), и `https://<домен>/` открывается через фронт.
+
+```bash
+./prod/start.sh          # публикует 80
+./test/start.sh          # публикует 8091
+curl -s http://127.0.0.1/api/health
+curl -s https://7f6a7dc97a7c.vps.myjino.ru/api/health
+```
+
+Тестовый экземпляр при этом доступен напрямую по `http://<домен>:8091/`: своего
+сертификата у тестового контура нет, а брать чужой (провайдерский) нельзя — его
+ключ лежит у провайдера.
+
+Проверьте, что Apache не перехватит порт 80 после перезагрузки:
+
+```bash
+sudo systemctl disable --now apache2
+```
+
+Если `80` и `8091` не открываются снаружи — дело в файрволе:
+
+```bash
+sudo ufw allow 80/tcp
+sudo ufw allow 8091/tcp
+sudo ufw status
+```
+
+### Вариант B. 80 и 443 свободны или заняты своим веб-сервером
+
+Тогда TLS терминируем сами. Сертификат выпускать не нужно, если он уже есть на
+машине; иначе — `certbot`. Скрипты добавляют виртуальные хосты
+**443 → рабочий**, **8443 → тестовый**, редирект с HTTP и откатываются, если
+конфигурация не проходит проверку.
+
+**Apache:**
 
 ```bash
 cd /opt/dnd-memory
 sudo bash bin/apache-setup.sh 7f6a7dc97a7c.vps.myjino.ru
 ```
 
-**Если это nginx:**
+**nginx:**
 
 ```bash
 cd /opt/dnd-memory
 sudo bash bin/nginx-setup.sh 7f6a7dc97a7c.vps.myjino.ru
 ```
 
-Оба скрипта делают одно и то же:
-
-* находят сертификат в текущей конфигурации веб-сервера и проверяют, что он покрывает домен;
-* добавляют виртуальные хосты: **443** → рабочий экземпляр, **8443** → тестовый;
-* перенаправляют HTTP на HTTPS;
-* проверяют конфигурацию (`apache2ctl configtest` / `nginx -t`) и при ошибке
-  **откатывают** свои изменения, не трогая остальные сайты.
+Сертификат выбирается только доверенный (проверка цепочки по системным корням) и
+покрывающий домен — само-подписанный `snakeoil` не подойдёт, даже если его SAN
+совпадает с именем хоста.
 
 Проверка:
 
@@ -198,18 +234,6 @@ sudo bash bin/nginx-setup.sh 7f6a7dc97a7c.vps.myjino.ru
 curl -s https://7f6a7dc97a7c.vps.myjino.ru/api/health
 curl -s https://7f6a7dc97a7c.vps.myjino.ru:8443/api/health
 ```
-
-Нужные настройки на сервере, кроме этого: **открытый порт 8443** в файрволе, если он
-включён:
-
-```bash
-sudo ufw allow 8443/tcp      # если ufw активен
-sudo ufw status
-```
-
-Порты 80 и 443 уже заняты веб-сервером — их трогать не нужно, он же и раздаёт HTTPS.
-Apache перезапускается (`systemctl restart apache2`), потому что добавлен новый
-`Listen 8443`; nginx достаточно перезагрузить.
 
 ## Шаг 4. Чтобы работало всегда
 
@@ -241,7 +265,7 @@ curl -s https://7f6a7dc97a7c.vps.myjino.ru/api/health
 
 ## Шаг 5. Приложение
 
-Тестовый экземпляр доступен по `https://7f6a7dc97a7c.vps.myjino.ru:8443/` — на него и
+Тестовый экземпляр доступен по `http://7f6a7dc97a7c.vps.myjino.ru:8091/` — на него и
 настроена сборка APK, которую я приложил. Сертификат доверенный, поэтому никаких
 послаблений для HTTP не требуется.
 
@@ -249,7 +273,7 @@ curl -s https://7f6a7dc97a7c.vps.myjino.ru/api/health
 
 ```bash
 cd android
-./gradlew assembleDebug -PDND_SERVER_URL=https://7f6a7dc97a7c.vps.myjino.ru:8443/
+./gradlew assembleDebug -PDND_SERVER_URL=http://7f6a7dc97a7c.vps.myjino.ru:8091/
 ```
 
 Для рабочего экземпляра — тот же ключ с адресом без порта:
@@ -290,11 +314,12 @@ tar czf ~/dnd-files-$(date +%F).tar.gz -C /opt/dnd-memory/prod/data files
 | `Permission denied` на `./prod/start.sh` | у скриптов нет бита исполнения (файлы копировали не через `tar`): `chmod +x bin/*.sh prod/*.sh test/*.sh` |
 | `Нет prod/app.jar` | положите jar в папку экземпляра |
 | `Задайте DB_PASSWORD в .env` | не заполнен `.env` |
-| `bind: address already in use` | порт 8090/8091 занят — поменяйте `APP_PORT` в `.env` |
+| `bind: address already in use` | порт 80/8091 занят — поменяйте `APP_PORT` в `.env` или освободите порт |
 | `502 Bad Gateway` на домене | экземпляр не запущен: `./prod/logs.sh` |
 | `503 Service Unavailable` на домене | Apache не смог связаться с контейнером: `docker compose -p dnd-prod ps` |
 | `✗ nginx не установлен` | на сервере Apache — запустите `sudo bash bin/apache-setup.sh <домен>` |
 | контейнер падает с `password authentication failed` | в `.env` и в томе базы разные пароли: если меняли `DB_PASSWORD`, удалите том `docker compose -p dnd-prod down -v` (данные пропадут) |
 | после перезагрузки ничего не поднялось | `sudo systemctl status docker dnd-memory` |
-| на 8443 не открывается | порт закрыт файрволом: `sudo ufw allow 8443/tcp` |
+| не открывается `8091` | порт закрыт файрволом: `sudo ufw allow 8091/tcp` |
+| `✗ порт 443 уже занят процессом «docker-proxy»` | 443 держит другой сервис (VPN): используйте вариант A, Apache на 443 не нужен |
 | старая страница вместо приложения | конфликт `server_name` в nginx — см. предупреждение `nginx-setup.sh` |
