@@ -28,6 +28,22 @@ command -v apache2 >/dev/null || die "Apache не найден. Если сто�
 
 echo "==> Домен $DOMAIN: рабочий на 443 (порт $PROD_PORT), тестовый на 8443 (порт $TEST_PORT)"
 
+# Кто слушает порт (имя процесса) — чтобы не биться в «Address already in use»
+port_owner() {
+  ss -ltnpH "sport = :$1" 2>/dev/null \
+    | sed -n 's/.*users:(("\([^"]*\)".*/\1/p' | head -1
+}
+
+for p in 443 8443; do
+  owner="$(port_owner "$p")"
+  if [ -n "$owner" ] && [ "$owner" != "apache2" ]; then
+    die "порт $p уже занят процессом «$owner» — Apache его не получит.
+  Посмотрите, что это: docker ps --format '{{.Names}} {{.Image}} {{.Ports}}'
+  Порты 80/443 на VPS обычно держит один внешний веб-сервер (контейнер или Apache);
+  наш сайт должен публиковаться именно им, а не вторым сервером."
+  fi
+done
+
 for pair in "рабочий:$PROD_PORT" "тестовый:$TEST_PORT"; do
   name="${pair%%:*}"; port="${pair##*:}"
   if curl -sf --max-time 5 "http://127.0.0.1:$port/api/health" >/dev/null; then
@@ -67,28 +83,37 @@ collect_pairs() {
   done
 }
 
+# Доверенный ли сертификат: проверяем цепочку системными корнями.
+# snakeoil — само-подписанный: SAN может совпасть с именем хоста, но браузер
+# такому сертификату не доверяет, поэтому одного cert_covers недостаточно.
+cert_trusted() {
+  openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt "$1" >/dev/null 2>&1
+}
+
 if [ -n "$CERT_ARG" ] && [ -n "$KEY_ARG" ]; then
   CERT="$CERT_ARG"; KEY="$KEY_ARG"
   ok "сертификат из аргументов"
 else
-  CERT=""; KEY=""; FALLBACK=""
+  CERT=""; KEY=""; FOUND_ANY=""
   while read -r c k; do
     [ -f "$c" ] && [ -f "$k" ] || continue
-    if command -v openssl >/dev/null && cert_covers "$c" "$DOMAIN"; then
+    FOUND_ANY=yes
+    if cert_trusted "$c" && cert_covers "$c" "$DOMAIN"; then
       CERT="$c"; KEY="$k"; break
     fi
-    [ -z "$FALLBACK" ] && FALLBACK="$c $k"
   done < <(collect_pairs | sort -u)
-  if [ -z "$CERT" ] && [ -n "$FALLBACK" ]; then
-    CERT="${FALLBACK% *}"; KEY="${FALLBACK#* }"
-    warn "ни один найденный сертификат не покрывает $DOMAIN — беру $CERT"
+
+  if [ -z "$CERT" ] && [ -n "$FOUND_ANY" ]; then
+    echo "  Что есть в конфигурации Apache:" >&2
+    while read -r c k; do
+      [ -f "$c" ] || continue
+      printf '    %s\n      %s\n' "$c" "$(openssl x509 -in "$c" -noout -issuer 2>/dev/null)" >&2
+    done < <(collect_pairs | sort -u)
+    die "подходящего доверенного сертификата для $DOMAIN в Apache нет.
+  Скорее всего, сертификат Let's Encrypt принадлежит другому веб-серверу
+  (например, контейнеру, который сейчас держит 443). Передайте пути явно:
+    $0 $DOMAIN $PROD_PORT $TEST_PORT /путь/fullchain.pem /путь/privkey.pem"
   fi
-fi
-if [ -z "$CERT" ] || [ -z "$KEY" ]; then
-  echo "  Что нашлось в конфигурации Apache:" >&2
-  grep -rh 'SSLCertificate' /etc/apache2/sites-enabled /etc/apache2/sites-available \
-       /etc/apache2/conf-enabled 2>/dev/null | sed 's/^/    /' >&2
-  die "сертификат не найден — передайте пути: $0 $DOMAIN $PROD_PORT $TEST_PORT /cert /key"
 fi
 [ -f "$CERT" ] || die "нет файла сертификата: $CERT"
 [ -f "$KEY" ] || die "нет файла ключа: $KEY"
@@ -120,8 +145,7 @@ else
 fi
 
 # --- конфигурация сайта ----------------------------------------------------
-EXISTED=no
-[ -f "$AVAIL" ] && { EXISTED=yes; cp "$AVAIL" "$AVAIL.bak"; }
+[ -f "$AVAIL" ] && cp "$AVAIL" "$AVAIL.bak"
 
 cat > "$AVAIL" <<APACHE
 # Создано deploy-kit/bin/apache-setup.sh
