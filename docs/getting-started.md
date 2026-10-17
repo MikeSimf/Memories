@@ -158,6 +158,54 @@ cd android
 `gradle.properties` строку `org.gradle.jvmargs=-Xmx1024m` и запускайте с
 `--no-daemon --max-workers=1`.
 
+## 3.1. Сборка APK под свой сервер
+
+Две вещи, без которых приложение не подключится:
+
+**1. Адрес сервера** — `android/gradle.properties`:
+
+```
+DND_SERVER_URL=http://81.177.139.30:8081/
+```
+
+Или разово, без правки файла:
+
+```bash
+./gradlew assembleDebug -PDND_SERVER_URL=http://81.177.139.30:8081/
+```
+
+**2. Разрешение на открытый HTTP.** Приложение по умолчанию ходит только по HTTPS:
+в `app/src/main/res/xml/network_security_config.xml` открытый HTTP разрешён лишь для
+`10.0.2.2`, `localhost` и `127.0.0.1`. Для адреса вида `http://81.177.139.30:8081`
+нужно либо добавить туда `<domain includeSubdomains="false">81.177.139.30</domain>`,
+либо собирать debug-сборку: в проекте есть `app/src/debug/res/xml/network_security_config.xml`,
+который разрешает HTTP **только в отладочных сборках** (release остаётся строго TLS).
+
+Сборка и установка:
+
+```bash
+cd android
+./gradlew assembleDebug            # Linux/macOS
+gradlew.bat assembleDebug          # Windows
+
+# APK: app/build/outputs/apk/debug/app-debug.apk
+./gradlew installDebug             # сразу на подключённый телефон
+# или: adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+Release-сборка не подписана — нужен свой ключ:
+
+```bash
+keytool -genkeypair -keystore dnd.jks -alias dnd -keyalg RSA -keysize 2048 -validity 10000
+./gradlew assembleRelease
+$ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks dnd.jks \
+  --out app-release-signed.apk app/build/outputs/apk/release/app-release-unsigned.apk
+```
+
+В release открытый HTTP запрещён: либо HTTPS (через nginx или общий шлюз из
+[`deployment.md`](deployment.md)), либо добавьте адрес в основной
+`network_security_config.xml`.
+
 ## 4. Веб-версия (VS Code, WebStorm или IDEA)
 
 ```bash
