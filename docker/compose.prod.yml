@@ -58,6 +58,11 @@ services:
     restart: unless-stopped
     depends_on:
       - server
+    # Необязательный локальный вход. Нужен, когда HTTPS уже отдаёт внешний nginx
+    # (например, nginx хостера с сертификатом): он проксирует на 127.0.0.1:${WEB_PORT}.
+    # По умолчанию порт слушает только localhost и наружу не выставлен.
+    ports:
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8090}:80"
     volumes:
       - ./nginx/nginx.app.conf.template:/etc/nginx/templates/default.conf.template:ro
     networks: [internal, edge]

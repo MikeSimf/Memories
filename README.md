@@ -49,6 +49,7 @@
 | [`docs/data-model.md`](docs/data-model.md) | Таблицы базы и связи между ними |
 | [`docs/deployment.md`](docs/deployment.md) | Развёртывание на своём сервере (Docker, два контура, TLS) |
 | [`docs/run-without-docker.md`](docs/run-without-docker.md) | Запуск без Docker: только jar, настройки, systemd |
+| [`docs/deploy-behind-nginx.md`](docs/deploy-behind-nginx.md) | Docker за уже существующим nginx с сертификатом хостера |
 | [`docs/server-multi-project.md`](docs/server-multi-project.md) | Несколько проектов на одном сервере: шлюз, порты, имена |
 | [`docs/api-examples.md`](docs/api-examples.md) | Ручная проверка API через curl |
 | [`docs/verification.md`](docs/verification.md) | Что проверено запуском, а что нет |
