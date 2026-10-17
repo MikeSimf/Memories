@@ -3,6 +3,25 @@
 Комплект для развёртывания **без исходников на сервере**: только Docker, готовый jar и
 эти скрипты. Рабочий и тестовый экземпляры независимы — свои базы, свои папки, свои порты.
 
+## Скачать
+
+Готовые файлы лежат в релизе, авторизация не нужна:
+
+```bash
+# комплект (эти скрипты и веб-версия)
+curl -fL -o /tmp/kit.tar.gz \
+  https://github.com/MikeSimf/Memories/releases/download/v1.0.0/dnd-memory-deploy-kit.tar.gz
+
+# сервер приложения
+curl -fL -o /tmp/dnd-memory-server.jar \
+  https://github.com/MikeSimf/Memories/releases/download/v1.0.0/dnd-memory-server.jar
+
+sha256sum /tmp/kit.tar.gz /tmp/dnd-memory-server.jar   # сверить с релизом
+```
+
+Копия архива есть и в самом репозитории: [`release/dnd-memory-deploy-kit.tar.gz`](../release/dnd-memory-deploy-kit.tar.gz)
+(пересобирается скриптом [`scripts/make-deploy-kit.sh`](../scripts/make-deploy-kit.sh)).
+
 ```
 Интернет ──► Apache или nginx сервера (уже стоит, сертификат хостера)
                  │  :443  ──► 127.0.0.1:8090 ──► dnd-prod-web ──┬─► dnd-prod-app ──► dnd-prod-db
