@@ -4,7 +4,7 @@
 эти скрипты. Рабочий и тестовый экземпляры независимы — свои базы, свои папки, свои порты.
 
 ```
-Интернет ──► nginx (уже стоит на сервере, сертификат хостера)
+Интернет ──► Apache или nginx сервера (уже стоит, сертификат хостера)
                  │  :443  ──► 127.0.0.1:8090 ──► dnd-prod-web ──┬─► dnd-prod-app ──► dnd-prod-db
                  │                                              └─ статика веб-версии
                  │  :8443 ──► 127.0.0.1:8091 ──► dnd-test-web ──┬─► dnd-test-app ──► dnd-test-db
@@ -31,7 +31,8 @@
     dnd.sh             ← общее управление
     start-all.sh       ← поднять всё настроенное
     install-docker.sh  ← установка Docker (шаг 1)
-    nginx-setup.sh     ← публикация по HTTPS
+    apache-setup.sh    ← публикация по HTTPS через Apache
+    nginx-setup.sh     ← публикация по HTTPS через nginx
     dnd-memory.service ← автозапуск через systemd
 ```
 
@@ -144,16 +145,33 @@ rm -rf /opt/dnd-memory/web/* && tar xzf web-dist.tar.gz -C /opt/dnd-memory/web
 Сертификат выпускать не нужно: на сервере уже есть действующий (у Jino это
 wildcard `*.vps.myjino.ru`), и он покрывает `7f6a7dc97a7c.vps.myjino.ru`.
 
+Сначала посмотрите, кто держит порты 80 и 443:
+
+```bash
+sudo ss -ltnp | grep -E ':(80|443)\b'
+```
+
+**Если это Apache** (на серверах Jino стоит он, Ubuntu 22.04 → `Apache/2.4.52`):
+
+```bash
+cd /opt/dnd-memory
+sudo bash bin/apache-setup.sh 7f6a7dc97a7c.vps.myjino.ru
+```
+
+**Если это nginx:**
+
 ```bash
 cd /opt/dnd-memory
 sudo bash bin/nginx-setup.sh 7f6a7dc97a7c.vps.myjino.ru
 ```
 
-Скрипт:
-* находит сертификат в текущей конфигурации nginx и проверяет, что он покрывает домен;
-* добавляет виртуальные хосты: **443** → рабочий экземпляр, **8443** → тестовый;
-* перенаправляет HTTP на HTTPS;
-* запускает `nginx -t` и при ошибке **откатывает** свои изменения, не трогая рабочий сайт.
+Оба скрипта делают одно и то же:
+
+* находят сертификат в текущей конфигурации веб-сервера и проверяют, что он покрывает домен;
+* добавляют виртуальные хосты: **443** → рабочий экземпляр, **8443** → тестовый;
+* перенаправляют HTTP на HTTPS;
+* проверяют конфигурацию (`apache2ctl configtest` / `nginx -t`) и при ошибке
+  **откатывают** свои изменения, не трогая остальные сайты.
 
 Проверка:
 
@@ -170,7 +188,9 @@ sudo ufw allow 8443/tcp      # если ufw активен
 sudo ufw status
 ```
 
-Порты 80 и 443 уже заняты nginx — их трогать не нужно, он же и раздаёт HTTPS.
+Порты 80 и 443 уже заняты веб-сервером — их трогать не нужно, он же и раздаёт HTTPS.
+Apache перезапускается (`systemctl restart apache2`), потому что добавлен новый
+`Listen 8443`; nginx достаточно перезагрузить.
 
 ## Шаг 4. Чтобы работало всегда
 
@@ -253,6 +273,8 @@ tar czf ~/dnd-files-$(date +%F).tar.gz -C /opt/dnd-memory/prod/data files
 | `Задайте DB_PASSWORD в .env` | не заполнен `.env` |
 | `bind: address already in use` | порт 8090/8091 занят — поменяйте `APP_PORT` в `.env` |
 | `502 Bad Gateway` на домене | экземпляр не запущен: `./prod/logs.sh` |
+| `503 Service Unavailable` на домене | Apache не смог связаться с контейнером: `docker compose -p dnd-prod ps` |
+| `✗ nginx не установлен` | на сервере Apache — запустите `sudo bash bin/apache-setup.sh <домен>` |
 | контейнер падает с `password authentication failed` | в `.env` и в томе базы разные пароли: если меняли `DB_PASSWORD`, удалите том `docker compose -p dnd-prod down -v` (данные пропадут) |
 | после перезагрузки ничего не поднялось | `sudo systemctl status docker dnd-memory` |
 | на 8443 не открывается | порт закрыт файрволом: `sudo ufw allow 8443/tcp` |

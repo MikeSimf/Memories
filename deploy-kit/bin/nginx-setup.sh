@@ -21,7 +21,7 @@ warn() { printf '  \033[33m!\033[0m %s\n' "$1"; }
 die()  { printf '  \033[31m✗\033[0m %s\n' "$1" >&2; exit 1; }
 
 [ "$(id -u)" = "0" ] || die "нужны права root: sudo bash $0 $DOMAIN"
-command -v nginx >/dev/null || die "nginx не установлен"
+command -v nginx >/dev/null || die "nginx не установлен. Если стоит Apache — используйте bin/apache-setup.sh"
 
 echo "==> Домен $DOMAIN: рабочий на 443 (порт $PROD_PORT), тестовый на 8443 (порт $TEST_PORT)"
 
