@@ -167,6 +167,11 @@ cd /opt/dnd-memory
 ./bin/deploy-web.sh prod /tmp/web-dist.tar.gz
 ```
 
+Если на `deploy-web.sh` ругается `Permission denied` — у файлов потерялся бит
+исполнения (так бывает, когда архив распаковывают не через `tar`, а копируют файлы
+по одному): `chmod +x bin/*.sh prod/*.sh test/*.sh`. Тот же скрипт можно запустить и
+без него: `bash bin/deploy-web.sh test /tmp/web-dist.tar.gz`.
+
 `deploy-web.sh` чистит старые файлы (иначе останутся ассеты прошлой сборки),
 копирует новую и проверяет, что сайт отвечает `200`.
 
