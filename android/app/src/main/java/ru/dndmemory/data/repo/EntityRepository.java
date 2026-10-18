@@ -197,6 +197,45 @@ public class EntityRepository {
         }, callback);
     }
 
+    /**
+     * Обновление одного объекта с сервера: свайп «обновить» в списке.
+     * Локальные неотправленные правки не затираются.
+     */
+    public void refreshOne(String campaignId, EntityType kind, String entityId,
+                           RepoCallback<EntityRoom> callback) {
+        exec.io(() -> {
+            EntityDto dto = fetchOne(campaignId, kind, entityId);
+            EntityRoom incoming = Mappers.toRoom(dto, kind, campaignId);
+            if (incoming.id == null || incoming.id.isEmpty()) {
+                incoming.id = entityId;
+            }
+            EntityRoom local = db.entityDao().find(entityId);
+            if (local != null && local.dirty) {
+                return local;
+            }
+            db.entityDao().upsert(incoming);
+            return incoming;
+        }, callback);
+    }
+
+    /** Удаление нескольких объектов сразу: каждый уходит в очередь синхронизации. */
+    public void deleteMany(List<String> entityIds, RepoCallback<Void> callback) {
+        exec.io(() -> {
+            for (String entityId : entityIds) {
+                EntityRoom room = db.entityDao().find(entityId);
+                if (room == null) {
+                    continue;
+                }
+                room.updatedAt = DateFormats.nowIso();
+                db.entityDao().markDeleted(entityId, room.updatedAt);
+                room.deleted = true;
+                room.dirty = true;
+                writer.entity(room, ChangeOp.DELETE);
+            }
+            return null;
+        }, callback);
+    }
+
     /** Полная перезагрузка списка объектов кампании (онлайн-обновление). */
     public void refresh(String campaignId, RepoCallback<List<EntityRoom>> callback) {
         refresh(campaignId, null, callback);

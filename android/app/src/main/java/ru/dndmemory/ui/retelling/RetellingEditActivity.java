@@ -31,6 +31,7 @@ import ru.dndmemory.ui.common.NameIndex;
 import ru.dndmemory.ui.common.Nav;
 import ru.dndmemory.ui.common.ViewModelFactory;
 import ru.dndmemory.ui.common.ViewUtils;
+import ru.dndmemory.ui.common.WikiLinkEditor;
 import ru.dndmemory.util.AppExecutors;
 import ru.dndmemory.util.DateFormats;
 import ru.dndmemory.util.WikiMarkdown;
@@ -78,6 +79,9 @@ public class RetellingEditActivity extends AppCompatActivity {
             getSupportActionBar().setTitle(creating || retellingId == null
                     ? R.string.retelling_edit_title_new : R.string.retelling_edit_title_edit);
         }
+
+        // Ввод ссылок: «[[» сразу закрывается, после трёх букв — подсказки.
+        WikiLinkEditor.attach(binding.retellingEditBodyInput, () -> nameIndex.names());
 
         binding.retellingEditDateInput.setOnClickListener(v -> showDatePicker());
         binding.retellingEditSaveDraft.setOnClickListener(v -> {

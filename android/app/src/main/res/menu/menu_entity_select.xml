@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Действия над выбранными объектами (режим выбора свайпом вправо) -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_selected_refresh"
+        android:icon="@drawable/ic_refresh"
+        android:title="@string/entity_selected_refresh"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_selected_delete"
+        android:icon="@drawable/ic_delete"
+        android:title="@string/entity_selected_delete"
+        app:showAsAction="ifRoom" />
+</menu>

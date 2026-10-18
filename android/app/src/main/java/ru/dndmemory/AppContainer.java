@@ -17,6 +17,7 @@ import ru.dndmemory.data.remote.TokenAuthenticator;
 import ru.dndmemory.data.repo.AuthRepository;
 import ru.dndmemory.data.repo.CampaignRepository;
 import ru.dndmemory.data.repo.EntityRepository;
+import ru.dndmemory.data.repo.FileRepository;
 import ru.dndmemory.data.repo.InviteRepository;
 import ru.dndmemory.data.repo.MemberRepository;
 import ru.dndmemory.data.repo.PendingWriter;
@@ -47,6 +48,8 @@ public class AppContainer {
     private final RetellingRepository retellingRepository;
     private final MemberRepository memberRepository;
     private final InviteRepository inviteRepository;
+    private final FileRepository fileRepository;
+    private final OkHttpClient authorizedClient;
     private final SyncEngine syncEngine;
     private final SyncScheduler syncScheduler;
 
@@ -68,7 +71,7 @@ public class AppContainer {
         // 3. Основной клиент: Bearer + обновление по 401.
         TokenAuthenticator authenticator = new TokenAuthenticator(sessionStore, authRepository);
         AuthInterceptor interceptor = new AuthInterceptor(sessionStore);
-        OkHttpClient authorizedClient =
+        authorizedClient =
                 ApiClient.authorizedHttpClient(plainClient, authenticator, interceptor);
         apiService = ApiClient.create(authorizedClient);
         authRepository.setApi(apiService);
@@ -80,6 +83,7 @@ public class AppContainer {
         retellingRepository = new RetellingRepository(database, apiService, pendingWriter, executors);
         memberRepository = new MemberRepository(database, apiService, executors);
         inviteRepository = new InviteRepository(apiService, executors);
+        fileRepository = new FileRepository(apiService, executors);
 
         // 5. Синхронизация.
         syncEngine = new SyncEngine(database, apiService, sessionStore.deviceClientId());
@@ -163,6 +167,15 @@ public class AppContainer {
 
     public InviteRepository inviteRepository() {
         return inviteRepository;
+    }
+
+    public FileRepository fileRepository() {
+        return fileRepository;
+    }
+
+    /** Авторизованный клиент: нужен загрузчику картинок для GET /api/files/{id}. */
+    public OkHttpClient okHttpClient() {
+        return authorizedClient;
     }
 
     public SyncEngine syncEngine() {

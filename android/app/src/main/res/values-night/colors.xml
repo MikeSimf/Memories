@@ -38,5 +38,16 @@
 
     <color name="text_muted">#A99B86</color>
 
+    <!-- Типы объектов: в тёмной теме светлее, но так же спокойно -->
+    <color name="type_hero">#A9B6CC</color>
+    <color name="type_character">#C8A98F</color>
+    <color name="type_location">#A3C2AE</color>
+    <color name="type_item">#BBA9C9</color>
+
+    <color name="type_hero_soft">#2A3040</color>
+    <color name="type_character_soft">#3A2F26</color>
+    <color name="type_location_soft">#28362E</color>
+    <color name="type_item_soft">#332C3A</color>
+
     <color name="ic_launcher_background">#3A2A18</color>
 </resources>

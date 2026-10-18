@@ -17,6 +17,14 @@
         android:orientation="horizontal"
         android:padding="12dp">
 
+        <!-- Цвет класса объекта: виден до чтения подписи -->
+        <View
+            android:id="@+id/item_entity_stripe"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="10dp"
+            android:background="@color/type_character" />
+
         <ImageView
             android:id="@+id/item_entity_icon"
             android:layout_width="32dp"

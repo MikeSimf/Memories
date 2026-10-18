@@ -6,6 +6,8 @@ import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -15,6 +17,9 @@ import java.util.List;
 
 import ru.dndmemory.App;
 import ru.dndmemory.AppContainer;
+import ru.dndmemory.data.remote.dto.FileDto;
+import ru.dndmemory.ui.common.ImageLoader;
+import ru.dndmemory.ui.common.ImageTools;
 import ru.dndmemory.R;
 import ru.dndmemory.data.local.entity.CampaignRoom;
 import ru.dndmemory.data.local.entity.EntityRoom;
@@ -31,7 +36,9 @@ import ru.dndmemory.ui.common.NameIndex;
 import ru.dndmemory.ui.common.Rights;
 import ru.dndmemory.ui.common.ViewModelFactory;
 import ru.dndmemory.ui.common.ViewUtils;
+import ru.dndmemory.ui.common.WikiLinkEditor;
 import ru.dndmemory.util.AppExecutors;
+import ru.dndmemory.util.RepoCallback;
 
 /**
  * Редактор объекта. Набор полей зависит от класса (docs/api.md, раздел 6):
@@ -61,6 +68,10 @@ public class EntityEditActivity extends AppCompatActivity {
 
     private final List<ItemHeroItemEditBinding> itemRows = new ArrayList<>();
 
+    /** Выбор фото из галереи: системный диалог, без разрешений в манифесте. */
+    private ActivityResultLauncher<String> photoPicker;
+    private AppContainer container;
+
     private static final EntityType[] TYPE_VALUES = {
             EntityType.HERO, EntityType.CHARACTER, EntityType.LOCATION, EntityType.ITEM};
 
@@ -83,7 +94,8 @@ public class EntityEditActivity extends AppCompatActivity {
             currentKind = requested;
         }
 
-        AppContainer container = App.container(this);
+        container = App.container(this);
+        photoPicker = registerForActivityResult(new ActivityResultContracts.GetContent(), this::onPhotoPicked);
         viewModel = new ViewModelProvider(this, ViewModelFactory.of(
                 () -> new EntityEditViewModel(container.entityRepository(),
                         container.memberRepository(), AppExecutors.get())))
@@ -118,12 +130,22 @@ public class EntityEditActivity extends AppCompatActivity {
         binding.entityEditType.setEnabled(creating);
         binding.entityEditTypeGroup.setEnabled(creating);
 
+        // Ввод ссылок: «[[» сразу закрывается, после трёх букв — подсказки.
+        WikiLinkEditor.attach(binding.entityEditDescriptionInput, () -> nameIndex.names());
+        WikiLinkEditor.attach(binding.entityEditShortInput, () -> nameIndex.names());
+
         binding.entityEditSave.setOnClickListener(v -> {
             collect();
             viewModel.save();
         });
         binding.entityEditDelete.setOnClickListener(v -> confirmDelete());
         ViewUtils.show(binding.entityEditDelete, !creating);
+
+        binding.entityEditPhotoPick.setOnClickListener(v -> photoPicker.launch("image/*"));
+        binding.entityEditPhotoClear.setOnClickListener(v -> {
+            viewModel.setImageFileId(null);
+            showPhoto(null);
+        });
 
         binding.entityEditAddItem.setOnClickListener(v -> addItemRow(null));
         binding.entityEditPlayer.setOnItemClickListener((parent, view, position, id) ->
@@ -193,6 +215,7 @@ public class EntityEditActivity extends AppCompatActivity {
                     ? state.entity.ownerHeroId : state.entity.ownerCharacterId;
 
             bindFieldsForKind();
+            showPhoto(state.entity.imageFileId);
             checkRights();
         });
 
@@ -221,6 +244,70 @@ public class EntityEditActivity extends AppCompatActivity {
                 finish();
             }
         });
+    }
+
+    // --- Фото -------------------------------------------------------------
+
+    /** Выбрали картинку: сжимаем в фоне и сразу загружаем на сервер. */
+    private void onPhotoPicked(@Nullable android.net.Uri uri) {
+        if (uri == null || container == null) {
+            return;
+        }
+        ViewUtils.toast(this, R.string.entity_photo_uploading);
+        binding.entityEditPhotoPick.setEnabled(false);
+        AppExecutors.get().io(() -> {
+            byte[] data = ImageTools.compress(this, uri);
+            if (data == null) {
+                throw ru.dndmemory.data.remote.ApiException.unexpected(
+                        new IllegalArgumentException(getString(R.string.entity_photo_too_big)));
+            }
+            container.fileRepository().upload(data, "image/jpeg", "photo.jpg",
+                    new RepoCallback<FileDto>() {
+                        @Override
+                        public void onSuccess(@Nullable FileDto value) {
+                            binding.entityEditPhotoPick.setEnabled(true);
+                            if (value == null || value.id == null) {
+                                ViewUtils.toast(EntityEditActivity.this, R.string.entity_photo_too_big);
+                                return;
+                            }
+                            viewModel.setImageFileId(value.id);
+                            showPhoto(value.id);
+                        }
+
+                        @Override
+                        public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) {
+                            binding.entityEditPhotoPick.setEnabled(true);
+                            ViewUtils.toast(EntityEditActivity.this,
+                                    getString(R.string.entity_photo_failed,
+                                            ErrorMessages.text(EntityEditActivity.this, error)));
+                        }
+                    });
+            return null;
+        }, new RepoCallback<Void>() {
+            @Override
+            public void onSuccess(@Nullable Void value) {
+            }
+
+            @Override
+            public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) {
+                binding.entityEditPhotoPick.setEnabled(true);
+                ViewUtils.toast(EntityEditActivity.this,
+                        getString(R.string.entity_photo_failed,
+                                ErrorMessages.text(EntityEditActivity.this, error)));
+            }
+        });
+    }
+
+    /** Превью фото: пустой id прячет картинку и кнопку «Убрать». */
+    private void showPhoto(@Nullable String fileId) {
+        boolean has = fileId != null && !fileId.isEmpty();
+        ViewUtils.show(binding.entityEditPhotoClear, has);
+        if (!has) {
+            binding.entityEditPhoto.setImageDrawable(null);
+            ViewUtils.show(binding.entityEditPhoto, false);
+            return;
+        }
+        ImageLoader.load(container.okHttpClient(), fileId, binding.entityEditPhoto);
     }
 
     /**

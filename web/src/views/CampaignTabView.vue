@@ -90,6 +90,14 @@ const createClasses = computed<ObjectClass[]>(() =>
   objectClasses.value ? objectClasses.value.filter((cls) => campaign.canCreate(cls)) : [],
 )
 
+/** Полоска слева: тип виден сразу, ещё до чтения бейджа. */
+function typeCardClass(object: LocalObject): string {
+  if (object.objectType === 'HERO') return 'card--type-hero'
+  if (object.objectType === 'CHARACTER') return 'card--type-npc'
+  if (object.objectType === 'LOCATION') return 'card--type-location'
+  return 'card--type-item'
+}
+
 function badgeClass(object: LocalObject): string {
   if (object.objectType === 'HERO') return 'badge--hero'
   if (object.objectType === 'CHARACTER') return 'badge--npc'
@@ -183,6 +191,7 @@ const tabProgressLabel = computed(() =>
           v-for="object in filteredObjects"
           :key="object.id"
           class="card card--link"
+          :class="typeCardClass(object)"
           :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: object.id } }"
         >
           <h3 class="card__title">

@@ -203,6 +203,18 @@ public class EntityEditViewModel extends ViewModel {
         }
     }
 
+    /** Идентификатор загруженной картинки; {@code null} — фото нет. */
+    public void setImageFileId(@Nullable String imageFileId) {
+        if (draft != null) {
+            draft.imageFileId = nullable(imageFileId);
+        }
+    }
+
+    @Nullable
+    public String imageFileId() {
+        return draft == null ? null : draft.imageFileId;
+    }
+
     /** Котомка героя: список заменяется целиком (docs/api.md, раздел 6). */
     public void setItems(@NonNull List<HeroItem> items) {
         if (draft != null) {

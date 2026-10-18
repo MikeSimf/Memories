@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
@@ -16,6 +17,7 @@ import ru.dndmemory.data.local.entity.EntityRoom;
 import ru.dndmemory.data.model.EntityType;
 import ru.dndmemory.databinding.ItemEntityBinding;
 import ru.dndmemory.ui.common.Labels;
+import ru.dndmemory.ui.common.TypeColors;
 import ru.dndmemory.ui.common.ViewUtils;
 
 /**
@@ -27,6 +29,9 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
 
     public interface Listener {
         void onEntityClick(@NonNull EntityRoom entity);
+
+        /** Долгое нажатие включает режим выбора — как и свайп вправо. */
+        void onEntityLongClick(@NonNull EntityRoom entity);
     }
 
     private static final DiffUtil.ItemCallback<EntityRoom> DIFF =
@@ -53,10 +58,28 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
             };
 
     private final Listener listener;
+    private final java.util.Set<String> selected = new java.util.HashSet<>();
+    private boolean selectionMode;
 
     public EntityAdapter(@NonNull Listener listener) {
         super(DIFF);
         this.listener = listener;
+    }
+
+    /** Режим выбора: подсвечиваем отмеченные и не даём свайпам мешать. */
+    public void setSelection(@NonNull java.util.Collection<String> ids, boolean mode) {
+        selected.clear();
+        selected.addAll(ids);
+        selectionMode = mode;
+        notifyDataSetChanged();
+    }
+
+    public boolean isSelected(@Nullable String id) {
+        return id != null && selected.contains(id);
+    }
+
+    public boolean isSelectionMode() {
+        return selectionMode;
     }
 
     @NonNull
@@ -69,9 +92,13 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
 
     @Override
     public void onBindViewHolder(@NonNull EntityHolder holder, int position) {
-        EntityRoom entity = getItem(position);
-        holder.bind(entity);
+        EntityRoom entity = getCurrentList().get(position);
+        holder.bind(entity, selectionMode && isSelected(entity.id));
         holder.itemView.setOnClickListener(v -> listener.onEntityClick(entity));
+        holder.itemView.setOnLongClickListener(v -> {
+            listener.onEntityLongClick(entity);
+            return true;
+        });
     }
 
     static final class EntityHolder extends RecyclerView.ViewHolder {
@@ -83,9 +110,16 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
             this.binding = binding;
         }
 
-        void bind(@NonNull final EntityRoom entity) {
+        void bind(@NonNull final EntityRoom entity, boolean picked) {
             Context context = itemView.getContext();
+            EntityType type = EntityType.fromOrCharacter(entity.kind);
+            binding.itemEntityRoot.setCardBackgroundColor(androidx.core.content.ContextCompat.getColor(
+                    context, picked ? R.color.colorPrimaryContainer : R.color.colorSurface));
             binding.itemEntityIcon.setImageResource(Labels.entityIcon(entity.kind));
+            // Тип виден по цвету полоски и подписи — не нужно читать строку класса.
+            binding.itemEntityIcon.setColorFilter(TypeColors.of(context, type));
+            binding.itemEntityStripe.setBackgroundColor(TypeColors.of(context, type));
+            binding.itemEntityType.setTextColor(TypeColors.of(context, type));
             binding.itemEntityName.setText(TextUtils.isEmpty(entity.name)
                     ? context.getString(R.string.attr_not_set) : entity.name);
             // Герой и персонаж живут в одной вкладке — различаем подписью класса.

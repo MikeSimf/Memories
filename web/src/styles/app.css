@@ -1,0 +1,17 @@
+
+/* ---------------------------------------------------------------------------
+   Тип объекта на карточке: полоска слева. Те же приглушённые тона, что и в
+   бейджах, но заметные до чтения подписи.
+   --------------------------------------------------------------------------- */
+.card--type-hero {
+  border-left: 4px solid var(--accent);
+}
+.card--type-npc {
+  border-left: 4px solid var(--info);
+}
+.card--type-location {
+  border-left: 4px solid var(--success);
+}
+.card--type-item {
+  border-left: 4px solid var(--warning);
+}

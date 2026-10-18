@@ -36,6 +36,8 @@ import ru.dndmemory.ui.common.Extras;
 import ru.dndmemory.ui.common.Labels;
 import ru.dndmemory.ui.common.NameIndex;
 import ru.dndmemory.ui.common.Nav;
+import ru.dndmemory.ui.common.ImageLoader;
+import ru.dndmemory.ui.common.TypeColors;
 import ru.dndmemory.ui.common.Rights;
 import ru.dndmemory.ui.common.ViewModelFactory;
 import ru.dndmemory.ui.common.ViewUtils;
@@ -142,10 +144,17 @@ public class EntityDetailActivity extends AppCompatActivity {
         }
         binding.entityTitle.setText(TextUtils.isEmpty(entity.name)
                 ? getString(R.string.attr_not_set) : entity.name);
-        binding.entitySubtitle.setText(getString(R.string.entity_detail_type,
-                Labels.entityTypeText(this, entity.kind)));
+        EntityType type = EntityType.fromOrCharacter(entity.kind);
+        binding.entityTypeChip.setText(Labels.entityTypeText(this, entity.kind));
+        binding.entityTypeChip.setTextColor(TypeColors.of(this, type));
+        binding.entityTypeChip.setBackgroundTintList(
+                android.content.res.ColorStateList.valueOf(TypeColors.soft(this, type)));
+        ViewUtils.setTextOrGone(binding.entitySubtitle, Labels.entitySubtitle(this, entity));
         binding.entityUpdated.setText(getString(R.string.entity_detail_updated,
                 DateFormats.formatIso(entity.updatedAt)));
+
+        // Фото грузится с сервера авторизованным клиентом и кэшируется в памяти.
+        ImageLoader.load(App.container(this).okHttpClient(), entity.imageFileId, binding.entityPhoto);
 
         renderWiki(binding.entityDescription, entity.description);
         ViewUtils.show(binding.entityDescriptionTitle,

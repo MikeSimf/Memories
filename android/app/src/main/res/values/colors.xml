@@ -44,6 +44,18 @@
     <!-- Пустое состояние и подписи -->
     <color name="text_muted">#6B5B47</color>
 
+    <!-- Типы объектов: приглушённые тона, без контрастных цветов -->
+    <color name="type_hero">#4F5D75</color>
+    <color name="type_character">#7A5C43</color>
+    <color name="type_location">#4F6F5A</color>
+    <color name="type_item">#6B5A7A</color>
+
+    <!-- Подложки под тип: те же тона, сильно разбавленные -->
+    <color name="type_hero_soft">#E3E7EF</color>
+    <color name="type_character_soft">#EDE3DA</color>
+    <color name="type_location_soft">#E2EAE4</color>
+    <color name="type_item_soft">#E9E4EE</color>
+
     <!-- Иконка приложения -->
     <color name="ic_launcher_background">#3A2A18</color>
 </resources>

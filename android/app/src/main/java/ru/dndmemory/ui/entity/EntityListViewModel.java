@@ -138,6 +138,49 @@ public class EntityListViewModel extends ViewModel {
         });
     }
 
+    /** Обновление одного объекта с сервера (действие свайпа). */
+    public void refreshOne(@NonNull EntityRoom entity) {
+        refreshState.setValue(Resource.loading());
+        entities.refreshOne(campaignId, EntityType.fromOrCharacter(entity.kind), entity.id,
+                new RepoCallback<EntityRoom>() {
+                    @Override
+                    public void onSuccess(@Nullable EntityRoom value) {
+                        refreshState.setValue(Resource.success(null));
+                    }
+
+                    @Override
+                    public void onError(@NonNull ApiException error) {
+                        refreshState.setValue(Resource.error(error));
+                    }
+                });
+    }
+
+    /** Удаление выбранных объектов: локально сразу, отправка — синхронизацией. */
+    public void deleteMany(@NonNull List<EntityRoom> selection) {
+        List<String> ids = new ArrayList<>();
+        for (EntityRoom room : selection) {
+            if (room != null && room.id != null) {
+                ids.add(room.id);
+            }
+        }
+        if (ids.isEmpty()) {
+            return;
+        }
+        refreshState.setValue(Resource.loading());
+        entities.deleteMany(ids, new RepoCallback<Void>() {
+            @Override
+            public void onSuccess(@Nullable Void value) {
+                refreshState.setValue(Resource.success(null));
+                scheduler.syncNow(campaignId);
+            }
+
+            @Override
+            public void onError(@NonNull ApiException error) {
+                refreshState.setValue(Resource.error(error));
+            }
+        });
+    }
+
     public void syncNow() {
         scheduler.syncNow(campaignId);
     }

@@ -181,7 +181,53 @@
                     android:text="@string/entity_item_add" />
             </LinearLayout>
 
-            <com.google.android.material.textfield.TextInputLayout
+                <!-- Фото объекта: необязательное, сжимается перед отправкой -->
+                <LinearLayout
+                    android:id="@+id/entity_edit_photo_group"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/entity_photo"
+                        android:textAppearance="?attr/textAppearanceLabelLarge" />
+
+                    <ImageView
+                        android:id="@+id/entity_edit_photo"
+                        android:layout_width="match_parent"
+                        android:layout_height="180dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@color/colorSurfaceVariant"
+                        android:contentDescription="@string/entity_photo"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/entity_edit_photo_pick"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/entity_photo_pick" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/entity_edit_photo_clear"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/entity_photo_clear"
+                            android:visibility="gone" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
