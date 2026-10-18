@@ -117,7 +117,8 @@ public final class WikiLinkEditor {
         shown.addAll(matches);
         popup.setAdapter(new ArrayAdapter<>(field.getContext(),
                 android.R.layout.simple_list_item_1, shown));
-        popup.setWidth(field.getWidth());
+        int width = field.getWidth();
+        popup.setWidth(width > 0 ? width : android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
         popup.show();
     }
 
