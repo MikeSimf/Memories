@@ -295,15 +295,21 @@ public class EntityRepository {
             throws ru.dndmemory.data.remote.ApiException {
         switch (kind) {
             case HERO:
-                return ApiCall.execute(api.heroes(campaignId, null, null, 500, null));
+                return itemsOf(ApiCall.execute(api.heroes(campaignId, null, null, 500, null)));
             case LOCATION:
-                return ApiCall.execute(api.locations(campaignId, null, null, 500, null));
+                return itemsOf(ApiCall.execute(api.locations(campaignId, null, null, 500, null)));
             case ITEM:
-                return ApiCall.execute(api.items(campaignId, null, null, 500, null));
+                return itemsOf(ApiCall.execute(api.items(campaignId, null, null, 500, null)));
             case CHARACTER:
             default:
-                return ApiCall.execute(api.characters(campaignId, null, null, 500, null));
+                return itemsOf(ApiCall.execute(api.characters(campaignId, null, null, 500, null)));
         }
+    }
+
+    /** Сервер отдаёт страницу списка: {@code {"items": […], "total": n}}. */
+    @NonNull
+    private static <T> List<T> itemsOf(@Nullable ru.dndmemory.data.remote.dto.ObjectListDto<T> page) {
+        return page == null || page.items == null ? new ArrayList<>() : page.items;
     }
 
     /** Чтение одного объекта: {@code GET .../heroes/{id}} и аналоги. */

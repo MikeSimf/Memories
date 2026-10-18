@@ -104,7 +104,8 @@ public class SettingsActivity extends AppCompatActivity {
 
         viewModel.loggedOut().observe(this, done -> {
             if (Boolean.TRUE.equals(done)) {
-                Nav.openCampaignList(this);
+                // После выхода — экран входа, а не список кампаний: данных там уже нет.
+                Nav.authAfterLogout(this);
                 finish();
             }
         });

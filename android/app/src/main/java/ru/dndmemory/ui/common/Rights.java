@@ -1,5 +1,6 @@
 package ru.dndmemory.ui.common;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import ru.dndmemory.data.local.entity.CampaignRoom;
@@ -39,9 +40,40 @@ public final class Rights {
         if (campaign.hasPermission(permission)) {
             return true;
         }
-        // Свежесозданная кампания приходит без myPermissions — владелец имеет всё.
-        return campaign.myPermissions != null && campaign.myPermissions.isEmpty()
-                && MemberRole.OWNER == MemberRole.from(campaign.myRole);
+        if (campaign.myPermissions != null && !campaign.myPermissions.isEmpty()) {
+            // Список прав пришёл с сервера и в нём этого права нет — значит нельзя.
+            return false;
+        }
+        // Списка прав нет: кампания создана локально или пришла из списка
+        // (GET /api/campaigns отдаёт только myRole, без myPermissions).
+        // Права роли неизменны (docs/roles.md), поэтому выводим их из роли.
+        MemberRole role = MemberRole.from(campaign.myRole);
+        return role != null && roleHas(role, permission);
+    }
+
+    /** Матрица прав из docs/roles.md, раздел 2. */
+    private static boolean roleHas(@NonNull MemberRole role, String permission) {
+        switch (permission) {
+            case CAMPAIGN_MANAGE:
+                return role.canManageCampaign();
+            case MEMBERS_MANAGE:
+                return role.canManageMembers();
+            case INVITE_CREATE:
+                return role == MemberRole.OWNER;
+            case ENTITY_READ:
+            case RETELLING_READ:
+                return true;
+            case ENTITY_WRITE:
+            case RETELLING_WRITE:
+            case RETELLING_WRITE_OWN:
+                return role.canWriteEntities();
+            case HERO_WRITE:
+                return role == MemberRole.OWNER;
+            case RETELLING_PUBLISH:
+                return role.canPublishRetellings();
+            default:
+                return false;
+        }
     }
 
     public static boolean canReadEntities(@Nullable CampaignRoom campaign) {
@@ -91,10 +123,10 @@ public final class Rights {
         if (has(campaign, RETELLING_PUBLISH)) {
             return true;
         }
-        if (retelling != null && currentUserId != null && currentUserId.equals(retelling.createdBy)) {
-            return has(campaign, RETELLING_WRITE_OWN) || has(campaign, RETELLING_WRITE);
-        }
-        return false;
+        // Свой пересказ автор правит всегда: удалять его он всё равно может,
+        // а требование отдельного права на правку давало странную асимметрию.
+        return retelling != null && currentUserId != null
+                && currentUserId.equals(retelling.createdBy);
     }
 
     public static boolean canDeleteRetelling(@Nullable CampaignRoom campaign, @Nullable RetellingRoom retelling,

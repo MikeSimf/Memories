@@ -158,7 +158,10 @@ public class CampaignListActivity extends AppCompatActivity implements CampaignA
         new MaterialAlertDialogBuilder(this)
                 .setMessage(R.string.settings_logout_confirm)
                 .setPositiveButton(R.string.action_logout, (dialog, which) ->
-                        App.container(this).authRepository().logout(null))
+                        App.container(this).logout(() -> {
+                            Nav.authAfterLogout(this);
+                            finish();
+                        }))
                 .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }

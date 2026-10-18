@@ -82,6 +82,7 @@ public class EntityDetailActivity extends AppCompatActivity {
                         container.syncScheduler())))
                 .get(CampaignViewModel.class);
         campaignViewModel.setCampaignId(campaignId);
+        campaignViewModel.refreshDetails();
 
         setSupportActionBar(binding.entityToolbar);
         if (getSupportActionBar() != null) {
@@ -309,6 +310,10 @@ public class EntityDetailActivity extends AppCompatActivity {
             CampaignRoom campaign = campaignViewModel.campaign().getValue();
             String userId = campaignViewModel.currentUserId();
             if (current == null || !Rights.canWriteEntity(campaign, current, userId)) {
+                android.util.Log.w("DndRights", "правка запрещена: роль="
+                        + (campaign == null ? null : campaign.myRole) + " права="
+                        + (campaign == null ? null : campaign.myPermissions) + " класс="
+                        + (current == null ? null : current.kind));
                 ViewUtils.toast(this, current != null
                         && EntityType.HERO.name().equalsIgnoreCase(current.kind)
                         ? R.string.entity_hero_owner_only : R.string.error_forbidden);

@@ -57,7 +57,19 @@ public class CampaignRepository {
             if (remote != null) {
                 for (CampaignDto dto : remote) {
                     if (dto != null && dto.id != null) {
-                        rooms.add(Mappers.toRoom(dto));
+                        CampaignRoom room = Mappers.toRoom(dto);
+                        // Список отдаёт только myRole, без myPermissions: не затираем
+                        // права, полученные ранее из карточки кампании.
+                        CampaignRoom local = db.campaignDao().find(room.id);
+                        if (local != null) {
+                            if (room.myPermissions == null || room.myPermissions.isEmpty()) {
+                                room.myPermissions = local.myPermissions;
+                            }
+                            if (room.myRole == null) {
+                                room.myRole = local.myRole;
+                            }
+                        }
+                        rooms.add(room);
                     }
                 }
             }

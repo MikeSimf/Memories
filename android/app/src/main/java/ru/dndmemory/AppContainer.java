@@ -2,10 +2,14 @@ package ru.dndmemory;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import okhttp3.OkHttpClient;
 import ru.dndmemory.data.local.AppDatabase;
 import ru.dndmemory.data.local.SessionStore;
 import ru.dndmemory.data.local.SettingsStore;
+import ru.dndmemory.data.local.entity.CampaignRoom;
 import ru.dndmemory.data.remote.ApiClient;
 import ru.dndmemory.data.remote.ApiService;
 import ru.dndmemory.data.remote.AuthInterceptor;
@@ -17,6 +21,8 @@ import ru.dndmemory.data.repo.InviteRepository;
 import ru.dndmemory.data.repo.MemberRepository;
 import ru.dndmemory.data.repo.PendingWriter;
 import ru.dndmemory.data.repo.RetellingRepository;
+import ru.dndmemory.data.remote.ApiException;
+import ru.dndmemory.util.RepoCallback;
 import ru.dndmemory.sync.SyncEngine;
 import ru.dndmemory.sync.SyncScheduler;
 import ru.dndmemory.util.AppExecutors;
@@ -78,6 +84,45 @@ public class AppContainer {
         // 5. Синхронизация.
         syncEngine = new SyncEngine(database, apiService, sessionStore.deviceClientId());
         syncScheduler = new SyncScheduler(app, settingsStore);
+    }
+
+    /**
+     * Выход из аккаунта: останавливает периодическую синхронизацию, чистит сессию
+     * и локальные данные кампаний. {@code onDone} вызывается в главном потоке.
+     *
+     * <p>Раньше выход был размазан по двум экранам, и из списка кампаний
+     * локальная база не чистилась вовсе.
+     */
+    public void logout(@Nullable final Runnable onDone) {
+        syncScheduler.cancelPeriodic();
+        authRepository.logout(null);
+        AppExecutors.get().io(() -> {
+            for (CampaignRoom campaign : database.campaignDao().findAllNow()) {
+                database.entityDao().clearForCampaign(campaign.id);
+                database.retellingDao().clearForCampaign(campaign.id);
+                database.retellingDraftDao().clearForCampaign(campaign.id);
+                database.memberDao().clearForCampaign(campaign.id);
+                database.pendingChangeDao().clearForCampaign(campaign.id);
+                database.syncStateDao().clearForCampaign(campaign.id);
+            }
+            database.campaignDao().clear();
+            return null;
+        }, new RepoCallback<Void>() {
+            @Override
+            public void onSuccess(@Nullable Void value) {
+                if (onDone != null) {
+                    onDone.run();
+                }
+            }
+
+            @Override
+            public void onError(@NonNull ApiException error) {
+                // Локальные данные могли не удалиться — пользователь всё равно выходит.
+                if (onDone != null) {
+                    onDone.run();
+                }
+            }
+        });
     }
 
     public AppDatabase database() {

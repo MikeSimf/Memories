@@ -96,6 +96,7 @@ public class EntityEditActivity extends AppCompatActivity {
                         container.syncScheduler())))
                 .get(CampaignViewModel.class);
         campaignViewModel.setCampaignId(campaignId);
+        campaignViewModel.refreshDetails();
 
         setSupportActionBar(binding.entityEditToolbar);
         if (getSupportActionBar() != null) {
@@ -233,6 +234,8 @@ public class EntityEditActivity extends AppCompatActivity {
         }
         if (!Rights.canWrite(campaign, currentKind)) {
             rightsBlocked = true;
+            android.util.Log.w("DndRights", "редактор закрыт: роль=" + campaign.myRole
+                    + " права=" + campaign.myPermissions + " класс=" + currentKind);
             ViewUtils.toast(this, currentKind.requiresHeroPermission()
                     ? R.string.entity_hero_owner_only : R.string.error_forbidden);
             finish();

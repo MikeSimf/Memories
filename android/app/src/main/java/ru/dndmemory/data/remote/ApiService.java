@@ -32,6 +32,7 @@ import ru.dndmemory.data.remote.dto.ItemDto;
 import ru.dndmemory.data.remote.dto.LocationDto;
 import ru.dndmemory.data.remote.dto.LoginRequest;
 import ru.dndmemory.data.remote.dto.MemberDto;
+import ru.dndmemory.data.remote.dto.ObjectListDto;
 import ru.dndmemory.data.remote.dto.PatchCampaignRequest;
 import ru.dndmemory.data.remote.dto.PatchMeRequest;
 import ru.dndmemory.data.remote.dto.PatchMemberRequest;
@@ -148,7 +149,7 @@ public interface ApiService {
     // --- Герои (раздел 6): создаёт, правит и удаляет только владелец --------
 
     @GET("api/campaigns/{id}/heroes")
-    Call<List<HeroDto>> heroes(@Path("id") String campaignId,
+    Call<ObjectListDto<HeroDto>> heroes(@Path("id") String campaignId,
                                @Query("q") String query,
                                @Query("updatedSince") String updatedSince,
                                @Query("limit") Integer limit,
@@ -171,7 +172,7 @@ public interface ApiService {
     // --- Персонажи (НПС) ---------------------------------------------------
 
     @GET("api/campaigns/{id}/characters")
-    Call<List<CharacterDto>> characters(@Path("id") String campaignId,
+    Call<ObjectListDto<CharacterDto>> characters(@Path("id") String campaignId,
                                         @Query("q") String query,
                                         @Query("updatedSince") String updatedSince,
                                         @Query("limit") Integer limit,
@@ -198,7 +199,7 @@ public interface ApiService {
     // --- Локации -----------------------------------------------------------
 
     @GET("api/campaigns/{id}/locations")
-    Call<List<LocationDto>> locations(@Path("id") String campaignId,
+    Call<ObjectListDto<LocationDto>> locations(@Path("id") String campaignId,
                                       @Query("q") String query,
                                       @Query("updatedSince") String updatedSince,
                                       @Query("limit") Integer limit,
@@ -225,7 +226,7 @@ public interface ApiService {
     // --- Предметы ----------------------------------------------------------
 
     @GET("api/campaigns/{id}/items")
-    Call<List<ItemDto>> items(@Path("id") String campaignId,
+    Call<ObjectListDto<ItemDto>> items(@Path("id") String campaignId,
                               @Query("q") String query,
                               @Query("updatedSince") String updatedSince,
                               @Query("limit") Integer limit,

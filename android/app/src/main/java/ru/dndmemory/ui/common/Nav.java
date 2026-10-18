@@ -49,6 +49,16 @@ public final class Nav {
         return intent;
     }
 
+    /**
+     * Экран входа сразу после выхода из аккаунта. Стек очищается: иначе кнопка
+     * «назад» вернёт в список кампаний, которого больше нет.
+     */
+    public static void authAfterLogout(@NonNull Context context) {
+        Intent intent = auth(context, null);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        context.startActivity(intent);
+    }
+
     /** Сброс пароля: письма нет, ссылку передают администратору. */
     public static void openPasswordReset(@NonNull Context context) {
         context.startActivity(new Intent(context, PasswordResetActivity.class));

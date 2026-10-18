@@ -70,6 +70,7 @@ public class RetellingDetailActivity extends AppCompatActivity {
                         container.syncScheduler())))
                 .get(CampaignViewModel.class);
         campaignViewModel.setCampaignId(campaignId);
+        campaignViewModel.refreshDetails();
 
         setSupportActionBar(binding.retellingToolbar);
         if (getSupportActionBar() != null) {

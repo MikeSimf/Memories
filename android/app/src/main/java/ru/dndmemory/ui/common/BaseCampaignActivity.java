@@ -39,6 +39,8 @@ public abstract class BaseCampaignActivity extends AppCompatActivity implements 
                         container.syncScheduler())))
                 .get(CampaignViewModel.class);
         viewModel.setCampaignId(campaignId);
+        // Права и роль берём свежие: список кампаний отдаёт только myRole.
+        viewModel.refreshDetails();
         return true;
     }
 

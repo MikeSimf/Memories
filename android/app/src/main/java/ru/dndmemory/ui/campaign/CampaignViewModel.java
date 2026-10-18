@@ -79,6 +79,19 @@ public class CampaignViewModel extends ViewModel {
         scheduler.syncNow(id);
     }
 
+    /**
+     * Тихо обновляет карточку кампании с сервера: роль и {@code myPermissions}.
+     * Без этого после обновления списка прав могло не быть вовсе — список их
+     * не отдаёт, — и экран считал, что редактировать нельзя.
+     */
+    public void refreshDetails() {
+        String id = campaignId.getValue();
+        if (id == null || id.isEmpty()) {
+            return;
+        }
+        campaigns.refreshDetails(id, null);
+    }
+
     public void syncNow() {
         scheduler.syncNow(campaignId.getValue());
     }
