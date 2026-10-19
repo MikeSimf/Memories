@@ -28,6 +28,9 @@ public class MaterialRoom {
     /** Файл картинки на сервере: {@code GET /api/files/{id}}. */
     public String imageFileId;
 
+    /** Файлы материала в JSON: картинки и документы. */
+    public String filesJson;
+
     public long revision;
     public String createdAt;
     public String updatedAt;

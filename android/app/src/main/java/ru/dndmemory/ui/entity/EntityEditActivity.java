@@ -320,6 +320,7 @@ public class EntityEditActivity extends AppCompatActivity {
 
             bindFieldsForKind();
             showPhoto(state.entity.imageFileId);
+            renderFiles();
             checkRights();
         });
 
@@ -375,7 +376,11 @@ public class EntityEditActivity extends AppCompatActivity {
                                 return;
                             }
                             viewModel.setImageFileId(value.id);
-                            showPhoto(value.id);
+                            viewModel.addFile(new ru.dndmemory.data.model.Attachment(
+                                    value.id, "photo-" + viewModel.files().size() + ".jpg",
+                                    value.contentType == null ? "image/jpeg" : value.contentType,
+                                    value.size));
+                            renderFiles();
                         }
 
                         @Override
@@ -400,6 +405,31 @@ public class EntityEditActivity extends AppCompatActivity {
                                 ErrorMessages.text(EntityEditActivity.this, error)));
             }
         });
+    }
+
+    /** Галерея файлов объекта: миниатюра, имя и кнопка «Убрать». */
+    private void renderFiles() {
+        binding.entityEditFiles.removeAllViews();
+        java.util.List<ru.dndmemory.data.model.Attachment> files = viewModel.files();
+        for (final ru.dndmemory.data.model.Attachment file : files) {
+            android.widget.LinearLayout row = (android.widget.LinearLayout)
+                    getLayoutInflater().inflate(R.layout.item_attachment, binding.entityEditFiles, false);
+            android.widget.ImageView thumb = row.findViewById(R.id.attachment_thumb);
+            android.widget.TextView name = row.findViewById(R.id.attachment_name);
+            com.google.android.material.button.MaterialButton action =
+                    row.findViewById(R.id.attachment_action);
+            name.setText(file.name == null || file.name.isEmpty() ? file.id : file.name);
+            if (file.isImage()) {
+                ImageLoader.load(container.okHttpClient(), file.id, thumb);
+            }
+            action.setText(R.string.file_remove);
+            action.setOnClickListener(v -> {
+                viewModel.removeFile(file.id);
+                renderFiles();
+            });
+            binding.entityEditFiles.addView(row);
+        }
+        ViewUtils.show(binding.entityEditFiles, !files.isEmpty());
     }
 
     /** Превью фото: пустой id прячет картинку и кнопку «Убрать». */

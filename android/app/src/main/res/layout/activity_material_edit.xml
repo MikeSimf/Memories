@@ -45,6 +45,13 @@
                     android:text="@string/entity_photo_pick" />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/material_file_document"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/file_add_document" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/material_photo_clear"
                     style="@style/Widget.MaterialComponents.Button.TextButton"
                     android:layout_width="wrap_content"
@@ -52,6 +59,13 @@
                     android:text="@string/entity_photo_clear"
                     android:visibility="gone" />
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/material_files"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"

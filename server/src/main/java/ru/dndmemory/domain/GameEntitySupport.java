@@ -50,6 +50,14 @@ public abstract class GameEntitySupport
     @Column(name = "image_file_id")
     private UUID imageFileId;
 
+    /**
+     * Файлы объекта в формате JSON: [{id, name, contentType, size}].
+     * Хранится строкой в jsonb — список едет внутри payload, отдельный тип
+     * изменений для файлов не нужен.
+     */
+    @Column(name = "files", columnDefinition = "jsonb")
+    private String files;
+
     @Column(nullable = false)
     private boolean deleted;
 

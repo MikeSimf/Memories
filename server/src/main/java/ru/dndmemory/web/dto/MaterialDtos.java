@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.dndmemory.web.dto.AttachmentDto;
 import ru.dndmemory.web.dto.LinkDto;
 
 import javax.validation.constraints.NotBlank;
@@ -28,6 +29,7 @@ public final class MaterialDtos {
         private String name;
         private String description;
         private UUID imageFileId;
+        private List<AttachmentDto> files;
         private List<LinkDto> links;
         private UUID createdBy;
         private String createdByName;

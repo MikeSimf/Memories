@@ -105,6 +105,7 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
                 .campaignId(hero.getCampaignId())
                 .name(hero.getName())
                 .description(hero.getDescription())
+                .files(filesOf(hero))
                 .imageFileId(hero.getImageFileId())
                 .links(objectIndexService.links(context, hero.getDescription()))
                 .createdBy(hero.getCreatedBy())
@@ -125,6 +126,7 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
 
     @Override
     protected void applyPayload(Hero hero, JsonNode payload) {
+        applyFiles(hero, payload);
         if (payload == null) {
             return;
         }

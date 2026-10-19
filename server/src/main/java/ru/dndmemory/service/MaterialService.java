@@ -78,6 +78,7 @@ public class MaterialService extends AbstractObjectService<Material, MaterialDto
                 .campaignId(material.getCampaignId())
                 .name(material.getName())
                 .description(material.getDescription())
+                .files(filesOf(material))
                 .imageFileId(material.getImageFileId())
                 .links(objectIndexService.links(context, material.getDescription()))
                 .createdBy(material.getCreatedBy())
@@ -93,6 +94,7 @@ public class MaterialService extends AbstractObjectService<Material, MaterialDto
 
     @Override
     protected void applyPayload(Material material, JsonNode payload) {
+        applyFiles(material, payload);
         if (payload == null) {
             return;
         }

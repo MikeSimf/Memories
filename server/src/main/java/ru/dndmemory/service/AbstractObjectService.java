@@ -93,6 +93,30 @@ public abstract class AbstractObjectService<
     protected void validate(E entity) {
     }
 
+    /** Файлы объекта: jsonb-строка превращается в список для DTO. */
+    protected java.util.List<ru.dndmemory.web.dto.AttachmentDto> filesOf(ImageExtender entity) {
+        String raw = entity.getFiles();
+        if (raw == null || raw.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        try {
+            return objectMapper.readValue(raw, new com.fasterxml.jackson.core.type.TypeReference<
+                    java.util.List<ru.dndmemory.web.dto.AttachmentDto>>() {
+            });
+        } catch (Exception e) {
+            return java.util.Collections.emptyList();
+        }
+    }
+
+    /** Сохраняет список файлов из payload как есть: клиент присылает готовый JSON. */
+    protected void applyFiles(ImageExtender entity, JsonNode payload) {
+        if (payload == null || !payload.has("files")) {
+            return;
+        }
+        JsonNode files = payload.get("files");
+        entity.setFiles(files == null || files.isNull() ? null : files.toString());
+    }
+
     /** Право на создание объекта этого класса. */
     protected void requireCreate(Member member) {
         permissionService.require(member, Permissions.ENTITY_WRITE);

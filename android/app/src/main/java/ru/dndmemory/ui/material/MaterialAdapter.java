@@ -35,6 +35,7 @@ public class MaterialAdapter extends ListAdapter<MaterialRoom, MaterialAdapter.H
                     return TextUtils.equals(oldItem.name, newItem.name)
                             && TextUtils.equals(oldItem.description, newItem.description)
                             && TextUtils.equals(oldItem.imageFileId, newItem.imageFileId)
+                            && TextUtils.equals(oldItem.filesJson, newItem.filesJson)
                             && oldItem.dirty == newItem.dirty;
                 }
             };
@@ -75,8 +76,19 @@ public class MaterialAdapter extends ListAdapter<MaterialRoom, MaterialAdapter.H
                     ? material.name : itemView.getContext().getString(R.string.material_no_photo));
             ViewUtils.setTextOrGone(binding.itemMaterialDescription, material.description);
             ViewUtils.show(binding.itemMaterialStatus, material.dirty);
+            // Миниатюра: первая картинка из файлов, иначе унаследованное фото.
+            String thumbId = material.imageFileId;
+            for (ru.dndmemory.data.model.Attachment file :
+                    ru.dndmemory.data.Mappers.files(material.filesJson)) {
+                if (file.isImage()) {
+                    thumbId = file.id;
+                    break;
+                }
+            }
             ImageLoader.load(App.container(itemView.getContext()).okHttpClient(),
-                    material.imageFileId, binding.itemMaterialPhoto);
+                    thumbId, binding.itemMaterialPhoto);
+            binding.itemMaterialPhoto.setVisibility(
+                    thumbId == null ? android.view.View.GONE : android.view.View.VISIBLE);
         }
     }
 }

@@ -72,6 +72,7 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
                 .campaignId(location.getCampaignId())
                 .name(location.getName())
                 .description(location.getDescription())
+                .files(filesOf(location))
                 .imageFileId(location.getImageFileId())
                 .links(objectIndexService.links(context, location.getDescription()))
                 .createdBy(location.getCreatedBy())
@@ -87,6 +88,7 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
 
     @Override
     protected void applyPayload(Location location, JsonNode payload) {
+        applyFiles(location, payload);
         if (payload == null) {
             return;
         }

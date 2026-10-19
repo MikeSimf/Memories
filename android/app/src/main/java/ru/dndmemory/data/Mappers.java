@@ -2,12 +2,17 @@ package ru.dndmemory.data;
 
 import java.util.ArrayList;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import ru.dndmemory.data.local.entity.CampaignRoom;
 import ru.dndmemory.data.local.entity.EntityRoom;
 import ru.dndmemory.data.local.entity.MaterialRoom;
 import ru.dndmemory.data.local.entity.MemberRoom;
 import ru.dndmemory.data.local.entity.RetellingRoom;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import ru.dndmemory.data.model.Attachment;
 import ru.dndmemory.data.model.EntityLink;
 import ru.dndmemory.data.model.EntityType;
 import ru.dndmemory.data.model.HeroItem;
@@ -121,6 +126,7 @@ public final class Mappers {
         room.name = dto.name;
         room.description = dto.description;
         room.imageFileId = dto.imageFileId;
+        room.filesJson = filesJson(dto.files);
         room.links = dto.links == null ? new ArrayList<EntityLink>() : new ArrayList<>(dto.links);
         room.createdBy = dto.createdBy;
         room.updatedBy = dto.updatedBy;
@@ -164,6 +170,7 @@ public final class Mappers {
         room.name = dto.name;
         room.description = dto.description;
         room.imageFileId = dto.imageFileId;
+        room.filesJson = filesJson(dto.files);
         room.revision = dto.revision;
         room.createdAt = dto.createdAt;
         room.updatedAt = dto.updatedAt;
@@ -184,11 +191,38 @@ public final class Mappers {
         dto.name = room.name;
         dto.description = room.description;
         dto.imageFileId = room.imageFileId;
+        dto.files = files(room.filesJson);
         dto.revision = room.revision;
         dto.createdAt = room.createdAt;
         dto.updatedAt = room.updatedAt;
         dto.deleted = room.deleted;
         return dto;
+    }
+
+    private static final Gson FILES_GSON = new Gson();
+
+    /** Файлы объекта из JSON-колонки; битый JSON не роняет список. */
+    @NonNull
+    public static java.util.List<Attachment> files(String json) {
+        if (json == null || json.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        try {
+            java.util.List<Attachment> parsed = FILES_GSON.fromJson(json,
+                    new TypeToken<java.util.List<Attachment>>() { }.getType());
+            return parsed == null ? new java.util.ArrayList<>() : parsed;
+        } catch (RuntimeException e) {
+            return new java.util.ArrayList<>();
+        }
+    }
+
+    /** Файлы в JSON для локальной колонки и для payload. */
+    @Nullable
+    public static String filesJson(@Nullable java.util.List<Attachment> files) {
+        if (files == null || files.isEmpty()) {
+            return null;
+        }
+        return FILES_GSON.toJson(files);
     }
 
     /** Тело правки: подкласс DTO по классу объекта, лишние поля не отправляются. */
@@ -204,6 +238,7 @@ public final class Mappers {
         dto.name = room.name;
         dto.description = room.description;
         dto.imageFileId = room.imageFileId;
+        dto.files = files(room.filesJson);
         dto.links = room.links == null ? new ArrayList<EntityLink>() : room.links;
         dto.createdBy = room.createdBy;
         dto.updatedBy = room.updatedBy;

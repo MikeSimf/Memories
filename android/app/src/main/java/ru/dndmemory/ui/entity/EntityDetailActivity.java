@@ -174,6 +174,36 @@ public class EntityDetailActivity extends AppCompatActivity {
         ViewUtils.show(binding.entityConflictBar, entity.hasConflict());
     }
 
+    /** Все файлы объекта: фото открываются, документы скачиваются. */
+    private void renderFiles(@NonNull EntityRoom entity) {
+        binding.entityFiles.removeAllViews();
+        java.util.List<ru.dndmemory.data.model.Attachment> files =
+                ru.dndmemory.data.Mappers.files(entity.filesJson);
+        for (final ru.dndmemory.data.model.Attachment file : files) {
+            android.widget.LinearLayout row = (android.widget.LinearLayout) getLayoutInflater()
+                    .inflate(R.layout.item_attachment, binding.entityFiles, false);
+            android.widget.ImageView thumb = row.findViewById(R.id.attachment_thumb);
+            android.widget.TextView name = row.findViewById(R.id.attachment_name);
+            com.google.android.material.button.MaterialButton action =
+                    row.findViewById(R.id.attachment_action);
+            name.setText(file.name == null || file.name.isEmpty() ? file.id : file.name);
+            if (file.isImage()) {
+                ImageLoader.load(App.container(this).okHttpClient(), file.id, thumb);
+                action.setText(R.string.file_open);
+                action.setOnClickListener(v -> openPhoto(file.id));
+            } else {
+                boolean downloaded = ru.dndmemory.ui.common.FileDownloads.isDownloaded(this, file.id);
+                action.setText(downloaded ? R.string.file_downloaded : R.string.update_download);
+                action.setOnClickListener(v -> {
+                    ru.dndmemory.ui.common.FileDownloads.download(this, file.id, file.name);
+                    renderFiles(entity);
+                });
+            }
+            binding.entityFiles.addView(row);
+        }
+        ViewUtils.show(binding.entityFiles, !files.isEmpty());
+    }
+
     /** Полноэкранный просмотр фото: по нажатию на картинку в карточке. */
     private void openPhoto(@Nullable String fileId) {
         if (fileId == null || fileId.isEmpty()) {

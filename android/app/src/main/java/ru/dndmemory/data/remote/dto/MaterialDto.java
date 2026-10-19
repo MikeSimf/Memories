@@ -15,6 +15,7 @@ public class MaterialDto {
     public String name;
     public String description;
     public String imageFileId;
+    public java.util.List<ru.dndmemory.data.model.Attachment> files;
     public List<EntityLink> links;
     public String createdBy;
     public String updatedBy;

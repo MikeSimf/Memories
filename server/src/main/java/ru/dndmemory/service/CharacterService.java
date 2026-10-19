@@ -82,6 +82,7 @@ public class CharacterService extends AbstractObjectService<Character, Character
                 .campaignId(character.getCampaignId())
                 .name(character.getName())
                 .description(character.getDescription())
+                .files(filesOf(character))
                 .imageFileId(character.getImageFileId())
                 .links(objectIndexService.links(context, character.getDescription(), character.getShortDescription()))
                 .createdBy(character.getCreatedBy())
@@ -99,6 +100,7 @@ public class CharacterService extends AbstractObjectService<Character, Character
 
     @Override
     protected void applyPayload(Character character, JsonNode payload) {
+        applyFiles(character, payload);
         if (payload == null) {
             return;
         }

@@ -76,6 +76,9 @@ public class EntityRoom {
 
     public String imageFileId;
 
+    /** Файлы объекта в JSON: фото галереи, карты, документы. */
+    public String filesJson;
+
     public List<EntityLink> links = new ArrayList<>();
 
     public String createdBy;

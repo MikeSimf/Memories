@@ -203,6 +203,38 @@ public class EntityEditViewModel extends ViewModel {
         }
     }
 
+    /** Файлы объекта: фото галереи, карты, документы. */
+    @NonNull
+    public java.util.List<ru.dndmemory.data.model.Attachment> files() {
+        if (draft == null) {
+            return new java.util.ArrayList<>();
+        }
+        return ru.dndmemory.data.Mappers.files(draft.filesJson);
+    }
+
+    public void addFile(@NonNull ru.dndmemory.data.model.Attachment attachment) {
+        if (draft == null) {
+            return;
+        }
+        java.util.List<ru.dndmemory.data.model.Attachment> list = files();
+        list.add(attachment);
+        draft.filesJson = ru.dndmemory.data.Mappers.filesJson(list);
+    }
+
+    public void removeFile(@Nullable String fileId) {
+        if (draft == null || fileId == null) {
+            return;
+        }
+        java.util.List<ru.dndmemory.data.model.Attachment> list = files();
+        java.util.Iterator<ru.dndmemory.data.model.Attachment> it = list.iterator();
+        while (it.hasNext()) {
+            if (fileId.equals(it.next().id)) {
+                it.remove();
+            }
+        }
+        draft.filesJson = ru.dndmemory.data.Mappers.filesJson(list);
+    }
+
     /** Идентификатор загруженной картинки; {@code null} — фото нет. */
     public void setImageFileId(@Nullable String imageFileId) {
         if (draft != null) {

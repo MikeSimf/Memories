@@ -81,6 +81,7 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
                 .campaignId(item.getCampaignId())
                 .name(item.getName())
                 .description(item.getDescription())
+                .files(filesOf(item))
                 .imageFileId(item.getImageFileId())
                 .links(objectIndexService.links(context, item.getDescription()))
                 .createdBy(item.getCreatedBy())
@@ -101,6 +102,7 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
 
     @Override
     protected void applyPayload(Item item, JsonNode payload) {
+        applyFiles(item, payload);
         if (payload == null) {
             return;
         }

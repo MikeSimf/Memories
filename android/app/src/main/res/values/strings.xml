@@ -16,6 +16,13 @@
     <string name="update_available_text">Доступна версия %1$s. Обновиться можно сейчас или позже.</string>
     <string name="update_download">Скачать</string>
     <string name="update_later">Позже</string>
+    <string name="file_download_started">Скачивание началось</string>
+    <string name="file_download_failed">Не удалось начать скачивание</string>
+    <string name="file_downloaded">скачано</string>
+    <string name="file_open">Открыть</string>
+    <string name="file_remove">Убрать</string>
+    <string name="file_add_image">Добавить фото</string>
+    <string name="file_add_document">Добавить документ</string>
     <string name="update_downloading">Скачиваю обновление…</string>
     <string name="update_install_ready">Загрузка завершена</string>
     <string name="update_failed">Не удалось скачать обновление</string>

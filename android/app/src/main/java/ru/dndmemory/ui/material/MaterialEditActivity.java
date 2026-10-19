@@ -21,6 +21,7 @@ import ru.dndmemory.data.remote.dto.FileDto;
 import ru.dndmemory.databinding.ActivityMaterialEditBinding;
 import ru.dndmemory.ui.common.ErrorMessages;
 import ru.dndmemory.ui.common.Extras;
+import ru.dndmemory.ui.common.FileDownloads;
 import ru.dndmemory.ui.common.ImageLoader;
 import ru.dndmemory.ui.common.ImageTools;
 import ru.dndmemory.ui.common.ViewUtils;
@@ -41,6 +42,7 @@ public class MaterialEditActivity extends AppCompatActivity {
     private String campaignId;
     private boolean creating;
     private ActivityResultLauncher<String> photoPicker;
+    private ActivityResultLauncher<String> documentPicker;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -57,7 +59,10 @@ public class MaterialEditActivity extends AppCompatActivity {
         }
 
         container = App.container(this);
-        photoPicker = registerForActivityResult(new ActivityResultContracts.GetContent(), this::onPhotoPicked);
+        photoPicker = registerForActivityResult(new ActivityResultContracts.GetContent(),
+                uri -> onFilePicked(uri, true));
+        documentPicker = registerForActivityResult(new ActivityResultContracts.GetContent(),
+                uri -> onFilePicked(uri, false));
 
         setSupportActionBar(binding.materialToolbar);
         if (getSupportActionBar() != null) {
@@ -75,9 +80,11 @@ public class MaterialEditActivity extends AppCompatActivity {
         binding.materialNameInput.setText(draft.name);
         binding.materialDescriptionInput.setText(draft.description);
         showPhoto(draft.imageFileId);
+        renderFiles();
         ViewUtils.show(binding.materialDelete, !creating);
 
         binding.materialPhotoPick.setOnClickListener(v -> photoPicker.launch("image/*"));
+        binding.materialFileDocument.setOnClickListener(v -> documentPicker.launch("*/*"));
         binding.materialPhotoClear.setOnClickListener(v -> {
             draft.imageFileId = null;
             showPhoto(null);
@@ -155,9 +162,25 @@ public class MaterialEditActivity extends AppCompatActivity {
                 .show();
     }
 
+    private String mimeOf(@Nullable Uri uri) {
+        String type = uri == null ? null : getContentResolver().getType(uri);
+        return type == null ? "application/octet-stream" : type;
+    }
+
+    private String fileNameOf(@Nullable Uri uri, boolean image) {
+        String fallback = image ? "photo.jpg" : "document";
+        if (uri == null) {
+            return fallback;
+        }
+        String mime = mimeOf(uri);
+        String ext = android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mime);
+        return ext == null ? fallback : fallback.replaceAll("\\..*$", "") + "." + ext;
+    }
+
     // --- Фото ---------------------------------------------------------------
 
-    private void onPhotoPicked(@Nullable Uri uri) {
+    /** Выбор файла: картинка сразу показывается, документ предлагается скачать. */
+    private void onFilePicked(@Nullable Uri uri, boolean image) {
         if (uri == null) {
             return;
         }
@@ -174,14 +197,20 @@ public class MaterialEditActivity extends AppCompatActivity {
                 throw ApiException.unexpected(new IllegalArgumentException(
                         getString(R.string.entity_photo_too_big)));
             }
-            container.fileRepository().upload(data, "image/jpeg", "material.jpg",
+            final String contentType = image ? "image/jpeg" : mimeOf(uri);
+            final String fileName = fileNameOf(uri, image);
+            container.fileRepository().upload(data, contentType, fileName,
                     new RepoCallback<FileDto>() {
                         @Override
                         public void onSuccess(@Nullable FileDto value) {
                             binding.materialPhotoPick.setEnabled(true);
                             if (value != null && value.id != null) {
-                                draft.imageFileId = value.id;
-                                showPhoto(value.id);
+                                java.util.List<ru.dndmemory.data.model.Attachment> files =
+                                        ru.dndmemory.data.Mappers.files(draft.filesJson);
+                                files.add(new ru.dndmemory.data.model.Attachment(value.id, fileName,
+                                        contentType, value.size));
+                                draft.filesJson = ru.dndmemory.data.Mappers.filesJson(files);
+                                renderFiles();
                             }
                         }
 
@@ -205,6 +234,57 @@ public class MaterialEditActivity extends AppCompatActivity {
                 ViewUtils.toast(MaterialEditActivity.this, R.string.entity_photo_too_big);
             }
         });
+    }
+
+    /** Список файлов материала: миниатюра картинки или имя документа. */
+    private void renderFiles() {
+        binding.materialFiles.removeAllViews();
+        java.util.List<ru.dndmemory.data.model.Attachment> files =
+                ru.dndmemory.data.Mappers.files(draft.filesJson);
+        for (final ru.dndmemory.data.model.Attachment file : files) {
+            android.widget.LinearLayout row = (android.widget.LinearLayout) getLayoutInflater()
+                    .inflate(R.layout.item_attachment, binding.materialFiles, false);
+            android.widget.ImageView thumb = row.findViewById(R.id.attachment_thumb);
+            android.widget.TextView name = row.findViewById(R.id.attachment_name);
+            com.google.android.material.button.MaterialButton action =
+                    row.findViewById(R.id.attachment_action);
+
+            name.setText(file.name == null || file.name.isEmpty() ? file.id : file.name);
+            if (file.isImage()) {
+                ImageLoader.load(container.okHttpClient(), file.id, thumb);
+                action.setText(R.string.file_open);
+                action.setOnClickListener(v -> openPhoto(file.id));
+            } else {
+                // Документ: отметка «скачано» и скачивание в «Загрузки».
+                boolean downloaded = FileDownloads.isDownloaded(this, file.id);
+                name.append(downloaded ? "\n" + getString(R.string.file_downloaded) : "");
+                action.setText(downloaded ? R.string.file_open : R.string.update_download);
+                action.setOnClickListener(v -> {
+                    if (FileDownloads.isDownloaded(MaterialEditActivity.this, file.id)) {
+                        ViewUtils.toast(MaterialEditActivity.this, R.string.file_downloaded);
+                    } else {
+                        FileDownloads.download(MaterialEditActivity.this, file.id, file.name);
+                        renderFiles();
+                    }
+                });
+            }
+
+            final String fileId = file.id;
+            row.setOnLongClickListener(v -> {
+                java.util.List<ru.dndmemory.data.model.Attachment> list =
+                        ru.dndmemory.data.Mappers.files(draft.filesJson);
+                java.util.Iterator<ru.dndmemory.data.model.Attachment> it = list.iterator();
+                while (it.hasNext()) {
+                    if (fileId.equals(it.next().id)) {
+                        it.remove();
+                    }
+                }
+                draft.filesJson = ru.dndmemory.data.Mappers.filesJson(list);
+                renderFiles();
+                return true;
+            });
+            binding.materialFiles.addView(row);
+        }
     }
 
     private void showPhoto(@Nullable String fileId) {

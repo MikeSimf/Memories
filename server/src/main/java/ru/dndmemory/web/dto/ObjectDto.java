@@ -26,6 +26,8 @@ public class ObjectDto {
     private String name;
     private String description;
     private UUID imageFileId;
+    /** Файлы объекта: фото галереи, карты, документы. */
+    private List<AttachmentDto> files;
     private List<LinkDto> links;
     private UUID createdBy;
     private String createdByName;
