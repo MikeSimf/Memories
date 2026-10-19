@@ -133,7 +133,17 @@
     <string name="tab_characters">Персонажи</string>
     <string name="tab_locations">Локации</string>
     <string name="tab_items">Предметы</string>
+    <string name="tab_materials">Материалы</string>
     <string name="tab_retellings">Пересказы</string>
+    <string name="material_list_empty">Материалов пока нет. Добавьте карту, портрет или письмо — они сохранятся на телефоне и уедут на сервер, когда появится сеть.</string>
+    <string name="material_add">Добавить материал</string>
+    <string name="material_photo">Фото материала</string>
+    <string name="material_edit_title_new">Новый материал</string>
+    <string name="material_edit_title_edit">Материал</string>
+    <string name="material_name">Название</string>
+    <string name="material_description">Описание</string>
+    <string name="material_delete_confirm">Удалить материал «%1$s»?</string>
+    <string name="material_no_photo">Без фото</string>
     <string name="tab_members">Участники</string>
     <string name="retellings_title">Пересказы</string>
 

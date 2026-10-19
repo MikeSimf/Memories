@@ -18,6 +18,7 @@ public class SnapshotResponse {
     public List<LocationDto> locations = new ArrayList<>();
     public List<ItemDto> items = new ArrayList<>();
 
+    public List<MaterialDto> materials = new ArrayList<>();
     public List<RetellingDto> retellings = new ArrayList<>();
     public List<MemberDto> members = new ArrayList<>();
     public CampaignDto campaign;

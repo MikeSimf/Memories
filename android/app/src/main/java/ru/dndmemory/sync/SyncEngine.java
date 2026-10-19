@@ -18,6 +18,7 @@ import ru.dndmemory.data.Mappers;
 import ru.dndmemory.data.local.AppDatabase;
 import ru.dndmemory.data.local.entity.CampaignRoom;
 import ru.dndmemory.data.local.entity.EntityRoom;
+import ru.dndmemory.data.local.entity.MaterialRoom;
 import ru.dndmemory.data.local.entity.MemberRoom;
 import ru.dndmemory.data.local.entity.PendingChangeRoom;
 import ru.dndmemory.data.local.entity.RetellingRoom;
@@ -34,6 +35,7 @@ import ru.dndmemory.data.remote.ApiService;
 import ru.dndmemory.data.remote.dto.CampaignDto;
 import ru.dndmemory.data.remote.dto.ConflictDto;
 import ru.dndmemory.data.remote.dto.EntityDto;
+import ru.dndmemory.data.remote.dto.MaterialDto;
 import ru.dndmemory.data.remote.dto.MemberDto;
 import ru.dndmemory.data.remote.dto.PullChangeDto;
 import ru.dndmemory.data.remote.dto.PullResponse;
@@ -376,6 +378,25 @@ public class SyncEngine {
                 applyEntityChange(campaignId, change, type.entityType(), deleted, payload);
                 break;
             }
+            case MATERIAL: {
+                MaterialRoom local = db.materialDao().find(change.objectId);
+                if (local != null && local.dirty) {
+                    return; // неотправленная локальная правка важнее
+                }
+                if (deleted) {
+                    db.materialDao().applyTombstone(change.objectId, change.revision,
+                            updatedAt(payload, change.createdAt));
+                    return;
+                }
+                if (payload == null) {
+                    return;
+                }
+                MaterialDto dto = gson.fromJson(payload, MaterialDto.class);
+                if (dto != null) {
+                    db.materialDao().upsert(Mappers.toRoom(dto, campaignId));
+                }
+                break;
+            }
             case RETELLING: {
                 RetellingRoom local = db.retellingDao().find(change.objectId);
                 if (local != null && local.dirty) {
@@ -483,6 +504,7 @@ public class SyncEngine {
     private SyncResult snapshot(String campaignId) throws ApiException {
         List<EntityRoom> entities = new ArrayList<>();
         List<RetellingRoom> retellings = new ArrayList<>();
+        List<ru.dndmemory.data.local.entity.MaterialRoom> materials = new ArrayList<>();
         List<MemberRoom> members = new ArrayList<>();
         CampaignRoom campaign = null;
         long latest = 0L;
@@ -501,6 +523,13 @@ public class SyncEngine {
             addEntities(entities, page.characters, EntityType.CHARACTER, campaignId);
             addEntities(entities, page.locations, EntityType.LOCATION, campaignId);
             addEntities(entities, page.items, EntityType.ITEM, campaignId);
+            if (page.materials != null) {
+                for (MaterialDto dto : page.materials) {
+                    if (dto != null && dto.id != null) {
+                        materials.add(Mappers.toRoom(dto, campaignId));
+                    }
+                }
+            }
             if (page.retellings != null) {
                 for (RetellingDto dto : page.retellings) {
                     if (dto != null && dto.id != null) {
@@ -530,6 +559,8 @@ public class SyncEngine {
         // Локальные черновики пересказов не трогаем: они живут только на устройстве.
         db.entityDao().clearForCampaign(campaignId);
         db.entityDao().upsertAll(entities);
+        db.materialDao().clearForCampaign(campaignId);
+        db.materialDao().upsertAll(materials);
         db.retellingDao().clearForCampaign(campaignId);
         db.retellingDao().upsertAll(retellings);
         db.memberDao().clearForCampaign(campaignId);

@@ -125,6 +125,7 @@ public final class SyncDtos {
         private List<CharacterDtos.CharacterDto> characters;
         private List<LocationDtos.LocationDto> locations;
         private List<ItemDtos.ItemDto> items;
+        private List<MaterialDtos.MaterialDto> materials;
         private List<RetellingDtos.RetellingDto> retellings;
         private List<CampaignDtos.MemberDto> members;
     }

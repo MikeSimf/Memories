@@ -7,14 +7,15 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import ru.dndmemory.data.model.EntityType;
 import ru.dndmemory.ui.entity.EntityListFragment;
+import ru.dndmemory.ui.material.MaterialsFragment;
 
 /**
- * Три вкладки кампании: Персонажи (герои и НПС вместе), Локации, Предметы.
+ * Четыре вкладки кампании: Персонажи (герои и НПС вместе), Локации, Предметы, Материалы.
  * Пересказы и Участники — отдельные экраны из меню шапки.
  */
 public class CampaignPagerAdapter extends FragmentStateAdapter {
 
-    public static final int TAB_COUNT = 3;
+    public static final int TAB_COUNT = 4;
 
     public CampaignPagerAdapter(@NonNull FragmentActivity activity) {
         super(activity);
@@ -28,6 +29,8 @@ public class CampaignPagerAdapter extends FragmentStateAdapter {
                 return EntityListFragment.newInstance(EntityType.LOCATION.name());
             case 2:
                 return EntityListFragment.newInstance(EntityType.ITEM.name());
+            case 3:
+                return new MaterialsFragment();
             case 0:
             default:
                 return EntityListFragment.newInstance(EntityType.CHARACTERS);

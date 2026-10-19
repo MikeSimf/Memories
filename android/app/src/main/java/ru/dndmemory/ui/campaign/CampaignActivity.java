@@ -79,8 +79,10 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
             case 1:
                 return R.string.tab_locations;
             case 2:
-            default:
                 return R.string.tab_items;
+            case 3:
+            default:
+                return R.string.tab_materials;
         }
     }
 

@@ -13,7 +13,9 @@ public enum ObjectType {
     ITEM,
     RETELLING,
     CAMPAIGN,
-    MEMBER;
+    MEMBER,
+    /** Фото-материалы кампании. */
+    MATERIAL;
 
     @Nullable
     public static ObjectType from(@Nullable String raw) {

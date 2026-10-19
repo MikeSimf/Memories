@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import androidx.annotation.Nullable;
 import ru.dndmemory.data.local.entity.CampaignRoom;
 import ru.dndmemory.data.local.entity.EntityRoom;
+import ru.dndmemory.data.local.entity.MaterialRoom;
 import ru.dndmemory.data.local.entity.MemberRoom;
 import ru.dndmemory.data.local.entity.RetellingRoom;
 import ru.dndmemory.data.model.EntityLink;
@@ -16,6 +17,7 @@ import ru.dndmemory.data.remote.dto.EntityDto;
 import ru.dndmemory.data.remote.dto.HeroDto;
 import ru.dndmemory.data.remote.dto.ItemDto;
 import ru.dndmemory.data.remote.dto.LocationDto;
+import ru.dndmemory.data.remote.dto.MaterialDto;
 import ru.dndmemory.data.remote.dto.MemberDto;
 import ru.dndmemory.data.remote.dto.RetellingDto;
 
@@ -149,6 +151,44 @@ public final class Mappers {
             room.ownerCharacterName = item.ownerCharacterName;
         }
         return room;
+    }
+
+    /** Фото-материал: сервер → локальная база. */
+    public static MaterialRoom toRoom(MaterialDto dto, String fallbackCampaignId) {
+        MaterialRoom room = new MaterialRoom();
+        if (dto == null) {
+            return room;
+        }
+        room.id = nz(dto.id);
+        room.campaignId = dto.campaignId != null ? dto.campaignId : fallbackCampaignId;
+        room.name = dto.name;
+        room.description = dto.description;
+        room.imageFileId = dto.imageFileId;
+        room.revision = dto.revision;
+        room.createdAt = dto.createdAt;
+        room.updatedAt = dto.updatedAt;
+        room.deleted = dto.deleted;
+        room.dirty = false;
+        room.conflictJson = null;
+        return room;
+    }
+
+    /** Фото-материал: локальная база → тело правки для push. */
+    public static MaterialDto toDto(MaterialRoom room) {
+        MaterialDto dto = new MaterialDto();
+        if (room == null) {
+            return dto;
+        }
+        dto.id = room.id;
+        dto.campaignId = room.campaignId;
+        dto.name = room.name;
+        dto.description = room.description;
+        dto.imageFileId = room.imageFileId;
+        dto.revision = room.revision;
+        dto.createdAt = room.createdAt;
+        dto.updatedAt = room.updatedAt;
+        dto.deleted = room.deleted;
+        return dto;
     }
 
     /** Тело правки: подкласс DTO по классу объекта, лишние поля не отправляются. */

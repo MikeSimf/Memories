@@ -14,6 +14,7 @@ import ru.dndmemory.ui.entity.EntityDetailActivity;
 import ru.dndmemory.ui.entity.EntityEditActivity;
 import ru.dndmemory.ui.invite.InviteAcceptActivity;
 import ru.dndmemory.ui.invite.InviteActivity;
+import ru.dndmemory.ui.material.MaterialEditActivity;
 import ru.dndmemory.ui.members.MembersActivity;
 import ru.dndmemory.ui.retelling.RetellingDetailActivity;
 import ru.dndmemory.ui.retelling.RetellingEditActivity;
@@ -56,6 +57,23 @@ public final class Nav {
     public static void authAfterLogout(@NonNull Context context) {
         Intent intent = auth(context, null);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        context.startActivity(intent);
+    }
+
+    /** Новый фото-материал кампании. */
+    public static void createMaterial(@NonNull Context context, @NonNull String campaignId) {
+        Intent intent = new Intent(context, MaterialEditActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        intent.putExtra(Extras.CREATE_NEW, true);
+        context.startActivity(intent);
+    }
+
+    /** Правка существующего материала. */
+    public static void editMaterial(@NonNull Context context, @NonNull String campaignId,
+                                    @NonNull String materialId) {
+        Intent intent = new Intent(context, MaterialEditActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        intent.putExtra(Extras.MATERIAL_ID, materialId);
         context.startActivity(intent);
     }
 

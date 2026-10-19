@@ -19,6 +19,7 @@ import ru.dndmemory.data.repo.CampaignRepository;
 import ru.dndmemory.data.repo.EntityRepository;
 import ru.dndmemory.data.repo.FileRepository;
 import ru.dndmemory.data.repo.InviteRepository;
+import ru.dndmemory.data.repo.MaterialRepository;
 import ru.dndmemory.data.repo.MemberRepository;
 import ru.dndmemory.data.repo.PendingWriter;
 import ru.dndmemory.data.repo.RaceRepository;
@@ -53,6 +54,7 @@ public class AppContainer {
     private final FileRepository fileRepository;
     private final RaceRepository raceRepository;
     private final UpdateRepository updateRepository;
+    private final MaterialRepository materialRepository;
     private final OkHttpClient authorizedClient;
     private final SyncEngine syncEngine;
     private final SyncScheduler syncScheduler;
@@ -90,6 +92,7 @@ public class AppContainer {
         fileRepository = new FileRepository(apiService, executors);
         raceRepository = new RaceRepository(apiService, executors);
         updateRepository = new UpdateRepository(apiService, executors);
+        materialRepository = new MaterialRepository(database, apiService, pendingWriter, executors);
 
         // 5. Синхронизация.
         syncEngine = new SyncEngine(database, apiService, sessionStore.deviceClientId());
@@ -173,6 +176,10 @@ public class AppContainer {
 
     public InviteRepository inviteRepository() {
         return inviteRepository;
+    }
+
+    public MaterialRepository materialRepository() {
+        return materialRepository;
     }
 
     public UpdateRepository updateRepository() {

@@ -7,6 +7,7 @@ import ru.dndmemory.data.Mappers;
 import ru.dndmemory.data.local.AppDatabase;
 import ru.dndmemory.data.local.entity.CampaignRoom;
 import ru.dndmemory.data.local.entity.EntityRoom;
+import ru.dndmemory.data.local.entity.MaterialRoom;
 import ru.dndmemory.data.local.entity.MemberRoom;
 import ru.dndmemory.data.local.entity.PendingChangeRoom;
 import ru.dndmemory.data.local.entity.RetellingRoom;
@@ -48,6 +49,16 @@ public class PendingWriter {
         PendingChangeRoom change = base(room.campaignId, ObjectType.RETELLING, room.id, op, room.revision);
         if (op == ChangeOp.DELETE) {
             change.payloadJson = tombstone(room.id, ObjectType.RETELLING, room.updatedAt, room.revision);
+        } else {
+            change.payloadJson = gson.toJson(Mappers.toDto(room));
+        }
+        db.pendingChangeDao().insert(change);
+    }
+
+    public void material(MaterialRoom room, ChangeOp op) {
+        PendingChangeRoom change = base(room.campaignId, ObjectType.MATERIAL, room.id, op, room.revision);
+        if (op == ChangeOp.DELETE) {
+            change.payloadJson = tombstone(room.id, ObjectType.MATERIAL, room.updatedAt, room.revision);
         } else {
             change.payloadJson = gson.toJson(Mappers.toDto(room));
         }

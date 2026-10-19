@@ -32,6 +32,7 @@ import ru.dndmemory.data.remote.dto.InvitePreviewDto;
 import ru.dndmemory.data.remote.dto.ItemDto;
 import ru.dndmemory.data.remote.dto.LocationDto;
 import ru.dndmemory.data.remote.dto.LoginRequest;
+import ru.dndmemory.data.remote.dto.MaterialDto;
 import ru.dndmemory.data.remote.dto.MemberDto;
 import ru.dndmemory.data.remote.dto.ObjectListDto;
 import ru.dndmemory.data.remote.dto.PatchCampaignRequest;
@@ -255,6 +256,15 @@ public interface ApiService {
 
     @DELETE("api/campaigns/{id}/items/{itemId}")
     Call<Void> deleteItem(@Path("id") String campaignId, @Path("itemId") String itemId);
+
+    // --- Фото-материалы кампании ------------------------------------------
+
+    @GET("api/campaigns/{id}/materials")
+    Call<ObjectListDto<MaterialDto>> materials(@Path("id") String campaignId,
+                                               @Query("q") String query,
+                                               @Query("updatedSince") String updatedSince,
+                                               @Query("limit") Integer limit,
+                                               @Query("offset") Integer offset);
 
     // --- Пересказы (раздел 7) ---------------------------------------------
 

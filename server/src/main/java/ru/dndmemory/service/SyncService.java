@@ -27,6 +27,7 @@ import ru.dndmemory.web.dto.CharacterDtos;
 import ru.dndmemory.web.dto.HeroDtos;
 import ru.dndmemory.web.dto.ItemDtos;
 import ru.dndmemory.web.dto.LocationDtos;
+import ru.dndmemory.web.dto.MaterialDtos;
 import ru.dndmemory.web.dto.RetellingDtos;
 import ru.dndmemory.web.dto.SyncDtos;
 
@@ -268,7 +269,7 @@ public class SyncService {
 
     /**
      * Полная выгрузка кампании страницами по 500 объектов. Порядок классов:
-     * герои, персонажи, локации, предметы, пересказы; курсор — «класс:смещение».
+     * герои, персонажи, локации, предметы, материалы, пересказы; курсор — «класс:смещение».
      */
     @Transactional(readOnly = true)
     public SyncDtos.SnapshotDto snapshot(UUID campaignId, UUID userId, String cursor, int limit) {
@@ -284,6 +285,7 @@ public class SyncService {
         List<CharacterDtos.CharacterDto> characters = Collections.emptyList();
         List<LocationDtos.LocationDto> locations = Collections.emptyList();
         List<ItemDtos.ItemDto> items = Collections.emptyList();
+        List<MaterialDtos.MaterialDto> materials = Collections.emptyList();
         List<RetellingDtos.RetellingDto> retellings = Collections.emptyList();
         boolean more = false;
 
@@ -306,14 +308,18 @@ public class SyncService {
                     page = pageOf(ObjectType.ITEM, campaignId, offset, pageSize, context);
                     items = cast(page);
                     break;
+                case 4:
+                    page = pageOf(ObjectType.MATERIAL, campaignId, offset, pageSize, context);
+                    materials = cast(page);
+                    break;
                 default:
                     page = retellingPage(campaignId, offset, pageSize, context);
                     retellings = cast(page);
                     break;
             }
-            if (!page.isEmpty() || kindIndex >= 4) {
+            if (!page.isEmpty() || kindIndex >= 5) {
                 more = page.size() == pageSize
-                        || (kindIndex < 4 && hasAnythingAfter(campaignId, kindIndex, offset + page.size(), pageSize));
+                        || (kindIndex < 5 && hasAnythingAfter(campaignId, kindIndex, offset + page.size(), pageSize));
                 break;
             }
             kindIndex++;
@@ -324,12 +330,13 @@ public class SyncService {
         return SyncDtos.SnapshotDto.builder()
                 .latestRevision(campaign.getRevision())
                 .nextCursor(more ? encodeCursor(kindIndex, offset + pageSizeOf(kindIndex, heroes, characters,
-                        locations, items, retellings)) : null)
+                        locations, items, materials, retellings)) : null)
                 .campaign(detail)
                 .heroes(heroes)
                 .characters(characters)
                 .locations(locations)
                 .items(items)
+                .materials(materials)
                 .retellings(retellings)
                 .members(detail.getMembers())
                 .build();
@@ -357,7 +364,7 @@ public class SyncService {
 
     /** Есть ли ещё объекты после текущей страницы — чтобы не отдавать пустой курсор. */
     private boolean hasAnythingAfter(UUID campaignId, int kindIndex, int nextOffset, int pageSize) {
-        for (int index = kindIndex + 1; index <= 4; index++) {
+        for (int index = kindIndex + 1; index <= 5; index++) {
             ObjectType type = kindOf(index);
             if (type == ObjectType.RETELLING) {
                 if (retellingRepository.countByCampaignIdAndDeletedFalse(campaignId) > 0) {
@@ -383,13 +390,15 @@ public class SyncService {
                 return ObjectType.LOCATION;
             case 3:
                 return ObjectType.ITEM;
+            case 4:
+                return ObjectType.MATERIAL;
             default:
                 return ObjectType.RETELLING;
         }
     }
 
     private int pageSizeOf(int kindIndex, List<?> heroes, List<?> characters, List<?> locations,
-                           List<?> items, List<?> retellings) {
+                           List<?> items, List<?> materials, List<?> retellings) {
         switch (kindIndex) {
             case 0:
                 return heroes.size();
@@ -399,6 +408,8 @@ public class SyncService {
                 return locations.size();
             case 3:
                 return items.size();
+            case 4:
+                return materials.size();
             default:
                 return retellings.size();
         }

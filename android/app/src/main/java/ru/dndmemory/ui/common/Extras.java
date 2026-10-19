@@ -3,6 +3,9 @@ package ru.dndmemory.ui.common;
 /** Ключи extras для навигации между экранами. */
 public final class Extras {
 
+    /** Идентификатор фото-материала кампании. */
+    public static final String MATERIAL_ID = "ru.dndmemory.extra.MATERIAL_ID";
+
     public static final String CAMPAIGN_ID = "campaignId";
     public static final String ENTITY_ID = "entityId";
     public static final String ENTITY_TYPE = "entityType";

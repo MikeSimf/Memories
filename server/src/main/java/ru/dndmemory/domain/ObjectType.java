@@ -12,5 +12,7 @@ public enum ObjectType {
     ITEM,
     RETELLING,
     CAMPAIGN,
-    MEMBER
+    MEMBER,
+    /** Фото-материалы кампании: карта, портрет, письмо. */
+    MATERIAL
 }
