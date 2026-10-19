@@ -52,6 +52,7 @@ sha256sum /tmp/kit.tar.gz /tmp/dnd-memory-server.jar   # сверить с ре�
     start-all.sh       ← поднять всё настроенное
     install-docker.sh  ← установка Docker (шаг 1)
     deploy-web.sh      ← выложить новую сборку веб-версии
+    deploy-app.sh      ← выложить apk и сменить версию
     apache-setup.sh    ← публикация по HTTPS через Apache
     nginx-setup.sh     ← публикация по HTTPS через nginx
     dnd-memory.service ← автозапуск через systemd
@@ -267,6 +268,37 @@ sudo bash bin/nginx-setup.sh 7f6a7dc97a7c.vps.myjino.ru
 curl -s https://7f6a7dc97a7c.vps.myjino.ru/api/health
 curl -s https://7f6a7dc97a7c.vps.myjino.ru:8443/api/health
 ```
+
+## Обновление приложения (apk и версия)
+
+Телефон проверяет версию через `GET /api/app/latest` и предлагает обновиться сам.
+Чтобы это заработало, на сервере должны совпасть три вещи: сам apk, номер версии
+в конфиге и перезапущенные контейнеры (конфиг читается только при старте).
+
+Одна команда делает всё сразу:
+
+```bash
+cd /opt/dnd-memory
+./bin/deploy-app.sh /tmp/dnd-memory-test.apk 10 1.0.9
+```
+
+Аргументы: путь к apk, `versionCode` (целое, как в `build.gradle`) и `versionName`.
+Четвёртым можно указать `prod` или `test`, чтобы обновить только один контур.
+
+Скрипт копирует apk в `web-prod/` и `web-test/`, прописывает версию в
+`application.yml` обоих экземпляров и перезапускает контейнеры. В конце печатает,
+что отвечает `/api/app/latest`.
+
+Проверка:
+
+```bash
+curl -s https://7f6a7dc97a7c.vps.myjino.ru/api/app/latest
+# {"versionCode":10,"versionName":"1.0.9","minVersionCode":4,"url":"...","notes":"..."}
+```
+
+Если номер версии не совпадает с тем, что показывает телефон в «Настройках»,
+обновление не предложится. `min-version-code` задаёт порог обязательного
+обновления: ниже него приложение не даст работать без обновления.
 
 ## Шаг 4. Чтобы работало всегда
 
