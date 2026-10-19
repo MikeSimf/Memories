@@ -23,6 +23,7 @@ public final class CharacterDtos {
     @AllArgsConstructor
     public static class CharacterDto extends ObjectDto {
         private String race;
+        private String klass;
         private String shortDescription;
     }
 
@@ -44,6 +45,7 @@ public final class CharacterDtos {
 
         @Size(max = 120, message = "Не длиннее 120 символов")
         private String race;
+        private String klass;
 
         private String shortDescription;
     }
@@ -63,6 +65,7 @@ public final class CharacterDtos {
 
         @Size(max = 120, message = "Не длиннее 120 символов")
         private String race;
+        private String klass;
 
         private String shortDescription;
     }

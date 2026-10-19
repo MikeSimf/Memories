@@ -348,6 +348,17 @@ async function onFileSelected(event: Event): Promise<void> {
             <option v-for="race in races" :key="race" :value="race">{{ race }}</option>
           </select>
         </div>
+        <div class="field" style="flex: 1; min-width: 180px">
+          <label class="field__label" for="character-klass">Класс</label>
+          <select
+            id="character-klass"
+            class="input"
+            :value="modelValue.klass ?? 'Неизвестно'"
+            @change="patch({ klass: ($event.target as HTMLSelectElement).value })"
+          >
+            <option v-for="item in classes" :key="item" :value="item">{{ item }}</option>
+          </select>
+        </div>
         <div class="field" style="flex: 2; min-width: 220px">
           <label class="field__label" for="character-short">Краткое описание</label>
           <input

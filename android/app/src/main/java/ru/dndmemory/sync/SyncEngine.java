@@ -287,6 +287,16 @@ public class SyncEngine {
             }
             return;
         }
+        // Материалы: без этой ветки правка уходила на сервер, но помечалась
+        // «не отправлено» навсегда.
+        MaterialRoom material = db.materialDao().find(objectId);
+        if (material != null) {
+            db.materialDao().markClean(objectId, revision);
+            if (forward) {
+                db.campaignDao().updateRevision(campaignId, revision);
+            }
+            return;
+        }
         if (forward) {
             db.campaignDao().updateRevision(campaignId, revision);
         }

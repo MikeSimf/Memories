@@ -7,5 +7,6 @@ package ru.dndmemory.data.remote.dto;
 public class CharacterDto extends EntityDto {
 
     public String race;
+    public String klass;
     public String shortDescription;
 }

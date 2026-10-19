@@ -27,6 +27,10 @@ public class Character extends GameEntitySupport
     @Column(length = 120)
     private String race;
 
+    /** Класс из справочника character_classes — как у героя. */
+    @Column(length = 96)
+    private String klass;
+
     /** Короткое описание — по нему тоже идёт поиск. */
     @Column(name = "short_description", columnDefinition = "text")
     private String shortDescription;

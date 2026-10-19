@@ -28,6 +28,9 @@ public interface MaterialDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsertAll(List<MaterialRoom> rooms);
 
+    @Query("UPDATE materials SET dirty = 0, revision = :revision WHERE id = :id")
+    void markClean(String id, long revision);
+
     @Query("UPDATE materials SET deleted = 1, dirty = 1, updatedAt = :updatedAt WHERE id = :id")
     void markDeleted(String id, String updatedAt);
 

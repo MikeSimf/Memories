@@ -238,7 +238,7 @@ public class EntityEditActivity extends AppCompatActivity {
             }
         }
 
-        if (currentKind == EntityType.HERO) {
+        if (currentKind == EntityType.HERO || currentKind == EntityType.CHARACTER) {
             String klass = text(binding.entityEditKlassInput.getText());
             if (container.raceRepository().cachedClasses().isEmpty()) {
                 binding.entityEditKlassGroup.setError(null);
@@ -472,7 +472,7 @@ public class EntityEditActivity extends AppCompatActivity {
         boolean item = currentKind == EntityType.ITEM;
 
         ViewUtils.show(binding.entityEditRaceGroup, hero || character);
-        ViewUtils.show(binding.entityEditKlassGroup, hero);
+        ViewUtils.show(binding.entityEditKlassGroup, hero || character);
         ViewUtils.show(binding.entityEditPlayerGroup, hero);
         ViewUtils.show(binding.entityEditShortGroup, character);
         ViewUtils.show(binding.entityEditOwnerNameGroup, item);
@@ -700,6 +700,7 @@ public class EntityEditActivity extends AppCompatActivity {
             viewModel.setItems(collectItems());
         } else if (currentKind == EntityType.CHARACTER) {
             viewModel.setRace(text(binding.entityEditRaceInput.getText()));
+            viewModel.setKlass(text(binding.entityEditKlassInput.getText()));
             viewModel.setShortDescription(text(binding.entityEditShortInput.getText()));
         } else if (currentKind == EntityType.ITEM) {
             viewModel.setOwnerName(text(binding.entityEditOwnerNameInput.getText()));

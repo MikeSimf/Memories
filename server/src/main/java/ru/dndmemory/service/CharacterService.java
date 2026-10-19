@@ -94,6 +94,7 @@ public class CharacterService extends AbstractObjectService<Character, Character
                 .updatedAt(character.getUpdatedAt())
                 .deleted(character.isDeleted())
                 .race(character.getRace())
+                .klass(character.getKlass())
                 .shortDescription(character.getShortDescription())
                 .build();
     }
@@ -115,6 +116,9 @@ public class CharacterService extends AbstractObjectService<Character, Character
         }
         if (payload.has("race")) {
             character.setRace(text(payload.get("race")));
+        }
+        if (payload.has("klass")) {
+            character.setKlass(text(payload.get("klass")));
         }
         if (payload.has("shortDescription")) {
             character.setShortDescription(text(payload.get("shortDescription")));

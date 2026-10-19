@@ -147,6 +147,7 @@ public final class Mappers {
         } else if (kind == EntityType.CHARACTER && dto instanceof CharacterDto) {
             CharacterDto character = (CharacterDto) dto;
             room.race = character.race;
+            room.klass = character.klass;
             room.shortDescription = character.shortDescription;
         } else if (kind == EntityType.ITEM && dto instanceof ItemDto) {
             ItemDto item = (ItemDto) dto;
@@ -256,6 +257,7 @@ public final class Mappers {
         } else if (dto instanceof CharacterDto) {
             CharacterDto character = (CharacterDto) dto;
             character.race = room.race;
+            character.klass = room.klass;
             character.shortDescription = room.shortDescription;
         } else if (dto instanceof ItemDto) {
             ItemDto item = (ItemDto) dto;

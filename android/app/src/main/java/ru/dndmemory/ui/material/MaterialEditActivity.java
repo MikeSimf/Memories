@@ -43,6 +43,8 @@ public class MaterialEditActivity extends AppCompatActivity {
     private String campaignId;
     private boolean creating;
     private ActivityResultLauncher<String> photoPicker;
+    /** Имена объектов для подсказок [[Имя]]: читаются заранее в фоне. */
+    private java.util.List<String> linkNames = new java.util.ArrayList<>();
     private ActivityResultLauncher<String> documentPicker;
 
     @Override
@@ -106,22 +108,37 @@ public class MaterialEditActivity extends AppCompatActivity {
         binding.materialSave.setOnClickListener(v -> save());
         binding.materialDelete.setOnClickListener(v -> confirmDelete());
 
-        // Подсказки [[Имя]] в описании.
+        // Подсказки [[Имя]] в описании: список имён готовим заранее,
+        // в главном потоке Room читать нельзя.
         ru.dndmemory.ui.common.WikiLinkEditor.attach(binding.materialDescriptionInput,
-                () -> nameIndex());
+                () -> linkNames);
+        loadLinkNames();
     }
 
-    /** Имена объектов кампании для подсказок ссылок. */
-    @NonNull
-    private java.util.List<String> nameIndex() {
-        java.util.List<String> names = new java.util.ArrayList<>();
-        for (ru.dndmemory.data.local.entity.EntityRoom room
-                : container.entityRepository().findAllNow(campaignId)) {
-            if (room.name != null && !room.name.isEmpty()) {
-                names.add(room.name);
+    /** Имена объектов кампании для подсказок ссылок: читаем в фоне один раз. */
+    private void loadLinkNames() {
+        AppExecutors.get().io(() -> {
+            java.util.List<String> names = new java.util.ArrayList<>();
+            for (ru.dndmemory.data.local.entity.EntityRoom room
+                    : container.entityRepository().findAllNow(campaignId)) {
+                if (room.name != null && !room.name.isEmpty()) {
+                    names.add(room.name);
+                }
             }
-        }
-        return names;
+            return names;
+        }, new RepoCallback<java.util.List<String>>() {
+            @Override
+            public void onSuccess(@Nullable java.util.List<String> value) {
+                if (value != null) {
+                    linkNames = value;
+                }
+            }
+
+            @Override
+            public void onError(@NonNull ApiException error) {
+                // Без имён подсказки просто не появятся.
+            }
+        });
     }
 
     private void save() {
