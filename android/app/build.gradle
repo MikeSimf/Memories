@@ -16,8 +16,8 @@ android {
         applicationId 'ru.dndmemory'
         minSdk 24
         targetSdk 34
-        versionCode 9
-        versionName "1.0.8"
+        versionCode 10
+        versionName "1.0.9"
 
         buildConfigField 'String', 'DND_SERVER_URL', "\"${dndServerUrl}\""
         buildConfigField 'String', 'DEEP_LINK_SCHEME', "\"dndmemory\""

@@ -45,6 +45,8 @@ ok "сборка: index.html $(du -sh "$STAGE" | cut -f1)"
 # поэтому заменять сам каталог нельзя — только его содержимое)
 find "$DIR" -mindepth 1 -delete
 cp -a "$STAGE"/. "$DIR"/
+# Права на чтение: nginx работает не под root, файл с режимом 600 даёт 403.
+chmod -R a+rX "$DIR"
 ok "выложено в $DIR"
 
 PORT="$(grep -E '^APP_PORT=' "$ROOT/$INSTANCE/.env" 2>/dev/null | cut -d= -f2 || true)"

@@ -23,6 +23,7 @@ import ru.dndmemory.ui.common.ErrorMessages;
 import ru.dndmemory.ui.common.Extras;
 import ru.dndmemory.ui.common.FileDownloads;
 import ru.dndmemory.ui.common.ImageLoader;
+import ru.dndmemory.ui.common.FileTools;
 import ru.dndmemory.ui.common.ImageTools;
 import ru.dndmemory.ui.common.ViewUtils;
 import ru.dndmemory.data.Mappers;
@@ -71,17 +72,30 @@ public class MaterialEditActivity extends AppCompatActivity {
                     ? R.string.material_edit_title_new : R.string.material_edit_title_edit);
         }
 
-        draft = materialId == null ? container.materialRepository().createDraft(campaignId)
-                : container.materialRepository().find(materialId);
-        if (draft == null) {
+        // Room нельзя читать в главном потоке: карточка открывалась и падала.
+        if (materialId == null) {
             draft = container.materialRepository().createDraft(campaignId);
-        }
+            bindDraft();
+        } else {
+            ViewUtils.show(binding.materialProgress, true);
+            AppExecutors.get().io(() -> container.materialRepository().find(materialId),
+                    new RepoCallback<MaterialRoom>() {
+                        @Override
+                        public void onSuccess(@Nullable MaterialRoom value) {
+                            ViewUtils.show(binding.materialProgress, false);
+                            draft = value != null ? value
+                                    : container.materialRepository().createDraft(campaignId);
+                            bindDraft();
+                        }
 
-        binding.materialNameInput.setText(draft.name);
-        binding.materialDescriptionInput.setText(draft.description);
-        showPhoto(draft.imageFileId);
-        renderFiles();
-        ViewUtils.show(binding.materialDelete, !creating);
+                        @Override
+                        public void onError(@NonNull ApiException error) {
+                            ViewUtils.show(binding.materialProgress, false);
+                            draft = container.materialRepository().createDraft(campaignId);
+                            bindDraft();
+                        }
+                    });
+        }
 
         binding.materialPhotoPick.setOnClickListener(v -> photoPicker.launch("image/*"));
         binding.materialFileDocument.setOnClickListener(v -> documentPicker.launch("*/*"));
@@ -189,7 +203,10 @@ public class MaterialEditActivity extends AppCompatActivity {
         AppExecutors.get().io(() -> {
             final byte[] data;
             try {
-                data = ImageTools.compress(this, uri);
+                // Картинку сжимаем, документ (pdf/docx) отправляем как есть.
+                data = image
+                        ? ImageTools.compress(this, uri)
+                        : FileTools.read(this, uri, FileTools.MAX_BYTES);
             } catch (java.io.IOException e) {
                 throw ApiException.unexpected(e);
             }
@@ -234,6 +251,18 @@ public class MaterialEditActivity extends AppCompatActivity {
                 ViewUtils.toast(MaterialEditActivity.this, R.string.entity_photo_too_big);
             }
         });
+    }
+
+    /** Показывает загруженный материал: поля, файлы и кнопку удаления. */
+    private void bindDraft() {
+        if (draft == null) {
+            return;
+        }
+        binding.materialNameInput.setText(draft.name);
+        binding.materialDescriptionInput.setText(draft.description);
+        showPhoto(draft.imageFileId);
+        renderFiles();
+        ViewUtils.show(binding.materialDelete, !creating);
     }
 
     /** Список файлов материала: миниатюра картинки или имя документа. */
