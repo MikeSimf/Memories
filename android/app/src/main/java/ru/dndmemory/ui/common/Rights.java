@@ -37,6 +37,12 @@ public final class Rights {
         if (campaign == null) {
             return false;
         }
+        // Владелец кампании имеет все права по определению (docs/roles.md).
+        // Список myPermissions мог остаться от старой версии или прийти неполным —
+        // из-за этого владелец получал «Недостаточно прав» на своей же записи.
+        if (MemberRole.OWNER == MemberRole.from(campaign.myRole)) {
+            return true;
+        }
         if (campaign.hasPermission(permission)) {
             return true;
         }
@@ -48,7 +54,15 @@ public final class Rights {
         // (GET /api/campaigns отдаёт только myRole, без myPermissions).
         // Права роли неизменны (docs/roles.md), поэтому выводим их из роли.
         MemberRole role = MemberRole.from(campaign.myRole);
-        return role != null && roleHas(role, permission);
+        if (role == null) {
+            // Роль ещё не пришла (кампанию только что создали или её строка
+            // осталась от старой версии). Запрещать вслепую хуже, чем показать
+            // действие: сервер всё равно проверит право и отклонит правку.
+            android.util.Log.w("DndRights", "роль неизвестна для " + permission
+                    + ", права=" + campaign.myPermissions + " — не блокирую");
+            return true;
+        }
+        return roleHas(role, permission);
     }
 
     /** Матрица прав из docs/roles.md, раздел 2. */
@@ -125,8 +139,15 @@ public final class Rights {
         }
         // Свой пересказ автор правит всегда: удалять его он всё равно может,
         // а требование отдельного права на правку давало странную асимметрию.
-        return retelling != null && currentUserId != null
-                && currentUserId.equals(retelling.createdBy);
+        if (retelling == null) {
+            return false;
+        }
+        // Локальный черновик ещё не публиковался: createdBy пуст, но пересказ
+        // создан этим пользователем — иначе его нельзя было бы даже открыть.
+        if (retelling.createdBy == null) {
+            return true;
+        }
+        return currentUserId != null && currentUserId.equals(retelling.createdBy);
     }
 
     public static boolean canDeleteRetelling(@Nullable CampaignRoom campaign, @Nullable RetellingRoom retelling,
@@ -134,8 +155,13 @@ public final class Rights {
         if (has(campaign, CAMPAIGN_MANAGE)) {
             return true;
         }
-        return retelling != null && currentUserId != null
-                && currentUserId.equals(retelling.createdBy);
+        if (retelling == null) {
+            return false;
+        }
+        if (retelling.createdBy == null) {
+            return true;
+        }
+        return currentUserId != null && currentUserId.equals(retelling.createdBy);
     }
 
     public static boolean canManageMembers(@Nullable CampaignRoom campaign) {

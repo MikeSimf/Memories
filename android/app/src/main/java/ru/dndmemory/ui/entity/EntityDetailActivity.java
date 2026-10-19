@@ -10,6 +10,7 @@ import android.text.method.LinkMovementMethod;
 import android.text.style.StyleSpan;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -145,6 +146,7 @@ public class EntityDetailActivity extends AppCompatActivity {
         binding.entityTitle.setText(TextUtils.isEmpty(entity.name)
                 ? getString(R.string.attr_not_set) : entity.name);
         EntityType type = EntityType.fromOrCharacter(entity.kind);
+        binding.entityTypeStripe.setBackgroundColor(TypeColors.of(this, type));
         binding.entityTypeChip.setText(Labels.entityTypeText(this, entity.kind));
         binding.entityTypeChip.setTextColor(TypeColors.of(this, type));
         binding.entityTypeChip.setBackgroundTintList(
@@ -154,7 +156,9 @@ public class EntityDetailActivity extends AppCompatActivity {
                 DateFormats.formatIso(entity.updatedAt)));
 
         // Фото грузится с сервера авторизованным клиентом и кэшируется в памяти.
-        ImageLoader.load(App.container(this).okHttpClient(), entity.imageFileId, binding.entityPhoto);
+        final String photoId = entity.imageFileId;
+        ImageLoader.load(App.container(this).okHttpClient(), photoId, binding.entityPhoto);
+        binding.entityPhoto.setOnClickListener(v -> openPhoto(photoId));
 
         renderWiki(binding.entityDescription, entity.description);
         ViewUtils.show(binding.entityDescriptionTitle,
@@ -163,6 +167,23 @@ public class EntityDetailActivity extends AppCompatActivity {
         bindLinks(entity);
 
         ViewUtils.show(binding.entityConflictBar, entity.hasConflict());
+    }
+
+    /** Полноэкранный просмотр фото: по нажатию на картинку в карточке. */
+    private void openPhoto(@Nullable String fileId) {
+        if (fileId == null || fileId.isEmpty()) {
+            return;
+        }
+        ImageLoader.loadFull(App.container(this).okHttpClient(), fileId, bitmap -> {
+            ImageView view = new ImageView(this);
+            view.setAdjustViewBounds(true);
+            view.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            view.setImageBitmap(bitmap);
+            new androidx.appcompat.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_NoActionBar)
+                    .setView(view)
+                    .setPositiveButton(R.string.action_close, null)
+                    .show();
+        });
     }
 
     /** Текст с markdown и живыми ссылками [[Имя]]. */

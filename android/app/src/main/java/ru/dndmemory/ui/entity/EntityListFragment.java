@@ -71,7 +71,7 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
 
     /** Режим выбора: id отмеченных объектов и панель действий над ними. */
     private final Set<String> selected = new LinkedHashSet<>();
-    private androidx.appcompat.view.ActionMode selectionMode;
+    private boolean selectionMode;
 
     private final Handler filterHandler = new Handler(Looper.getMainLooper());
     private final Runnable filterTask = () -> viewModel.setQuery(text(binding.entityListFilter.getText()));
@@ -124,6 +124,9 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
             viewModel.syncNow();
         });
         binding.entityListFab.setOnClickListener(v -> onCreateClicked());
+        binding.entityListSelectionRefresh.setOnClickListener(v -> refreshSelected());
+        binding.entityListSelectionDelete.setOnClickListener(v -> deleteSelected());
+        binding.entityListSelectionClose.setOnClickListener(v -> stopSelection());
 
         observe();
     }
@@ -243,7 +246,7 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
 
     @Override
     public void onEntityClick(@NonNull EntityRoom entity) {
-        if (selectionMode != null) {
+        if (selectionMode) {
             toggleSelection(entity);
             return;
         }
@@ -253,7 +256,7 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
     @Override
     public void onEntityLongClick(@NonNull EntityRoom entity) {
         // Долгое нажатие — тот же режим выбора, что и свайп вправо.
-        if (selectionMode == null) {
+        if (!selectionMode) {
             startSelection(entity);
         } else {
             toggleSelection(entity);
@@ -273,7 +276,7 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
             @Override
             public int getSwipeDirs(@NonNull RecyclerView recyclerView,
                                     @NonNull RecyclerView.ViewHolder viewHolder) {
-                return selectionMode == null ? super.getSwipeDirs(recyclerView, viewHolder) : 0;
+                return selectionMode ? 0 : super.getSwipeDirs(recyclerView, viewHolder);
             }
 
             @Override
@@ -357,16 +360,11 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
     }
 
     private void startSelection(@NonNull EntityRoom entity) {
-        if (selectionMode != null) {
+        if (selectionMode) {
             toggleSelection(entity);
             return;
         }
-        if (!(requireActivity() instanceof androidx.appcompat.app.AppCompatActivity)) {
-            return;
-        }
-        androidx.appcompat.app.AppCompatActivity activity =
-                (androidx.appcompat.app.AppCompatActivity) requireActivity();
-        selectionMode = activity.startSupportActionMode(new SelectionCallback());
+        selectionMode = true;
         selected.clear();
         selected.add(entity.id);
         applySelection();
@@ -380,19 +378,27 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
             selected.add(entity.id);
         }
         if (selected.isEmpty()) {
-            if (selectionMode != null) {
-                selectionMode.finish();
-            }
+            stopSelection();
             return;
         }
         applySelection();
     }
 
+    /** Панель над списком: сколько выбрано и что с ними можно сделать. */
     private void applySelection() {
-        adapter.setSelection(selected, selectionMode != null);
-        if (selectionMode != null) {
-            selectionMode.setTitle(getString(R.string.entity_selected_title, selected.size()));
+        adapter.setSelection(selected, selectionMode);
+        ViewUtils.show(binding.entityListSelectionBar, selectionMode);
+        if (selectionMode) {
+            binding.entityListSelectionCount.setText(
+                    getString(R.string.entity_selected_title, selected.size()));
         }
+    }
+
+    private void stopSelection() {
+        selectionMode = false;
+        selected.clear();
+        adapter.setSelection(selected, false);
+        ViewUtils.show(binding.entityListSelectionBar, false);
     }
 
     @NonNull
@@ -418,9 +424,7 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
                     viewModel.deleteMany(entities);
                     ViewUtils.toast(requireContext(),
                             getString(R.string.entity_selected_deleted, entities.size()));
-                    if (selectionMode != null) {
-                        selectionMode.finish();
-                    }
+                    stopSelection();
                 })
                 .setNegativeButton(R.string.action_cancel, null)
                 .show();
@@ -431,9 +435,7 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
         for (EntityRoom entity : entities) {
             viewModel.refreshOne(entity);
         }
-        if (selectionMode != null) {
-            selectionMode.finish();
-        }
+        stopSelection();
     }
 
     private static final int ACTION_OPEN = 0;
@@ -441,43 +443,6 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
     private static final int ACTION_REFRESH = 2;
     private static final int ACTION_DELETE = 3;
     private static final int ACTION_SELECT = 4;
-
-    /** Панель действий над выбранными объектами. */
-    private final class SelectionCallback implements androidx.appcompat.view.ActionMode.Callback {
-
-        @Override
-        public boolean onCreateActionMode(androidx.appcompat.view.ActionMode mode, Menu menu) {
-            mode.getMenuInflater().inflate(R.menu.menu_entity_select, menu);
-            mode.setTitle(getString(R.string.entity_selected_title, selected.size()));
-            return true;
-        }
-
-        @Override
-        public boolean onPrepareActionMode(androidx.appcompat.view.ActionMode mode, Menu menu) {
-            return false;
-        }
-
-        @Override
-        public boolean onActionItemClicked(androidx.appcompat.view.ActionMode mode, MenuItem item) {
-            int id = item.getItemId();
-            if (id == R.id.action_selected_refresh) {
-                refreshSelected();
-                return true;
-            }
-            if (id == R.id.action_selected_delete) {
-                deleteSelected();
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        public void onDestroyActionMode(androidx.appcompat.view.ActionMode mode) {
-            selectionMode = null;
-            selected.clear();
-            adapter.setSelection(selected, false);
-        }
-    }
 
     @Override
     public void onDestroyView() {

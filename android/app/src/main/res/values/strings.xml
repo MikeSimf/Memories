@@ -24,6 +24,7 @@
     <string name="entity_actions_title">Действия</string>
     <string name="entity_selected_refresh">Обновить выбранные</string>
     <string name="entity_selected_delete">Удалить выбранные</string>
+    <string name="entity_selected_refresh_short">Обновить</string>
     <string name="entity_selected_title">Выбрано: %1$d</string>
     <string name="entity_selected_deleted">Удалено объектов: %1$d</string>
     <string name="entity_delete_many_confirm">Удалить выбранные объекты (%1$d)?</string>

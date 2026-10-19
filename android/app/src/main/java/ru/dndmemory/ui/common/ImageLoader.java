@@ -75,6 +75,24 @@ public final class ImageLoader {
         });
     }
 
+    /** Картинка целиком — для полноэкранного просмотра. */
+    public static void loadFull(@NonNull final OkHttpClient client, @NonNull final String fileId,
+                                @NonNull final java.util.function.Consumer<Bitmap> onLoaded) {
+        Bitmap cached = CACHE.get(fileId);
+        if (cached != null) {
+            onLoaded.accept(cached);
+            return;
+        }
+        POOL.execute(() -> {
+            Bitmap bitmap = fetch(client, fileId);
+            if (bitmap == null) {
+                return;
+            }
+            CACHE.put(fileId, bitmap);
+            MAIN.post(() -> onLoaded.accept(bitmap));
+        });
+    }
+
     @Nullable
     private static Bitmap fetch(@NonNull OkHttpClient client, @NonNull String fileId) {
         Request request = new Request.Builder()

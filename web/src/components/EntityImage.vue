@@ -14,6 +14,8 @@ const props = withDefaults(
 
 const objectUrl = ref<string | null>(null)
 const failed = ref(false)
+/** Полноэкранный просмотр: картинка не растягивается, пропорции сохраняются. */
+const zoom = ref(false)
 
 function revoke(): void {
   if (objectUrl.value) {
@@ -45,6 +47,13 @@ onBeforeUnmount(revoke)
     :src="objectUrl"
     :alt="alt"
     :style="{ maxHeight: `${maxHeight}px` }"
+    @click="zoom = true"
   />
   <span v-else-if="failed" class="faint">Изображение недоступно без сети</span>
+  <Teleport to="body">
+    <div v-if="zoom && objectUrl" class="image-zoom" @click="zoom = false">
+      <img :src="objectUrl" :alt="alt" />
+      <button class="image-zoom__close" type="button" @click="zoom = false">Закрыть</button>
+    </div>
+  </Teleport>
 </template>

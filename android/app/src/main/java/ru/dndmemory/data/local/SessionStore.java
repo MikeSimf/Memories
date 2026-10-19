@@ -59,10 +59,11 @@ public class SessionStore {
         this.prefs = context.getApplicationContext()
                 .getSharedPreferences(FILE, Context.MODE_PRIVATE);
         ensureDeviceClientId();
-        // postValue, а не setValue: контейнер приложения может быть собран
-        // и с фонового потока (WorkManager), где setValue запрещён.
-        loggedIn.postValue(isLoggedIn());
-        displayName.postValue(prefs.getString(KEY_DISPLAY_NAME, null));
+        // Значение нужно сразу: Splash читает его в том же кадре, и postValue
+        // успевал отдать false — приложение просило вход при каждом запуске.
+        // В главном потоке ставим синхронно, в фоновом — через postValue.
+        setNow(loggedIn, isLoggedIn());
+        setNow(displayName, prefs.getString(KEY_DISPLAY_NAME, null));
     }
 
     public boolean isLoggedIn() {
@@ -226,6 +227,15 @@ public class SessionStore {
      * вызовы. {@code setValue} там запрещён ({@code IllegalStateException:
      * Cannot invoke setValue on a background thread}), поэтому {@code postValue}.
      */
+    /** Синхронно в главном потоке, отложенно — в фоновом (setValue там запрещён). */
+    private static <T> void setNow(MutableLiveData<T> live, T value) {
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            live.setValue(value);
+        } else {
+            live.postValue(value);
+        }
+    }
+
     private void publish(String name) {
         loggedIn.postValue(isLoggedIn());
         displayName.postValue(name);

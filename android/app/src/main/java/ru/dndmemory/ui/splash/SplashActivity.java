@@ -5,7 +5,6 @@ import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.LiveData;
 
 import ru.dndmemory.App;
 import ru.dndmemory.databinding.ActivitySplashBinding;
@@ -30,17 +29,18 @@ public class SplashActivity extends AppCompatActivity {
         binding = ActivitySplashBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        LiveData<Boolean> loggedIn = App.container(this).authRepository().loggedIn();
-        loggedIn.observe(this, this::route);
+        // Решаем по сохранённому токену, а не по LiveData: ответ нужен в этом же
+        // кадре, иначе на миг видно «не вошёл» и открывается экран входа.
+        route(App.container(this).authRepository().isLoggedIn());
     }
 
-    private void route(Boolean logged) {
+    private void route(boolean logged) {
         if (navigated) {
             return;
         }
         navigated = true;
         Intent next;
-        if (Boolean.TRUE.equals(logged)) {
+        if (logged) {
             next = new Intent(this, ru.dndmemory.ui.campaigns.CampaignListActivity.class);
         } else {
             // Пояснение показываем только если сессию действительно прервали.

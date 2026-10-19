@@ -181,7 +181,14 @@ public final class WikiLinkEditor {
         applying = true;
         Editable editable = field.getText();
         editable.replace(from, caret, name);
-        field.setSelection(from + name.length());
+        // Автозакрытие: после имени всегда стоят «]]», даже если пользователь
+        // стёр их или пришёл из списка без закрывающих скобок.
+        int after = from + name.length();
+        if (after + CLOSE.length() > editable.length()
+                || !CLOSE.contentEquals(editable.subSequence(after, after + CLOSE.length()))) {
+            editable.insert(after, CLOSE);
+        }
+        field.setSelection(after);
         applying = false;
         shown.clear();
         popup.dismiss();

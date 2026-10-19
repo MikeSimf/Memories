@@ -38,6 +38,79 @@ const ui = useUiStore()
 const showPreview = ref(false)
 const uploading = ref(false)
 
+/** Подсказки для ввода [[Имя]]: имена объектов кампании. */
+const wikiHints = ref<string[]>([])
+const descriptionEl = ref<HTMLTextAreaElement | null>(null)
+
+function objectNames(): string[] {
+  const names = new Set<string>()
+  for (const item of campaign.objects) {
+    if (item.name && item.name.trim() !== "") names.add(item.name)
+  }
+  return [...names].sort((a, b) => a.localeCompare(b, "ru"))
+}
+
+/** Что набрано после ближайшего «[[» до курсора. */
+function wikiQuery(el: HTMLTextAreaElement): string | null {
+  const caret = el.selectionStart ?? 0
+  const before = el.value.slice(0, caret)
+  const open = before.lastIndexOf("[[")
+  if (open < 0) return null
+  const inside = before.slice(open + 2)
+  if (inside.includes("]]")) return null
+  return inside
+}
+
+function refreshHints(): void {
+  const el = descriptionEl.value
+  if (!el) return
+  const query = wikiQuery(el)
+  if (query === null || query.trim().length < 3) {
+    wikiHints.value = []
+    return
+  }
+  const needle = query.trim().toLowerCase()
+  wikiHints.value = objectNames()
+    .filter((name) => name.toLowerCase().includes(needle))
+    .slice(0, 6)
+}
+
+/** Ввод «[[» сразу закрывается: курсор встаёт между скобками. */
+function onDescriptionInput(event: Event): void {
+  const el = event.target as HTMLTextAreaElement
+  const caret = el.selectionStart ?? 0
+  const typed = el.value.slice(Math.max(0, caret - 2), caret)
+  if (typed === "[[" && el.value.slice(caret, caret + 2) !== "]]") {
+    const next = el.value.slice(0, caret) + "]]" + el.value.slice(caret)
+    patch({ description: next })
+    el.value = next
+    el.setSelectionRange(caret, caret)
+  } else {
+    patch({ description: el.value })
+  }
+  refreshHints()
+}
+
+/** Подстановка выбранного имени: закрывающие скобки добавляются сами. */
+function applyHint(name: string): void {
+  const el = descriptionEl.value
+  if (!el) return
+  const caret = el.selectionStart ?? 0
+  const before = el.value.slice(0, caret)
+  const open = before.lastIndexOf("[[")
+  if (open < 0) return
+  const head = el.value.slice(0, open + 2)
+  const tail = el.value.slice(caret)
+  const closing = tail.startsWith("]]") ? "" : "]]"
+  const next = head + name + closing + tail
+  patch({ description: next })
+  el.value = next
+  const pos = head.length + name.length + closing.length
+  el.focus()
+  el.setSelectionRange(pos, pos)
+  wikiHints.value = []
+}
+
 const classLocked = computed(() => props.mode === 'edit' || !props.allowClassChange)
 const isHero = computed(() => props.objectClass === 'HERO')
 const isCharacter = computed(() => props.objectClass === 'CHARACTER')
@@ -348,11 +421,19 @@ async function onFileSelected(event: Event): Promise<void> {
       </div>
       <textarea
         id="object-description"
+        ref="descriptionEl"
         class="textarea textarea--tall"
         :value="modelValue.description"
         placeholder="Связан с [[Лира Ксенофонт|Лиры]] долгом…"
-        @input="patch({ description: ($event.target as HTMLTextAreaElement).value })"
+        @input="onDescriptionInput"
+        @keyup="refreshHints"
+        @click="refreshHints"
       />
+      <ul v-if="wikiHints.length > 0" class="wiki-hints">
+        <li v-for="hint in wikiHints" :key="hint">
+          <button type="button" @click="applyHint(hint)">{{ hint }}</button>
+        </li>
+      </ul>
       <span class="field__hint">
         Поддерживается markdown и ссылки на объекты: <code>[[Имя]]</code>,
         <code>[[Имя|подпись]]</code>, <code>[[#uuid|подпись]]</code>.
