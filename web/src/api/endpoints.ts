@@ -13,6 +13,7 @@ import type {
   CreateRetellingRequest,
   FileDto,
   HealthDto,
+  MaterialDto,
   InviteDto,
   InvitePreviewDto,
   LoginRequest,
@@ -463,6 +464,29 @@ export const classesApi = {
   },
 }
 
+/** Фото-материалы кампании: карты, портреты, письма и документы. */
+export const materialsApi = {
+  list(campaignId: string, query = ""): Promise<{ items: MaterialDto[]; total: number }> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/materials`, query: { q: query || undefined } })
+  },
+  create(campaignId: string, body: Partial<MaterialDto>): Promise<MaterialDto> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/materials`, method: "POST", body })
+  },
+  update(campaignId: string, materialId: string, body: Partial<MaterialDto>): Promise<MaterialDto> {
+    return apiClient.request({
+      path: `/api/campaigns/${campaignId}/materials/${materialId}`,
+      method: "PATCH",
+      body,
+    })
+  },
+  remove(campaignId: string, materialId: string): Promise<void> {
+    return apiClient.request({
+      path: `/api/campaigns/${campaignId}/materials/${materialId}`,
+      method: "DELETE",
+    })
+  },
+}
+
 export type { FileDto }
 
 export const api = {
@@ -477,4 +501,5 @@ export const api = {
   service: serviceApi,
   races: racesApi,
   classes: classesApi,
+  materials: materialsApi,
 }

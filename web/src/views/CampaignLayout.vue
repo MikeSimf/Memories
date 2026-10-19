@@ -14,6 +14,7 @@ const tabs = [
   { key: 'characters', label: 'Персонажи' },
   { key: 'locations', label: 'Локации' },
   { key: 'items', label: 'Предметы' },
+  { key: 'materials', label: 'Материалы' },
 ] as const
 
 /** Разделы кампании, вынесенные из вкладок (маршруты сохранены). */
@@ -26,6 +27,7 @@ const campaignId = computed(() => String(route.params.campaignId ?? ''))
 const activeTab = computed(() => {
   const name = route.name
   if (name === 'campaign-retellings') return 'retellings'
+  if (name === 'campaign-materials' || name === 'material-new' || name === 'material-edit') return 'materials'
   if (name === 'campaign-members') return 'members'
   return typeof route.params.tab === 'string' ? route.params.tab : ''
 })

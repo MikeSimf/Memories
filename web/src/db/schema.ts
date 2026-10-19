@@ -1,6 +1,7 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 
 import type {
+  AttachmentDto,
   ChangeOp,
   EntityLinkDto,
   HeroItemDto,
@@ -15,7 +16,7 @@ import type {
 
 export const DB_NAME = 'dnd-memory'
 /** Схема v2: четыре класса объектов вместо общего хранилища `entities` (`sync.md` §5). */
-export const DB_VERSION = 2
+export const DB_VERSION = 3
 
 /**
  * Имена хранилищ — по `sync.md` §5 («Локальное состояние клиента»).
@@ -23,6 +24,7 @@ export const DB_VERSION = 2
  */
 export const STORE = {
   objects: 'objects',
+  materials: 'materials',
   retellings: 'retellings',
   retellingDrafts: 'retelling_drafts',
   pendingChanges: 'pending_changes',
@@ -112,6 +114,26 @@ export function isLocalObjectOf<C extends ObjectClass>(
   objectClass: C,
 ): object is LocalObjectOf<C> {
   return object.objectType === objectClass
+}
+
+/** Фото-материал кампании в локальной базе. */
+export interface LocalMaterial {
+  id: string
+  campaignId: string
+  name: string
+  description: string
+  imageFileId: string | null
+  files: AttachmentDto[]
+  revision: number
+  createdBy: string
+  createdByName: string
+  updatedBy: string
+  updatedByName: string
+  createdAt: string
+  updatedAt: string
+  deleted: boolean
+  dirty: 0 | 1
+  conflict: SyncConflictDto | null
 }
 
 /** Локальная запись пересказа: только `PUBLISHED` (или отправляемый на сервер). */
@@ -219,6 +241,13 @@ export interface DndMemoryDB extends DBSchema {
       'by-campaign-class': [string, ObjectClass]
     }
   }
+  materials: {
+    key: string
+    value: LocalMaterial
+    indexes: {
+      'by-campaign': string
+    }
+  }
   retellings: {
     key: string
     value: LocalRetelling
@@ -284,6 +313,10 @@ export function openDatabase(): Promise<IDBPDatabase<DndMemoryDB>> {
           const objects = db.createObjectStore(STORE.objects, { keyPath: 'id' })
           objects.createIndex('by-campaign', 'campaignId')
           objects.createIndex('by-campaign-class', ['campaignId', 'objectType'])
+        }
+        if (!db.objectStoreNames.contains(STORE.materials)) {
+          const materials = db.createObjectStore(STORE.materials, { keyPath: 'id' })
+          materials.createIndex('by-campaign', 'campaignId')
         }
         if (!db.objectStoreNames.contains(STORE.retellings)) {
           const retellings = db.createObjectStore(STORE.retellings, { keyPath: 'id' })

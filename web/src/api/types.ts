@@ -29,7 +29,7 @@ export type RetellingStatus = 'DRAFT' | 'PUBLISHED'
 export type ChangeOp = 'UPSERT' | 'DELETE'
 
 /** `ObjectType` — тип объекта в журнале синхронизации (`api.md` §2). */
-export type ObjectType = ObjectClass | 'RETELLING' | 'CAMPAIGN' | 'MEMBER'
+export type ObjectType = ObjectClass | 'RETELLING' | 'CAMPAIGN' | 'MEMBER' | 'MATERIAL'
 
 /** Плоский список прав текущего пользователя в кампании (`myPermissions`). */
 export type Permission =
@@ -754,8 +754,36 @@ export interface SyncSnapshotResponse {
   characters: CharacterDto[]
   locations: LocationDto[]
   items: ItemDto[]
+  materials: MaterialDto[]
   retellings: RetellingDto[]
   members: MemberDto[]
+}
+
+/** Файл объекта или материала: фото, карта, документ. */
+export interface AttachmentDto {
+  id: string
+  name: string | null
+  contentType: string | null
+  size: number | null
+}
+
+/** Фото-материал кампании: картинка или документ плюс название и описание. */
+export interface MaterialDto {
+  id: string
+  campaignId: string
+  name: string
+  description: string
+  imageFileId: string | null
+  files: AttachmentDto[] | null
+  links: EntityLinkDto[] | null
+  createdBy: string
+  createdByName: string
+  updatedBy: string
+  updatedByName: string
+  revision: number
+  createdAt: string
+  updatedAt: string
+  deleted: boolean
 }
 
 export interface SyncStateDto {

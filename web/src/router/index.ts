@@ -78,6 +78,24 @@ const routes: RouteRecordRaw[] = [
         redirect: (to) => ({ name: 'campaign-tab', params: { campaignId: to.params.campaignId, tab: 'characters' } }),
       },
       {
+        path: 'materials',
+        name: 'campaign-materials',
+        component: () => import('@/views/MaterialsView.vue'),
+        meta: { title: 'Материалы' },
+      },
+      {
+        path: 'materials/new',
+        name: 'material-new',
+        component: () => import('@/views/MaterialEditView.vue'),
+        meta: { title: 'Новый материал' },
+      },
+      {
+        path: 'materials/:materialId/edit',
+        name: 'material-edit',
+        component: () => import('@/views/MaterialEditView.vue'),
+        meta: { title: 'Правка материала' },
+      },
+      {
         // Пересказы и участники — отдельные разделы кампании, не вкладки.
         path: 'retellings',
         name: 'campaign-retellings',

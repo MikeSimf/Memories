@@ -17,5 +17,6 @@ export {
   serviceApi,
   racesApi,
   classesApi,
+  materialsApi,
 } from './endpoints'
 export type { RaceDto } from './endpoints'

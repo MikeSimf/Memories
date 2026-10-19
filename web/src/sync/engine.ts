@@ -13,6 +13,7 @@ import {
   type SyncPushResponse,
   type SyncPushResult,
   type SyncSnapshotResponse,
+  type MaterialDto,
 } from '@/api'
 import { isObjectClass } from './payload'
 import {
@@ -37,6 +38,10 @@ import {
   objectFromDto,
   objectToPayload,
   patchSyncState,
+  pruneMaterials,
+  putMaterials,
+  materialFromDto,
+  dirtyMaterialIds,
   pruneMembers,
   pruneObjects,
   pruneRetellings,
@@ -49,6 +54,7 @@ import {
   putPendingChange,
   retellingFromDto,
   retellingToPayload,
+  type LocalMaterial,
   type LocalObject,
   type LocalRetelling,
   type MemberRecord,
@@ -420,6 +426,7 @@ async function applyChangeLog(
   const objects: LocalObject[] = []
   const retellings: LocalRetelling[] = []
   const members: MemberRecord[] = []
+  const materials: LocalMaterial[] = []
   let campaignPatch: CampaignDto | null = null
 
   for (const entry of changes) {
@@ -434,6 +441,14 @@ async function applyChangeLog(
     if (entry.objectType === 'RETELLING') {
       const retelling = retellingFromPayload(campaignId, payload, entry.op)
       if (retelling) retellings.push(retelling)
+      continue
+    }
+    if (entry.objectType === 'MATERIAL') {
+      if (entry.op === 'DELETE') {
+        materials.push({ ...emptyMaterial(campaignId, entry.objectId), deleted: true })
+      } else {
+        materials.push(materialFromDto(payload as unknown as MaterialDto))
+      }
       continue
     }
     if (entry.objectType === 'MEMBER') {
@@ -451,6 +466,9 @@ async function applyChangeLog(
   const skipRetelling =
     retellings.length > 0 ? await dirtyRetellingIds(campaignId) : new Set<string>()
 
+  const skipMaterial = materials.length > 0 ? await dirtyMaterialIds(campaignId) : new Set<string>()
+
+  await putMaterials(materials.filter((item) => !skipMaterial.has(item.id)))
   await putObjects(objects.filter((item) => !skipObject.has(item.id)))
   await putRetellings(retellings.filter((item) => !skipRetelling.has(item.id)))
   if (members.length > 0) {
@@ -481,6 +499,25 @@ async function applyChangeLog(
     await putCampaignRecord(record)
   }
   emitDatabaseChanged(campaignId)
+}
+
+/** Пустой материал: нужен для надгробия при DELETE в журнале. */
+function emptyMaterial(campaignId: string, id: string): LocalMaterial {
+  const now = nowIso()
+  return {
+    id,
+    campaignId,
+    name: '',
+    description: '',
+    imageFileId: null,
+    files: [],
+    revision: 0,
+    createdBy: '',
+    createdByName: '',
+    updatedBy: '',
+    updatedByName: '',
+    createdAt: now, updatedAt: now, deleted: false, dirty: 0, conflict: null,
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -518,6 +555,8 @@ export async function loadSnapshot(campaignId: string): Promise<SnapshotSummary>
   const objects: LocalObject[] = []
   const retellings: LocalRetelling[] = []
   const members: MemberRecord[] = []
+  const materials: LocalMaterial[] = []
+  const materialIds = new Set<string>()
   let campaign: CampaignDto | null = null
   let latestRevision = 0
   let cursor: string | null = null
@@ -529,6 +568,10 @@ export async function loadSnapshot(campaignId: string): Promise<SnapshotSummary>
     const pageObjects = snapshotObjects(response)
     for (const id of pageObjects.ids) objectIds.add(id)
     objects.push(...pageObjects.objects)
+    for (const dto of response.materials ?? []) {
+      materialIds.add(dto.id)
+      materials.push(materialFromDto(dto))
+    }
     for (const dto of response.retellings ?? []) {
       retellingIds.add(dto.id)
       retellings.push(retellingFromDto(dto))
@@ -544,6 +587,9 @@ export async function loadSnapshot(campaignId: string): Promise<SnapshotSummary>
   const skipObject = await dirtyObjectIds(campaignId)
   const skipRetelling = await dirtyRetellingIds(campaignId)
 
+  const skipMaterial = await dirtyMaterialIds(campaignId)
+  await putMaterials(materials.filter((item) => !skipMaterial.has(item.id)))
+  await pruneMaterials(campaignId, materialIds)
   await putObjects(objects.filter((item) => !skipObject.has(item.id)))
   await putRetellings(retellings.filter((item) => !skipRetelling.has(item.id)))
   await putMembers(members)
