@@ -101,6 +101,14 @@ public interface ApiService {
     @GET("api/races")
     Call<List<RaceDto>> races();
 
+    /** Справочник типов локаций. */
+    @GET("api/location-types")
+    Call<List<RaceDto>> locationTypes();
+
+    /** Справочник типов предметов. */
+    @GET("api/item-types")
+    Call<List<RaceDto>> itemTypes();
+
     /** Справочник классов персонажа. */
     @GET("api/classes")
     Call<List<RaceDto>> classes();

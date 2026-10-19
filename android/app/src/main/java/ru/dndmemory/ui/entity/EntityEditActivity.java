@@ -149,6 +149,32 @@ public class EntityEditActivity extends AppCompatActivity {
                 // Без сети остаются значения, загруженные ранее.
             }
         });
+        setupReference(binding.entityEditLocationType,
+                container.raceRepository().cachedLocationTypes(), false);
+        setupReference(binding.entityEditItemType,
+                container.raceRepository().cachedItemTypes(), false);
+        container.raceRepository().refreshLocationTypes(new RepoCallback<java.util.List<String>>() {
+            @Override
+            public void onSuccess(@Nullable java.util.List<String> value) {
+                setupReference(binding.entityEditLocationType,
+                        container.raceRepository().cachedLocationTypes(), false);
+            }
+
+            @Override
+            public void onError(@NonNull ApiException error) {
+            }
+        });
+        container.raceRepository().refreshItemTypes(new RepoCallback<java.util.List<String>>() {
+            @Override
+            public void onSuccess(@Nullable java.util.List<String> value) {
+                setupReference(binding.entityEditItemType,
+                        container.raceRepository().cachedItemTypes(), false);
+            }
+
+            @Override
+            public void onError(@NonNull ApiException error) {
+            }
+        });
         container.raceRepository().refreshClasses(new RepoCallback<java.util.List<String>>() {
             @Override
             public void onSuccess(@Nullable java.util.List<String> value) {
@@ -478,6 +504,8 @@ public class EntityEditActivity extends AppCompatActivity {
         ViewUtils.show(binding.entityEditOwnerNameGroup, item);
         ViewUtils.show(binding.entityEditOwnerLinkGroup, item);
         ViewUtils.show(binding.entityEditItemsGroup, hero);
+        ViewUtils.show(binding.entityEditLocationTypeGroup, currentKind == EntityType.LOCATION);
+        ViewUtils.show(binding.entityEditItemTypeGroup, currentKind == EntityType.ITEM);
         ViewUtils.show(binding.entityEditFieldsTitle, hero || character || item);
 
         if (draft != null) {
@@ -702,7 +730,10 @@ public class EntityEditActivity extends AppCompatActivity {
             viewModel.setRace(text(binding.entityEditRaceInput.getText()));
             viewModel.setKlass(text(binding.entityEditKlassInput.getText()));
             viewModel.setShortDescription(text(binding.entityEditShortInput.getText()));
+        } else if (currentKind == EntityType.LOCATION) {
+            viewModel.setLocationType(text(binding.entityEditLocationType.getText()));
         } else if (currentKind == EntityType.ITEM) {
+            viewModel.setItemType(text(binding.entityEditItemType.getText()));
             viewModel.setOwnerName(text(binding.entityEditOwnerNameInput.getText()));
             viewModel.setOwnerLink(ownerById(selectedOwnerId));
         }

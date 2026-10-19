@@ -19,6 +19,8 @@ public final class LocationDtos {
     @Setter
     @SuperBuilder
     public static class LocationDto extends ObjectDto {
+        /** Тип из справочника location_types. */
+        private String locationType;
     }
 
     @Getter
@@ -33,6 +35,7 @@ public final class LocationDtos {
         private String description;
 
         private UUID imageFileId;
+        private String locationType;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
         private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;
@@ -47,6 +50,7 @@ public final class LocationDtos {
         private String description;
 
         private UUID imageFileId;
+        private String locationType;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
         private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;

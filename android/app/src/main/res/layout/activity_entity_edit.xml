@@ -110,6 +110,38 @@
 
             <!-- Только персонаж -->
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/entity_edit_location_type_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Тип локации"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                    android:id="@+id/entity_edit_location_type"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:completionThreshold="1"
+                    android:inputType="textCapSentences"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/entity_edit_item_type_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Тип предмета"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                    android:id="@+id/entity_edit_item_type"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:completionThreshold="1"
+                    android:inputType="textCapSentences"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/entity_edit_short_group"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -22,6 +22,8 @@ public final class ItemDtos {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ItemDto extends ObjectDto {
+        /** Тип из справочника item_types. */
+        private String itemType;
         private String ownerName;
         private UUID ownerHeroId;
         private String ownerHeroName;
@@ -41,6 +43,7 @@ public final class ItemDtos {
         private String description;
 
         private UUID imageFileId;
+        private String itemType;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
         private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;
@@ -62,6 +65,7 @@ public final class ItemDtos {
         private String description;
 
         private UUID imageFileId;
+        private String itemType;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
         private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;

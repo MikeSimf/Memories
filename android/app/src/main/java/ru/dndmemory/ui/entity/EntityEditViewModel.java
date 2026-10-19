@@ -168,6 +168,20 @@ public class EntityEditViewModel extends ViewModel {
         }
     }
 
+    /** Тип локации из справочника. */
+    public void setLocationType(@Nullable String locationType) {
+        if (draft != null) {
+            draft.locationType = nullable(locationType);
+        }
+    }
+
+    /** Тип предмета из справочника. */
+    public void setItemType(@Nullable String itemType) {
+        if (draft != null) {
+            draft.itemType = nullable(itemType);
+        }
+    }
+
     /** Владелец предмета «как написано в мире». */
     public void setOwnerName(@Nullable String ownerName) {
         if (draft != null) {

@@ -23,6 +23,10 @@ public class Item extends GameEntitySupport
         implements GameEntityExtender, NamedExtender, SyncExtended, ImageExtender {
 
     /** Владелец так, как его называет мастер: «гильдия воров», «Лира Ксенофонт». */
+    /** Тип из справочника item_types: оружие, артефакт, трофей. */
+    @Column(name = "item_type", length = 48)
+    private String itemType;
+
     @Column(name = "owner_name", length = 200)
     private String ownerName;
 

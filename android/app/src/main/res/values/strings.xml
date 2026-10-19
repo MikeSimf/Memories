@@ -146,6 +146,8 @@
     <string name="tab_characters">Персонажи</string>
     <string name="tab_locations">Локации</string>
     <string name="tab_items">Предметы</string>
+    <string name="entity_location_type">Тип локации</string>
+    <string name="entity_item_type">Тип предмета</string>
     <string name="tab_materials">Материалы</string>
     <string name="ref_unknown">Неизвестно</string>
     <string name="error_name_required">Укажите название</string>

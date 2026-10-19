@@ -8,6 +8,7 @@ import ru.dndmemory.domain.extender.GameEntityExtender;
 import ru.dndmemory.domain.extender.ImageExtender;
 import ru.dndmemory.domain.extender.NamedExtender;
 import ru.dndmemory.domain.extender.SyncExtended;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
@@ -24,4 +25,7 @@ public class Location extends GameEntitySupport
     public String matchKey() {
         return normalizePart(getName());
     }
+    /** Тип из справочника location_types: город, лес, перекрёсток. */
+    @Column(name = "location_type", length = 48)
+    private String locationType;
 }

@@ -149,8 +149,11 @@ public final class Mappers {
             room.race = character.race;
             room.klass = character.klass;
             room.shortDescription = character.shortDescription;
+        } else if (kind == EntityType.LOCATION && dto instanceof LocationDto) {
+            room.locationType = ((LocationDto) dto).locationType;
         } else if (kind == EntityType.ITEM && dto instanceof ItemDto) {
             ItemDto item = (ItemDto) dto;
+            room.itemType = item.itemType;
             room.ownerName = item.ownerName;
             room.ownerHeroId = item.ownerHeroId;
             room.ownerHeroName = item.ownerHeroName;
@@ -248,6 +251,9 @@ public final class Mappers {
         dto.updatedAt = room.updatedAt;
         dto.deleted = room.deleted;
 
+        if (dto instanceof LocationDto) {
+            ((LocationDto) dto).locationType = room.locationType;
+        }
         if (dto instanceof HeroDto) {
             HeroDto hero = (HeroDto) dto;
             hero.race = room.race;
@@ -261,6 +267,7 @@ public final class Mappers {
             character.shortDescription = room.shortDescription;
         } else if (dto instanceof ItemDto) {
             ItemDto item = (ItemDto) dto;
+            item.itemType = room.itemType;
             item.ownerName = room.ownerName;
             item.ownerHeroId = room.ownerHeroId;
             item.ownerCharacterId = room.ownerCharacterId;

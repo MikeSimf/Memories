@@ -83,6 +83,7 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
                 .description(item.getDescription())
                 .files(filesOf(item))
                 .imageFileId(item.getImageFileId())
+                .itemType(item.getItemType())
                 .links(objectIndexService.links(context, item.getDescription()))
                 .createdBy(item.getCreatedBy())
                 .createdByName(context.userName(item.getCreatedBy()))
@@ -108,6 +109,9 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
         }
         if (payload.hasNonNull("name")) {
             item.setName(payload.get("name").asText());
+        }
+        if (payload.has("itemType")) {
+            item.setItemType(text(payload.get("itemType")));
         }
         if (payload.has("description")) {
             item.setDescription(text(payload.get("description")));

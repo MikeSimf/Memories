@@ -67,6 +67,12 @@ public class EntityRoom {
 
     /** Владелец «как написано в мире». */
     public String ownerName;
+
+    /** Тип локации из справочника location_types. */
+    public String locationType;
+
+    /** Тип предмета из справочника item_types. */
+    public String itemType;
     public String ownerHeroId;
     public String ownerHeroName;
     public String ownerCharacterId;

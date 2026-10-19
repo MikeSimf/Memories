@@ -42,7 +42,7 @@ import ru.dndmemory.data.local.entity.SyncStateRoom;
                 MemberRoom.class,
                 MaterialRoom.class
         },
-        version = 3,
+        version = 5,
         exportSchema = false
 )
 @TypeConverters({Converters.class})
@@ -79,6 +79,23 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /** 3 → 4: класс у персонажа. */
+    public static final Migration MIGRATION_3_4 = new Migration(3, 4) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            // klass уже есть в таблице entities (поле героя), отдельная колонка не нужна.
+        }
+    };
+
+    /** 4 → 5: типы локаций и предметов. */
+    public static final Migration MIGRATION_4_5 = new Migration(4, 5) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE `entities` ADD COLUMN `locationType` TEXT");
+            db.execSQL("ALTER TABLE `entities` ADD COLUMN `itemType` TEXT");
+        }
+    };
+
     public abstract CampaignDao campaignDao();
 
     public abstract EntityDao entityDao();
@@ -99,7 +116,7 @@ public abstract class AppDatabase extends RoomDatabase {
         return Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, NAME)
                 // Материалы кампании появились во второй версии: таблица
                 // создаётся миграцией, локальные данные не теряются.
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .fallbackToDestructiveMigration()
                 .build();
     }

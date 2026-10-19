@@ -117,7 +117,6 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
                     context, picked ? R.color.colorPrimaryContainer : R.color.colorSurface));
             binding.itemEntityIcon.setImageResource(Labels.entityIcon(entity.kind));
             // Тип виден по цвету полоски и подписи — не нужно читать строку класса.
-            binding.itemEntityIcon.setColorFilter(TypeColors.of(context, type));
             binding.itemEntityStripe.setBackgroundColor(TypeColors.of(context, type));
             binding.itemEntityType.setTextColor(TypeColors.of(context, type));
             binding.itemEntityName.setText(TextUtils.isEmpty(entity.name)

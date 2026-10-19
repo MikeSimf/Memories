@@ -22,6 +22,8 @@ public class RaceRepository {
     private final AppExecutors exec;
     private volatile List<String> cached = new ArrayList<>();
     private volatile List<String> cachedClasses = new ArrayList<>();
+    private volatile List<String> cachedLocationTypes = new ArrayList<>();
+    private volatile List<String> cachedItemTypes = new ArrayList<>();
 
     public RaceRepository(@NonNull ApiService api, @NonNull AppExecutors exec) {
         this.api = api;
@@ -55,6 +57,41 @@ public class RaceRepository {
             cachedClasses = names;
             return names;
         }, callback);
+    }
+
+    /** Названия типов локаций. */
+    @NonNull
+    public List<String> cachedLocationTypes() {
+        return cachedLocationTypes;
+    }
+
+    /** Названия типов предметов. */
+    @NonNull
+    public List<String> cachedItemTypes() {
+        return cachedItemTypes;
+    }
+
+    /** Перечитывает справочник типов локаций. */
+    public void refreshLocationTypes(@Nullable RepoCallback<List<String>> callback) {
+        exec.io(() -> cachedLocationTypes = loadNames(ApiCall.execute(api.locationTypes())), callback);
+    }
+
+    /** Перечитывает справочник типов предметов. */
+    public void refreshItemTypes(@Nullable RepoCallback<List<String>> callback) {
+        exec.io(() -> cachedItemTypes = loadNames(ApiCall.execute(api.itemTypes())), callback);
+    }
+
+    @NonNull
+    private static List<String> loadNames(@Nullable List<RaceDto> remote) {
+        List<String> names = new ArrayList<>();
+        if (remote != null) {
+            for (RaceDto item : remote) {
+                if (item != null && item.name != null) {
+                    names.add(item.name);
+                }
+            }
+        }
+        return names;
     }
 
     /** Перечитывает справочник с сервера; ошибку вызывающий может игнорировать. */

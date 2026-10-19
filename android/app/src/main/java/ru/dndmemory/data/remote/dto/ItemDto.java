@@ -7,6 +7,9 @@ package ru.dndmemory.data.remote.dto;
  */
 public class ItemDto extends EntityDto {
 
+    /** Тип из справочника item_types. */
+    public String itemType;
+
     public String ownerName;
     public String ownerHeroId;
     public String ownerHeroName;
