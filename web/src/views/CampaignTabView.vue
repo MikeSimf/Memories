@@ -10,6 +10,7 @@ import {
 } from '@/api/types'
 import type { LocalObject } from '@/db/schema'
 import EmptyState from '@/components/EmptyState.vue'
+import EntityAvatar from '@/components/EntityAvatar.vue'
 import MembersPanel from '@/components/MembersPanel.vue'
 import SearchBox from '@/components/SearchBox.vue'
 import { matchesText, objectMatchesQuery } from '@/db/search'
@@ -194,10 +195,13 @@ const tabProgressLabel = computed(() =>
           :class="typeCardClass(object)"
           :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: object.id } }"
         >
-          <h3 class="card__title">
-            {{ object.name }}
-            <span v-if="object.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />
-          </h3>
+          <div class="row card__head">
+            <EntityAvatar :object="object" :size="40" />
+            <h3 class="card__title">
+              {{ object.name }}
+              <span v-if="object.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />
+            </h3>
+          </div>
           <p v-if="excerpt(object)" class="card__excerpt">{{ excerpt(object) }}</p>
           <div class="card__meta">
             <span class="badge" :class="badgeClass(object)">
@@ -262,6 +266,13 @@ const tabProgressLabel = computed(() =>
 </template>
 
 <style scoped>
+.card__head {
+  align-items: center;
+  gap: 0.6rem;
+}
+.card__head .card__title {
+  margin: 0;
+}
 .search-summary {
   min-height: 28px;
 }

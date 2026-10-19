@@ -89,6 +89,7 @@ export function objectFromDto<C extends ObjectClass>(
         ...local,
         objectType: 'CHARACTER',
         race: character.race ?? null,
+        klass: character.klass ?? null,
         shortDescription: character.shortDescription ?? null,
       } as LocalObjectOf<C>
     }
@@ -97,6 +98,7 @@ export function objectFromDto<C extends ObjectClass>(
       return {
         ...local,
         objectType: 'ITEM',
+        itemType: item.itemType ?? null,
         ownerName: item.ownerName ?? null,
         ownerHeroId: item.ownerHeroId ?? null,
         ownerHeroName: item.ownerHeroName ?? null,

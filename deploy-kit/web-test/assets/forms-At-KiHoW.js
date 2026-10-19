@@ -1,1 +1,0 @@
-function n(){return{id:null,name:"",itemId:null,quantity:null,notes:""}}function t(e=""){return{name:e,description:"",imageFileId:null,race:"",klass:"",playerUserId:null,items:[],shortDescription:"",ownerName:"",ownerHeroId:null,ownerCharacterId:null}}function l(){return{title:"",body:"",authorEntityId:null,sessionDate:null}}export{t as a,l as b,n as e};

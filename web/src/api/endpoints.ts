@@ -464,6 +464,20 @@ export const classesApi = {
   },
 }
 
+/** Типы локаций: по коду выбирается картинка по умолчанию. */
+export const locationTypesApi = {
+  list(): Promise<RaceDto[]> {
+    return apiClient.request<RaceDto[]>({ path: '/api/location-types' })
+  },
+}
+
+/** Типы предметов. */
+export const itemTypesApi = {
+  list(): Promise<RaceDto[]> {
+    return apiClient.request<RaceDto[]>({ path: '/api/item-types' })
+  },
+}
+
 /** Фото-материалы кампании: карты, портреты, письма и документы. */
 export const materialsApi = {
   list(campaignId: string, query = ""): Promise<{ items: MaterialDto[]; total: number }> {
@@ -504,5 +518,7 @@ export const api = {
   service: serviceApi,
   races: racesApi,
   classes: classesApi,
+  locationTypes: locationTypesApi,
+  itemTypes: itemTypesApi,
   materials: materialsApi,
 }

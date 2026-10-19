@@ -148,6 +148,7 @@ export function objectFromPayload(
     const dto: CharacterDto = {
       ...common,
       race: asOptionalString(payload.race),
+      klass: asOptionalString(payload.klass),
       shortDescription: asOptionalString(payload.shortDescription),
     }
     return objectFromDto('CHARACTER', dto)
@@ -155,6 +156,7 @@ export function objectFromPayload(
   if (objectClass === 'ITEM') {
     const dto: ItemDto = {
       ...common,
+      itemType: asOptionalString(payload.itemType),
       ownerName: asOptionalString(payload.ownerName),
       ownerHeroId: asOptionalString(payload.ownerHeroId),
       ownerHeroName: asOptionalString(payload.ownerHeroName),
@@ -163,7 +165,7 @@ export function objectFromPayload(
     }
     return objectFromDto('ITEM', dto)
   }
-  const dto: LocationDto = { ...common }
+  const dto: LocationDto = { ...common, locationType: asOptionalString(payload.locationType) }
   return objectFromDto('LOCATION', dto)
 }
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 
-import { classesApi, errorMessage, racesApi, uploadFile } from '@/api'
+import { classesApi, errorMessage, itemTypesApi, locationTypesApi, racesApi, uploadFile } from '@/api'
 import { OBJECT_CLASSES, OBJECT_CLASS_LABELS, type ObjectClass } from '@/api/types'
 import EntityImage from './EntityImage.vue'
 import MarkupText from './MarkupText.vue'
@@ -38,11 +38,15 @@ const ui = useUiStore()
 /** Справочник рас: подсказки в поле «Раса», свободный ввод не запрещён. */
 const races = ref<string[]>([])
 const classes = ref<string[]>([])
+const locationTypes = ref<string[]>([])
+const itemTypes = ref<string[]>([])
 
 onMounted(async () => {
   try {
     races.value = (await racesApi.list()).map((race) => race.name)
     classes.value = (await classesApi.list()).map((item) => item.name)
+    locationTypes.value = (await locationTypesApi.list()).map((item) => item.name)
+    itemTypes.value = (await itemTypesApi.list()).map((item) => item.name)
   } catch {
     // Без сети остаётся обычный ввод.
   }
@@ -128,6 +132,7 @@ const classLocked = computed(() => props.mode === 'edit' || !props.allowClassCha
 const isHero = computed(() => props.objectClass === 'HERO')
 const isCharacter = computed(() => props.objectClass === 'CHARACTER')
 const isItem = computed(() => props.objectClass === 'ITEM')
+const isLocation = computed(() => props.objectClass === 'LOCATION')
 
 /** Игрок героя — участник кампании (`playerUserId`). */
 const playerOptions = computed(() =>
@@ -374,8 +379,35 @@ async function onFileSelected(event: Event): Promise<void> {
       <span class="field__hint">По расе и краткому описанию тоже идёт поиск.</span>
     </template>
 
+    <!-- Локация: тип из справочника -->
+    <template v-if="isLocation">
+      <div class="field">
+        <label class="field__label" for="location-type">Тип локации</label>
+        <select
+          id="location-type"
+          class="input"
+          :value="modelValue.locationType ?? 'Неизвестно'"
+          @change="patch({ locationType: ($event.target as HTMLSelectElement).value })"
+        >
+          <option v-for="item in locationTypes" :key="item" :value="item">{{ item }}</option>
+        </select>
+        <span class="field__hint">По типу подбирается картинка локации, если своя не загружена.</span>
+      </div>
+    </template>
+
     <!-- Предмет: владелец строкой и необязательная ссылка -->
     <template v-if="isItem">
+      <div class="field">
+        <label class="field__label" for="item-type">Тип предмета</label>
+        <select
+          id="item-type"
+          class="input"
+          :value="modelValue.itemType ?? 'Неизвестно'"
+          @change="patch({ itemType: ($event.target as HTMLSelectElement).value })"
+        >
+          <option v-for="item in itemTypes" :key="item" :value="item">{{ item }}</option>
+        </select>
+      </div>
       <div class="field">
         <label class="field__label" for="item-owner">Владелец</label>
         <input

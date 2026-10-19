@@ -438,14 +438,20 @@ export interface HeroDto extends ObjectDto {
 /** Персонаж (НПС): раса и краткое описание — по ним тоже идёт поиск. */
 export interface CharacterDto extends ObjectDto {
   race: string | null
+  /** Класс персонажа из справочника character_classes. */
+  klass: string | null
   shortDescription: string | null
 }
 
-/** Локация: своих полей нет. */
-export type LocationDto = ObjectDto
+/** Локация: тип из справочника location_types. */
+export interface LocationDto extends ObjectDto {
+  locationType: string | null
+}
 
 /** Предмет: владелец как написано в мире и ссылка не более чем на одного героя/НПС. */
 export interface ItemDto extends ObjectDto {
+  /** Тип из справочника item_types. */
+  itemType: string | null
   ownerName: string | null
   ownerHeroId: string | null
   ownerHeroName: string | null

@@ -27,6 +27,9 @@ export interface ObjectFormValues {
   items: HeroItemFormValue[]
   /** Персонаж (НПС). */
   shortDescription: string
+  /** Локация и предмет: тип из справочника. */
+  locationType: string
+  itemType: string
   /** Предмет: владелец «как написано в мире» и не более одной ссылки. */
   ownerName: string
   ownerHeroId: string | null
@@ -54,6 +57,8 @@ export function emptyObjectForm(name = ''): ObjectFormValues {
     imageFileId: null,
     race: '',
     klass: '',
+    locationType: '',
+    itemType: '',
     playerUserId: null,
     items: [],
     shortDescription: '',

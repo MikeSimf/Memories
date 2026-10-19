@@ -76,17 +76,20 @@ export interface LocalHero extends LocalObjectBase {
 export interface LocalCharacter extends LocalObjectBase {
   objectType: 'CHARACTER'
   race: string | null
+  klass: string | null
   shortDescription: string | null
 }
 
-/** Локация: своих полей нет. */
+/** Локация: тип из справочника location_types. */
 export interface LocalLocation extends LocalObjectBase {
   objectType: 'LOCATION'
+  locationType: string | null
 }
 
 /** Предмет: владелец строкой и необязательная ссылка на героя или персонажа. */
 export interface LocalItem extends LocalObjectBase {
   objectType: 'ITEM'
+  itemType: string | null
   ownerName: string | null
   ownerHeroId: string | null
   ownerHeroName: string | null

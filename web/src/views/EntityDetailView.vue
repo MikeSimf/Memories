@@ -12,6 +12,7 @@ import type { LocalObject } from '@/db/schema'
 import BaseModal from '@/components/BaseModal.vue'
 import ConflictNotice from '@/components/ConflictNotice.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import EntityAvatar from '@/components/EntityAvatar.vue'
 import EntityImage from '@/components/EntityImage.vue'
 import MarkupText from '@/components/MarkupText.vue'
 import { useCampaignStore } from '@/stores/campaign'
@@ -179,6 +180,9 @@ async function keepLocal(): Promise<void> {
     <template v-if="entity">
       <div class="page-header">
         <div class="page-header__titles">
+          <div class="row entity-head">
+            <EntityAvatar :object="entity" :size="56" />
+            <div>
           <h1>
             {{ entity.name }}
             <span v-if="entity.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />
@@ -189,6 +193,8 @@ async function keepLocal(): Promise<void> {
             </span>
             <span v-if="entity.deleted" class="badge badge--danger">удалён</span>
             <span class="faint"> · {{ campaign.changeSummary(entity) }}</span>
+          </div>
+            </div>
           </div>
         </div>
         <RouterLink

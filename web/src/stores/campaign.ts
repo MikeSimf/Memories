@@ -467,6 +467,8 @@ export const useCampaignStore = defineStore('campaign', () => {
       imageFileId: object.imageFileId,
       race: '',
       klass: '',
+      locationType: '',
+      itemType: '',
       playerUserId: null,
       items: [],
       shortDescription: '',
@@ -488,6 +490,12 @@ export const useCampaignStore = defineStore('campaign', () => {
           notes: item.notes ?? '',
         })),
       }
+    }
+    if (object.objectType === 'LOCATION') {
+      base.locationType = object.locationType ?? ''
+    }
+    if (object.objectType === 'ITEM') {
+      base.itemType = object.itemType ?? ''
     }
     if (object.objectType === 'CHARACTER') {
       return { ...base, race: object.race ?? '', shortDescription: object.shortDescription ?? '' }
@@ -656,6 +664,7 @@ export const useCampaignStore = defineStore('campaign', () => {
         ...base,
         objectType: 'CHARACTER',
         race: optional(values.race),
+        klass: optional(values.klass),
         shortDescription: optional(values.shortDescription),
       }
       character.links = linksFor([character.description, character.shortDescription])
@@ -668,6 +677,7 @@ export const useCampaignStore = defineStore('campaign', () => {
       const item: LocalItem = {
         ...base,
         objectType: 'ITEM',
+        itemType: optional(values.itemType),
         ownerName: optional(values.ownerName),
         ownerHeroId,
         ownerHeroName: ownerHeroId ? (objectById(ownerHeroId)?.name ?? null) : null,
@@ -679,7 +689,11 @@ export const useCampaignStore = defineStore('campaign', () => {
       item.links = linksFor([item.description])
       return item
     }
-    const location: LocalLocation = { ...base, objectType: 'LOCATION' }
+    const location: LocalLocation = {
+      ...base,
+      objectType: 'LOCATION',
+      locationType: optional(values.locationType),
+    }
     location.links = linksFor([location.description])
     return location
   }
