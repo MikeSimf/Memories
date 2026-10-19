@@ -13,11 +13,11 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 10
-    latest-version-name: 1.0.9
+    latest-version-code: 11
+    latest-version-name: 1.0.10
     min-version-code: 4
     apk-url: http://81.177.139.30:8091/dnd-memory.apk
-    notes: Карточка материала, документы, вкладка «Материалы» в вебе
+    notes: Файлы материалов: понятные имена, открытие скачанного
   jwt:
     secret: ${JWT_SECRET}
   public-url: ${PUBLIC_URL}

@@ -42,6 +42,9 @@ public final class ItemDtos {
 
         private UUID imageFileId;
 
+        /** Файлы: фото и документы. Форма совпадает с ответом. */
+        private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;
+
         @Size(max = 200, message = "Не длиннее 200 символов")
         private String ownerName;
 
@@ -59,6 +62,9 @@ public final class ItemDtos {
         private String description;
 
         private UUID imageFileId;
+
+        /** Файлы: фото и документы. Форма совпадает с ответом. */
+        private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;
 
         @Size(max = 200, message = "Не длиннее 200 символов")
         private String ownerName;

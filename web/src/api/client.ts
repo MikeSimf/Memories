@@ -270,6 +270,46 @@ export async function fetchFileBlob(fileId: string): Promise<Blob> {
   return apiClient.fetchBlob(`/api/files/${encodeURIComponent(fileId)}`)
 }
 
+/** Имя из `Content-Disposition`: сначала filename*, потом filename. */
+function nameFromDisposition(header: string | null): string | null {
+  if (!header) return null
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(header)
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded[1].trim())
+    } catch {
+      /* оставляем как есть */
+    }
+  }
+  const plain = /filename="?([^";]+)"?/i.exec(header)
+  return plain ? plain[1].trim() : null
+}
+
+/**
+ * Файл для скачивания вместе с именем, которое подготовил сервер.
+ * `name` — название материала: сервер транслитерирует его и обрежет.
+ */
+export async function fetchFileForDownload(
+  fileId: string,
+  name?: string,
+): Promise<{ blob: Blob; filename: string | null }> {
+  const url = buildUrl(`/api/files/${encodeURIComponent(fileId)}`, name ? { name } : undefined)
+  const token = tokenStore.accessToken
+  const response = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    credentials: 'omit',
+  })
+  if (!response.ok) {
+    throw new ApiError({
+      status: response.status,
+      code: response.status === 401 ? 'unauthorized' : 'unknown',
+      message: `Не удалось скачать файл (HTTP ${response.status})`,
+      requestId: response.headers.get('X-Request-Id'),
+    })
+  }
+  return { blob: await response.blob(), filename: nameFromDisposition(response.headers.get('Content-Disposition')) }
+}
+
 /** Абсолютный адрес файла — используется как значение по умолчанию (без токена). */
 export function fileUrl(fileId: string): string {
   return buildUrl(`/api/files/${encodeURIComponent(fileId)}`)

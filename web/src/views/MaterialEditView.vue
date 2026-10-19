@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import {
   errorMessage,
-  fetchFileBlob,
+  fetchFileForDownload,
   materialsApi,
   uploadFile,
   type AttachmentDto,
@@ -130,11 +130,12 @@ function removeFile(id: string): void {
 
 async function downloadDocument(file: AttachmentDto): Promise<void> {
   try {
-    const blob = await fetchFileBlob(file.id)
+    // Имя готовит сервер: транслит названия материала плюс расширение файла.
+    const { blob, filename } = await fetchFileForDownload(file.id, name.value || file.name || undefined)
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = file.name ?? 'document'
+    link.download = filename ?? file.name ?? 'document'
     link.click()
     URL.revokeObjectURL(url)
     markDownloaded(file.id)

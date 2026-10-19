@@ -193,10 +193,17 @@ public class EntityDetailActivity extends AppCompatActivity {
                 action.setOnClickListener(v -> openPhoto(file.id));
             } else {
                 boolean downloaded = ru.dndmemory.ui.common.FileDownloads.isDownloaded(this, file.id);
-                action.setText(downloaded ? R.string.file_downloaded : R.string.update_download);
+                String saved = downloaded
+                        ? ru.dndmemory.ui.common.FileDownloads.savedName(this, file.id) : null;
+                name.setText(saved != null ? saved : (file.name == null ? file.id : file.name));
+                action.setText(downloaded ? R.string.file_open : R.string.update_download);
                 action.setOnClickListener(v -> {
-                    ru.dndmemory.ui.common.FileDownloads.download(this, file.id, file.name);
-                    renderFiles(entity);
+                    if (ru.dndmemory.ui.common.FileDownloads.isDownloaded(this, file.id)) {
+                        ru.dndmemory.ui.common.FileDownloads.open(this, file.id);
+                    } else {
+                        ru.dndmemory.ui.common.FileDownloads.download(this, file.id, entity.name,
+                                file.contentType, () -> renderFiles(entity));
+                    }
                 });
             }
             binding.entityFiles.addView(row);

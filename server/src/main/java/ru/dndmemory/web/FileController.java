@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import ru.dndmemory.domain.StoredFile;
 import ru.dndmemory.security.UserPrincipal;
+import ru.dndmemory.service.FileNames;
 import ru.dndmemory.service.FileStorageService;
 import ru.dndmemory.web.dto.FileDtos;
 
@@ -40,8 +41,14 @@ public class FileController {
                 .build();
     }
 
+    /**
+     * Отдаёт файл. Необязательный {@code name} — название материала или объекта:
+     * из него делается понятное имя для скачивания (транслит и обрезка),
+     * расширение берётся у исходного файла.
+     */
     @GetMapping("/api/files/{fileId}")
-    public ResponseEntity<Resource> download(@PathVariable UUID fileId) {
+    public ResponseEntity<Resource> download(@PathVariable UUID fileId,
+                                             @RequestParam(name = "name", required = false) String name) {
         StoredFile meta = fileStorageService.requireMeta(fileId);
         Resource resource = fileStorageService.load(fileId);
         MediaType mediaType;
@@ -50,9 +57,17 @@ public class FileController {
         } catch (Exception e) {
             mediaType = MediaType.APPLICATION_OCTET_STREAM;
         }
+        String fileName = name == null || name.isBlank()
+                ? meta.getFileName()
+                : FileNames.forDownload(name, meta.getFileName());
+        // Русские буквы в заголовке недопустимы без кодирования: отдаём ASCII-имя
+        // и дублируем исходное в filename*, как требует RFC 6266.
+        String encoded = java.net.URLEncoder.encode(fileName, java.nio.charset.StandardCharsets.UTF_8)
+                .replace("+", "%20");
         return ResponseEntity.ok()
                 .contentType(mediaType)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + meta.getFileName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + fileName + "\"; filename*=UTF-8''" + encoded)
                 .body(resource);
     }
 }

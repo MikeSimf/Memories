@@ -53,6 +53,9 @@ public final class MaterialDtos {
 
         private String description;
         private UUID imageFileId;
+
+        /** Файлы: фото и документы. Форма совпадает с ответом. */
+        private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;
     }
 
     @Data
@@ -64,5 +67,8 @@ public final class MaterialDtos {
 
         private String description;
         private UUID imageFileId;
+
+        /** Файлы: фото и документы. Форма совпадает с ответом. */
+        private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;
     }
 }

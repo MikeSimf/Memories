@@ -2,4 +2,6 @@
 <!-- Откуда FileProvider отдаёт файлы: только папка updates (скачанный apk). -->
 <paths>
     <external-files-path name="updates" path="updates/" />
+    <!-- Скачанные документы материалов -->
+    <external-files-path name="files" path="files/" />
 </paths>

@@ -19,6 +19,8 @@
     <string name="file_download_started">Скачивание началось</string>
     <string name="file_download_failed">Не удалось начать скачивание</string>
     <string name="file_downloaded">скачано</string>
+    <string name="file_not_downloaded">Файл ещё не скачан</string>
+    <string name="file_no_viewer">Нет приложения, чтобы открыть этот файл</string>
     <string name="file_open">Открыть</string>
     <string name="file_remove">Убрать</string>
     <string name="file_add_image">Добавить фото</string>

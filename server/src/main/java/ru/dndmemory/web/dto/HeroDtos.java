@@ -74,6 +74,9 @@ public final class HeroDtos {
 
         private UUID imageFileId;
 
+        /** Файлы: фото и документы. Форма совпадает с ответом. */
+        private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;
+
         @Size(max = 120, message = "Не длиннее 120 символов")
         private String race;
 
@@ -94,6 +97,9 @@ public final class HeroDtos {
         private String description;
 
         private UUID imageFileId;
+
+        /** Файлы: фото и документы. Форма совпадает с ответом. */
+        private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;
 
         @Size(max = 120, message = "Не длиннее 120 символов")
         private String race;

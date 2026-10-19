@@ -284,16 +284,18 @@ public class MaterialEditActivity extends AppCompatActivity {
                 action.setText(R.string.file_open);
                 action.setOnClickListener(v -> openPhoto(file.id));
             } else {
-                // Документ: отметка «скачано» и скачивание в «Загрузки».
+                // Документ: сначала скачиваем, потом открываем тем же нажатием.
                 boolean downloaded = FileDownloads.isDownloaded(this, file.id);
-                name.append(downloaded ? "\n" + getString(R.string.file_downloaded) : "");
+                String saved = downloaded ? FileDownloads.savedName(this, file.id) : null;
+                name.setText(saved != null ? saved : (file.name == null ? file.id : file.name));
                 action.setText(downloaded ? R.string.file_open : R.string.update_download);
                 action.setOnClickListener(v -> {
                     if (FileDownloads.isDownloaded(MaterialEditActivity.this, file.id)) {
-                        ViewUtils.toast(MaterialEditActivity.this, R.string.file_downloaded);
+                        FileDownloads.open(MaterialEditActivity.this, file.id);
                     } else {
-                        FileDownloads.download(MaterialEditActivity.this, file.id, file.name);
-                        renderFiles();
+                        FileDownloads.download(MaterialEditActivity.this, file.id,
+                                draft == null ? null : draft.name, file.contentType,
+                                () -> renderFiles());
                     }
                 });
             }
