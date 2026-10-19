@@ -1,7 +1,34 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 
+import { fetchFileBlob } from '@/api'
 import type { LocalObject } from '@/db/schema'
+import { typeIconPath, type IconKind } from '@/ui/typeIcons'
+
+/**
+ * Кэш object URL по файлу: один и тот же аватар в списке и карточке
+ * скачивается один раз. Ссылки живут до перезагрузки страницы.
+ */
+const AVATAR_URLS = new Map<string, string>()
+const AVATAR_LOADING = new Map<string, Promise<string | null>>()
+
+async function avatarUrl(fileId: string): Promise<string | null> {
+  const ready = AVATAR_URLS.get(fileId)
+  if (ready) return ready
+  let pending = AVATAR_LOADING.get(fileId)
+  if (!pending) {
+    pending = fetchFileBlob(fileId)
+      .then((blob) => {
+        const url = URL.createObjectURL(blob)
+        AVATAR_URLS.set(fileId, url)
+        return url
+      })
+      .catch(() => null)
+      .finally(() => AVATAR_LOADING.delete(fileId))
+    AVATAR_LOADING.set(fileId, pending)
+  }
+  return pending
+}
 
 /**
  * Аватар объекта на сайте: загруженная картинка либо силуэт категории,
@@ -30,17 +57,40 @@ function hashColor(key: string | null | undefined): string {
   return PALETTE[Math.abs(hash) % PALETTE.length]
 }
 
+const coverId = computed(() => props.object.avatarFileId)
+
+const coverUrl = ref<string | null>(null)
+watch(
+  coverId,
+  async (fileId) => {
+    coverUrl.value = null
+    if (!fileId) return
+    const url = await avatarUrl(fileId)
+    if (coverId.value === fileId) coverUrl.value = url
+  },
+  { immediate: true },
+)
+
 const color = computed(() => {
   if (props.object.objectType === 'LOCATION') return hashColor(props.object.locationType)
   if (props.object.objectType === 'ITEM') return hashColor(props.object.itemType)
   return hashColor((props.object as { race?: string | null }).race)
 })
 
-const category = computed(() => {
-  if (props.object.objectType === 'LOCATION') return 'location'
-  if (props.object.objectType === 'ITEM') return 'item'
-  return 'person'
+/** Раса, тип локации или тип предмета — по ним выбирается глиф. */
+const iconKind = computed<IconKind>(() => {
+  if (props.object.objectType === 'LOCATION') return 'LOCATION'
+  if (props.object.objectType === 'ITEM') return 'ITEM'
+  return 'RACE'
 })
+
+const iconValue = computed(() => {
+  if (props.object.objectType === 'LOCATION') return props.object.locationType
+  if (props.object.objectType === 'ITEM') return props.object.itemType
+  return (props.object as { race?: string | null }).race
+})
+
+const iconPath = computed(() => typeIconPath(iconKind.value, iconValue.value))
 
 const badge = computed(() => {
   if (!props.showBadge) return ''
@@ -57,19 +107,18 @@ const badge = computed(() => {
     :style="{ width: `${size}px`, height: `${size}px`, background: `${color}22`, color }"
     :title="object.name"
   >
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-      <template v-if="category === 'person'">
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7" stroke-linecap="round" />
-      </template>
-      <template v-else-if="category === 'location'">
-        <path d="M12 3l5 7h-3l4 6H6l4-6H7z" stroke-linejoin="round" />
-        <path d="M12 16v5" stroke-linecap="round" />
-      </template>
-      <template v-else>
-        <path d="M14 3l7 7-8 8-4-4z" stroke-linejoin="round" />
-        <path d="M6 15l3 3-4 3z" stroke-linejoin="round" />
-      </template>
+    <img v-if="coverUrl" class="avatar__img" :src="coverUrl" :alt="object.name" />
+    <svg
+      v-else
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.7"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path :d="iconPath" />
     </svg>
     <span v-if="badge" class="avatar__badge">{{ badge }}</span>
   </span>
@@ -82,6 +131,12 @@ const badge = computed(() => {
   align-items: center;
   justify-content: center;
   flex: none;
+  border-radius: 50%;
+}
+.avatar__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   border-radius: 50%;
 }
 .avatar svg {

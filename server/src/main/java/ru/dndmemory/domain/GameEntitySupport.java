@@ -50,6 +50,10 @@ public abstract class GameEntitySupport
     @Column(name = "image_file_id")
     private UUID imageFileId;
 
+    /** Аватар: одна картинка, отдельно от галереи файлов. */
+    @Column(name = "avatar_file_id")
+    private UUID avatarFileId;
+
     /**
      * Файлы объекта в формате JSON: [{id, name, contentType, size}].
      * Хранится строкой в jsonb — список едет внутри payload, отдельный тип

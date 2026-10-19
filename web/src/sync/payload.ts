@@ -89,6 +89,7 @@ function commonPayload(
   name: string
   description: string
   imageFileId: string | null
+  avatarFileId: string | null
   links: EntityLinkDto[]
   createdBy: string
   createdByName: string
@@ -105,6 +106,7 @@ function commonPayload(
     name: asString(payload.name),
     description: asString(payload.description),
     imageFileId: asOptionalString(payload.imageFileId),
+    avatarFileId: asOptionalString(payload.avatarFileId),
     links: asLinks(payload.links),
     createdBy: asString(payload.createdBy),
     createdByName: asString(payload.createdByName),

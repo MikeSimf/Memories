@@ -47,6 +47,8 @@ interface LocalObjectBase {
   name: string
   description: string
   imageFileId: string | null
+  /** Аватар: отдельная картинка, не из галереи. */
+  avatarFileId: string | null
   links: EntityLinkDto[]
   createdBy: string
   createdByName: string

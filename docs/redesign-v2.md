@@ -87,7 +87,7 @@ users: id, login (уникальный), email (уникальный, обяза
 interface GameEntityExtender   id, campaignId
 interface NamedExtender        name, description, matchKey(), matchReason()
 interface SyncExtended         deleted, createdAt, updatedAt, createdBy, updatedBy, revision
-interface ImageExtender        imageFileId
+interface ImageExtender        imageFileId, avatarFileId
 
 @Entity Hero       extends GameEntitySupport implements все четыре + race, klass, playerUserId
 @Entity Character  extends GameEntitySupport implements все четыре + race, shortDescription
@@ -178,7 +178,7 @@ Java не поддерживает множественное наследова
 
 * Общие параметры списка: `q`, `updatedSince`, `limit`, `offset`.
 * В описаниях ответов — общие поля (`id`, `campaignId`, `name`, `description`,
-  `imageFileId`, `links`, `createdBy`, `updatedBy`, `revision`, `createdAt`,
+  `imageFileId`, `avatarFileId`, `links`, `createdBy`, `updatedBy`, `revision`, `createdAt`,
   `updatedAt`, `deleted`) плюс поля своего класса.
 * `PATCH` поддерживает `If-Match: <revision>` как раньше.
 * `/api/campaigns/{id}/entities` из прежней версии **удаляется**.

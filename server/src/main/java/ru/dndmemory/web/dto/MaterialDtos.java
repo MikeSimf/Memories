@@ -29,6 +29,7 @@ public final class MaterialDtos {
         private String name;
         private String description;
         private UUID imageFileId;
+        private UUID avatarFileId;
         private List<AttachmentDto> files;
         private List<LinkDto> links;
         private UUID createdBy;
@@ -53,6 +54,7 @@ public final class MaterialDtos {
 
         private String description;
         private UUID imageFileId;
+        private UUID avatarFileId;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
         private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;
@@ -67,6 +69,7 @@ public final class MaterialDtos {
 
         private String description;
         private UUID imageFileId;
+        private UUID avatarFileId;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
         private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;

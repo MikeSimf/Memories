@@ -43,6 +43,7 @@ public final class ItemDtos {
         private String description;
 
         private UUID imageFileId;
+        private UUID avatarFileId;
         private String itemType;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
@@ -65,6 +66,7 @@ public final class ItemDtos {
         private String description;
 
         private UUID imageFileId;
+        private UUID avatarFileId;
         private String itemType;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */

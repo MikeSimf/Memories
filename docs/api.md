@@ -261,6 +261,7 @@
 { "id": "…", "campaignId": "…", "name": "Лира Ксенофонт",
   "description": "Связана с [[Силдар Холлвинтер|мэром]] долгом…",
   "imageFileId": null,
+  "avatarFileId": null,
   "links": [ { "targetId": "…", "label": "мэром", "resolved": true } ],
   "createdBy": "…", "createdByName": "Аня", "updatedBy": "…", "updatedByName": "Аня",
   "revision": 42, "createdAt": "…", "updatedAt": "…", "deleted": false }

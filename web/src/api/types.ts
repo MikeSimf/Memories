@@ -405,6 +405,8 @@ export interface ObjectDto {
   name: string
   description: string
   imageFileId: string | null
+  /** Аватар: отдельная картинка, не из галереи. */
+  avatarFileId: string | null
   links: EntityLinkDto[]
   createdBy: string
   createdByName: string
@@ -499,6 +501,7 @@ export interface CreateHeroRequest {
   name: string
   description?: string
   imageFileId?: string | null
+  avatarFileId?: string | null
   race?: string | null
   klass?: string | null
   playerUserId?: string | null
@@ -509,6 +512,7 @@ export interface UpdateHeroRequest {
   name?: string
   description?: string
   imageFileId?: string | null
+  avatarFileId?: string | null
   race?: string | null
   klass?: string | null
   playerUserId?: string | null
@@ -520,6 +524,7 @@ export interface CreateCharacterRequest {
   name: string
   description?: string
   imageFileId?: string | null
+  avatarFileId?: string | null
   race?: string | null
   shortDescription?: string | null
 }
@@ -528,6 +533,7 @@ export interface UpdateCharacterRequest {
   name?: string
   description?: string
   imageFileId?: string | null
+  avatarFileId?: string | null
   race?: string | null
   shortDescription?: string | null
 }
@@ -537,12 +543,14 @@ export interface CreateLocationRequest {
   name: string
   description?: string
   imageFileId?: string | null
+  avatarFileId?: string | null
 }
 
 export interface UpdateLocationRequest {
   name?: string
   description?: string
   imageFileId?: string | null
+  avatarFileId?: string | null
 }
 
 export interface CreateItemRequest {
@@ -550,6 +558,7 @@ export interface CreateItemRequest {
   name: string
   description?: string
   imageFileId?: string | null
+  avatarFileId?: string | null
   ownerName?: string | null
   ownerHeroId?: string | null
   ownerCharacterId?: string | null
@@ -559,6 +568,7 @@ export interface UpdateItemRequest {
   name?: string
   description?: string
   imageFileId?: string | null
+  avatarFileId?: string | null
   ownerName?: string | null
   ownerHeroId?: string | null
   ownerCharacterId?: string | null
@@ -780,6 +790,7 @@ export interface MaterialDto {
   name: string
   description: string
   imageFileId: string | null
+  avatarFileId: string | null
   files: AttachmentDto[] | null
   links: EntityLinkDto[] | null
   createdBy: string

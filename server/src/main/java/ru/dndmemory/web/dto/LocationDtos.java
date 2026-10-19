@@ -35,6 +35,7 @@ public final class LocationDtos {
         private String description;
 
         private UUID imageFileId;
+        private UUID avatarFileId;
         private String locationType;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
@@ -50,6 +51,7 @@ public final class LocationDtos {
         private String description;
 
         private UUID imageFileId;
+        private UUID avatarFileId;
         private String locationType;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */

@@ -84,6 +84,7 @@ public class CharacterService extends AbstractObjectService<Character, Character
                 .description(character.getDescription())
                 .files(filesOf(character))
                 .imageFileId(character.getImageFileId())
+                .avatarFileId(character.getAvatarFileId())
                 .links(objectIndexService.links(context, character.getDescription(), character.getShortDescription()))
                 .createdBy(character.getCreatedBy())
                 .createdByName(context.userName(character.getCreatedBy()))
@@ -113,6 +114,9 @@ public class CharacterService extends AbstractObjectService<Character, Character
         }
         if (payload.has("imageFileId")) {
             character.setImageFileId(uuidOrNull(payload.get("imageFileId")));
+        }
+        if (payload.has("avatarFileId")) {
+            character.setAvatarFileId(uuidOrNull(payload.get("avatarFileId")));
         }
         if (payload.has("race")) {
             character.setRace(text(payload.get("race")));

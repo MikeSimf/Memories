@@ -82,6 +82,9 @@ public class EntityRoom {
 
     public String imageFileId;
 
+    /** Аватар: одна картинка, отдельно от галереи files. */
+    public String avatarFileId;
+
     /** Файлы объекта в JSON: фото галереи, карты, документы. */
     public String filesJson;
 

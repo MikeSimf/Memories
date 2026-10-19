@@ -80,6 +80,7 @@ public class MaterialService extends AbstractObjectService<Material, MaterialDto
                 .description(material.getDescription())
                 .files(filesOf(material))
                 .imageFileId(material.getImageFileId())
+                .avatarFileId(material.getAvatarFileId())
                 .links(objectIndexService.links(context, material.getDescription()))
                 .createdBy(material.getCreatedBy())
                 .createdByName(context.userName(material.getCreatedBy()))
@@ -106,6 +107,9 @@ public class MaterialService extends AbstractObjectService<Material, MaterialDto
         }
         if (payload.has("imageFileId")) {
             material.setImageFileId(uuidOrNull(payload.get("imageFileId")));
+        }
+        if (payload.has("avatarFileId")) {
+            material.setAvatarFileId(uuidOrNull(payload.get("avatarFileId")));
         }
     }
 }

@@ -39,6 +39,7 @@ public final class CharacterDtos {
         private String description;
 
         private UUID imageFileId;
+        private UUID avatarFileId;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
         private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;
@@ -59,6 +60,7 @@ public final class CharacterDtos {
         private String description;
 
         private UUID imageFileId;
+        private UUID avatarFileId;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
         private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;

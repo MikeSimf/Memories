@@ -1,1 +1,0 @@
-import{d as n,o as t,c as s,b as o,t as a,f as r,ag as l}from"./index-33genKHt.js";const p={class:"empty"},i={key:0,class:"muted"},u=n({__name:"EmptyState",props:{title:{},hint:{default:""}},setup(c){return(e,d)=>(t(),s("div",p,[o("p",null,[o("strong",null,a(e.title),1)]),e.hint?(t(),s("p",i,a(e.hint),1)):r("",!0),l(e.$slots,"default")]))}});export{u as _};

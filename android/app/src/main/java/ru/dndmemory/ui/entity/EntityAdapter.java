@@ -115,7 +115,8 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
             EntityType type = EntityType.fromOrCharacter(entity.kind);
             binding.itemEntityRoot.setCardBackgroundColor(androidx.core.content.ContextCompat.getColor(
                     context, picked ? R.color.colorPrimaryContainer : R.color.colorSurface));
-            binding.itemEntityIcon.setImageResource(Labels.entityIcon(entity.kind));
+            ru.dndmemory.ui.common.AvatarBinder.bind(context, binding.itemEntityIcon, entity,
+                    ru.dndmemory.App.container(context).okHttpClient());
             // Тип виден по цвету полоски и подписи — не нужно читать строку класса.
             binding.itemEntityStripe.setBackgroundColor(TypeColors.of(context, type));
             binding.itemEntityType.setTextColor(TypeColors.of(context, type));

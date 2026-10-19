@@ -74,6 +74,7 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
                 .description(location.getDescription())
                 .files(filesOf(location))
                 .imageFileId(location.getImageFileId())
+                .avatarFileId(location.getAvatarFileId())
                 .locationType(location.getLocationType())
                 .links(objectIndexService.links(context, location.getDescription()))
                 .createdBy(location.getCreatedBy())
@@ -104,6 +105,9 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
         }
         if (payload.has("imageFileId")) {
             location.setImageFileId(uuidOrNull(payload.get("imageFileId")));
+        }
+        if (payload.has("avatarFileId")) {
+            location.setAvatarFileId(uuidOrNull(payload.get("avatarFileId")));
         }
     }
 }

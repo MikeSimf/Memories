@@ -13,4 +13,9 @@ public interface ImageExtender {
     UUID getImageFileId();
 
     void setImageFileId(UUID imageFileId);
+
+    /** Аватар объекта: отдельная картинка, не из галереи. */
+    UUID getAvatarFileId();
+
+    void setAvatarFileId(UUID avatarFileId);
 }

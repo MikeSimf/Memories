@@ -20,6 +20,7 @@ export interface ObjectFormValues {
   name: string
   description: string
   imageFileId: string | null
+  avatarFileId: string | null
   /** Герой. */
   race: string
   klass: string
@@ -55,6 +56,7 @@ export function emptyObjectForm(name = ''): ObjectFormValues {
     name,
     description: '',
     imageFileId: null,
+    avatarFileId: null,
     race: '',
     klass: '',
     locationType: '',

@@ -54,6 +54,7 @@ onMounted(async () => {
 
 const showPreview = ref(false)
 const uploading = ref(false)
+const avatarUploading = ref(false)
 
 /** Подсказки для ввода [[Имя]]: имена объектов кампании. */
 const wikiHints = ref<string[]>([])
@@ -164,6 +165,24 @@ function addItem(): void {
 
 function removeItem(index: number): void {
   patch({ items: props.modelValue.items.filter((_, position) => position !== index) })
+}
+
+/** Аватар — отдельная картинка: в галерею объекта не попадает. */
+async function onAvatarSelected(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  avatarUploading.value = true
+  try {
+    const uploaded = await uploadFile(file)
+    patch({ avatarFileId: uploaded.id })
+    ui.pushToast('success', 'Аватар загружен')
+  } catch (caught) {
+    ui.pushToast('error', errorMessage(caught))
+  } finally {
+    avatarUploading.value = false
+  }
 }
 
 /* --------------------------- Ссылки предмета ------------------------------ */
@@ -453,6 +472,40 @@ async function onFileSelected(event: Event): Promise<void> {
     </template>
 
     <div class="field">
+      <span class="field__label">Аватар</span>
+      <div class="avatar-picker">
+        <div class="avatar-picker__preview">
+          <EntityImage
+            v-if="modelValue.avatarFileId"
+            :file-id="modelValue.avatarFileId"
+            :alt="modelValue.name || 'Аватар'"
+            :max-height="96"
+          />
+          <span v-else class="avatar-picker__empty">без аватара</span>
+        </div>
+        <div class="stack stack--sm" style="flex: 1">
+          <input
+            type="file"
+            accept="image/*"
+            :disabled="avatarUploading"
+            @change="onAvatarSelected"
+          />
+          <button
+            v-if="modelValue.avatarFileId"
+            class="btn btn--sm"
+            type="button"
+            @click="patch({ avatarFileId: null })"
+          >
+            Убрать аватар
+          </button>
+          <span class="field__hint">
+            Отдельная картинка для карточки и списка. Не заменяет изображение ниже.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
       <span class="field__label">Изображение</span>
       <div v-if="modelValue.imageFileId" class="stack stack--sm">
         <EntityImage :file-id="modelValue.imageFileId" :alt="modelValue.name || 'Изображение'" />
@@ -517,3 +570,32 @@ async function onFileSelected(event: Event): Promise<void> {
     </div>
   </form>
 </template>
+
+<style scoped>
+.avatar-picker {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.avatar-picker__preview {
+  width: 96px;
+  height: 96px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--bg-elev);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.avatar-picker__preview :deep(img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar-picker__empty {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+}
+</style>

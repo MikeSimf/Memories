@@ -71,6 +71,8 @@ public class EntityEditActivity extends AppCompatActivity {
 
     /** Выбор фото из галереи: системный диалог, без разрешений в манифесте. */
     private ActivityResultLauncher<String> photoPicker;
+    /** Выбор отдельного аватара: та же галерея, но картинка не попадает в files. */
+    private ActivityResultLauncher<String> avatarPicker;
     private AppContainer container;
 
     private static final EntityType[] TYPE_VALUES = {
@@ -97,6 +99,7 @@ public class EntityEditActivity extends AppCompatActivity {
 
         container = App.container(this);
         photoPicker = registerForActivityResult(new ActivityResultContracts.GetContent(), this::onPhotoPicked);
+        avatarPicker = registerForActivityResult(new ActivityResultContracts.GetContent(), this::onAvatarPicked);
         viewModel = new ViewModelProvider(this, ViewModelFactory.of(
                 () -> new EntityEditViewModel(container.entityRepository(),
                         container.memberRepository(), AppExecutors.get())))
@@ -200,6 +203,11 @@ public class EntityEditActivity extends AppCompatActivity {
         binding.entityEditDelete.setOnClickListener(v -> confirmDelete());
         ViewUtils.show(binding.entityEditDelete, !creating);
 
+        binding.entityEditAvatarPick.setOnClickListener(v -> avatarPicker.launch("image/*"));
+        binding.entityEditAvatarClear.setOnClickListener(v -> {
+            viewModel.setAvatarFileId(null);
+            showAvatar(null);
+        });
         binding.entityEditPhotoPick.setOnClickListener(v -> photoPicker.launch("image/*"));
         binding.entityEditPhotoClear.setOnClickListener(v -> {
             viewModel.setImageFileId(null);
@@ -346,6 +354,7 @@ public class EntityEditActivity extends AppCompatActivity {
 
             bindFieldsForKind();
             showPhoto(state.entity.imageFileId);
+            showAvatar(state.entity.avatarFileId);
             renderFiles();
             checkRights();
         });
@@ -375,6 +384,76 @@ public class EntityEditActivity extends AppCompatActivity {
                 finish();
             }
         });
+    }
+
+    // --- Аватар -----------------------------------------------------------
+
+    /**
+     * Выбрали аватар: сжимаем и загружаем отдельно от галереи. В {@code files}
+     * картинка не попадает — иначе она стала бы ещё и фото объекта.
+     */
+    private void onAvatarPicked(@Nullable android.net.Uri uri) {
+        if (uri == null || container == null) {
+            return;
+        }
+        ViewUtils.toast(this, R.string.entity_avatar_uploading);
+        binding.entityEditAvatarPick.setEnabled(false);
+        AppExecutors.get().io(() -> {
+            byte[] data = ImageTools.compress(this, uri);
+            if (data == null) {
+                throw ru.dndmemory.data.remote.ApiException.unexpected(
+                        new IllegalArgumentException(getString(R.string.entity_photo_too_big)));
+            }
+            container.fileRepository().upload(data, "image/jpeg", "avatar.jpg",
+                    new RepoCallback<FileDto>() {
+                        @Override
+                        public void onSuccess(@Nullable FileDto value) {
+                            binding.entityEditAvatarPick.setEnabled(true);
+                            if (value == null || value.id == null) {
+                                ViewUtils.toast(EntityEditActivity.this, R.string.entity_photo_too_big);
+                                return;
+                            }
+                            viewModel.setAvatarFileId(value.id);
+                            showAvatar(value.id);
+                        }
+
+                        @Override
+                        public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) {
+                            binding.entityEditAvatarPick.setEnabled(true);
+                            ViewUtils.toast(EntityEditActivity.this,
+                                    getString(R.string.entity_avatar_failed,
+                                            ErrorMessages.text(EntityEditActivity.this, error)));
+                        }
+                    });
+            return null;
+        }, new RepoCallback<Void>() {
+            @Override
+            public void onSuccess(@Nullable Void value) {
+            }
+
+            @Override
+            public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) {
+                binding.entityEditAvatarPick.setEnabled(true);
+                ViewUtils.toast(EntityEditActivity.this,
+                        getString(R.string.entity_avatar_failed,
+                                ErrorMessages.text(EntityEditActivity.this, error)));
+            }
+        });
+    }
+
+    /** Превью аватара: без картинки показываем силуэт категории. */
+    private void showAvatar(@Nullable String fileId) {
+        boolean has = fileId != null && !fileId.isEmpty();
+        ViewUtils.show(binding.entityEditAvatarClear, has);
+        if (has) {
+            binding.entityEditAvatar.clearColorFilter();
+            binding.entityEditAvatar.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
+            ImageLoader.load(container.okHttpClient(), fileId, binding.entityEditAvatar);
+        } else {
+            binding.entityEditAvatar.setImageResource(Labels.entityIcon(currentKind.name()));
+            binding.entityEditAvatar.setColorFilter(androidx.core.content.ContextCompat.getColor(
+                    this, R.color.text_muted));
+        }
     }
 
     // --- Фото -------------------------------------------------------------

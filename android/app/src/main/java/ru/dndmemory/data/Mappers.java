@@ -126,6 +126,7 @@ public final class Mappers {
         room.name = dto.name;
         room.description = dto.description;
         room.imageFileId = dto.imageFileId;
+        room.avatarFileId = dto.avatarFileId;
         room.filesJson = filesJson(dto.files);
         room.links = dto.links == null ? new ArrayList<EntityLink>() : new ArrayList<>(dto.links);
         room.createdBy = dto.createdBy;
@@ -174,6 +175,7 @@ public final class Mappers {
         room.name = dto.name;
         room.description = dto.description;
         room.imageFileId = dto.imageFileId;
+        room.avatarFileId = dto.avatarFileId;
         room.filesJson = filesJson(dto.files);
         room.revision = dto.revision;
         room.createdAt = dto.createdAt;
@@ -195,6 +197,7 @@ public final class Mappers {
         dto.name = room.name;
         dto.description = room.description;
         dto.imageFileId = room.imageFileId;
+        dto.avatarFileId = room.avatarFileId;
         dto.files = files(room.filesJson);
         dto.revision = room.revision;
         dto.createdAt = room.createdAt;
@@ -242,6 +245,7 @@ public final class Mappers {
         dto.name = room.name;
         dto.description = room.description;
         dto.imageFileId = room.imageFileId;
+        dto.avatarFileId = room.avatarFileId;
         dto.files = files(room.filesJson);
         dto.links = room.links == null ? new ArrayList<EntityLink>() : room.links;
         dto.createdBy = room.createdBy;

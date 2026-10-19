@@ -17,6 +17,7 @@ function commonFromDto(dto: CampaignObjectDto): {
   name: string
   description: string
   imageFileId: string | null
+  avatarFileId: string | null
   links: CampaignObjectDto['links']
   createdBy: string
   createdByName: string
@@ -33,6 +34,7 @@ function commonFromDto(dto: CampaignObjectDto): {
     name: dto.name ?? '',
     description: dto.description ?? '',
     imageFileId: dto.imageFileId ?? null,
+    avatarFileId: dto.avatarFileId ?? null,
     links: dto.links ?? [],
     createdBy: dto.createdBy ?? '',
     createdByName: dto.createdByName ?? '',
@@ -122,6 +124,7 @@ export function objectToPayload(object: LocalObject): Record<string, unknown> {
     name: object.name,
     description: object.description,
     imageFileId: object.imageFileId,
+    avatarFileId: object.avatarFileId,
     createdAt: object.createdAt,
     updatedAt: object.updatedAt,
     deleted: object.deleted,

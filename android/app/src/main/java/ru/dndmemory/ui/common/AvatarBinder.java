@@ -6,8 +6,9 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import okhttp3.OkHttpClient;
+
 import androidx.annotation.ColorInt;
-import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
@@ -17,14 +18,16 @@ import java.util.Locale;
 import ru.dndmemory.R;
 import ru.dndmemory.data.local.entity.EntityRoom;
 import ru.dndmemory.data.model.EntityType;
+import ru.dndmemory.data.Mappers;
+import ru.dndmemory.data.model.Attachment;
 
 /**
  * Аватар объекта и значок класса.
  *
- * <p>Если у объекта загружена картинка — показываем её. Иначе рисуем силуэт
- * категории, окрашенный по расе (для героя и персонажа) или по типу локации
- * и предмета: так тип читается до подписи. Значок класса — маленький кружок
- * с первой буквой класса поверх аватара.
+ * <p>Если у объекта загружена картинка — показываем её. Иначе рисуем глиф
+ * расы (для героя и персонажа) или типа локации и предмета, окрашенный в цвет
+ * этого значения: так тип читается до подписи. Значок класса — маленький
+ * кружок с первой буквой класса поверх аватара.
  */
 public final class AvatarBinder {
 
@@ -34,11 +37,43 @@ public final class AvatarBinder {
     /** Кладёт картинку (или силуэт) в {@code avatar}. */
     public static void bind(@NonNull Context context, @NonNull ImageView avatar,
                             @NonNull EntityRoom entity) {
+        bind(context, avatar, entity, null);
+    }
+
+    /**
+     * Аватар в порядке важности: отдельный аватар, первое фото галереи, силуэт.
+     * Картинка грузится авторизованным клиентом; без клиента остаётся силуэт.
+     */
+    public static void bind(@NonNull Context context, @NonNull ImageView avatar,
+                            @NonNull EntityRoom entity, @Nullable OkHttpClient client) {
+        String fileId = coverFileId(entity);
+        if (fileId != null && client != null) {
+            avatar.setColorFilter(null);
+            avatar.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            avatar.setContentDescription(context.getString(R.string.entity_avatar));
+            ViewUtils.show(avatar, true);
+            ImageLoader.load(client, fileId, avatar);
+            return;
+        }
         EntityType kind = EntityType.fromOrCharacter(entity.kind);
-        int color = colorFor(context, kind, entity);
-        avatar.setColorFilter(color);
-        avatar.setImageResource(iconFor(kind));
+        avatar.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        TypeIcons.apply(avatar, kind.name(), iconValue(kind, entity), colorFor(context, kind, entity));
         avatar.setContentDescription(context.getString(typeLabel(kind)));
+        ViewUtils.show(avatar, true);
+    }
+
+    /** Файл-аватар: отдельное поле, иначе первая картинка из галереи. */
+    @Nullable
+    private static String coverFileId(@NonNull EntityRoom entity) {
+        if (entity.avatarFileId != null && !entity.avatarFileId.isEmpty()) {
+            return entity.avatarFileId;
+        }
+        for (Attachment file : Mappers.files(entity.filesJson)) {
+            if (file != null && file.isImage() && file.id != null) {
+                return file.id;
+            }
+        }
+        return null;
     }
 
     /** Значок класса: буква и цвет. Если класса нет — скрываем. */
@@ -61,19 +96,16 @@ public final class AvatarBinder {
         badge.setBackgroundTintList(ColorStateList.valueOf(soft(context, color)));
     }
 
-    @DrawableRes
-    private static int iconFor(@NonNull EntityType kind) {
-        switch (kind) {
-            case LOCATION:
-                return R.drawable.ic_location;
-            case ITEM:
-                return R.drawable.ic_item;
-            case CHARACTER:
-                return R.drawable.ic_npc;
-            case HERO:
-            default:
-                return R.drawable.ic_hero;
+    /** Значение, по которому выбирается глиф: раса или тип. */
+    @Nullable
+    private static String iconValue(@NonNull EntityType kind, @NonNull EntityRoom entity) {
+        if (kind == EntityType.LOCATION) {
+            return entity.locationType;
         }
+        if (kind == EntityType.ITEM) {
+            return entity.itemType;
+        }
+        return entity.race;
     }
 
     private static int typeLabel(@NonNull EntityType kind) {

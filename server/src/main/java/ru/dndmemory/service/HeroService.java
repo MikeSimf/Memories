@@ -107,6 +107,7 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
                 .description(hero.getDescription())
                 .files(filesOf(hero))
                 .imageFileId(hero.getImageFileId())
+                .avatarFileId(hero.getAvatarFileId())
                 .links(objectIndexService.links(context, hero.getDescription()))
                 .createdBy(hero.getCreatedBy())
                 .createdByName(context.userName(hero.getCreatedBy()))
@@ -138,6 +139,9 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
         }
         if (payload.has("imageFileId")) {
             hero.setImageFileId(uuidOrNull(payload.get("imageFileId")));
+        }
+        if (payload.has("avatarFileId")) {
+            hero.setAvatarFileId(uuidOrNull(payload.get("avatarFileId")));
         }
         if (payload.has("race")) {
             hero.setRace(text(payload.get("race")));

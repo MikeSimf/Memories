@@ -249,6 +249,13 @@ public class EntityEditViewModel extends ViewModel {
         draft.filesJson = ru.dndmemory.data.Mappers.filesJson(list);
     }
 
+    /** Идентификатор отдельного аватара; {@code null} — аватара нет. */
+    public void setAvatarFileId(@Nullable String avatarFileId) {
+        if (draft != null) {
+            draft.avatarFileId = nullable(avatarFileId);
+        }
+    }
+
     /** Идентификатор загруженной картинки; {@code null} — фото нет. */
     public void setImageFileId(@Nullable String imageFileId) {
         if (draft != null) {
