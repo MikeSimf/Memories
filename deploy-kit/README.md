@@ -53,6 +53,7 @@ sha256sum /tmp/kit.tar.gz /tmp/dnd-memory-server.jar   # сверить с ре�
     install-docker.sh  ← установка Docker (шаг 1)
     deploy-web.sh      ← выложить новую сборку веб-версии
     deploy-app.sh      ← выложить apk и сменить версию
+    diagnose.sh        ← статусы, логи, место и память
     apache-setup.sh    ← публикация по HTTPS через Apache
     nginx-setup.sh     ← публикация по HTTPS через nginx
     dnd-memory.service ← автозапуск через systemd
