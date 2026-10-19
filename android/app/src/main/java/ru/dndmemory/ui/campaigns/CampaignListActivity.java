@@ -101,12 +101,8 @@ public class CampaignListActivity extends AppCompatActivity implements CampaignA
             ViewUtils.toast(this, R.string.update_no_link);
             return;
         }
-        try {
-            startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,
-                    android.net.Uri.parse(url)));
-        } catch (RuntimeException e) {
-            ViewUtils.toast(this, R.string.update_no_link);
-        }
+        // Скачиваем и сразу открываем установщик: искать apk в загрузках не нужно.
+        ru.dndmemory.ui.common.ApkInstaller.downloadAndInstall(this, url);
     }
 
     private boolean onMenu(@NonNull MenuItem item) {

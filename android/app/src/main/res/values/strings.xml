@@ -16,6 +16,10 @@
     <string name="update_available_text">Доступна версия %1$s. Обновиться можно сейчас или позже.</string>
     <string name="update_download">Скачать</string>
     <string name="update_later">Позже</string>
+    <string name="update_downloading">Скачиваю обновление…</string>
+    <string name="update_install_ready">Загрузка завершена</string>
+    <string name="update_failed">Не удалось скачать обновление</string>
+    <string name="update_allow_install">Разрешите установку из этого приложения</string>
     <string name="update_no_link">Ссылка на обновление не настроена на сервере</string>
     <string name="action_create">Создать</string>
     <string name="action_refresh">Обновить</string>
@@ -134,6 +138,11 @@
     <string name="tab_locations">Локации</string>
     <string name="tab_items">Предметы</string>
     <string name="tab_materials">Материалы</string>
+    <string name="ref_unknown">Неизвестно</string>
+    <string name="error_name_required">Укажите название</string>
+    <string name="error_race_from_list">Выберите расу из списка</string>
+    <string name="error_class_from_list">Выберите класс из списка</string>
+    <string name="error_check_fields">Проверьте выделенные поля</string>
     <string name="tab_retellings">Пересказы</string>
     <string name="material_list_empty">Материалов пока нет. Добавьте карту, портрет или письмо — они сохранятся на телефоне и уедут на сервер, когда появится сеть.</string>
     <string name="material_add">Добавить материал</string>
@@ -289,6 +298,7 @@
     <string name="settings_user">Пользователь: %1$s</string>
     <string name="settings_logout_confirm">Выйти из аккаунта? Локальные данные кампаний будут удалены. Неотправленные черновики пересказов тоже исчезнут.</string>
     <string name="settings_about">DnD Memory, версия %1$s</string>
+    <string name="settings_web_open">Открыть веб-версию</string>
     <string name="settings_resync_done">Данные загружены заново</string>
 
     <!-- Профиль и пароль -->

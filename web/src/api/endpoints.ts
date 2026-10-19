@@ -456,6 +456,13 @@ export const racesApi = {
   },
 }
 
+/** Справочник классов персонажа: тот же формат, что у рас. */
+export const classesApi = {
+  list(): Promise<RaceDto[]> {
+    return apiClient.request<RaceDto[]>({ path: "/api/classes" })
+  },
+}
+
 export type { FileDto }
 
 export const api = {
@@ -469,4 +476,5 @@ export const api = {
   sync: syncApi,
   service: serviceApi,
   races: racesApi,
+  classes: classesApi,
 }

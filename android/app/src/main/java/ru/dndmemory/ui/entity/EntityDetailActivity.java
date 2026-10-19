@@ -56,6 +56,8 @@ public class EntityDetailActivity extends AppCompatActivity {
     private ActivityEntityDetailBinding binding;
     private EntityDetailViewModel viewModel;
     private CampaignViewModel campaignViewModel;
+    /** Снимок кампании: нужен для проверки прав, когда LiveData ещё не наблюдалась. */
+    private CampaignRoom campaignSnapshot;
     private String campaignId;
     private NameIndex nameIndex = NameIndex.of(null);
     private EntityRoom current;
@@ -86,6 +88,9 @@ public class EntityDetailActivity extends AppCompatActivity {
                 .get(CampaignViewModel.class);
         campaignViewModel.setCampaignId(campaignId);
         campaignViewModel.refreshDetails();
+        // Без подписки MediatorLiveData.getValue() возвращает null, и проверка
+        // прав в меню отказывала владельцу («нет прав» из карточки).
+        campaignViewModel.campaign().observe(this, campaign -> campaignSnapshot = campaign);
 
         setSupportActionBar(binding.entityToolbar);
         if (getSupportActionBar() != null) {
@@ -337,7 +342,7 @@ public class EntityDetailActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_edit) {
-            CampaignRoom campaign = campaignViewModel.campaign().getValue();
+            CampaignRoom campaign = campaignSnapshot;
             String userId = campaignViewModel.currentUserId();
             if (current == null || !Rights.canWriteEntity(campaign, current, userId)) {
                 android.util.Log.w("DndRights", "правка запрещена: роль="
@@ -363,7 +368,7 @@ public class EntityDetailActivity extends AppCompatActivity {
         if (current == null) {
             return;
         }
-        CampaignRoom campaign = campaignViewModel.campaign().getValue();
+        CampaignRoom campaign = campaignSnapshot;
         String userId = campaignViewModel.currentUserId();
         if (!Rights.canDeleteEntity(campaign, current, userId)) {
             ViewUtils.toast(this, EntityType.HERO.name().equalsIgnoreCase(current.kind)

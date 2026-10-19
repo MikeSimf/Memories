@@ -21,6 +21,7 @@ public class RaceRepository {
     private final ApiService api;
     private final AppExecutors exec;
     private volatile List<String> cached = new ArrayList<>();
+    private volatile List<String> cachedClasses = new ArrayList<>();
 
     public RaceRepository(@NonNull ApiService api, @NonNull AppExecutors exec) {
         this.api = api;
@@ -31,6 +32,29 @@ public class RaceRepository {
     @NonNull
     public List<String> cachedNames() {
         return cached;
+    }
+
+    /** Названия классов персонажа. */
+    @NonNull
+    public List<String> cachedClasses() {
+        return cachedClasses;
+    }
+
+    /** Перечитывает справочник классов. */
+    public void refreshClasses(@Nullable RepoCallback<List<String>> callback) {
+        exec.io(() -> {
+            List<RaceDto> remote = ApiCall.execute(api.classes());
+            List<String> names = new ArrayList<>();
+            if (remote != null) {
+                for (RaceDto item : remote) {
+                    if (item != null && item.name != null) {
+                        names.add(item.name);
+                    }
+                }
+            }
+            cachedClasses = names;
+            return names;
+        }, callback);
     }
 
     /** Перечитывает справочник с сервера; ошибку вызывающий может игнорировать. */

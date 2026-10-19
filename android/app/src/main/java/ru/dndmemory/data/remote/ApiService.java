@@ -101,6 +101,10 @@ public interface ApiService {
     @GET("api/races")
     Call<List<RaceDto>> races();
 
+    /** Справочник классов персонажа. */
+    @GET("api/classes")
+    Call<List<RaceDto>> classes();
+
     // --- Кампании (раздел 4) -----------------------------------------------
 
     @GET("api/campaigns")

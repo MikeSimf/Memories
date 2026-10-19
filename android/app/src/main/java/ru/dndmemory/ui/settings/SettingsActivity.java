@@ -57,6 +57,9 @@ public class SettingsActivity extends AppCompatActivity {
 
         binding.settingsServer.setText(getString(R.string.settings_server, viewModel.serverUrl()));
         binding.settingsAbout.setText(getString(R.string.settings_about, viewModel.version()));
+        // Веб-версия живёт на том же адресе, что и API: прод — рабочий сайт,
+        // тест — тестовый адрес из сборки.
+        binding.settingsWebLink.setOnClickListener(v -> openWeb(viewModel.serverUrl()));
 
         String lastSync = viewModel.lastSyncAt();
         binding.settingsLastSync.setText(getString(R.string.sync_last_at,
@@ -112,6 +115,18 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     /** Логин только для чтения, остальное — из профиля или из сессии. */
+    private void openWeb(@Nullable String serverUrl) {
+        if (serverUrl == null || serverUrl.isEmpty()) {
+            return;
+        }
+        try {
+            startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse(serverUrl)));
+        } catch (RuntimeException e) {
+            ViewUtils.toast(this, R.string.update_no_link);
+        }
+    }
+
     private void bindProfile(@Nullable UserDto user) {
         String name = user != null && !TextUtils.isEmpty(user.displayName)
                 ? user.displayName : viewModel.userName();

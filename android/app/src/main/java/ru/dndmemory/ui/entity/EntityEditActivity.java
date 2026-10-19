@@ -17,6 +17,7 @@ import java.util.List;
 
 import ru.dndmemory.App;
 import ru.dndmemory.AppContainer;
+import ru.dndmemory.data.remote.ApiException;
 import ru.dndmemory.data.remote.dto.FileDto;
 import ru.dndmemory.ui.common.ImageLoader;
 import ru.dndmemory.ui.common.ImageTools;
@@ -35,7 +36,6 @@ import ru.dndmemory.ui.common.Labels;
 import ru.dndmemory.ui.common.NameIndex;
 import ru.dndmemory.ui.common.Rights;
 import ru.dndmemory.ui.common.ViewModelFactory;
-import ru.dndmemory.ui.common.SuggestField;
 import ru.dndmemory.ui.common.ViewUtils;
 import ru.dndmemory.ui.common.WikiLinkEditor;
 import ru.dndmemory.util.AppExecutors;
@@ -132,15 +132,43 @@ public class EntityEditActivity extends AppCompatActivity {
         binding.entityEditTypeGroup.setEnabled(creating);
 
         // Ввод ссылок: «[[» сразу закрывается, после трёх букв — подсказки.
-        // Раса: подсказки из справочника, свободный ввод сохраняется.
-        SuggestField.attach(binding.entityEditRaceInput, () -> container.raceRepository().cachedNames());
-        container.raceRepository().refresh(null);
+        // Раса и класс — закрытые справочники: список с фильтрацией по вводу.
+        setupReference(binding.entityEditRaceInput,
+                container.raceRepository().cachedNames(), true);
+        setupReference(binding.entityEditKlassInput,
+                container.raceRepository().cachedClasses(), false);
+        container.raceRepository().refresh(new RepoCallback<java.util.List<String>>() {
+            @Override
+            public void onSuccess(@Nullable java.util.List<String> value) {
+                setupReference(binding.entityEditRaceInput,
+                        container.raceRepository().cachedNames(), true);
+            }
+
+            @Override
+            public void onError(@NonNull ApiException error) {
+                // Без сети остаются значения, загруженные ранее.
+            }
+        });
+        container.raceRepository().refreshClasses(new RepoCallback<java.util.List<String>>() {
+            @Override
+            public void onSuccess(@Nullable java.util.List<String> value) {
+                setupReference(binding.entityEditKlassInput,
+                        container.raceRepository().cachedClasses(), false);
+            }
+
+            @Override
+            public void onError(@NonNull ApiException error) {
+            }
+        });
 
         WikiLinkEditor.attach(binding.entityEditDescriptionInput, () -> nameIndex.names());
         WikiLinkEditor.attach(binding.entityEditShortInput, () -> nameIndex.names());
 
         binding.entityEditSave.setOnClickListener(v -> {
             collect();
+            if (!validateForm()) {
+                return;
+            }
             viewModel.save();
         });
         binding.entityEditDelete.setOnClickListener(v -> confirmDelete());
@@ -159,6 +187,77 @@ public class EntityEditActivity extends AppCompatActivity {
                 selectedOwnerId = ownerIdAt(position));
 
         observe();
+    }
+
+    /** Список значений из справочника: выбор из списка, ручной ввод фильтрует. */
+    private void setupReference(@NonNull android.widget.AutoCompleteTextView field,
+                                @NonNull java.util.List<String> values, boolean race) {
+        if (values.isEmpty()) {
+            return;
+        }
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
+                this, android.R.layout.simple_list_item_1, new java.util.ArrayList<>(values));
+        field.setAdapter(adapter);
+        field.setThreshold(1);
+        // Пустое значение у существующей записи заменяем на «Неизвестно»,
+        // чтобы поле никогда не оставалось неопределённым.
+        if (field.getText() == null || field.getText().toString().trim().isEmpty()) {
+            String fallback = values.contains(getString(R.string.ref_unknown))
+                    ? getString(R.string.ref_unknown) : values.get(0);
+            field.setText(fallback, false);
+        }
+        if (race) {
+            binding.entityEditRaceGroup.setError(null);
+        }
+    }
+
+    /**
+     * Проверка обязательных полей до сохранения: пустое название, раса и класс
+     * не из справочника. Ошибки показываются под полями, а не тостом.
+     */
+    private boolean validateForm() {
+        boolean ok = true;
+
+        String name = text(binding.entityEditNameInput.getText());
+        if (name.isEmpty()) {
+            binding.entityEditNameGroup.setError(getString(R.string.error_name_required));
+            ok = false;
+        } else {
+            binding.entityEditNameGroup.setError(null);
+        }
+
+        if (currentKind == EntityType.HERO || currentKind == EntityType.CHARACTER) {
+            String race = text(binding.entityEditRaceInput.getText());
+            if (container.raceRepository().cachedNames().isEmpty()) {
+                binding.entityEditRaceGroup.setError(null); // справочник не загрузился
+            } else if (!container.raceRepository().cachedNames().contains(race)) {
+                binding.entityEditRaceGroup.setError(getString(R.string.error_race_from_list));
+                ok = false;
+            } else {
+                binding.entityEditRaceGroup.setError(null);
+            }
+        }
+
+        if (currentKind == EntityType.HERO) {
+            String klass = text(binding.entityEditKlassInput.getText());
+            if (container.raceRepository().cachedClasses().isEmpty()) {
+                binding.entityEditKlassGroup.setError(null);
+            } else if (!container.raceRepository().cachedClasses().contains(klass)) {
+                binding.entityEditKlassGroup.setError(getString(R.string.error_class_from_list));
+                ok = false;
+            } else {
+                binding.entityEditKlassGroup.setError(null);
+            }
+        }
+
+        if (!ok) {
+            ViewUtils.toast(this, R.string.error_check_fields);
+        }
+        return ok;
+    }
+
+    private static String text(@Nullable CharSequence value) {
+        return value == null ? "" : value.toString().trim();
     }
 
     private String[] typeLabels() {
@@ -616,7 +715,4 @@ public class EntityEditActivity extends AppCompatActivity {
         return true;
     }
 
-    private static String text(@Nullable CharSequence value) {
-        return value == null ? "" : value.toString().trim();
-    }
 }

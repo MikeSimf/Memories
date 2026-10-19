@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 
-import { errorMessage, racesApi, uploadFile } from '@/api'
+import { classesApi, errorMessage, racesApi, uploadFile } from '@/api'
 import { OBJECT_CLASSES, OBJECT_CLASS_LABELS, type ObjectClass } from '@/api/types'
 import EntityImage from './EntityImage.vue'
 import MarkupText from './MarkupText.vue'
@@ -37,10 +37,12 @@ const ui = useUiStore()
 
 /** Справочник рас: подсказки в поле «Раса», свободный ввод не запрещён. */
 const races = ref<string[]>([])
+const classes = ref<string[]>([])
 
 onMounted(async () => {
   try {
     races.value = (await racesApi.list()).map((race) => race.name)
+    classes.value = (await classesApi.list()).map((item) => item.name)
   } catch {
     // Без сети остаётся обычный ввод.
   }
@@ -226,26 +228,25 @@ async function onFileSelected(event: Event): Promise<void> {
       <div class="row" style="align-items: flex-end">
         <div class="field" style="flex: 1; min-width: 180px">
           <label class="field__label" for="hero-race">Раса</label>
-          <input
+          <select
             id="hero-race"
-            list="race-options"
             class="input"
-            type="text"
-            :value="modelValue.race"
-            placeholder="Полуэльф"
-            @input="patch({ race: ($event.target as HTMLInputElement).value })"
-          />
+            :value="modelValue.race ?? 'Неизвестно'"
+            @change="patch({ race: ($event.target as HTMLSelectElement).value })"
+          >
+            <option v-for="race in races" :key="race" :value="race">{{ race }}</option>
+          </select>
         </div>
         <div class="field" style="flex: 1; min-width: 180px">
           <label class="field__label" for="hero-klass">Класс</label>
-          <input
+          <select
             id="hero-klass"
             class="input"
-            type="text"
-            :value="modelValue.klass"
-            placeholder="Следопыт"
-            @input="patch({ klass: ($event.target as HTMLInputElement).value })"
-          />
+            :value="modelValue.klass ?? 'Неизвестно'"
+            @change="patch({ klass: ($event.target as HTMLSelectElement).value })"
+          >
+            <option v-for="item in classes" :key="item" :value="item">{{ item }}</option>
+          </select>
         </div>
         <div class="field" style="flex: 1; min-width: 200px">
           <label class="field__label" for="hero-player">Игрок</label>
@@ -338,15 +339,14 @@ async function onFileSelected(event: Event): Promise<void> {
       <div class="row" style="align-items: flex-end">
         <div class="field" style="flex: 1; min-width: 180px">
           <label class="field__label" for="character-race">Раса</label>
-          <input
+          <select
             id="character-race"
-            list="race-options"
             class="input"
-            type="text"
-            :value="modelValue.race"
-            placeholder="Человек"
-            @input="patch({ race: ($event.target as HTMLInputElement).value })"
-          />
+            :value="modelValue.race ?? 'Неизвестно'"
+            @change="patch({ race: ($event.target as HTMLSelectElement).value })"
+          >
+            <option v-for="race in races" :key="race" :value="race">{{ race }}</option>
+          </select>
         </div>
         <div class="field" style="flex: 2; min-width: 220px">
           <label class="field__label" for="character-short">Краткое описание</label>

@@ -3,6 +3,8 @@
 
     <!-- Сеть: REST API и синхронизация -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Установка скачанного обновления -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Состояние сети: WorkManager с NetworkType.CONNECTED -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Камера: сканирование QR-приглашений -->
@@ -76,6 +78,11 @@
             android:exported="false" />
 
         <activity
+            android:name=".ui.material.MaterialEditActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".ui.entity.EntityEditActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
@@ -113,6 +120,15 @@
         <activity
             android:name=".ui.settings.SettingsActivity"
             android:exported="false" />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>
