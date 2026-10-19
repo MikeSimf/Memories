@@ -15,4 +15,6 @@ export {
   searchApi,
   syncApi,
   serviceApi,
+  racesApi,
 } from './endpoints'
+export type { RaceDto } from './endpoints'

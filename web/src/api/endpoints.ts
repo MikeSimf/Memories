@@ -444,6 +444,18 @@ export const serviceApi = {
   },
 }
 
+export interface RaceDto {
+  code: string
+  name: string
+}
+
+/** Справочник рас: подсказки в редакторе героя и персонажа. */
+export const racesApi = {
+  list(): Promise<RaceDto[]> {
+    return apiClient.request<RaceDto[]>({ path: "/api/races" })
+  },
+}
+
 export type { FileDto }
 
 export const api = {
@@ -456,4 +468,5 @@ export const api = {
   search: searchApi,
   sync: syncApi,
   service: serviceApi,
+  races: racesApi,
 }

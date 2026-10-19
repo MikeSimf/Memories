@@ -17,6 +17,7 @@ import retrofit2.http.Query;
 import ru.dndmemory.data.remote.dto.AcceptInviteResponse;
 import ru.dndmemory.data.remote.dto.AddMemberRequest;
 import ru.dndmemory.data.remote.dto.AddMemberResponse;
+import ru.dndmemory.data.remote.dto.AppUpdateDto;
 import ru.dndmemory.data.remote.dto.AuthResponse;
 import ru.dndmemory.data.remote.dto.CampaignDto;
 import ru.dndmemory.data.remote.dto.CharacterDto;
@@ -41,6 +42,7 @@ import ru.dndmemory.data.remote.dto.PasswordResetRequest;
 import ru.dndmemory.data.remote.dto.PullResponse;
 import ru.dndmemory.data.remote.dto.PushRequest;
 import ru.dndmemory.data.remote.dto.PushResponse;
+import ru.dndmemory.data.remote.dto.RaceDto;
 import ru.dndmemory.data.remote.dto.RefreshRequest;
 import ru.dndmemory.data.remote.dto.RegisterRequest;
 import ru.dndmemory.data.remote.dto.RetellingDto;
@@ -62,6 +64,10 @@ public interface ApiService {
 
     @GET("api/version")
     Call<VersionDto> version();
+
+    /** Проверка обновления приложения: доступна без авторизации. */
+    @GET("api/app/latest")
+    Call<AppUpdateDto> appLatest();
 
     // --- Аутентификация: только логин и пароль (раздел 3) -------------------
 
@@ -89,6 +95,10 @@ public interface ApiService {
 
     @POST("api/me/password")
     Call<Void> setPassword(@Body SetPasswordRequest body);
+
+    /** Справочник рас: подсказки в редакторе героя и персонажа. */
+    @GET("api/races")
+    Call<List<RaceDto>> races();
 
     // --- Кампании (раздел 4) -----------------------------------------------
 

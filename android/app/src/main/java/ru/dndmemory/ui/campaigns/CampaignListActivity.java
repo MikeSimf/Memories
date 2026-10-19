@@ -24,6 +24,7 @@ import ru.dndmemory.ui.common.Labels;
 import ru.dndmemory.ui.common.Nav;
 import ru.dndmemory.ui.common.ViewModelFactory;
 import ru.dndmemory.ui.common.ViewUtils;
+import ru.dndmemory.data.repo.UpdateRepository;
 
 /** Список кампаний, создание и удаление. */
 public class CampaignListActivity extends AppCompatActivity implements CampaignAdapter.Listener {
@@ -59,6 +60,53 @@ public class CampaignListActivity extends AppCompatActivity implements CampaignA
         binding.campaignListFab.setOnClickListener(v -> showEditDialog(null));
 
         observe();
+        checkForUpdates();
+    }
+
+    /** Проверка версии: обязательная — без кнопки «Позже», иначе просто предложение. */
+    private void checkForUpdates() {
+        App.container(this).updateRepository().check(new ru.dndmemory.util.RepoCallback<UpdateRepository.UpdateInfo>() {
+            @Override
+            public void onSuccess(@Nullable UpdateRepository.UpdateInfo value) {
+                if (value != null) {
+                    showUpdate(value);
+                }
+            }
+
+            @Override
+            public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) {
+                // Без сети проверка просто не срабатывает.
+            }
+        });
+    }
+
+    private void showUpdate(@NonNull final UpdateRepository.UpdateInfo info) {
+        if (isFinishing()) {
+            return;
+        }
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(info.required
+                        ? R.string.update_required_title : R.string.update_available_title)
+                .setMessage(getString(info.required
+                        ? R.string.update_required_text : R.string.update_available_text,
+                        info.versionName == null ? "" : info.versionName))
+                .setCancelable(!info.required)
+                .setPositiveButton(R.string.update_download, (dialog, which) -> openUpdateLink(info.url))
+                .setNegativeButton(info.required ? null : getString(R.string.update_later), null)
+                .show();
+    }
+
+    private void openUpdateLink(@Nullable String url) {
+        if (url == null || url.isEmpty()) {
+            ViewUtils.toast(this, R.string.update_no_link);
+            return;
+        }
+        try {
+            startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse(url)));
+        } catch (RuntimeException e) {
+            ViewUtils.toast(this, R.string.update_no_link);
+        }
     }
 
     private boolean onMenu(@NonNull MenuItem item) {

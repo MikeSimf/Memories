@@ -35,6 +35,7 @@ import ru.dndmemory.ui.common.Labels;
 import ru.dndmemory.ui.common.NameIndex;
 import ru.dndmemory.ui.common.Rights;
 import ru.dndmemory.ui.common.ViewModelFactory;
+import ru.dndmemory.ui.common.SuggestField;
 import ru.dndmemory.ui.common.ViewUtils;
 import ru.dndmemory.ui.common.WikiLinkEditor;
 import ru.dndmemory.util.AppExecutors;
@@ -131,6 +132,10 @@ public class EntityEditActivity extends AppCompatActivity {
         binding.entityEditTypeGroup.setEnabled(creating);
 
         // Ввод ссылок: «[[» сразу закрывается, после трёх букв — подсказки.
+        // Раса: подсказки из справочника, свободный ввод сохраняется.
+        SuggestField.attach(binding.entityEditRaceInput, () -> container.raceRepository().cachedNames());
+        container.raceRepository().refresh(null);
+
         WikiLinkEditor.attach(binding.entityEditDescriptionInput, () -> nameIndex.names());
         WikiLinkEditor.attach(binding.entityEditShortInput, () -> nameIndex.names());
 

@@ -10,6 +10,13 @@
     <string name="action_delete">Удалить</string>
     <string name="action_edit">Редактировать</string>
     <string name="action_close">Закрыть</string>
+    <string name="update_required_title">Нужно обновить приложение</string>
+    <string name="update_available_title">Есть новая версия</string>
+    <string name="update_required_text">Версия %1$s несовместима с сервером. Обновите приложение, чтобы продолжить.</string>
+    <string name="update_available_text">Доступна версия %1$s. Обновиться можно сейчас или позже.</string>
+    <string name="update_download">Скачать</string>
+    <string name="update_later">Позже</string>
+    <string name="update_no_link">Ссылка на обновление не настроена на сервере</string>
     <string name="action_create">Создать</string>
     <string name="action_refresh">Обновить</string>
     <string name="action_open">Открыть</string>

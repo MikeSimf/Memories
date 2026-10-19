@@ -44,7 +44,7 @@ public class SecurityConfig {
                 .cors().configurationSource(corsConfigurationSource()).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeRequests()
-                .antMatchers("/api/auth/**", "/api/health", "/api/version").permitAll()
+                .antMatchers("/api/auth/**", "/api/health", "/api/version", "/api/app/latest").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/invites/*").permitAll()
                 // Админ-панель сброса пароля: пропускаем запрос, доступ проверяет X-Admin-Token
                 .antMatchers(HttpMethod.GET, "/api/admin/password-resets").permitAll()

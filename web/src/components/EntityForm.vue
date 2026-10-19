@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
-import { errorMessage, uploadFile } from '@/api'
+import { errorMessage, racesApi, uploadFile } from '@/api'
 import { OBJECT_CLASSES, OBJECT_CLASS_LABELS, type ObjectClass } from '@/api/types'
 import EntityImage from './EntityImage.vue'
 import MarkupText from './MarkupText.vue'
@@ -34,6 +34,17 @@ const emit = defineEmits<{
 
 const campaign = useCampaignStore()
 const ui = useUiStore()
+
+/** Справочник рас: подсказки в поле «Раса», свободный ввод не запрещён. */
+const races = ref<string[]>([])
+
+onMounted(async () => {
+  try {
+    races.value = (await racesApi.list()).map((race) => race.name)
+  } catch {
+    // Без сети остаётся обычный ввод.
+  }
+})
 
 const showPreview = ref(false)
 const uploading = ref(false)
@@ -217,6 +228,7 @@ async function onFileSelected(event: Event): Promise<void> {
           <label class="field__label" for="hero-race">Раса</label>
           <input
             id="hero-race"
+            list="race-options"
             class="input"
             type="text"
             :value="modelValue.race"
@@ -328,6 +340,7 @@ async function onFileSelected(event: Event): Promise<void> {
           <label class="field__label" for="character-race">Раса</label>
           <input
             id="character-race"
+            list="race-options"
             class="input"
             type="text"
             :value="modelValue.race"
@@ -443,6 +456,10 @@ async function onFileSelected(event: Event): Promise<void> {
         <span v-else class="faint">Пусто</span>
       </div>
     </div>
+
+    <datalist id="race-options">
+      <option v-for="race in races" :key="race" :value="race" />
+    </datalist>
 
     <div class="row row--end">
       <button class="btn" type="button" :disabled="saving" @click="emit('cancel')">Отмена</button>

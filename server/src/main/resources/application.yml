@@ -48,6 +48,13 @@ dnd:
   cors-origins: ${DND_CORS_ORIGINS:http://localhost:5173,http://localhost:8081}
   # Токен админ-панели сброса пароля. Если не задан, GET /api/admin/password-resets отвечает 404
   admin-token: ${DND_ADMIN_TOKEN:}
+  # Проверка обновлений приложения (GET /api/app/latest)
+  app:
+    latest-version-code: ${DND_APP_LATEST_CODE:1}
+    latest-version-name: ${DND_APP_LATEST_NAME:1.0.0}
+    min-version-code: ${DND_APP_MIN_CODE:1}
+    apk-url: ${DND_APP_APK_URL:}
+    notes: ${DND_APP_NOTES:}
   retention:
     change-log-days: ${DND_CHANGE_LOG_DAYS:90}
     change-log-max-rows: ${DND_CHANGE_LOG_MAX_ROWS:50000}
