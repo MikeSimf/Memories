@@ -17,7 +17,7 @@ dnd:
     latest-version-name: 1.0.10
     min-version-code: 4
     apk-url: http://81.177.139.30:8091/dnd-memory.apk
-    notes: Файлы материалов: понятные имена, открытие скачанного
+    notes: Понятные имена файлов и открытие после скачивания
   jwt:
     secret: ${JWT_SECRET}
   public-url: ${PUBLIC_URL}
