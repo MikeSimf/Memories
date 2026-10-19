@@ -71,15 +71,6 @@ import {
   resolveConflictUseServer as applyConflictUseServer,
 } from '@/sync/engine'
 import { enqueueChange } from '@/sync/queue'
-import {
-
-  getMaterial,
-  listMaterials,
-  materialToPayload,
-  putMaterial,
-  deleteMaterialRecord,
-} from '@/db/materials'
-import type { LocalMaterial } from '@/db/schema'
 import { formatRelative } from '@/utils/datetime'
 import {
   canCreateObject,
@@ -131,8 +122,6 @@ export const useCampaignStore = defineStore('campaign', () => {
   const retellings = ref<LocalRetelling[]>([])
   const drafts = ref<LocalRetellingDraft[]>([])
   const members = ref<MemberRecord[]>([])
-  /** Фото-материалы кампании: карты, портреты, письма и документы. */
-  const materials = ref<LocalMaterial[]>([])
   const invites = ref<InviteDto[]>([])
   /**
    * Объекты активной вкладки: читаются из IndexedDB с фильтром классов
@@ -268,20 +257,18 @@ export const useCampaignStore = defineStore('campaign', () => {
   async function reload(): Promise<void> {
     const id = campaignId.value
     if (!id) return
-    const [record, objectList, retellingList, draftList, memberList, materialList] = await Promise.all([
+    const [record, objectList, retellingList, draftList, memberList] = await Promise.all([
       campaigns.getRecord(id),
       listObjects(id),
       listRetellings(id),
       listDrafts(id),
       listMembers(id),
-      listMaterials(id),
     ])
     campaign.value = record
     objects.value = objectList
     retellings.value = retellingList
     drafts.value = draftList
     members.value = memberList
-    materials.value = materialList
     await readTabObjects()
   }
 
@@ -979,106 +966,6 @@ export const useCampaignStore = defineStore('campaign', () => {
 
   /* --------------------------- Участники ----------------------------- */
 
-  // --- Фото-материалы кампании -------------------------------------------
-
-  async function createMaterial(values: { name: string; description: string; files: LocalMaterial['files'] }): Promise<string> {
-    const cid = requireCampaignId()
-    const now = nowIso()
-    const material: LocalMaterial = {
-      id: createUuid(),
-      campaignId: cid,
-      name: values.name.trim(),
-      description: values.description,
-      imageFileId: null,
-      files: values.files,
-      revision: 0,
-      createdBy: userId.value ?? '',
-      createdByName: auth.user?.displayName ?? '',
-      updatedBy: userId.value ?? '',
-      updatedByName: auth.user?.displayName ?? '',
-      createdAt: now,
-      updatedAt: now,
-      deleted: false,
-      dirty: 1,
-      conflict: null,
-    }
-    await putMaterial(material)
-    await enqueueChange({
-      campaignId: cid,
-      objectType: 'MATERIAL',
-      objectId: material.id,
-      op: 'UPSERT',
-      baseRevision: null,
-      payload: materialToPayload(material),
-    })
-    await reload()
-    notifyLocalChange(cid)
-    return material.id
-  }
-
-  async function updateMaterial(
-    id: string,
-    values: { name: string; description: string; files: LocalMaterial['files'] },
-  ): Promise<LocalMaterial | null> {
-    const cid = requireCampaignId()
-    const existing = await getMaterial(id)
-    if (!existing) return null
-    const updated: LocalMaterial = {
-      ...existing,
-      name: values.name.trim(),
-      description: values.description,
-      files: values.files,
-      updatedBy: userId.value ?? '',
-      updatedByName: auth.user?.displayName ?? '',
-      updatedAt: nowIso(),
-      dirty: 1,
-      conflict: null,
-    }
-    await putMaterial(updated)
-    await enqueueChange({
-      campaignId: cid,
-      objectType: 'MATERIAL',
-      objectId: id,
-      op: 'UPSERT',
-      baseRevision: existing.revision > 0 ? existing.revision : null,
-      payload: materialToPayload(updated),
-    })
-    await reload()
-    notifyLocalChange(cid)
-    return updated
-  }
-
-  async function removeMaterial(id: string): Promise<void> {
-    const cid = requireCampaignId()
-    const existing = await getMaterial(id)
-    if (!existing) return
-    const updated: LocalMaterial = {
-      ...existing,
-      deleted: true,
-      updatedBy: userId.value ?? '',
-      updatedAt: nowIso(),
-      dirty: 1,
-    }
-    await putMaterial(updated)
-    const result = await enqueueChange({
-      campaignId: cid,
-      objectType: 'MATERIAL',
-      objectId: id,
-      op: 'DELETE',
-      baseRevision: existing.revision > 0 ? existing.revision : null,
-      payload: { id, deleted: true, updatedAt: updated.updatedAt },
-    })
-    if (result.dropped) {
-      await deleteMaterialRecord(id)
-    }
-    await reload()
-    notifyLocalChange(cid)
-  }
-
-  function materialById(id: string): LocalMaterial | null {
-    return materials.value.find((item) => item.id === id) ?? null
-  }
-
   async function reloadMembers(): Promise<void> {
     const id = requireCampaignId()
     try {
@@ -1175,7 +1062,6 @@ export const useCampaignStore = defineStore('campaign', () => {
     retellings,
     drafts,
     members,
-    materials,
     invites,
     tabObjects,
     tabClasses,
@@ -1208,10 +1094,6 @@ export const useCampaignStore = defineStore('campaign', () => {
     open,
     close,
     reload,
-    createMaterial,
-    updateMaterial,
-    removeMaterial,
-    materialById,
     objectById,
     objectName,
     retellingById,

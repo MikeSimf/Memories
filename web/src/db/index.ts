@@ -7,4 +7,3 @@ export * from './pending'
 export * from './syncState'
 export * from './search'
 
-export * from './materials'

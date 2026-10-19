@@ -469,6 +469,9 @@ export const materialsApi = {
   list(campaignId: string, query = ""): Promise<{ items: MaterialDto[]; total: number }> {
     return apiClient.request({ path: `/api/campaigns/${campaignId}/materials`, query: { q: query || undefined } })
   },
+  get(campaignId: string, materialId: string): Promise<MaterialDto> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/materials/${materialId}` })
+  },
   create(campaignId: string, body: Partial<MaterialDto>): Promise<MaterialDto> {
     return apiClient.request({ path: `/api/campaigns/${campaignId}/materials`, method: "POST", body })
   },
