@@ -30,7 +30,7 @@ public final class Dropdowns {
                 R.layout.item_suggestion, new ArrayList<>(labels));
         field.setAdapter(adapter);
         field.post(() -> {
-            if (field.getWindowToken() == null || field.isFocused()) {
+            if (field.getWindowToken() == null || field.isFocused() || !field.isShown()) {
                 return;
             }
             field.showDropDown();
