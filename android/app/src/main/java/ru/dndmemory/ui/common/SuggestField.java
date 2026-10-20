@@ -114,6 +114,12 @@ public final class SuggestField {
             }
             return false;
         });
+        // Прокрутка формы уводит поле из-под списка: закрываем, чтобы он не висел.
+        field.getViewTreeObserver().addOnScrollChangedListener(() -> {
+            if (popup.isShowing()) {
+                popup.dismiss();
+            }
+        });
         field.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
             @Override
             public void onViewAttachedToWindow(View v) {
