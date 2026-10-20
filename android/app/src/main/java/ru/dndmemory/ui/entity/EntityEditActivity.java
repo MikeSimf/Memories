@@ -121,7 +121,7 @@ public class EntityEditActivity extends AppCompatActivity {
                     ? R.string.entity_edit_title_new : R.string.entity_edit_title_edit);
         }
 
-        binding.entityEditType.setSimpleItems(typeLabels());
+        ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditType, java.util.Arrays.asList(typeLabels()));
         binding.entityEditType.setOnItemClickListener((parent, view, position, id) -> {
             EntityType selected = selectedType();
             if (selected != currentKind) {
@@ -135,16 +135,19 @@ public class EntityEditActivity extends AppCompatActivity {
         binding.entityEditTypeGroup.setEnabled(creating);
 
         // Ввод ссылок: «[[» сразу закрывается, после трёх букв — подсказки.
-        // Раса и класс — закрытые справочники: список с фильтрацией по вводу.
-        setupReference(binding.entityEditRaceInput,
-                container.raceRepository().cachedNames(), true);
-        setupReference(binding.entityEditKlassInput,
-                container.raceRepository().cachedClasses(), false);
+        // Справочники: по нажатию виден весь список, ввод фильтрует его.
+        ru.dndmemory.ui.common.SuggestField.attach(binding.entityEditRaceInput,
+                container.raceRepository()::cachedNames);
+        ru.dndmemory.ui.common.SuggestField.attach(binding.entityEditKlassInput,
+                container.raceRepository()::cachedClasses);
+        ru.dndmemory.ui.common.SuggestField.attach(binding.entityEditLocationType,
+                container.raceRepository()::cachedLocationTypes);
+        ru.dndmemory.ui.common.SuggestField.attach(binding.entityEditItemType,
+                container.raceRepository()::cachedItemTypes);
         container.raceRepository().refresh(new RepoCallback<java.util.List<String>>() {
             @Override
             public void onSuccess(@Nullable java.util.List<String> value) {
-                setupReference(binding.entityEditRaceInput,
-                        container.raceRepository().cachedNames(), true);
+                applyReferenceDefaults();
             }
 
             @Override
@@ -152,15 +155,10 @@ public class EntityEditActivity extends AppCompatActivity {
                 // Без сети остаются значения, загруженные ранее.
             }
         });
-        setupReference(binding.entityEditLocationType,
-                container.raceRepository().cachedLocationTypes(), false);
-        setupReference(binding.entityEditItemType,
-                container.raceRepository().cachedItemTypes(), false);
         container.raceRepository().refreshLocationTypes(new RepoCallback<java.util.List<String>>() {
             @Override
             public void onSuccess(@Nullable java.util.List<String> value) {
-                setupReference(binding.entityEditLocationType,
-                        container.raceRepository().cachedLocationTypes(), false);
+                applyReferenceDefaults();
             }
 
             @Override
@@ -170,8 +168,7 @@ public class EntityEditActivity extends AppCompatActivity {
         container.raceRepository().refreshItemTypes(new RepoCallback<java.util.List<String>>() {
             @Override
             public void onSuccess(@Nullable java.util.List<String> value) {
-                setupReference(binding.entityEditItemType,
-                        container.raceRepository().cachedItemTypes(), false);
+                applyReferenceDefaults();
             }
 
             @Override
@@ -181,8 +178,7 @@ public class EntityEditActivity extends AppCompatActivity {
         container.raceRepository().refreshClasses(new RepoCallback<java.util.List<String>>() {
             @Override
             public void onSuccess(@Nullable java.util.List<String> value) {
-                setupReference(binding.entityEditKlassInput,
-                        container.raceRepository().cachedClasses(), false);
+                applyReferenceDefaults();
             }
 
             @Override
@@ -223,26 +219,28 @@ public class EntityEditActivity extends AppCompatActivity {
         observe();
     }
 
-    /** Список значений из справочника: выбор из списка, ручной ввод фильтрует. */
-    private void setupReference(@NonNull android.widget.AutoCompleteTextView field,
-                                @NonNull java.util.List<String> values, boolean race) {
+    /**
+     * Значения по умолчанию: пустое поле справочника показывает «Неизвестно»,
+     * чтобы выбор всегда был определённым. Заполненные поля не трогаем.
+     */
+    private void applyReferenceDefaults() {
+        applyDefault(binding.entityEditRaceInput, container.raceRepository().cachedNames());
+        applyDefault(binding.entityEditKlassInput, container.raceRepository().cachedClasses());
+        applyDefault(binding.entityEditLocationType, container.raceRepository().cachedLocationTypes());
+        applyDefault(binding.entityEditItemType, container.raceRepository().cachedItemTypes());
+    }
+
+    private void applyDefault(@NonNull android.widget.EditText field,
+                              @NonNull java.util.List<String> values) {
         if (values.isEmpty()) {
             return;
         }
-        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
-                this, android.R.layout.simple_list_item_1, new java.util.ArrayList<>(values));
-        field.setAdapter(adapter);
-        field.setThreshold(1);
-        // Пустое значение у существующей записи заменяем на «Неизвестно»,
-        // чтобы поле никогда не оставалось неопределённым.
-        if (field.getText() == null || field.getText().toString().trim().isEmpty()) {
-            String fallback = values.contains(getString(R.string.ref_unknown))
-                    ? getString(R.string.ref_unknown) : values.get(0);
-            field.setText(fallback, false);
+        if (field.getText() != null && !field.getText().toString().trim().isEmpty()) {
+            return;
         }
-        if (race) {
-            binding.entityEditRaceGroup.setError(null);
-        }
+        String fallback = values.contains(getString(R.string.ref_unknown))
+                ? getString(R.string.ref_unknown) : values.get(0);
+        field.setText(fallback);
     }
 
     /**
@@ -361,7 +359,8 @@ public class EntityEditActivity extends AppCompatActivity {
 
         campaignViewModel.campaign().observe(this, campaign -> {
             if (creating) {
-                binding.entityEditType.setSimpleItems(typeLabels());
+                ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditType,
+                        java.util.Arrays.asList(typeLabels()));
             }
             checkRights();
         });
@@ -590,11 +589,14 @@ public class EntityEditActivity extends AppCompatActivity {
         if (draft != null) {
             binding.entityEditRaceInput.setText(draft.race);
             binding.entityEditKlassInput.setText(draft.klass);
+            binding.entityEditLocationType.setText(draft.locationType);
+            binding.entityEditItemType.setText(draft.itemType);
             binding.entityEditShortInput.setText(draft.shortDescription);
             binding.entityEditOwnerNameInput.setText(draft.ownerName);
             binding.entityEditNameInput.setText(draft.name);
             binding.entityEditDescriptionInput.setText(draft.description);
         }
+        applyReferenceDefaults();
 
         bindPlayerDropdown();
         bindOwnerDropdown();
@@ -617,7 +619,7 @@ public class EntityEditActivity extends AppCompatActivity {
             labels.add(TextUtils.isEmpty(member.displayName)
                     ? getString(R.string.attr_not_set) : member.displayName);
         }
-        binding.entityEditPlayer.setSimpleItems(labels.toArray(new String[0]));
+        ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditPlayer, labels);
         EntityRoom draft = currentDraft();
         String currentId = selectedPlayerUserId != null ? selectedPlayerUserId
                 : (draft == null ? null : draft.playerUserId);
@@ -662,7 +664,7 @@ public class EntityEditActivity extends AppCompatActivity {
         for (EntityRoom character : ownerCandidates(EntityType.CHARACTER)) {
             labels.add(getString(R.string.entity_owner_character, displayName(character)));
         }
-        binding.entityEditOwnerLink.setSimpleItems(labels.toArray(new String[0]));
+        ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditOwnerLink, labels);
         EntityRoom draft = currentDraft();
         String currentId = selectedOwnerId != null ? selectedOwnerId
                 : (draft == null ? null : (draft.ownerHeroId != null

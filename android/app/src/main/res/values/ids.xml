@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Метка «к полю уже подключён SuggestField»: повторная настройка не нужна. -->
+    <item name="tag_suggest_field" type="id" />
+</resources>
