@@ -15,6 +15,7 @@ export {
   searchApi,
   syncApi,
   serviceApi,
+  appApi,
   racesApi,
   classesApi,
   materialsApi,

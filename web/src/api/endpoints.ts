@@ -45,6 +45,7 @@ import type {
   UpdateObjectMap,
   UserDto,
   VersionDto,
+  AppLatestDto,
 } from './types'
 
 /** Список приходит страницей; «сырой» массив приводим к странице на всякий случай. */
@@ -445,6 +446,13 @@ export const serviceApi = {
   },
 }
 
+/** Обновление приложения для Android: версия и ссылка на apk. */
+export const appApi = {
+  latest(): Promise<AppLatestDto> {
+    return apiClient.request<AppLatestDto>({ path: '/api/app/latest', auth: false })
+  },
+}
+
 export interface RaceDto {
   code: string
   name: string
@@ -516,6 +524,7 @@ export const api = {
   search: searchApi,
   sync: syncApi,
   service: serviceApi,
+  app: appApi,
   races: racesApi,
   classes: classesApi,
   locationTypes: locationTypesApi,

@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { errorMessage } from '@/api'
+import ApkDownload from '@/components/ApkDownload.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
 
@@ -130,6 +131,10 @@ async function openInvite(): Promise<void> {
       <p class="muted center" style="margin-top: 1rem">
         Нет аккаунта?
         <RouterLink :to="{ name: 'register', query: route.query }">Зарегистрироваться</RouterLink>
+      </p>
+
+      <p class="center" style="margin-top: 0.75rem">
+        <ApkDownload variant="link" />
       </p>
     </div>
   </div>

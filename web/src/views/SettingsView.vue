@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { ApiError, apiBaseUrl, errorMessage, serviceApi } from '@/api'
+import ApkDownload from '@/components/ApkDownload.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { countLocalChanges } from '@/db'
 import { useAuthStore } from '@/stores/auth'
@@ -303,15 +304,22 @@ async function logout(): Promise<void> {
 
     <div class="card stack">
       <h2>Приложение</h2>
+      <p class="muted" style="margin: 0">
+        Та же кампания в приложении для Android: работает без сети и синхронизируется,
+        когда связь появляется.
+      </p>
+      <div class="row">
+        <ApkDownload />
+      </div>
+      <p class="faint" style="margin: 0">
+        Скачайте файл на телефоне и разрешите установку из этого источника — обновления
+        приложение потом предложит само. Сайт тоже работает офлайн: его можно добавить
+        на главный экран через меню браузера.
+      </p>
       <div class="faint">
         <div>Адрес API: {{ baseUrl }}</div>
         <div v-if="version">Версия сервера: {{ version }}</div>
-        <div>Работает офлайн: данные хранятся в IndexedDB, приложение открывается без сети.</div>
       </div>
-      <p class="faint">
-        Чтобы установить приложение на телефон, откройте сайт в браузере и выберите
-        «Добавить на главный экран».
-      </p>
     </div>
 
     <div class="card stack">

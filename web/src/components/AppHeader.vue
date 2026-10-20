@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
+import ApkDownload from './ApkDownload.vue'
 import SyncIndicator from './SyncIndicator.vue'
 import ThemeToggle from './ThemeToggle.vue'
 import { useCampaignStore } from '@/stores/campaign'
@@ -27,6 +28,8 @@ const title = computed(() => campaign.campaign?.title ?? '')
     <span class="spacer" />
 
     <SyncIndicator v-if="campaignId" :campaign-id="campaignId" />
+
+    <ApkDownload variant="header" />
 
     <ThemeToggle />
 

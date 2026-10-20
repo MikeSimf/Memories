@@ -838,6 +838,16 @@ export interface HealthDto {
   time: string
 }
 
+/** Данные обновления приложения для Android (`GET /api/app/latest`). */
+export interface AppLatestDto {
+  versionCode: number
+  versionName: string
+  minVersionCode: number
+  /** Прямая ссылка на apk; на сайте используем свой путь `/dnd-memory.apk`. */
+  url: string
+  notes: string
+}
+
 export interface VersionDto {
   version: string
   buildTime: string
