@@ -13,11 +13,11 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 16
-    latest-version-name: 1.0.15
+    latest-version-code: 17
+    latest-version-name: 1.0.16
     min-version-code: 4
     apk-url: http://81.177.139.30:8091/dnd-memory.apk
-    notes: Списки рас и типов открываются целиком, первый показ без узкой строки
+    notes: Поля расы, класса и типов одной высоты с остальными
   jwt:
     secret: ${JWT_SECRET}
   public-url: ${PUBLIC_URL}
