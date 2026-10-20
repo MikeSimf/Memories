@@ -8,6 +8,7 @@ import MarkupText from './MarkupText.vue'
 import { useCampaignStore } from '@/stores/campaign'
 import { useUiStore } from '@/stores/ui'
 import { emptyHeroItem, type HeroItemFormValue, type ObjectFormValues } from '@/types/forms'
+import { GENDERS } from '@/types/gender'
 
 const props = withDefaults(
   defineProps<{
@@ -250,6 +251,19 @@ async function onFileSelected(event: Event): Promise<void> {
     <!-- Герой: раса, класс, игрок -->
     <template v-if="isHero">
       <div class="row" style="align-items: flex-end">
+        <div class="field" style="flex: 0 0 150px">
+          <label class="field__label" for="hero-gender">Пол</label>
+          <select
+            id="hero-gender"
+            class="select"
+            :value="modelValue.gender || 'unknown'"
+            @change="patch({ gender: ($event.target as HTMLSelectElement).value })"
+          >
+            <option v-for="item in GENDERS" :key="item.code" :value="item.code">
+              {{ item.label }}
+            </option>
+          </select>
+        </div>
         <div class="field" style="flex: 1; min-width: 180px">
           <label class="field__label" for="hero-race">Раса</label>
           <select
@@ -361,6 +375,19 @@ async function onFileSelected(event: Event): Promise<void> {
     <!-- Персонаж (НПС): раса и краткое описание -->
     <template v-if="isCharacter">
       <div class="row" style="align-items: flex-end">
+        <div class="field" style="flex: 0 0 150px">
+          <label class="field__label" for="character-gender">Пол</label>
+          <select
+            id="character-gender"
+            class="select"
+            :value="modelValue.gender || 'unknown'"
+            @change="patch({ gender: ($event.target as HTMLSelectElement).value })"
+          >
+            <option v-for="item in GENDERS" :key="item.code" :value="item.code">
+              {{ item.label }}
+            </option>
+          </select>
+        </div>
         <div class="field" style="flex: 1; min-width: 180px">
           <label class="field__label" for="character-race">Раса</label>
           <select

@@ -39,6 +39,7 @@ public final class HeroDtos {
     public static class HeroDto extends ObjectDto {
         private String race;
         private String klass;
+        private String gender;
         private UUID playerUserId;
         private String playerName;
         private List<HeroItemDto> items;
@@ -84,6 +85,9 @@ public final class HeroDtos {
         @Size(max = 120, message = "Не длиннее 120 символов")
         private String klass;
 
+        /** female | male | unknown. */
+        private String gender;
+
         private UUID playerUserId;
 
         private List<HeroItemRequest> items;
@@ -108,6 +112,8 @@ public final class HeroDtos {
 
         @Size(max = 120, message = "Не длиннее 120 символов")
         private String klass;
+
+        private String gender;
 
         private UUID playerUserId;
 

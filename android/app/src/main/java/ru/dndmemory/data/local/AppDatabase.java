@@ -42,7 +42,7 @@ import ru.dndmemory.data.local.entity.SyncStateRoom;
                 MemberRoom.class,
                 MaterialRoom.class
         },
-        version = 6,
+        version = 7,
         exportSchema = false
 )
 @TypeConverters({Converters.class})
@@ -105,6 +105,14 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /** 6 → 7: пол героя и персонажа. */
+    public static final Migration MIGRATION_6_7 = new Migration(6, 7) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE `entities` ADD COLUMN `gender` TEXT");
+        }
+    };
+
     public abstract CampaignDao campaignDao();
 
     public abstract EntityDao entityDao();
@@ -125,7 +133,7 @@ public abstract class AppDatabase extends RoomDatabase {
         return Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, NAME)
                 // Материалы кампании появились во второй версии: таблица
                 // создаётся миграцией, локальные данные не теряются.
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .fallbackToDestructiveMigration()
                 .build();
     }

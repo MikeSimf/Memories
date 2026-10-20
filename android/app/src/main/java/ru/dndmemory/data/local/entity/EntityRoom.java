@@ -52,6 +52,9 @@ public class EntityRoom {
     public String race;
     public String klass;
 
+    /** female | male | unknown. */
+    public String gender;
+
     /** Кто отыгрывает героя — ссылка на пользователя, необязательна. */
     public String playerUserId;
     public String playerName;

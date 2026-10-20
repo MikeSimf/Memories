@@ -79,6 +79,7 @@ export function objectFromDto<C extends ObjectClass>(
         ...local,
         objectType: 'HERO',
         race: hero.race ?? null,
+        gender: hero.gender ?? null,
         klass: hero.klass ?? null,
         playerUserId: hero.playerUserId ?? null,
         playerName: hero.playerName ?? null,
@@ -91,6 +92,7 @@ export function objectFromDto<C extends ObjectClass>(
         ...local,
         objectType: 'CHARACTER',
         race: character.race ?? null,
+        gender: character.gender ?? null,
         klass: character.klass ?? null,
         shortDescription: character.shortDescription ?? null,
       } as LocalObjectOf<C>
@@ -134,6 +136,7 @@ export function objectToPayload(object: LocalObject): Record<string, unknown> {
       return {
         ...common,
         race: object.race,
+        gender: object.gender,
         klass: object.klass,
         playerUserId: object.playerUserId,
         items: object.items.map((item) => ({
@@ -147,6 +150,7 @@ export function objectToPayload(object: LocalObject): Record<string, unknown> {
       return {
         ...common,
         race: object.race,
+        gender: object.gender,
         shortDescription: object.shortDescription,
       }
     case 'ITEM':

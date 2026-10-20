@@ -90,7 +90,14 @@ const iconValue = computed(() => {
   return (props.object as { race?: string | null }).race
 })
 
-const iconPath = computed(() => typeIconPath(iconKind.value, iconValue.value))
+/** Пол меняет причёску у народов; у локаций и предметов его нет. */
+const iconGender = computed(() =>
+  props.object.objectType === 'HERO' || props.object.objectType === 'CHARACTER'
+    ? props.object.gender
+    : null,
+)
+
+const iconPath = computed(() => typeIconPath(iconKind.value, iconValue.value, iconGender.value))
 
 const badge = computed(() => {
   if (!props.showBadge) return ''

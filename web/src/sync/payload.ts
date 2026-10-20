@@ -140,6 +140,7 @@ export function objectFromPayload(
       ...common,
       race: asOptionalString(payload.race),
       klass: asOptionalString(payload.klass),
+      gender: asOptionalString(payload.gender),
       playerUserId: asOptionalString(payload.playerUserId),
       playerName: asOptionalString(payload.playerName),
       items: deleted ? [] : asHeroItems(payload.items),
@@ -151,6 +152,7 @@ export function objectFromPayload(
       ...common,
       race: asOptionalString(payload.race),
       klass: asOptionalString(payload.klass),
+      gender: asOptionalString(payload.gender),
       shortDescription: asOptionalString(payload.shortDescription),
     }
     return objectFromDto('CHARACTER', dto)

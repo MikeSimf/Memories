@@ -266,11 +266,13 @@ public class EntityDetailActivity extends AppCompatActivity {
         if (kind != null) {
             switch (kind) {
                 case HERO:
+                    addFieldRow(getString(R.string.attr_gender), Labels.gender(this, entity.gender));
                     addFieldRow(getString(R.string.attr_race), entity.race);
                     addFieldRow(getString(R.string.attr_klass), entity.klass);
                     addFieldRow(getString(R.string.attr_player_name), entity.playerName);
                     break;
                 case CHARACTER:
+                    addFieldRow(getString(R.string.attr_gender), Labels.gender(this, entity.gender));
                     addFieldRow(getString(R.string.attr_race), entity.race);
                     addFieldRow(getString(R.string.attr_short_description), entity.shortDescription);
                     break;

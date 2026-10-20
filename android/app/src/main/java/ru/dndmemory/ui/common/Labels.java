@@ -4,6 +4,7 @@ import android.content.Context;
 import android.text.TextUtils;
 
 import androidx.annotation.DrawableRes;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
@@ -95,6 +96,18 @@ public final class Labels {
             default:
                 return null;
         }
+    }
+
+    /** Подпись пола: Ж, М или «Не определён». */
+    @NonNull
+    public static String gender(@NonNull Context context, @Nullable String code) {
+        if ("female".equalsIgnoreCase(code)) {
+            return context.getString(R.string.gender_female);
+        }
+        if ("male".equalsIgnoreCase(code)) {
+            return context.getString(R.string.gender_male);
+        }
+        return context.getString(R.string.gender_unknown);
     }
 
     /** Строка «Предмет ×2 — заметка» для карточки героя. */

@@ -13,6 +13,7 @@ import BaseModal from '@/components/BaseModal.vue'
 import ConflictNotice from '@/components/ConflictNotice.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import EntityAvatar from '@/components/EntityAvatar.vue'
+import { genderLabel } from '@/types/gender'
 import EntityImage from '@/components/EntityImage.vue'
 import MarkupText from '@/components/MarkupText.vue'
 import { useCampaignStore } from '@/stores/campaign'
@@ -36,6 +37,7 @@ const details = computed<Array<{ label: string; value: string }>>(() => {
   if (!item) return []
   if (item.objectType === 'HERO') {
     const rows: Array<{ label: string; value: string }> = []
+    rows.push({ label: 'Пол', value: genderLabel(item.gender) })
     if (item.race) rows.push({ label: 'Раса', value: item.race })
     if (item.klass) rows.push({ label: 'Класс', value: item.klass })
     rows.push({ label: 'Игрок', value: item.playerName ?? 'не указан' })
@@ -43,6 +45,7 @@ const details = computed<Array<{ label: string; value: string }>>(() => {
   }
   if (item.objectType === 'CHARACTER') {
     const rows: Array<{ label: string; value: string }> = []
+    rows.push({ label: 'Пол', value: genderLabel(item.gender) })
     if (item.race) rows.push({ label: 'Раса', value: item.race })
     if (item.shortDescription) rows.push({ label: 'Краткое описание', value: item.shortDescription })
     return rows

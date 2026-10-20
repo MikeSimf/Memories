@@ -432,6 +432,7 @@ export interface HeroItemDto {
 export interface HeroDto extends ObjectDto {
   race: string | null
   klass: string | null
+  gender: string | null
   playerUserId: string | null
   playerName: string | null
   items: HeroItemDto[]
@@ -442,6 +443,7 @@ export interface CharacterDto extends ObjectDto {
   race: string | null
   /** Класс персонажа из справочника character_classes. */
   klass: string | null
+  gender: string | null
   shortDescription: string | null
 }
 
@@ -504,6 +506,7 @@ export interface CreateHeroRequest {
   avatarFileId?: string | null
   race?: string | null
   klass?: string | null
+  gender?: string | null
   playerUserId?: string | null
   items?: HeroItemRequest[]
 }
@@ -515,6 +518,7 @@ export interface UpdateHeroRequest {
   avatarFileId?: string | null
   race?: string | null
   klass?: string | null
+  gender?: string | null
   playerUserId?: string | null
   items?: HeroItemRequest[]
 }
@@ -526,6 +530,7 @@ export interface CreateCharacterRequest {
   imageFileId?: string | null
   avatarFileId?: string | null
   race?: string | null
+  gender?: string | null
   shortDescription?: string | null
 }
 
@@ -535,6 +540,7 @@ export interface UpdateCharacterRequest {
   imageFileId?: string | null
   avatarFileId?: string | null
   race?: string | null
+  gender?: string | null
   shortDescription?: string | null
 }
 

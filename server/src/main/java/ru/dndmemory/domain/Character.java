@@ -31,6 +31,10 @@ public class Character extends GameEntitySupport
     @Column(length = 96)
     private String klass;
 
+    /** Пол: female, male или unknown. */
+    @Column(length = 16, nullable = false)
+    private String gender = "unknown";
+
     /** Короткое описание — по нему тоже идёт поиск. */
     @Column(name = "short_description", columnDefinition = "text")
     private String shortDescription;

@@ -124,6 +124,7 @@ public final class Mappers {
         room.campaignId = dto.campaignId != null ? dto.campaignId : fallbackCampaignId;
         room.kind = kind.name();
         room.name = dto.name;
+        room.gender = dto.gender;
         room.description = dto.description;
         room.imageFileId = dto.imageFileId;
         room.avatarFileId = dto.avatarFileId;
@@ -244,6 +245,7 @@ public final class Mappers {
         dto.campaignId = room.campaignId;
         dto.name = room.name;
         dto.description = room.description;
+        dto.gender = room.gender;
         dto.imageFileId = room.imageFileId;
         dto.avatarFileId = room.avatarFileId;
         dto.files = files(room.filesJson);

@@ -35,6 +35,10 @@
     <string name="action_open">Открыть</string>
     <string name="action_sync_one">Обновить с сервера</string>
     <string name="action_select">Выбрать</string>
+    <string name="attr_gender">Пол</string>
+    <string name="gender_unknown">Не определён</string>
+    <string name="gender_female">Ж</string>
+    <string name="gender_male">М</string>
     <string name="entity_avatar">Аватар</string>
     <string name="entity_avatar_hint">Отдельная картинка для карточки и списка</string>
     <string name="entity_avatar_pick">Загрузить аватар</string>

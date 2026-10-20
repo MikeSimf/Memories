@@ -147,6 +147,13 @@ public class EntityEditViewModel extends ViewModel {
     }
 
     /** Класс — только у героя. */
+    /** Пол: female, male или unknown. */
+    public void setGender(@Nullable String gender) {
+        if (draft != null) {
+            draft.gender = nullable(gender);
+        }
+    }
+
     public void setKlass(@Nullable String klass) {
         if (draft != null) {
             draft.klass = nullable(klass);

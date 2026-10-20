@@ -119,6 +119,7 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
                 .deleted(hero.isDeleted())
                 .race(hero.getRace())
                 .klass(hero.getKlass())
+                .gender(hero.getGender())
                 .playerUserId(hero.getPlayerUserId())
                 .playerName(context.userName(hero.getPlayerUserId()))
                 .items(items)
@@ -148,6 +149,9 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
         }
         if (payload.has("klass")) {
             hero.setKlass(text(payload.get("klass")));
+        }
+        if (payload.has("gender")) {
+            hero.setGender(gender(payload.get("gender")));
         }
         if (payload.has("playerUserId")) {
             hero.setPlayerUserId(uuidOrNull(payload.get("playerUserId")));

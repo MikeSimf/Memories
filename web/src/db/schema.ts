@@ -68,6 +68,7 @@ interface LocalObjectBase {
 export interface LocalHero extends LocalObjectBase {
   objectType: 'HERO'
   race: string | null
+  gender: string | null
   klass: string | null
   playerUserId: string | null
   playerName: string | null
@@ -78,6 +79,7 @@ export interface LocalHero extends LocalObjectBase {
 export interface LocalCharacter extends LocalObjectBase {
   objectType: 'CHARACTER'
   race: string | null
+  gender: string | null
   klass: string | null
   shortDescription: string | null
 }

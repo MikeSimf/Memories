@@ -422,6 +422,26 @@ public abstract class AbstractObjectService<
         return node;
     }
 
+    /** Пол: принимает код или подпись, всё остальное считает «не определён». */
+    protected static String gender(JsonNode node) {
+        String value = text(node);
+        if (value == null) {
+            return "unknown";
+        }
+        switch (value.trim().toLowerCase(Locale.ROOT)) {
+            case "female":
+            case "ж":
+            case "женский":
+                return "female";
+            case "male":
+            case "м":
+            case "мужской":
+                return "male";
+            default:
+                return "unknown";
+        }
+    }
+
     protected static String text(JsonNode node) {
         return node == null || node.isNull() ? null : node.asText();
     }

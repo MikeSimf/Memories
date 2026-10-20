@@ -230,6 +230,39 @@ public class EntityEditActivity extends AppCompatActivity {
         applyDefault(binding.entityEditItemType, container.raceRepository().cachedItemTypes());
     }
 
+    /** Подписи поля «Пол»: порядок совпадает с кодами в {@link #genderCode}. */
+    @NonNull
+    private java.util.List<String> genderLabels() {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        out.add(getString(R.string.gender_unknown));
+        out.add(getString(R.string.gender_female));
+        out.add(getString(R.string.gender_male));
+        return out;
+    }
+
+    @NonNull
+    private String genderLabel(@Nullable String code) {
+        if ("female".equalsIgnoreCase(code)) {
+            return getString(R.string.gender_female);
+        }
+        if ("male".equalsIgnoreCase(code)) {
+            return getString(R.string.gender_male);
+        }
+        return getString(R.string.gender_unknown);
+    }
+
+    @Nullable
+    private String genderCode(@Nullable CharSequence label) {
+        String value = label == null ? "" : label.toString().trim();
+        if (value.equals(getString(R.string.gender_female))) {
+            return "female";
+        }
+        if (value.equals(getString(R.string.gender_male))) {
+            return "male";
+        }
+        return "unknown";
+    }
+
     private void applyDefault(@NonNull android.widget.EditText field,
                               @NonNull java.util.List<String> values) {
         if (values.isEmpty()) {
@@ -576,6 +609,7 @@ public class EntityEditActivity extends AppCompatActivity {
         boolean item = currentKind == EntityType.ITEM;
 
         ViewUtils.show(binding.entityEditRaceGroup, hero || character);
+        ViewUtils.show(binding.entityEditGenderGroup, hero || character);
         ViewUtils.show(binding.entityEditKlassGroup, hero || character);
         ViewUtils.show(binding.entityEditPlayerGroup, hero);
         ViewUtils.show(binding.entityEditShortGroup, character);
@@ -588,6 +622,7 @@ public class EntityEditActivity extends AppCompatActivity {
 
         if (draft != null) {
             binding.entityEditRaceInput.setText(draft.race);
+            binding.entityEditGender.setText(genderLabel(draft.gender), false);
             binding.entityEditKlassInput.setText(draft.klass);
             binding.entityEditLocationType.setText(draft.locationType);
             binding.entityEditItemType.setText(draft.itemType);
@@ -620,6 +655,7 @@ public class EntityEditActivity extends AppCompatActivity {
                     ? getString(R.string.attr_not_set) : member.displayName);
         }
         ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditPlayer, labels);
+        ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditGender, genderLabels());
         EntityRoom draft = currentDraft();
         String currentId = selectedPlayerUserId != null ? selectedPlayerUserId
                 : (draft == null ? null : draft.playerUserId);
@@ -802,6 +838,7 @@ public class EntityEditActivity extends AppCompatActivity {
 
         if (currentKind == EntityType.HERO) {
             viewModel.setRace(text(binding.entityEditRaceInput.getText()));
+            viewModel.setGender(genderCode(text(binding.entityEditGender.getText())));
             viewModel.setKlass(text(binding.entityEditKlassInput.getText()));
             MemberRoom player = memberById(selectedPlayerUserId);
             viewModel.setPlayerUserId(selectedPlayerUserId,
@@ -809,6 +846,7 @@ public class EntityEditActivity extends AppCompatActivity {
             viewModel.setItems(collectItems());
         } else if (currentKind == EntityType.CHARACTER) {
             viewModel.setRace(text(binding.entityEditRaceInput.getText()));
+            viewModel.setGender(genderCode(text(binding.entityEditGender.getText())));
             viewModel.setKlass(text(binding.entityEditKlassInput.getText()));
             viewModel.setShortDescription(text(binding.entityEditShortInput.getText()));
         } else if (currentKind == EntityType.LOCATION) {

@@ -33,6 +33,10 @@ public class Hero extends GameEntitySupport
     @Column(length = 120)
     private String klass;
 
+    /** Пол: female, male или unknown. */
+    @Column(length = 16, nullable = false)
+    private String gender = "unknown";
+
     /** Кто отыгрывает героя; ссылка на пользователя необязательна. */
     @Column(name = "player_user_id")
     private UUID playerUserId;

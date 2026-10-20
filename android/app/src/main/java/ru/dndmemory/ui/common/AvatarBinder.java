@@ -57,7 +57,8 @@ public final class AvatarBinder {
         }
         EntityType kind = EntityType.fromOrCharacter(entity.kind);
         avatar.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        TypeIcons.apply(avatar, kind.name(), iconValue(kind, entity), colorFor(context, kind, entity));
+        TypeIcons.apply(avatar, kind.name(), iconValue(kind, entity),
+                entity.gender, colorFor(context, kind, entity));
         avatar.setContentDescription(context.getString(typeLabel(kind)));
         ViewUtils.show(avatar, true);
     }

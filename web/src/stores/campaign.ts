@@ -466,6 +466,7 @@ export const useCampaignStore = defineStore('campaign', () => {
       description: object.description,
       imageFileId: object.imageFileId,
       avatarFileId: object.avatarFileId,
+      gender: 'unknown',
       race: '',
       klass: '',
       locationType: '',
@@ -482,6 +483,7 @@ export const useCampaignStore = defineStore('campaign', () => {
         ...base,
         race: object.race ?? '',
         klass: object.klass ?? '',
+        gender: object.gender ?? 'unknown',
         playerUserId: object.playerUserId,
         items: object.items.map((item) => ({
           id: item.id,
@@ -499,7 +501,13 @@ export const useCampaignStore = defineStore('campaign', () => {
       base.itemType = object.itemType ?? ''
     }
     if (object.objectType === 'CHARACTER') {
-      return { ...base, race: object.race ?? '', shortDescription: object.shortDescription ?? '' }
+      return {
+        ...base,
+        race: object.race ?? '',
+        klass: object.klass ?? '',
+        gender: object.gender ?? 'unknown',
+        shortDescription: object.shortDescription ?? '',
+      }
     }
     if (object.objectType === 'ITEM') {
       return {
@@ -653,6 +661,7 @@ export const useCampaignStore = defineStore('campaign', () => {
         ...base,
         objectType: 'HERO',
         race: optional(values.race),
+        gender: optional(values.gender),
         klass: optional(values.klass),
         playerUserId: values.playerUserId,
         playerName: playerNameFor(values.playerUserId),
@@ -666,6 +675,7 @@ export const useCampaignStore = defineStore('campaign', () => {
         ...base,
         objectType: 'CHARACTER',
         race: optional(values.race),
+        gender: optional(values.gender),
         klass: optional(values.klass),
         shortDescription: optional(values.shortDescription),
       }

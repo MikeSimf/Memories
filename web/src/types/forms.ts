@@ -21,6 +21,8 @@ export interface ObjectFormValues {
   description: string
   imageFileId: string | null
   avatarFileId: string | null
+  /** Герой и персонаж: female | male | unknown. */
+  gender: string
   /** Герой. */
   race: string
   klass: string
@@ -57,6 +59,7 @@ export function emptyObjectForm(name = ''): ObjectFormValues {
     description: '',
     imageFileId: null,
     avatarFileId: null,
+    gender: 'unknown',
     race: '',
     klass: '',
     locationType: '',
