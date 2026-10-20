@@ -10,8 +10,8 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASE="${DND_RELEASE_BASE:-https://github.com/MikeSimf/Memories/releases/download/v1.0.0}"
-CODE="${1:-14}"
-NAME="${2:-1.0.13}"
+CODE="${1:-}"
+NAME="${2:-}"
 TMP="${TMPDIR:-/tmp}/dnd-update-$$"
 
 ok()  { printf '  \033[32m✓\033[0m %s\n' "$1"; }
@@ -40,6 +40,11 @@ for inst in prod test; do
   cp "$TMP/app.jar" "$ROOT/$inst/app.jar"
   ok "$inst/app.jar заменён"
 done
+
+# Версию берём из свежего конфига комплекта, чтобы не расходиться с apk.
+[ -n "$CODE" ] || CODE=$(sed -n 's/^    latest-version-code: //p' "$ROOT/prod/application.yml" | head -1)
+[ -n "$NAME" ] || NAME=$(sed -n 's/^    latest-version-name: //p' "$ROOT/prod/application.yml" | head -1)
+[ -n "$CODE" ] && [ -n "$NAME" ] || die "Не нашёл версию в $ROOT/prod/application.yml"
 
 # Перезапуск подхватывает новый jar и новые version-code/name из конфига.
 bash "$ROOT/bin/deploy-app.sh" "$TMP/app.apk" "$CODE" "$NAME" both
