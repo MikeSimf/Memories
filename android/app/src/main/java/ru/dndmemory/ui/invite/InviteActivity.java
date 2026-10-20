@@ -196,7 +196,8 @@ public class InviteActivity extends AppCompatActivity implements InviteAdapter.L
         for (int i = 0; i < ROLES.length; i++) {
             roleLabels[i] = getString(Labels.role(ROLES[i]));
         }
-        dialog.inviteCreateRole.setSimpleItems(roleLabels);
+        ru.dndmemory.ui.common.Dropdowns.bind(dialog.inviteCreateRole,
+                java.util.Arrays.asList(roleLabels));
         dialog.inviteCreateRole.setText(roleLabels[0], false);
 
         List<String> heroLabels = new ArrayList<>();
@@ -206,7 +207,7 @@ public class InviteActivity extends AppCompatActivity implements InviteAdapter.L
                 heroLabels.add(hero.name);
             }
         }
-        dialog.inviteCreateLinked.setSimpleItems(heroLabels.toArray(new String[0]));
+        ru.dndmemory.ui.common.Dropdowns.bind(dialog.inviteCreateLinked, heroLabels);
         dialog.inviteCreateLinked.setText(heroLabels.get(0), false);
         dialog.inviteCreateExpires.setText(String.valueOf(MEMBER_EXPIRES_HOURS));
 

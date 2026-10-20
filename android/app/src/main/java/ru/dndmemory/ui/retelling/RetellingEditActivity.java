@@ -151,7 +151,7 @@ public class RetellingEditActivity extends AppCompatActivity {
                 labels.add(hero.name);
             }
         }
-        binding.retellingEditAuthorInput.setSimpleItems(labels.toArray(new String[0]));
+        ru.dndmemory.ui.common.Dropdowns.bind(binding.retellingEditAuthorInput, labels);
         String name = nameIndex.nameFor(authorEntityId);
         binding.retellingEditAuthorInput.setText(
                 name == null ? getString(R.string.retelling_author_none) : name, false);

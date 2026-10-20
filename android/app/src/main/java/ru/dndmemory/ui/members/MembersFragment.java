@@ -185,7 +185,8 @@ public class MembersFragment extends Fragment implements MemberAdapter.Listener 
         for (int i = 0; i < ROLES.length; i++) {
             roleLabels[i] = getString(Labels.role(ROLES[i]));
         }
-        dialog.memberEditRoleInput.setSimpleItems(roleLabels);
+        ru.dndmemory.ui.common.Dropdowns.bind(dialog.memberEditRoleInput,
+                java.util.Arrays.asList(roleLabels));
         dialog.memberEditRoleInput.setText(roleLabels[2], false);
 
         final List<String> heroLabels = new ArrayList<>();
@@ -195,7 +196,7 @@ public class MembersFragment extends Fragment implements MemberAdapter.Listener 
                 heroLabels.add(hero.name);
             }
         }
-        dialog.memberEditLinkedInput.setSimpleItems(heroLabels.toArray(new String[0]));
+        ru.dndmemory.ui.common.Dropdowns.bind(dialog.memberEditLinkedInput, heroLabels);
         dialog.memberEditLinkedInput.setText(heroLabels.get(0), false);
 
         if (editing) {

@@ -13,8 +13,8 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 15
-    latest-version-name: 1.0.14
+    latest-version-code: 16
+    latest-version-name: 1.0.15
     min-version-code: 4
     apk-url: https://7f6a7dc97a7c.vps.myjino.ru/dnd-memory.apk
     notes: Списки рас и типов открываются целиком, первый показ без узкой строки
