@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 
 import { fetchFileBlob } from '@/api'
 import type { LocalObject } from '@/db/schema'
-import { classIconPath } from '@/ui/classIcons'
+import { classIconUrl } from '@/ui/classIcons'
 import { typeIconPath, type IconKind } from '@/ui/typeIcons'
 
 /**
@@ -104,7 +104,7 @@ const klass = computed(() => {
   return props.object.klass
 })
 
-const classPath = computed(() => classIconPath(klass.value))
+const classIcon = computed(() => classIconUrl(klass.value))
 const classColor = computed(() => hashColor(klass.value))
 </script>
 
@@ -131,7 +131,7 @@ const classColor = computed(() => hashColor(klass.value))
 
     <!-- Второй кружок: класс. Такого же размера, как аватар. -->
     <span
-      v-if="classPath"
+      v-if="classIcon"
       class="avatar avatar--class"
       :style="{
         width: `${size}px`,
@@ -143,17 +143,10 @@ const classColor = computed(() => hashColor(klass.value))
       role="img"
       :aria-label="`Класс: ${klass}`"
     >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.7"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        <path :d="classPath" />
-      </svg>
+      <span
+        class="class-icon"
+        :style="{ maskImage: `url(${classIcon})`, WebkitMaskImage: `url(${classIcon})` }"
+      />
     </span>
   </span>
 </template>
@@ -183,8 +176,15 @@ const classColor = computed(() => hashColor(klass.value))
   width: 62%;
   height: 62%;
 }
-.avatar--class svg {
-  width: 58%;
-  height: 58%;
+.avatar--class .class-icon {
+  width: 60%;
+  height: 60%;
+  background: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
 }
 </style>

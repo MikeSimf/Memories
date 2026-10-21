@@ -25,6 +25,8 @@ public class EntityDetailViewModel extends ViewModel {
     private final MediatorLiveData<EntityRoom> entity = new MediatorLiveData<>();
     private LiveData<EntityRoom> entitySource;
     private final MutableLiveData<NameIndex> nameIndex = new MutableLiveData<>();
+    /** Все объекты кампании: по ним считаются упоминания в карточке. */
+    private final MutableLiveData<List<EntityRoom>> allEntities = new MutableLiveData<>();
     private final MutableLiveData<Resource<Void>> actionState = new MutableLiveData<>();
     private final MutableLiveData<Boolean> finishRequested = new MutableLiveData<>(false);
 
@@ -56,6 +58,11 @@ public class EntityDetailViewModel extends ViewModel {
     }
 
     @NonNull
+    public LiveData<List<EntityRoom>> allEntities() {
+        return allEntities;
+    }
+
+    @NonNull
     public LiveData<Resource<Void>> actionState() {
         return actionState;
     }
@@ -74,11 +81,13 @@ public class EntityDetailViewModel extends ViewModel {
         entities.loadEntities(campaignId, new RepoCallback<List<EntityRoom>>() {
             @Override
             public void onSuccess(@Nullable List<EntityRoom> value) {
+                allEntities.setValue(value);
                 nameIndex.setValue(NameIndex.of(value));
             }
 
             @Override
             public void onError(@NonNull ApiException error) {
+                allEntities.setValue(java.util.Collections.emptyList());
                 nameIndex.setValue(NameIndex.of(null));
             }
         });

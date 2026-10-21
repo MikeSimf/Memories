@@ -144,6 +144,8 @@ public class EntityEditActivity extends AppCompatActivity {
                 container.raceRepository()::cachedLocationTypes);
         ru.dndmemory.ui.common.SuggestField.attach(binding.entityEditItemType,
                 container.raceRepository()::cachedItemTypes);
+        ru.dndmemory.ui.common.SuggestField.attach(binding.entityEditOwnerLink,
+                this::ownerLabels);
         container.raceRepository().refresh(new RepoCallback<java.util.List<String>>() {
             @Override
             public void onSuccess(@Nullable java.util.List<String> value) {
@@ -213,9 +215,6 @@ public class EntityEditActivity extends AppCompatActivity {
         binding.entityEditAddItem.setOnClickListener(v -> addItemRow(null));
         binding.entityEditPlayer.setOnItemClickListener((parent, view, position, id) ->
                 selectedPlayerUserId = playerIdAt(position));
-        binding.entityEditOwnerLink.setOnItemClickListener((parent, view, position, id) ->
-                selectedOwnerId = ownerIdAt(position));
-
         observe();
     }
 
@@ -613,7 +612,6 @@ public class EntityEditActivity extends AppCompatActivity {
         ViewUtils.show(binding.entityEditKlassGroup, hero || character);
         ViewUtils.show(binding.entityEditPlayerGroup, hero);
         ViewUtils.show(binding.entityEditShortGroup, character);
-        ViewUtils.show(binding.entityEditOwnerNameGroup, item);
         ViewUtils.show(binding.entityEditOwnerLinkGroup, item);
         ViewUtils.show(binding.entityEditItemsGroup, hero);
         ViewUtils.show(binding.entityEditLocationTypeGroup, currentKind == EntityType.LOCATION);
@@ -627,7 +625,6 @@ public class EntityEditActivity extends AppCompatActivity {
             binding.entityEditLocationType.setText(draft.locationType);
             binding.entityEditItemType.setText(draft.itemType);
             binding.entityEditShortInput.setText(draft.shortDescription);
-            binding.entityEditOwnerNameInput.setText(draft.ownerName);
             binding.entityEditNameInput.setText(draft.name);
             binding.entityEditDescriptionInput.setText(draft.description);
         }
@@ -691,29 +688,51 @@ public class EntityEditActivity extends AppCompatActivity {
         return out;
     }
 
+    /**
+     * Владелец предмета: одно поле с автокомплитом по героям и персонажам.
+     * При выборе имя сразу превращается в ссылку на объект.
+     */
     private void bindOwnerDropdown() {
-        List<String> labels = new ArrayList<>();
-        labels.add(getString(R.string.entity_owner_none));
-        for (EntityRoom hero : ownerCandidates(EntityType.HERO)) {
-            labels.add(getString(R.string.entity_owner_hero, displayName(hero)));
-        }
-        for (EntityRoom character : ownerCandidates(EntityType.CHARACTER)) {
-            labels.add(getString(R.string.entity_owner_character, displayName(character)));
-        }
-        ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditOwnerLink, labels);
         EntityRoom draft = currentDraft();
         String currentId = selectedOwnerId != null ? selectedOwnerId
                 : (draft == null ? null : (draft.ownerHeroId != null
                         ? draft.ownerHeroId : draft.ownerCharacterId));
-        String shown = labels.get(0);
-        for (int i = 1; i < labels.size(); i++) {
-            if (currentId != null && currentId.equals(ownerIdAt(i))) {
-                shown = labels.get(i);
-                break;
+        EntityRoom owner = ownerById(currentId);
+        selectedOwnerId = owner == null ? null : owner.id;
+        binding.entityEditOwnerLink.setText(owner == null ? "" : displayName(owner), false);
+    }
+
+    /** Подсказки владельца: имена героев и персонажей кампании. */
+    @NonNull
+    private List<String> ownerLabels() {
+        List<String> labels = new ArrayList<>();
+        for (EntityRoom hero : ownerCandidates(EntityType.HERO)) {
+            labels.add(displayName(hero));
+        }
+        for (EntityRoom character : ownerCandidates(EntityType.CHARACTER)) {
+            labels.add(displayName(character));
+        }
+        return labels;
+    }
+
+    /** Имя из поля → объект-владелец; совпадение без учёта регистра. */
+    @Nullable
+    private EntityRoom ownerByName(@Nullable String name) {
+        String needle = name == null ? "" : name.trim();
+        if (needle.isEmpty()) {
+            return null;
+        }
+        for (EntityRoom hero : ownerCandidates(EntityType.HERO)) {
+            if (needle.equalsIgnoreCase(displayName(hero))) {
+                return hero;
             }
         }
-        binding.entityEditOwnerLink.setText(shown, false);
-        selectedOwnerId = ownerIdAt(indexOf(labels, shown));
+        for (EntityRoom character : ownerCandidates(EntityType.CHARACTER)) {
+            if (needle.equalsIgnoreCase(displayName(character))) {
+                return character;
+            }
+        }
+        return null;
     }
 
     @NonNull
@@ -853,8 +872,11 @@ public class EntityEditActivity extends AppCompatActivity {
             viewModel.setLocationType(text(binding.entityEditLocationType.getText()));
         } else if (currentKind == EntityType.ITEM) {
             viewModel.setItemType(text(binding.entityEditItemType.getText()));
-            viewModel.setOwnerName(text(binding.entityEditOwnerNameInput.getText()));
-            viewModel.setOwnerLink(ownerById(selectedOwnerId));
+            String ownerText = text(binding.entityEditOwnerLink.getText());
+            EntityRoom owner = ownerByName(ownerText);
+            viewModel.setOwnerLink(owner);
+            viewModel.setOwnerName(owner != null ? owner.name
+                    : (ownerText.isEmpty() ? null : ownerText));
         }
     }
 

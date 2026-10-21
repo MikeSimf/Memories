@@ -198,6 +198,9 @@
     <string name="entity_detail_fields">Поля</string>
     <string name="entity_detail_description">Описание</string>
     <string name="entity_detail_links">Упоминания</string>
+    <string name="entity_mentions">Упоминают</string>
+    <string name="entity_mentions_location">Здесь встречались</string>
+    <string name="entity_mentions_hint">Герои и персонажи, в описании которых есть эта локация.</string>
     <string name="entity_edit_title_new">Новый объект</string>
     <string name="entity_edit_title_edit">Редактирование</string>
     <string name="entity_edit_type">Класс</string>
@@ -218,7 +221,8 @@
     <string name="attr_not_set">Не задано</string>
     <string name="entity_player_none">Не указан</string>
     <string name="entity_owner_name_hint">Владелец как написан в мире</string>
-    <string name="entity_owner_link_hint">Ссылка на героя или персонажа</string>
+    <string name="entity_owner_link_hint">Владелец</string>
+    <string name="entity_owner_link_helper">Начните вводить имя героя или персонажа</string>
     <string name="entity_owner_none">Без ссылки</string>
     <string name="entity_owner_hero">Герой: %1$s</string>
     <string name="entity_owner_character">Персонаж: %1$s</string>

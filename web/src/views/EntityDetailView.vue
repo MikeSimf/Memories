@@ -52,6 +52,7 @@ const details = computed<Array<{ label: string; value: string }>>(() => {
   }
   if (item.objectType === 'ITEM') {
     return [
+      { label: 'Тип предмета', value: item.itemType ?? 'Неизвестно' },
       { label: 'Владелец', value: item.ownerName ?? 'не указан' },
       {
         label: 'Ссылка',
@@ -63,6 +64,9 @@ const details = computed<Array<{ label: string; value: string }>>(() => {
       },
     ]
   }
+  if (item.objectType === 'LOCATION') {
+    return [{ label: 'Тип локации', value: item.locationType ?? 'Неизвестно' }]
+  }
   return []
 })
 
@@ -72,6 +76,19 @@ const backlinks = computed(() =>
     (item) => item.id !== entityId.value && item.links.some((link) => link.targetId === entityId.value),
   ),
 )
+
+/**
+ * Кто упоминает эту карточку. У локации — только герои и персонажи:
+ * так ищется «кто здесь был», даже если имя забылось.
+ */
+const mentions = computed(() => {
+  const all = backlinks.value
+  const filtered =
+    entity.value?.objectType === 'LOCATION'
+      ? all.filter((item) => item.objectType === 'HERO' || item.objectType === 'CHARACTER')
+      : all
+  return [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+})
 
 const outgoingLinks = computed(() => {
   const seen = new Set<string>()
@@ -294,16 +311,23 @@ async function keepLocal(): Promise<void> {
         </div>
       </div>
 
-      <div v-if="backlinks.length > 0" class="card">
-        <h2>Ссылаются сюда</h2>
-        <div class="row">
+      <div v-if="mentions.length > 0" class="card">
+        <h2>{{ entity.objectType === 'LOCATION' ? 'Здесь встречались' : 'Упоминают' }}</h2>
+        <p v-if="entity.objectType === 'LOCATION'" class="faint" style="margin-top: 0">
+          Герои и персонажи, в описании которых есть эта локация.
+        </p>
+        <div class="mention-list">
           <RouterLink
-            v-for="item in backlinks"
+            v-for="item in mentions"
             :key="item.id"
-            class="btn btn--sm"
+            class="mention-row"
             :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: item.id } }"
           >
-            {{ item.name }}
+            <EntityAvatar :object="item" :size="36" />
+            <span class="mention-row__main">
+              <span class="mention-row__name">{{ item.name }}</span>
+              <span class="faint">{{ OBJECT_CLASS_LABELS[item.objectType] }}</span>
+            </span>
           </RouterLink>
         </div>
       </div>

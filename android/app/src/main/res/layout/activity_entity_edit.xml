@@ -178,36 +178,22 @@
                     android:maxLines="2" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Только предмет -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/entity_edit_owner_name_group"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/entity_owner_name_hint"
-                android:visibility="gone">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/entity_edit_owner_name_input"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textCapSentences"
-                    android:maxLines="1" />
-            </com.google.android.material.textfield.TextInputLayout>
-
+            <!-- Только предмет: один владелец, сразу ссылка на героя/персонажа -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/entity_edit_owner_link_group"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/entity_owner_link_hint"
                 android:visibility="gone"
-                app:endIconMode="dropdown_menu">
+                app:helperText="@string/entity_owner_link_helper">
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/entity_edit_owner_link"
+                    style="@style/Widget.Material3.AutoCompleteTextView.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="none" />
+                    android:inputType="textCapSentences"
+                    android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Котомка героя -->

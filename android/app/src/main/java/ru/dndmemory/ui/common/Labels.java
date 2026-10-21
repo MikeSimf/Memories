@@ -91,8 +91,9 @@ public final class Labels {
             case CHARACTER:
                 return join(room.race, room.shortDescription);
             case ITEM:
-                return TextUtils.isEmpty(room.ownerName) ? null : room.ownerName;
+                return join(room.itemType, room.ownerName);
             case LOCATION:
+                return room.locationType;
             default:
                 return null;
         }

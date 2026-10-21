@@ -32,6 +32,7 @@ import ru.dndmemory.data.model.EntityType;
 import ru.dndmemory.data.model.HeroItem;
 import ru.dndmemory.databinding.ActivityEntityDetailBinding;
 import ru.dndmemory.ui.campaign.CampaignViewModel;
+import ru.dndmemory.ui.common.AvatarBinder;
 import ru.dndmemory.ui.common.ErrorMessages;
 import ru.dndmemory.ui.common.Extras;
 import ru.dndmemory.ui.common.Labels;
@@ -60,6 +61,7 @@ public class EntityDetailActivity extends AppCompatActivity {
     private CampaignRoom campaignSnapshot;
     private String campaignId;
     private NameIndex nameIndex = NameIndex.of(null);
+    private java.util.List<EntityRoom> allObjects = java.util.Collections.emptyList();
     private EntityRoom current;
 
     @Override
@@ -114,6 +116,11 @@ public class EntityDetailActivity extends AppCompatActivity {
             }
             current = entity;
             bind(entity);
+        });
+
+        viewModel.allEntities().observe(this, list -> {
+            allObjects = list == null ? java.util.Collections.emptyList() : list;
+            renderMentions();
         });
 
         viewModel.nameIndex().observe(this, index -> {
@@ -173,6 +180,7 @@ public class EntityDetailActivity extends AppCompatActivity {
                 !TextUtils.isEmpty(entity.description));
         bindFields(entity);
         bindLinks(entity);
+        renderMentions();
 
         ViewUtils.show(binding.entityConflictBar, entity.hasConflict());
     }
@@ -277,9 +285,12 @@ public class EntityDetailActivity extends AppCompatActivity {
                     addFieldRow(getString(R.string.attr_short_description), entity.shortDescription);
                     break;
                 case ITEM:
+                    addFieldRow(getString(R.string.entity_item_type), entity.itemType);
                     addFieldRow(getString(R.string.attr_owner), ownerText(entity));
                     break;
                 case LOCATION:
+                    addFieldRow(getString(R.string.entity_location_type), entity.locationType);
+                    break;
                 default:
                     break;
             }
@@ -351,6 +362,69 @@ public class EntityDetailActivity extends AppCompatActivity {
             row.setOnClickListener(v -> Nav.openEntity(this, campaignId, linkId));
         }
         binding.entityFields.addView(row);
+    }
+
+    /**
+     * Обратные ссылки: кто упоминает эту карточку. У локации — только герои
+     * и персонажи, чтобы можно было найти «кто здесь был» по имени и аватару.
+     */
+    private void renderMentions() {
+        if (current == null || binding == null) {
+            return;
+        }
+        boolean location = EntityType.fromOrCharacter(current.kind) == EntityType.LOCATION;
+        String targetId = current.id;
+        java.util.List<EntityRoom> mentions = new java.util.ArrayList<>();
+        for (EntityRoom room : allObjects) {
+            if (room == null || room.deleted || targetId.equals(room.id)) {
+                continue;
+            }
+            if (location && EntityType.fromOrCharacter(room.kind) != EntityType.HERO
+                    && EntityType.fromOrCharacter(room.kind) != EntityType.CHARACTER) {
+                continue;
+            }
+            boolean mentionsTarget = false;
+            if (room.links != null) {
+                for (EntityLink link : room.links) {
+                    if (link != null && targetId.equals(link.targetId)) {
+                        mentionsTarget = true;
+                        break;
+                    }
+                }
+            }
+            if (mentionsTarget) {
+                mentions.add(room);
+            }
+        }
+        mentions.sort((left, right) -> {
+            String a = left.name == null ? "" : left.name;
+            String b = right.name == null ? "" : right.name;
+            return a.compareToIgnoreCase(b);
+        });
+
+        binding.entityMentions.removeAllViews();
+        boolean any = !mentions.isEmpty();
+        ViewUtils.show(binding.entityMentionsTitle, any);
+        ViewUtils.show(binding.entityMentionsHint, any && location);
+        if (!any) {
+            return;
+        }
+        binding.entityMentionsTitle.setText(location
+                ? R.string.entity_mentions_location : R.string.entity_mentions);
+        for (final EntityRoom room : mentions) {
+            android.view.View row = getLayoutInflater().inflate(
+                    R.layout.item_backlink, binding.entityMentions, false);
+            android.widget.ImageView avatar = row.findViewById(R.id.backlink_avatar);
+            android.widget.ImageView classIcon = row.findViewById(R.id.backlink_class_icon);
+            android.widget.TextView name = row.findViewById(R.id.backlink_name);
+            android.widget.TextView subtitle = row.findViewById(R.id.backlink_subtitle);
+            AvatarBinder.bind(this, avatar, room, App.container(this).okHttpClient());
+            AvatarBinder.bindClassIcon(this, classIcon, room);
+            name.setText(room.name);
+            subtitle.setText(Labels.entityTypeText(this, room.kind));
+            row.setOnClickListener(v -> Nav.openEntity(this, campaignId, room.id));
+            binding.entityMentions.addView(row);
+        }
     }
 
     private void bindLinks(@NonNull EntityRoom entity) {
