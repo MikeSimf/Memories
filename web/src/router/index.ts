@@ -69,9 +69,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/CampaignTabView.vue'),
       },
       {
-        // Старые адреса вкладок героев и НПС ведут на объединённую вкладку «Персонажи».
+        // Герои — отдельный раздел кампании, рядом с пересказами и участниками.
         path: 'heroes',
-        redirect: (to) => ({ name: 'campaign-tab', params: { campaignId: to.params.campaignId, tab: 'characters' } }),
+        name: 'campaign-heroes',
+        component: () => import('@/views/CampaignTabView.vue'),
+        props: { tab: 'heroes' },
+        meta: { title: 'Герои' },
       },
       {
         path: 'npcs',

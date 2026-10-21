@@ -154,6 +154,8 @@
 
     <!-- Вкладки кампании: три -->
     <string name="tab_characters">Персонажи</string>
+    <string name="heroes_title">Герои</string>
+    <string name="materials_title">Материалы</string>
     <string name="tab_locations">Локации</string>
     <string name="tab_items">Предметы</string>
     <string name="entity_location_type">Тип локации</string>
@@ -202,11 +204,19 @@
     <string name="entity_mentions_location">Здесь встречались</string>
     <string name="entity_mentions_hint">Герои и персонажи, в описании которых есть эта локация.</string>
     <string name="entity_edit_title_new">Новый объект</string>
+    <string name="entity_create_hero">Создание героя</string>
+    <string name="entity_create_character">Создание персонажа</string>
+    <string name="entity_create_location">Создание локации</string>
+    <string name="entity_create_item">Создание предмета</string>
+    <string name="entity_edit_hero">Правка героя</string>
+    <string name="entity_edit_character">Правка персонажа</string>
+    <string name="entity_edit_location">Правка локации</string>
+    <string name="entity_edit_item">Правка предмета</string>
     <string name="entity_edit_title_edit">Редактирование</string>
     <string name="entity_edit_type">Класс</string>
     <string name="entity_edit_name">Имя</string>
     <string name="entity_edit_description">Описание</string>
-    <string name="entity_edit_description_hint">Поддерживается markdown и ссылки [[Имя]]</string>
+    <string name="entity_edit_description_hint">Поддерживает ссылки на объекты: [[имя_объекта]] и [[имя_объекта|подпись]]</string>
     <string name="entity_edit_delete_confirm">Удалить объект «%1$s»?</string>
     <string name="entity_conflict">Есть расхождение с версией на сервере</string>
     <string name="entity_dirty">Не отправлено</string>

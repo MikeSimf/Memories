@@ -163,6 +163,18 @@ public final class Nav {
         context.startActivity(intent);
     }
 
+    public static void openHeroes(@NonNull Context context, @NonNull String campaignId) {
+        Intent intent = new Intent(context, ru.dndmemory.ui.entity.HeroListActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        context.startActivity(intent);
+    }
+
+    public static void openMaterials(@NonNull Context context, @NonNull String campaignId) {
+        Intent intent = new Intent(context, ru.dndmemory.ui.material.MaterialsActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        context.startActivity(intent);
+    }
+
     public static void openMembers(@NonNull Context context, @NonNull String campaignId) {
         Intent intent = new Intent(context, MembersActivity.class);
         intent.putExtra(Extras.CAMPAIGN_ID, campaignId);

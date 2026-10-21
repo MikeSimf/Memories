@@ -18,21 +18,23 @@ import { useCampaignStore } from '@/stores/campaign'
 import { formatDate, formatRelative } from '@/utils/datetime'
 
 /**
- * Три вкладки объектов: «Персонажи» объединяет героев и НПС (два запроса —
- * `GET .../heroes` и `GET .../characters`), плюс «Локации» и «Предметы».
- * Пересказы и участники — отдельные разделы кампании.
+ * Основные рабочие вкладки: персонажи (только НПС), локации и предметы.
+ * Герои, пересказы, материалы и участники — отдельные разделы кампании
+ * в шапке, поэтому у каждого списка ровно один класс.
  */
-type EntityTabKey = 'characters' | 'locations' | 'items'
+type EntityTabKey = 'characters' | 'heroes' | 'locations' | 'items'
 type TabKey = EntityTabKey | 'retellings' | 'members'
 
 const TAB_CLASSES: Record<EntityTabKey, ObjectClass[]> = {
-  characters: ['HERO', 'CHARACTER'],
+  characters: ['CHARACTER'],
+  heroes: ['HERO'],
   locations: ['LOCATION'],
   items: ['ITEM'],
 }
 
 const TAB_TITLES: Record<EntityTabKey, string> = {
   characters: 'Персонажи',
+  heroes: 'Герои',
   locations: OBJECT_CLASS_PLURALS.LOCATION,
   items: OBJECT_CLASS_PLURALS.ITEM,
 }
@@ -47,13 +49,20 @@ const tab = computed<TabKey>(() => {
   const fromProps = props.tab
   const fromRoute = typeof route.params.tab === 'string' ? route.params.tab : ''
   const value = fromProps ?? fromRoute
-  return value === 'locations' || value === 'items' || value === 'retellings' || value === 'members'
+  return value === 'heroes'
+    || value === 'locations'
+    || value === 'items'
+    || value === 'retellings'
+    || value === 'members'
     ? value
     : 'characters'
 })
 
 const objectClasses = computed<ObjectClass[] | null>(() =>
-  tab.value === 'characters' || tab.value === 'locations' || tab.value === 'items'
+  tab.value === 'characters'
+    || tab.value === 'heroes'
+    || tab.value === 'locations'
+    || tab.value === 'items'
     ? TAB_CLASSES[tab.value]
     : null,
 )

@@ -101,6 +101,14 @@
             android:exported="false" />
 
         <activity
+            android:name=".ui.entity.HeroListActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.material.MaterialsActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.members.MembersActivity"
             android:exported="false" />
 

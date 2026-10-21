@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { errorMessage } from '@/api'
-import { OBJECT_CLASS_LABELS, OBJECT_CLASSES, type ObjectClass } from '@/api/types'
+import { OBJECT_CLASSES, type ObjectClass } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import EntityForm from '@/components/EntityForm.vue'
 import { useCampaignStore } from '@/stores/campaign'
@@ -33,11 +33,23 @@ function initialClass(): ObjectClass {
 }
 
 function tabForClass(cls: ObjectClass): string {
-  // Герои и НПС живут на одной вкладке «Персонажи».
-  if (cls === 'HERO' || cls === 'CHARACTER') return 'characters'
+  if (cls === 'HERO') return 'heroes'
+  if (cls === 'CHARACTER') return 'characters'
   if (cls === 'LOCATION') return 'locations'
   return 'items'
 }
+
+/** Заголовок называет класс: тип выбирается один раз при создании. */
+const TITLES: Record<ObjectClass, { create: string; edit: string }> = {
+  HERO: { create: 'Создание героя', edit: 'Правка героя' },
+  CHARACTER: { create: 'Создание персонажа', edit: 'Правка персонажа' },
+  LOCATION: { create: 'Создание локации', edit: 'Правка локации' },
+  ITEM: { create: 'Создание предмета', edit: 'Правка предмета' },
+}
+
+const pageTitle = computed(() =>
+  isEdit.value ? TITLES[objectClass.value].edit : TITLES[objectClass.value].create,
+)
 
 watch(
   existing,
@@ -75,9 +87,12 @@ function back(): void {
     })
     return
   }
+  const tab = tabForClass(objectClass.value)
   void router.push({
-    name: 'campaign-tab',
-    params: { campaignId: campaign.campaignId, tab: tabForClass(objectClass.value) },
+    name: tab === 'heroes' ? 'campaign-heroes' : 'campaign-tab',
+    params: tab === 'heroes'
+      ? { campaignId: campaign.campaignId }
+      : { campaignId: campaign.campaignId, tab },
   })
 }
 
@@ -113,7 +128,7 @@ async function submit(): Promise<void> {
   <div class="stack">
     <div class="page-header">
       <div class="page-header__titles">
-        <h1>{{ isEdit ? 'Правка объекта' : 'Новый объект' }}</h1>
+        <h1>{{ pageTitle }}</h1>
         <div class="page-header__subtitle">
           Правки сохраняются в локальную базу и отправляются на сервер при синхронизации.
         </div>
@@ -139,10 +154,10 @@ async function submit(): Promise<void> {
     <div v-else class="card">
       <EntityForm
         v-model="form"
-        v-model:object-class="objectClass"
+        :object-class="objectClass"
         :mode="isEdit ? 'edit' : 'create'"
         :saving="saving"
-        :submit-label="isEdit ? 'Сохранить изменения' : `Создать: ${OBJECT_CLASS_LABELS[objectClass].toLowerCase()}`"
+        :submit-label="isEdit ? 'Сохранить изменения' : 'Создать'"
         @submit="submit"
         @cancel="back"
       />

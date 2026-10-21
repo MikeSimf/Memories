@@ -8,17 +8,30 @@
         android:title="@string/action_search"
         app:showAsAction="ifRoom" />
 
+    <!-- Разделы кампании: иконками в шапке, как на сайте -->
+    <item
+        android:id="@+id/action_heroes"
+        android:icon="@drawable/ic_heroes"
+        android:title="@string/heroes_title"
+        app:showAsAction="ifRoom" />
+
     <item
         android:id="@+id/action_retellings"
         android:icon="@drawable/ic_retelling"
         android:title="@string/tab_retellings"
-        app:showAsAction="never" />
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_materials"
+        android:icon="@drawable/ic_materials"
+        android:title="@string/tab_materials"
+        app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_members"
         android:icon="@drawable/ic_members"
         android:title="@string/tab_members"
-        app:showAsAction="never" />
+        app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/action_invite"

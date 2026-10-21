@@ -28,9 +28,9 @@ import ru.dndmemory.ui.common.ViewModelFactory;
 import ru.dndmemory.ui.common.ViewUtils;
 
 /**
- * Экран кампании: три вкладки объектов — Персонажи (герои и НПС вместе),
- * Локации и Предметы. Пересказы, Участники и Приглашения вынесены в меню шапки
- * отдельными пунктами (docs/api.md, раздел 6).
+ * Экран кампании: три рабочие вкладки — Персонажи (НПС), Локации и Предметы.
+ * Герои, Пересказы, Материалы, Участники и Приглашения — отдельные разделы
+ * в меню шапки (docs/api.md, раздел 6).
  */
 public class CampaignActivity extends AppCompatActivity implements CampaignHost {
 
@@ -79,10 +79,8 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
             case 1:
                 return R.string.tab_locations;
             case 2:
-                return R.string.tab_items;
-            case 3:
             default:
-                return R.string.tab_materials;
+                return R.string.tab_items;
         }
     }
 
@@ -97,7 +95,7 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
     private String currentTabFilter() {
         switch (binding.campaignPager.getCurrentItem()) {
             case 0:
-                return EntityType.CHARACTERS;
+                return EntityType.CHARACTER.name();
             case 1:
                 return EntityType.LOCATION.name();
             case 2:
@@ -113,6 +111,14 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
         if (id == R.id.action_search) {
             // Поиск открывается с фильтром текущей вкладки; чип «Всё» даёт общий поиск.
             Nav.openSearch(this, campaignId, currentTabFilter());
+            return true;
+        }
+        if (id == R.id.action_heroes) {
+            Nav.openHeroes(this, campaignId);
+            return true;
+        }
+        if (id == R.id.action_materials) {
+            Nav.openMaterials(this, campaignId);
             return true;
         }
         if (id == R.id.action_retellings) {

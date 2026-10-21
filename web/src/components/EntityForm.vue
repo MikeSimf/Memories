@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 
 import { classesApi, errorMessage, itemTypesApi, locationTypesApi, racesApi, uploadFile } from '@/api'
-import { OBJECT_CLASSES, OBJECT_CLASS_LABELS, type ObjectClass } from '@/api/types'
+import type { ObjectClass } from '@/api/types'
 import EntityImage from './EntityImage.vue'
 import MarkupText from './MarkupText.vue'
 import { useCampaignStore } from '@/stores/campaign'
@@ -13,22 +13,19 @@ import { GENDERS } from '@/types/gender'
 const props = withDefaults(
   defineProps<{
     modelValue: ObjectFormValues
-    /** Класс объекта: при правке не меняется, при создании выбирается. */
+    /** Класс объекта: задаётся экраном, внутри формы не переключается. */
     objectClass: ObjectClass
     mode?: 'create' | 'edit'
     saving?: boolean
     submitLabel?: string
-    /** Разрешить выбор класса (при создании). */
-    allowClassChange?: boolean
     /** Только чтение для тех, кому герой недоступен. */
     disabled?: boolean
   }>(),
-  { mode: 'create', saving: false, submitLabel: 'Сохранить', allowClassChange: true, disabled: false },
+  { mode: 'create', saving: false, submitLabel: 'Сохранить', disabled: false },
 )
 
 const emit = defineEmits<{
   (event: 'update:modelValue', value: ObjectFormValues): void
-  (event: 'update:objectClass', value: ObjectClass): void
   (event: 'submit'): void
   (event: 'cancel'): void
 }>()
@@ -130,7 +127,6 @@ function applyHint(name: string): void {
   wikiHints.value = []
 }
 
-const classLocked = computed(() => props.mode === 'edit' || !props.allowClassChange)
 const isHero = computed(() => props.objectClass === 'HERO')
 const isCharacter = computed(() => props.objectClass === 'CHARACTER')
 const isItem = computed(() => props.objectClass === 'ITEM')
@@ -219,21 +215,6 @@ async function onFileSelected(event: Event): Promise<void> {
 <template>
   <form class="stack" @submit.prevent="submit">
     <div class="row" style="align-items: flex-end">
-      <div class="field" style="flex: 0 0 190px">
-        <label class="field__label" for="object-class">Класс объекта</label>
-        <select
-          id="object-class"
-          class="select"
-          :value="objectClass"
-          :disabled="classLocked"
-          @change="emit('update:objectClass', ($event.target as HTMLSelectElement).value as ObjectClass)"
-        >
-          <option v-for="cls in OBJECT_CLASSES" :key="cls" :value="cls">
-            {{ OBJECT_CLASS_LABELS[cls] }}
-          </option>
-        </select>
-      </div>
-
       <div class="field" style="flex: 1; min-width: 220px">
         <label class="field__label" for="object-name">Название</label>
         <input
@@ -571,8 +552,8 @@ async function onFileSelected(event: Event): Promise<void> {
         </li>
       </ul>
       <span class="field__hint">
-        Поддерживается markdown и ссылки на объекты: <code>[[Имя]]</code>,
-        <code>[[Имя|подпись]]</code>, <code>[[#uuid|подпись]]</code>.
+        Поддерживает ссылки на объекты: <code>[[имя_объекта]]</code> и
+        <code>[[имя_объекта|подпись]]</code>.
       </span>
       <div v-if="showPreview" class="preview-box">
         <MarkupText v-if="modelValue.description.trim()" :text="modelValue.description" />

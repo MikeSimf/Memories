@@ -15,7 +15,7 @@ import ru.dndmemory.ui.material.MaterialsFragment;
  */
 public class CampaignPagerAdapter extends FragmentStateAdapter {
 
-    public static final int TAB_COUNT = 4;
+    public static final int TAB_COUNT = 3;
 
     public CampaignPagerAdapter(@NonNull FragmentActivity activity) {
         super(activity);
@@ -29,11 +29,9 @@ public class CampaignPagerAdapter extends FragmentStateAdapter {
                 return EntityListFragment.newInstance(EntityType.LOCATION.name());
             case 2:
                 return EntityListFragment.newInstance(EntityType.ITEM.name());
-            case 3:
-                return new MaterialsFragment();
             case 0:
             default:
-                return EntityListFragment.newInstance(EntityType.CHARACTERS);
+                return EntityListFragment.newInstance(EntityType.CHARACTER.name());
         }
     }
 

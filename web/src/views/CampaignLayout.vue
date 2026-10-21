@@ -10,22 +10,25 @@ const route = useRoute()
 const campaign = useCampaignStore()
 const sync = useSyncStore()
 
+/** Основные рабочие вкладки: персонажи, локации, предметы. */
 const tabs = [
   { key: 'characters', label: 'Персонажи', route: 'campaign-tab' },
   { key: 'locations', label: 'Локации', route: 'campaign-tab' },
   { key: 'items', label: 'Предметы', route: 'campaign-tab' },
-  { key: 'materials', label: 'Материалы', route: 'campaign-materials' },
 ] as const
 
-/** Разделы кампании, вынесенные из вкладок (маршруты сохранены). */
+/** Остальные разделы кампании — иконками в шапке, как в приложении. */
 const sections = [
+  { key: 'heroes', label: 'Герои', route: 'campaign-heroes' },
   { key: 'retellings', label: 'Пересказы', route: 'campaign-retellings' },
+  { key: 'materials', label: 'Материалы', route: 'campaign-materials' },
   { key: 'members', label: 'Участники', route: 'campaign-members' },
 ] as const
 
 const campaignId = computed(() => String(route.params.campaignId ?? ''))
 const activeTab = computed(() => {
   const name = route.name
+  if (name === 'campaign-heroes') return 'heroes'
   if (name === 'campaign-retellings') return 'retellings'
   if (name === 'campaign-materials' || name === 'material-new' || name === 'material-edit') return 'materials'
   if (name === 'campaign-members') return 'members'
@@ -83,11 +86,73 @@ onBeforeUnmount(() => {
       <RouterLink
         v-for="section in sections"
         :key="section.key"
-        class="btn btn--sm"
+        class="btn btn--icon"
         :class="{ 'btn--primary': activeTab === section.key }"
         :to="{ name: section.route, params: { campaignId } }"
+        :title="section.label"
+        :aria-label="section.label"
       >
-        {{ section.label }}
+        <svg
+          v-if="section.key === 'heroes'"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="9" r="3.2" />
+          <path d="M7 6.6C7.8 3.8 9.6 2.4 12 2.4s4.2 1.4 5 4.2M8.4 6.6h7.2" />
+          <path d="M5 20c0-3.4 3.1-5.8 7-5.8s7 2.4 7 5.8" />
+        </svg>
+        <svg
+          v-else-if="section.key === 'retellings'"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M4 5.2h5.2c1.4 0 2.4 1 2.4 2.4v12.2c0-1.2-1-2.2-2.4-2.2H4zM20 5.2h-5.2c-1.4 0-2.4 1-2.4 2.4v12.2c0-1.2 1-2.2 2.4-2.2H20z" />
+          <path d="M16.8 2.4l2.2 2.2-4.6 4.6-2.6.4.4-2.6z" />
+        </svg>
+        <svg
+          v-else-if="section.key === 'materials'"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M4 6.2h13.6v3.4H4zM4 11h16v3.4H4zM4 15.8h11.6v3.4H4z" />
+          <path d="M17.6 6.2h2.2M20 11h.4M15.6 15.8h2.2" />
+        </svg>
+        <svg
+          v-else
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="8" r="3.6" />
+          <path d="M5 20.4c0-3.6 3.1-6 7-6s7 2.4 7 6" />
+        </svg>
       </RouterLink>
       <RouterLink
         v-if="campaign.canInvite || campaign.canManageMembers"

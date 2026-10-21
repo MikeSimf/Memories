@@ -75,9 +75,6 @@ public class EntityEditActivity extends AppCompatActivity {
     private ActivityResultLauncher<String> avatarPicker;
     private AppContainer container;
 
-    private static final EntityType[] TYPE_VALUES = {
-            EntityType.HERO, EntityType.CHARACTER, EntityType.LOCATION, EntityType.ITEM};
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -117,22 +114,8 @@ public class EntityEditActivity extends AppCompatActivity {
         setSupportActionBar(binding.entityEditToolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle(creating
-                    ? R.string.entity_edit_title_new : R.string.entity_edit_title_edit);
+            getSupportActionBar().setTitle(titleFor(currentKind, creating));
         }
-
-        ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditType, java.util.Arrays.asList(typeLabels()));
-        binding.entityEditType.setOnItemClickListener((parent, view, position, id) -> {
-            EntityType selected = selectedType();
-            if (selected != currentKind) {
-                collect();
-                currentKind = selected;
-                bindFieldsForKind();
-            }
-        });
-        // Класс существующего объекта не меняется: у каждого класса свой эндпоинт.
-        binding.entityEditType.setEnabled(creating);
-        binding.entityEditTypeGroup.setEnabled(creating);
 
         // Ввод ссылок: «[[» сразу закрывается, после трёх букв — подсказки.
         // Справочники: по нажатию виден весь список, ввод фильтрует его.
@@ -324,45 +307,19 @@ public class EntityEditActivity extends AppCompatActivity {
         return value == null ? "" : value.toString().trim();
     }
 
-    private String[] typeLabels() {
-        List<String> labels = new ArrayList<>();
-        for (EntityType type : allowedTypes()) {
-            labels.add(getString(Labels.entityType(type)));
+    /** Заголовок называет класс: тип выбирается один раз, при открытии экрана. */
+    private int titleFor(@NonNull EntityType kind, boolean create) {
+        switch (kind) {
+            case HERO:
+                return create ? R.string.entity_create_hero : R.string.entity_edit_hero;
+            case LOCATION:
+                return create ? R.string.entity_create_location : R.string.entity_edit_location;
+            case ITEM:
+                return create ? R.string.entity_create_item : R.string.entity_edit_item;
+            case CHARACTER:
+            default:
+                return create ? R.string.entity_create_character : R.string.entity_edit_character;
         }
-        return labels.toArray(new String[0]);
-    }
-
-    /** При создании список классов ограничен правами: герой — только владельцу. */
-    @NonNull
-    private List<EntityType> allowedTypes() {
-        List<EntityType> out = new ArrayList<>();
-        if (!creating) {
-            out.add(currentKind);
-            return out;
-        }
-        CampaignRoom campaign = campaignViewModel.campaign().getValue();
-        for (EntityType type : TYPE_VALUES) {
-            if (Rights.canWrite(campaign, type)) {
-                out.add(type);
-            }
-        }
-        if (!out.contains(currentKind)) {
-            out.add(currentKind);
-        }
-        return out;
-    }
-
-    @NonNull
-    private EntityType selectedType() {
-        CharSequence shown = binding.entityEditType.getText();
-        if (shown != null) {
-            for (EntityType type : allowedTypes()) {
-                if (getString(Labels.entityType(type)).contentEquals(shown)) {
-                    return type;
-                }
-            }
-        }
-        return currentKind;
     }
 
     private void observe() {
@@ -377,7 +334,6 @@ public class EntityEditActivity extends AppCompatActivity {
 
             binding.entityEditNameInput.setText(state.entity.name);
             binding.entityEditDescriptionInput.setText(state.entity.description);
-            binding.entityEditType.setText(getString(Labels.entityType(currentKind)), false);
             selectedPlayerUserId = state.entity.playerUserId;
             selectedOwnerId = state.entity.ownerHeroId != null
                     ? state.entity.ownerHeroId : state.entity.ownerCharacterId;
@@ -389,13 +345,7 @@ public class EntityEditActivity extends AppCompatActivity {
             checkRights();
         });
 
-        campaignViewModel.campaign().observe(this, campaign -> {
-            if (creating) {
-                ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditType,
-                        java.util.Arrays.asList(typeLabels()));
-            }
-            checkRights();
-        });
+        campaignViewModel.campaign().observe(this, campaign -> checkRights());
 
         viewModel.actionState().observe(this, resource -> {
             if (resource == null) {
@@ -851,7 +801,7 @@ public class EntityEditActivity extends AppCompatActivity {
 
     /** Переносит значения формы в ViewModel перед сохранением. */
     private void collect() {
-        viewModel.setKind(selectedType());
+        viewModel.setKind(currentKind);
         viewModel.setName(text(binding.entityEditNameInput.getText()));
         viewModel.setDescription(text(binding.entityEditDescriptionInput.getText()));
 
