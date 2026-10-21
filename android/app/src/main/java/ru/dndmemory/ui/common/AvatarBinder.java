@@ -1,10 +1,8 @@
 package ru.dndmemory.ui.common;
 
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import okhttp3.OkHttpClient;
 
@@ -46,6 +44,12 @@ public final class AvatarBinder {
      */
     public static void bind(@NonNull Context context, @NonNull ImageView avatar,
                             @NonNull EntityRoom entity, @Nullable OkHttpClient client) {
+        EntityType kind = EntityType.fromOrCharacter(entity.kind);
+        int color = colorFor(context, kind, entity);
+        // Аватар — кружок, как и значок класса рядом.
+        avatar.setBackground(circle(soft(color)));
+        avatar.setClipToOutline(true);
+
         String fileId = coverFileId(entity);
         if (fileId != null && client != null) {
             avatar.setColorFilter(null);
@@ -55,10 +59,9 @@ public final class AvatarBinder {
             ImageLoader.load(client, fileId, avatar);
             return;
         }
-        EntityType kind = EntityType.fromOrCharacter(entity.kind);
         avatar.setScaleType(ImageView.ScaleType.FIT_CENTER);
         TypeIcons.apply(avatar, kind.name(), iconValue(kind, entity),
-                entity.gender, colorFor(context, kind, entity));
+                entity.gender, color);
         avatar.setContentDescription(context.getString(typeLabel(kind)));
         ViewUtils.show(avatar, true);
     }
@@ -77,24 +80,35 @@ public final class AvatarBinder {
         return null;
     }
 
-    /** Значок класса: буква и цвет. Если класса нет — скрываем. */
-    public static void bindClassBadge(@NonNull Context context, @NonNull TextView badge,
-                                      @NonNull EntityRoom entity) {
+    /**
+     * Второй кружок рядом с аватаром: значок класса. Показывается только
+     * у героя и персонажа с классом из справочника.
+     */
+    public static void bindClassIcon(@NonNull Context context, @NonNull ImageView icon,
+                                     @NonNull EntityRoom entity) {
         EntityType kind = EntityType.fromOrCharacter(entity.kind);
-        if (kind != EntityType.HERO && kind != EntityType.CHARACTER) {
-            badge.setVisibility(View.GONE);
+        if ((kind != EntityType.HERO && kind != EntityType.CHARACTER)
+                || !ClassIcons.isKnown(entity.klass)) {
+            ViewUtils.show(icon, false);
             return;
         }
-        String klass = entity.klass == null ? "" : entity.klass.trim();
-        if (klass.isEmpty()) {
-            badge.setVisibility(View.GONE);
-            return;
-        }
-        badge.setVisibility(View.VISIBLE);
-        badge.setText(initials(klass));
-        int color = classColor(context, klass);
-        badge.setTextColor(color);
-        badge.setBackgroundTintList(ColorStateList.valueOf(soft(context, color)));
+        int color = classColor(context, entity.klass);
+        icon.setBackground(circle(soft(color)));
+        icon.setClipToOutline(true);
+        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        ClassIcons.apply(icon, entity.klass, color);
+        icon.setContentDescription(context.getString(R.string.attr_klass) + ": " + entity.klass);
+        ViewUtils.show(icon, true);
+    }
+
+    /** Круглая подложка нужного тона. */
+    @NonNull
+    private static android.graphics.drawable.GradientDrawable circle(@ColorInt int color) {
+        android.graphics.drawable.GradientDrawable shape =
+                new android.graphics.drawable.GradientDrawable();
+        shape.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        shape.setColor(color);
+        return shape;
     }
 
     /** Значение, по которому выбирается глиф: раса или тип. */
@@ -176,14 +190,7 @@ public final class AvatarBinder {
 
     /** Полупрозрачная подложка того же тона для кружка класса. */
     @ColorInt
-    private static int soft(@NonNull Context context, @ColorInt int color) {
+    private static int soft(@ColorInt int color) {
         return (color & 0x00FFFFFF) | 0x33000000;
-    }
-
-    /** Первая буква класса: «Воин» → «В», «Изобретатель» → «И». */
-    @NonNull
-    private static String initials(@NonNull String klass) {
-        String trimmed = klass.trim();
-        return trimmed.isEmpty() ? "" : trimmed.substring(0, 1).toUpperCase(Locale.ROOT);
     }
 }

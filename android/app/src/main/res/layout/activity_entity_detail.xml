@@ -42,29 +42,35 @@
                 android:orientation="horizontal"
                 android:layout_marginBottom="8dp">
 
-                <FrameLayout
-                    android:layout_width="64dp"
-                    android:layout_height="64dp">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
+                    <!-- Аватар: кружок расы -->
                     <ImageView
                         android:id="@+id/entity_avatar"
                         android:layout_width="64dp"
                         android:layout_height="64dp"
+                        android:background="@drawable/bg_avatar"
+                        android:clipToOutline="true"
                         android:contentDescription="@string/cd_icon"
                         android:padding="8dp"
                         android:src="@drawable/ic_npc" />
 
-                    <TextView
-                        android:id="@+id/entity_class_badge"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_gravity="bottom|end"
-                        android:background="@drawable/bg_type_chip"
-                        android:gravity="center"
-                        android:textAppearance="?attr/textAppearanceLabelSmall"
-                        android:textStyle="bold"
+                    <!-- Класс: такой же кружок рядом -->
+                    <ImageView
+                        android:id="@+id/entity_class_icon"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_avatar"
+                        android:clipToOutline="true"
+                        android:contentDescription="@string/attr_klass"
+                        android:padding="12dp"
                         android:visibility="gone" />
-                </FrameLayout>
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/entity_title"

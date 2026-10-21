@@ -154,7 +154,7 @@ public class EntityDetailActivity extends AppCompatActivity {
         binding.entityTypeStripe.setBackgroundColor(TypeColors.of(this, type));
         ru.dndmemory.ui.common.AvatarBinder.bind(this, binding.entityAvatar, entity,
                 App.container(this).okHttpClient());
-        ru.dndmemory.ui.common.AvatarBinder.bindClassBadge(this, binding.entityClassBadge, entity);
+        ru.dndmemory.ui.common.AvatarBinder.bindClassIcon(this, binding.entityClassIcon, entity);
         binding.entityTypeChip.setText(Labels.entityTypeText(this, entity.kind));
         binding.entityTypeChip.setTextColor(TypeColors.of(this, type));
         binding.entityTypeChip.setBackgroundTintList(

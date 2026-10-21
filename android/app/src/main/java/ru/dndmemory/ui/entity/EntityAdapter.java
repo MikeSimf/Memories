@@ -117,6 +117,8 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
                     context, picked ? R.color.colorPrimaryContainer : R.color.colorSurface));
             ru.dndmemory.ui.common.AvatarBinder.bind(context, binding.itemEntityIcon, entity,
                     ru.dndmemory.App.container(context).okHttpClient());
+            ru.dndmemory.ui.common.AvatarBinder.bindClassIcon(context,
+                    binding.itemEntityClassIcon, entity);
             // Тип виден по цвету полоски и подписи — не нужно читать строку класса.
             binding.itemEntityStripe.setBackgroundColor(TypeColors.of(context, type));
             binding.itemEntityType.setTextColor(TypeColors.of(context, type));

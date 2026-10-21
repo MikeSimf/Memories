@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 
 import { fetchFileBlob } from '@/api'
 import type { LocalObject } from '@/db/schema'
+import { classIconPath } from '@/ui/classIcons'
 import { typeIconPath, type IconKind } from '@/ui/typeIcons'
 
 /**
@@ -41,10 +42,8 @@ const props = withDefaults(
   defineProps<{
     object: LocalObject
     size?: number
-    /** Показывать значок класса (герой и персонаж). */
-    showBadge?: boolean
   }>(),
-  { size: 40, showBadge: true },
+  { size: 40 },
 )
 
 const PALETTE = ['#5B7C99', '#8A6A3B', '#4F6F5A', '#6B5A7A', '#B98B2E']
@@ -99,39 +98,73 @@ const iconGender = computed(() =>
 
 const iconPath = computed(() => typeIconPath(iconKind.value, iconValue.value, iconGender.value))
 
-const badge = computed(() => {
-  if (!props.showBadge) return ''
-  const klass = (props.object as { klass?: string | null }).klass
-  if (!klass || klass.trim() === '') return ''
-  if (props.object.objectType !== 'HERO' && props.object.objectType !== 'CHARACTER') return ''
-  return klass.trim().slice(0, 1).toUpperCase()
+/** Класс есть только у героя и персонажа; у остальных второго кружка нет. */
+const klass = computed(() => {
+  if (props.object.objectType !== 'HERO' && props.object.objectType !== 'CHARACTER') return null
+  return props.object.klass
 })
+
+const classPath = computed(() => classIconPath(klass.value))
+const classColor = computed(() => hashColor(klass.value))
 </script>
 
 <template>
-  <span
-    class="avatar"
-    :style="{ width: `${size}px`, height: `${size}px`, background: `${color}22`, color }"
-    :title="object.name"
-  >
-    <img v-if="coverUrl" class="avatar__img" :src="coverUrl" :alt="object.name" />
-    <svg
-      v-else
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.7"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      aria-hidden="true"
+  <span class="avatar-pair" :title="object.name">
+    <span
+      class="avatar"
+      :style="{ width: `${size}px`, height: `${size}px`, background: `${color}22`, color }"
     >
-      <path :d="iconPath" />
-    </svg>
-    <span v-if="badge" class="avatar__badge">{{ badge }}</span>
+      <img v-if="coverUrl" class="avatar__img" :src="coverUrl" :alt="object.name" />
+      <svg
+        v-else
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.7"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path :d="iconPath" />
+      </svg>
+    </span>
+
+    <!-- Второй кружок: класс. Такого же размера, как аватар. -->
+    <span
+      v-if="classPath"
+      class="avatar avatar--class"
+      :style="{
+        width: `${size}px`,
+        height: `${size}px`,
+        background: `${classColor}22`,
+        color: classColor,
+      }"
+      :title="`Класс: ${klass}`"
+      role="img"
+      :aria-label="`Класс: ${klass}`"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.7"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path :d="classPath" />
+      </svg>
+    </span>
   </span>
 </template>
 
 <style scoped>
+.avatar-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
 .avatar {
   position: relative;
   display: inline-flex;
@@ -150,20 +183,8 @@ const badge = computed(() => {
   width: 62%;
   height: 62%;
 }
-.avatar__badge {
-  position: absolute;
-  right: -2px;
-  bottom: -2px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 3px;
-  border-radius: 8px;
-  background: var(--bg-elev);
-  border: 1px solid currentColor;
-  color: inherit;
-  font-size: 0.62rem;
-  font-weight: 700;
-  line-height: 14px;
-  text-align: center;
+.avatar--class svg {
+  width: 58%;
+  height: 58%;
 }
 </style>
