@@ -15,7 +15,7 @@ import type {
 
 export const DB_NAME = 'dnd-memory'
 /** Схема v2: четыре класса объектов вместо общего хранилища `entities` (`sync.md` §5). */
-export const DB_VERSION = 4
+export const DB_VERSION = 5
 
 /**
  * Имена хранилищ — по `sync.md` §5 («Локальное состояние клиента»).
@@ -276,7 +276,7 @@ let dbPromise: Promise<IDBPDatabase<DndMemoryDB>> | null = null
 export function openDatabase(): Promise<IDBPDatabase<DndMemoryDB>> {
   if (!dbPromise) {
     dbPromise = openDB<DndMemoryDB>(DB_NAME, DB_VERSION, {
-      upgrade(db, oldVersion) {
+      upgrade(db, oldVersion, _newVersion, transaction) {
         // Схема v1 хранила объекты в общем `entities`; в v2 у класса своя запись
         // и свой индекс `[campaignId, objectType]`.
         if (oldVersion < 2) {
@@ -291,6 +291,11 @@ export function openDatabase(): Promise<IDBPDatabase<DndMemoryDB>> {
         // В v3 оно успело появиться, поэтому при обновлении удаляем его.
         if (oldVersion < 4 && Array.from(db.objectStoreNames).includes('materials' as never)) {
           db.deleteObjectStore('materials' as never)
+        }
+        // v5: у локаций не сохранялся тип. Сбрасываем отметку snapshot, чтобы
+        // следующая синхронизация заново заполнила объекты с сервера.
+        if (oldVersion < 5 && db.objectStoreNames.contains(STORE.syncState)) {
+          void transaction.objectStore(STORE.syncState).clear()
         }
         if (!db.objectStoreNames.contains(STORE.objects)) {
           const objects = db.createObjectStore(STORE.objects, { keyPath: 'id' })

@@ -5,6 +5,7 @@ import type {
   HeroDto,
   HeroItemDto,
   ItemDto,
+  LocationDto,
   ObjectClass,
   ObjectDtoOf,
   SyncConflictDto,
@@ -110,8 +111,14 @@ export function objectFromDto<C extends ObjectClass>(
         ownerCharacterName: item.ownerCharacterName ?? null,
       } as LocalObjectOf<C>
     }
-    default:
-      return { ...local, objectType: 'LOCATION' } as LocalObjectOf<C>
+    default: {
+      const location = dto as LocationDto
+      return {
+        ...local,
+        objectType: 'LOCATION',
+        locationType: location.locationType ?? null,
+      } as LocalObjectOf<C>
+    }
   }
 }
 
@@ -151,15 +158,19 @@ export function objectToPayload(object: LocalObject): Record<string, unknown> {
         ...common,
         race: object.race,
         gender: object.gender,
+        klass: object.klass,
         shortDescription: object.shortDescription,
       }
     case 'ITEM':
       return {
         ...common,
+        itemType: object.itemType,
         ownerName: object.ownerName,
         ownerHeroId: object.ownerHeroId,
         ownerCharacterId: object.ownerCharacterId,
       }
+    case 'LOCATION':
+      return { ...common, locationType: object.locationType }
     default:
       return common
   }
