@@ -62,11 +62,28 @@
             android:layout_weight="1"
             android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/item_entity_name"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceTitleMedium" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/item_entity_name"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <TextView
+                    android:id="@+id/item_entity_gender"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/text_muted"
+                    android:visibility="gone" />
+            </LinearLayout>
 
             <!-- Герой или НПС внутри одной вкладки различаются этой подписью -->
             <TextView
@@ -77,15 +94,6 @@
                 android:textColor="?attr/colorSecondary" />
 
             <!-- Вторая строка: раса/класс/игрок, краткое описание или владелец -->
-            <TextView
-                android:id="@+id/item_entity_gender"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
-                android:textColor="@color/text_muted"
-                android:visibility="gone" />
-
             <TextView
                 android:id="@+id/item_entity_subtitle"
                 android:layout_width="match_parent"

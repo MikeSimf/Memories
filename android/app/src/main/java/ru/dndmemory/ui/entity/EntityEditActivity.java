@@ -127,8 +127,9 @@ public class EntityEditActivity extends AppCompatActivity {
                 container.raceRepository()::cachedLocationTypes);
         ru.dndmemory.ui.common.SuggestField.attach(binding.entityEditItemType,
                 container.raceRepository()::cachedItemTypes);
+        // Владелец: подсказки только после трёх введённых символов.
         ru.dndmemory.ui.common.SuggestField.attach(binding.entityEditOwnerLink,
-                this::ownerLabels);
+                this::ownerLabels, 3);
         container.raceRepository().refresh(new RepoCallback<java.util.List<String>>() {
             @Override
             public void onSuccess(@Nullable java.util.List<String> value) {
@@ -174,6 +175,7 @@ public class EntityEditActivity extends AppCompatActivity {
         WikiLinkEditor.attach(binding.entityEditDescriptionInput, () -> nameIndex.names());
         WikiLinkEditor.attach(binding.entityEditShortInput, () -> nameIndex.names());
 
+        binding.entityEditBottom.bind(campaignId, navKey(currentKind));
         binding.entityEditSave.setOnClickListener(v -> {
             collect();
             if (!validateForm()) {
@@ -305,6 +307,21 @@ public class EntityEditActivity extends AppCompatActivity {
 
     private static String text(@Nullable CharSequence value) {
         return value == null ? "" : value.toString().trim();
+    }
+
+    /** Ключ раздела для нижней панели. */
+    @NonNull
+    private static String navKey(@NonNull EntityType type) {
+        switch (type) {
+            case LOCATION:
+                return "locations";
+            case ITEM:
+                return "items";
+            case HERO:
+            case CHARACTER:
+            default:
+                return "characters";
+        }
     }
 
     /** Заголовок называет класс: тип выбирается один раз, при открытии экрана. */

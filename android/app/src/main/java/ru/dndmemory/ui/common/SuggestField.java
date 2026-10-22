@@ -51,12 +51,15 @@ public final class SuggestField {
     private final ListPopupWindow popup;
     private final List<String> shown = new ArrayList<>();
     private final ArrayAdapter<String> adapter;
+    /** Сколько символов ввести, прежде чем показывать подсказки (0 — сразу). */
+    private final int minChars;
     private boolean applying;
     private long openedAt;
 
-    private SuggestField(@NonNull EditText field, @NonNull Values values) {
+    private SuggestField(@NonNull EditText field, @NonNull Values values, int minChars) {
         this.field = field;
         this.values = values;
+        this.minChars = minChars;
         Context context = field.getContext();
 
         adapter = new ArrayAdapter<>(context, R.layout.item_suggestion, shown);
@@ -90,6 +93,9 @@ public final class SuggestField {
         // открыт — закрываем. Проверка по времени не даёт «открыть и тут же
         // закрыть» на первом касании, когда фокус и клик приходят вместе.
         field.setOnClickListener(v -> {
+            if (minChars > 0) {
+                return;
+            }
             if (System.currentTimeMillis() - openedAt < 350) {
                 return;
             }
@@ -100,9 +106,9 @@ public final class SuggestField {
             }
         });
         field.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
+            if (hasFocus && minChars == 0) {
                 open(true, true);
-            } else {
+            } else if (!hasFocus) {
                 popup.dismiss();
             }
         });
@@ -134,11 +140,19 @@ public final class SuggestField {
 
     /** Включает список значений для поля. Повторный вызов ничего не меняет. */
     public static void attach(@NonNull EditText field, @NonNull Values values) {
+        attach(field, values, 0);
+    }
+
+    /**
+     * @param minChars сколько символов нужно набрать, прежде чем показывать
+     *                 список; 0 — показывать по нажатию и при вводе
+     */
+    public static void attach(@NonNull EditText field, @NonNull Values values, int minChars) {
         if (field.getTag(R.id.tag_suggest_field) != null) {
             return;
         }
         field.setTag(R.id.tag_suggest_field, Boolean.TRUE);
-        new SuggestField(field, values);
+        new SuggestField(field, values, minChars);
     }
 
     private void choose(int position) {
@@ -168,6 +182,10 @@ public final class SuggestField {
             return;
         }
         String query = all ? "" : text();
+        if (query.length() < minChars) {
+            popup.dismiss();
+            return;
+        }
         List<String> matches = filter(source, query);
         if (matches.isEmpty()) {
             popup.dismiss();

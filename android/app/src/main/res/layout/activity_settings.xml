@@ -18,10 +18,32 @@
         android:layout_weight="1">
 
         <LinearLayout
+            android:id="@+id/settings_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/settings_open_profile"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_profile_title" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/settings_open_app"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_app_title"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/settings_profile_block"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
             <!-- Профиль: имя, почта, телефон и статус пароля -->
             <TextView
@@ -133,6 +155,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="@string/settings_password_change_action" />
+            </LinearLayout>
 
             <!-- Синхронизация -->
             <TextView
@@ -205,6 +228,14 @@
                 android:layout_marginTop="24dp"
                 android:text="@string/settings_updates_section"
                 android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/settings_check_update"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/settings_check_update" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/settings_update"

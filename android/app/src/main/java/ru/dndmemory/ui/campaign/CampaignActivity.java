@@ -65,8 +65,19 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
 
         binding.campaignPager.setAdapter(new CampaignPagerAdapter(this));
         binding.campaignPager.setOffscreenPageLimit(1);
-        new TabLayoutMediator(binding.campaignTabs, binding.campaignPager,
-                (tab, position) -> tab.setText(tabTitle(position))).attach();
+        String tab = getIntent() == null ? null : getIntent().getStringExtra(Extras.CAMPAIGN_TAB);
+        if ("locations".equals(tab)) {
+            binding.campaignPager.setCurrentItem(1, false);
+        } else if ("items".equals(tab)) {
+            binding.campaignPager.setCurrentItem(2, false);
+        }
+        binding.campaignBottom.bind(campaignId, tab == null ? "characters" : tab);
+        binding.campaignPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                binding.campaignBottom.bind(campaignId, tabKey(position));
+            }
+        });
 
         observe();
         observeUpdates();
@@ -80,6 +91,17 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
                 ru.dndmemory.ui.common.UpdatePrompt.show(this, info);
             }
         });
+    }
+
+    @NonNull
+    private static String tabKey(int position) {
+        if (position == 1) {
+            return "locations";
+        }
+        if (position == 2) {
+            return "items";
+        }
+        return "characters";
     }
 
     private int tabTitle(int position) {

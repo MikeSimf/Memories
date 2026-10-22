@@ -212,6 +212,9 @@ const tabProgressLabel = computed(() =>
           :class="typeCardClass(object)"
           :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: object.id } }"
         >
+          <span v-if="genderOf(object)" class="card__gender" title="Пол">
+            {{ genderOf(object) }}
+          </span>
           <div class="row card__head">
             <EntityAvatar :object="object" :size="40" />
             <h3 class="card__title">
@@ -226,9 +229,6 @@ const tabProgressLabel = computed(() =>
             </span>
             <span v-if="object.conflict" class="badge badge--danger">расхождение</span>
             <span>{{ campaign.changeSummary(object) }}</span>
-            <span v-if="genderOf(object)" class="gender-mark" title="Пол">
-              {{ genderOf(object) }}
-            </span>
           </div>
         </RouterLink>
       </div>
@@ -286,10 +286,12 @@ const tabProgressLabel = computed(() =>
 </template>
 
 <style scoped>
-.gender-mark {
-  margin-left: auto;
+.card__gender {
+  position: absolute;
+  top: 8px;
+  right: 12px;
   color: var(--text-muted);
-  font-size: 1rem;
+  font-size: 1.05rem;
   line-height: 1;
 }
 .card__head {

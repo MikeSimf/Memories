@@ -158,6 +158,7 @@ public class EntityDetailActivity extends AppCompatActivity {
         binding.entityTitle.setText(TextUtils.isEmpty(entity.name)
                 ? getString(R.string.attr_not_set) : entity.name);
         EntityType type = EntityType.fromOrCharacter(entity.kind);
+        binding.entityBottom.bind(campaignId, navKey(type));
         binding.entityTypeStripe.setBackgroundColor(TypeColors.of(this, type));
         ru.dndmemory.ui.common.AvatarBinder.bind(this, binding.entityAvatar, entity,
                 App.container(this).okHttpClient());
@@ -183,6 +184,21 @@ public class EntityDetailActivity extends AppCompatActivity {
         renderMentions();
 
         ViewUtils.show(binding.entityConflictBar, entity.hasConflict());
+    }
+
+    /** Ключ раздела для нижней панели. */
+    @NonNull
+    private static String navKey(@NonNull EntityType type) {
+        switch (type) {
+            case LOCATION:
+                return "locations";
+            case ITEM:
+                return "items";
+            case HERO:
+            case CHARACTER:
+            default:
+                return "characters";
+        }
     }
 
     /** Все файлы объекта: фото открываются, документы скачиваются. */
@@ -274,15 +290,18 @@ public class EntityDetailActivity extends AppCompatActivity {
         if (kind != null) {
             switch (kind) {
                 case HERO:
-                    addFieldRow(getString(R.string.attr_gender), Labels.gender(this, entity.gender));
-                    addFieldRow(getString(R.string.attr_race), entity.race);
-                    addFieldRow(getString(R.string.attr_klass), entity.klass);
-                    addFieldRow(getString(R.string.attr_player_name), entity.playerName);
-                    break;
                 case CHARACTER:
-                    addFieldRow(getString(R.string.attr_gender), Labels.gender(this, entity.gender));
-                    addFieldRow(getString(R.string.attr_race), entity.race);
-                    addFieldRow(getString(R.string.attr_short_description), entity.shortDescription);
+                    addPersonRow(getString(R.string.attr_name_label), entity.name, null, null);
+                    addPersonRow(getString(R.string.attr_race), entity.race, "race", null);
+                    addPersonRow(getString(R.string.attr_klass), entity.klass, "class", null);
+                    addPersonRow(getString(R.string.attr_gender), Labels.gender(this, entity.gender),
+                            null, Labels.genderSymbol(this, entity.gender));
+                    if (kind == EntityType.CHARACTER) {
+                        addPersonRow(getString(R.string.attr_short_description),
+                                entity.shortDescription, null, null);
+                    } else {
+                        addFieldRow(getString(R.string.attr_player_name), entity.playerName);
+                    }
                     break;
                 case ITEM:
                     addFieldRow(getString(R.string.entity_item_type), entity.itemType);
@@ -339,6 +358,41 @@ public class EntityDetailActivity extends AppCompatActivity {
 
     private void addFieldRow(@NonNull CharSequence label, @Nullable CharSequence value) {
         addFieldRow(label, value, null);
+    }
+
+    /** Строка карточки героя/персонажа: значение и значок в конце строки. */
+    private void addPersonRow(@NonNull CharSequence label, @Nullable CharSequence value,
+                              @Nullable String icon, @Nullable String symbol) {
+        if (value == null || value.length() == 0) {
+            return;
+        }
+        android.view.View row = getLayoutInflater().inflate(
+                R.layout.item_field_row, binding.entityFields, false);
+        android.widget.TextView labelView = row.findViewById(R.id.field_row_label);
+        android.widget.TextView valueView = row.findViewById(R.id.field_row_value);
+        android.widget.ImageView iconView = row.findViewById(R.id.field_row_icon);
+        android.widget.TextView symbolView = row.findViewById(R.id.field_row_symbol);
+        labelView.setText(label);
+        valueView.setText(value);
+        if (symbol != null && !symbol.isEmpty()) {
+            symbolView.setText(symbol);
+            ViewUtils.show(symbolView, true);
+        }
+        if (icon != null) {
+            int color = androidx.core.content.ContextCompat.getColor(this, R.color.text_muted);
+            if ("race".equals(icon)) {
+                ru.dndmemory.ui.common.TypeIcons.applyRace(iconView, value.toString(), color);
+                ViewUtils.show(iconView, true);
+            } else if ("class".equals(icon)) {
+                if (ru.dndmemory.ui.common.ClassIcons.isKnown(value.toString())) {
+                    iconView.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+                    iconView.setColorFilter(color);
+                    ru.dndmemory.ui.common.ClassIcons.apply(iconView, value.toString(), color);
+                    ViewUtils.show(iconView, true);
+                }
+            }
+        }
+        binding.entityFields.addView(row);
     }
 
     /** Строка «Подпись: значение»; при {@code linkId} строка открывает объект. */

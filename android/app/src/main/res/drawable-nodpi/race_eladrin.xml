@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Значок расы: eladrin. Заливка, цвет задаётся тонированием. -->
+<!-- Значок расы: eladrin. Контур, как в прежнем наборе. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
-        android:fillColor="#FF000000"
-        android:fillType="evenOdd"
-        android:pathData="M6.6 9.4C3.8 8.4 2 5.8 1.8 2.6c3 .6 5 2.8 5.6 5.8M17.4 9.4c2.8-1 4.6-3.6 4.8-6.8-3 .6-5 2.8-5.6 5.8M12 3.2c3 2 4.6 4.8 4.6 8.2 0 2.6-1 4.8-2.5 6.6-1.5-1.8-2.5-4-2.5-6.6 0-3.4 1.6-6.2 4.6-8.2z" />
+        android:fillColor="@android:color/transparent"
+        android:pathData="M8.8 8.6a3.1 3.1 0 1 0 6.2 0a3.1 3.1 0 1 0-6.2 0M4.8 20.8c0-3.3 3.2-5.8 7.2-5.8s7.2 2.5 7.2 5.8M8.9 7.6C9.2 5.4 10.5 4.2 12 4.2s2.8 1.2 3.1 3.4M8.9 7.6c-.3 1-.3 1.9-.1 2.7M15.1 7.6c.3 1 .3 1.9.1 2.7 M12 2.2c1.8 1.4 2.6 3.2 2.6 5.2 0 1.6-.8 2.8-2.6 3.8-1.8-1-2.6-2.2-2.6-3.8 0-2 .8-3.8 2.6-5.2z"
+        android:strokeColor="#FF000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="1.6" />
 </vector>

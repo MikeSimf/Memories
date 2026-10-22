@@ -7,6 +7,10 @@ public final class Extras {
     public static final String MATERIAL_ID = "ru.dndmemory.extra.MATERIAL_ID";
 
     public static final String CAMPAIGN_ID = "campaignId";
+    /** Какая вкладка кампании открыта: characters, locations, items. */
+    public static final String CAMPAIGN_TAB = "campaignTab";
+    /** Открыть настройки сразу на профиле. */
+    public static final String SETTINGS_PROFILE = "settingsProfile";
     public static final String ENTITY_ID = "entityId";
     public static final String ENTITY_TYPE = "entityType";
     public static final String RETELLING_ID = "retellingId";

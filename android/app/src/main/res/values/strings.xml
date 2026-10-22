@@ -37,6 +37,7 @@
     <string name="action_sync_one">Обновить с сервера</string>
     <string name="action_select">Выбрать</string>
     <string name="attr_gender">Пол</string>
+    <string name="attr_name_label">Имя</string>
     <string name="gender_unknown">Не определён</string>
     <string name="gender_female">Ж</string>
     <string name="gender_symbol_female">♀</string>
@@ -157,6 +158,7 @@
 
     <!-- Вкладки кампании: три -->
     <string name="tab_characters">Персонажи</string>
+    <string name="nav_home">Домой</string>
     <string name="heroes_title">Герои</string>
     <string name="materials_title">Материалы</string>
     <string name="tab_locations">Локации</string>
@@ -327,6 +329,11 @@
 
     <!-- Настройки -->
     <string name="settings_title">Настройки</string>
+    <string name="settings_profile_title">Профиль</string>
+    <string name="settings_app_title">Настройки приложения</string>
+    <string name="settings_check_update">Проверить наличие обновления</string>
+    <string name="settings_no_update">Обновлений нет — у вас последняя версия</string>
+    <string name="settings_update_check_failed">Не удалось проверить обновление</string>
     <string name="settings_updates_section">Обновления</string>
     <string name="settings_version_line">%1$s — %2$s</string>
     <string name="settings_sync_section">Синхронизация</string>

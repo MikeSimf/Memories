@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Строка карточки: подпись, значение и значок расы/класса/пола справа. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingVertical="4dp">
+
+    <TextView
+        android:id="@+id/field_row_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/field_row_value"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_weight="1"
+        android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+    <ImageView
+        android:id="@+id/field_row_icon"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_marginStart="8dp"
+        android:contentDescription="@string/cd_icon"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/field_row_symbol"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textColor="@color/text_muted"
+        android:visibility="gone" />
+</LinearLayout>

@@ -11,17 +11,6 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize" />
 
-    <!-- Ровно три вкладки: Персонажи, Локации, Предметы -->
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/campaign_tabs"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="?attr/colorSurface"
-        app:tabIndicatorColor="?attr/colorSecondary"
-        app:tabMode="fixed"
-        app:tabSelectedTextColor="?attr/colorOnSurface"
-        app:tabTextColor="@color/text_muted" />
-
     <TextView
         android:id="@+id/campaign_sync_status"
         android:layout_width="match_parent"
@@ -47,4 +36,9 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
+
+    <ru.dndmemory.ui.common.BottomNavView
+        android:id="@+id/campaign_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 </LinearLayout>

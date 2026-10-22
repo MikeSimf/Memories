@@ -13,7 +13,9 @@ import BaseModal from '@/components/BaseModal.vue'
 import ConflictNotice from '@/components/ConflictNotice.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import EntityAvatar from '@/components/EntityAvatar.vue'
-import { genderLabel } from '@/types/gender'
+import { genderLabel, genderSymbol } from '@/types/gender'
+import { classIconUrl } from '@/ui/classIcons'
+import { typeIconPath } from '@/ui/typeIcons'
 import EntityImage from '@/components/EntityImage.vue'
 import MarkupText from '@/components/MarkupText.vue'
 import { useCampaignStore } from '@/stores/campaign'
@@ -68,6 +70,28 @@ const details = computed<Array<{ label: string; value: string }>>(() => {
     return [{ label: 'Тип локации', value: item.locationType ?? 'Неизвестно' }]
   }
   return []
+})
+
+/** Поля героя и персонажа: имя, раса, класс, пол, кратко — с значками. */
+const personRows = computed(() => {
+  const item = entity.value
+  if (!item || (item.objectType !== 'HERO' && item.objectType !== 'CHARACTER')) return []
+  const rows: Array<{ label: string; value: string; icon: 'race' | 'class' | 'gender' | null }> = [
+    { label: 'Имя', value: item.name || '—', icon: null },
+  ]
+  if (item.race) rows.push({ label: 'Раса', value: item.race, icon: 'race' })
+  if (item.klass) rows.push({ label: 'Класс', value: item.klass, icon: 'class' })
+  rows.push({ label: 'Пол', value: genderLabel(item.gender), icon: 'gender' })
+  if (item.objectType === 'CHARACTER' && item.shortDescription) {
+    rows.push({ label: 'Кратко', value: item.shortDescription, icon: null })
+  }
+  return rows
+})
+
+const personGender = computed(() => {
+  const item = entity.value
+  if (!item || (item.objectType !== 'HERO' && item.objectType !== 'CHARACTER')) return ''
+  return genderSymbol(item.gender)
 })
 
 /** Обратные ссылки считаем по локальной базе — работает и без сети (`sync.md` §8). */
@@ -207,6 +231,7 @@ async function keepLocal(): Promise<void> {
             {{ entity.name }}
             <span v-if="entity.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />
           </h1>
+          <span v-if="personGender" class="entity-gender" title="Пол">{{ personGender }}</span>
           <div class="page-header__subtitle">
             <span class="badge" :class="badgeClass(entity)">
               {{ OBJECT_CLASS_LABELS[objectClass] }}
@@ -246,7 +271,43 @@ async function keepLocal(): Promise<void> {
         :alt="`Изображение: ${entity.name}`"
       />
 
-      <div v-if="details.length > 0" class="card">
+      <div v-if="personRows.length > 0" class="card">
+        <dl class="attr-grid attr-grid--person" style="margin: 0">
+          <div v-for="row in personRows" :key="row.label" class="person-row">
+            <dt class="field__label">{{ row.label }}</dt>
+            <dd class="person-row__value">
+              <span>{{ row.value }}</span>
+              <svg
+                v-if="row.icon === 'race'"
+                class="person-row__icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path :d="typeIconPath('RACE', row.value)" />
+              </svg>
+              <span
+                v-else-if="row.icon === 'class' && classIconUrl(row.value)"
+                class="person-row__mask"
+                :style="{
+                  maskImage: `url(${classIconUrl(row.value)})`,
+                  WebkitMaskImage: `url(${classIconUrl(row.value)})`,
+                }"
+                aria-hidden="true"
+              />
+              <span v-else-if="row.icon === 'gender'" class="person-row__symbol">
+                {{ personGender }}
+              </span>
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <div v-else-if="details.length > 0" class="card">
         <h2>Поля</h2>
         <dl class="attr-grid" style="margin: 0">
           <div v-for="row in details" :key="row.label">
@@ -389,3 +450,36 @@ async function keepLocal(): Promise<void> {
     </EmptyState>
   </div>
 </template>
+
+<style scoped>
+.entity-gender {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+}
+.person-row__value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+.person-row__icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--text-muted);
+}
+.person-row__mask {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  background: var(--text-muted);
+  -webkit-mask: center / contain no-repeat;
+  mask: center / contain no-repeat;
+}
+.person-row__symbol {
+  color: var(--text-muted);
+}
+</style>

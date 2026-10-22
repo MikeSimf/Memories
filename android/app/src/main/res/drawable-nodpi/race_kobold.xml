@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Значок расы: kobold. Заливка, цвет задаётся тонированием. -->
+<!-- Значок расы: kobold. Контур, как в прежнем наборе. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
-        android:fillColor="#FF000000"
-        android:fillType="evenOdd"
-        android:pathData="M12 7.4c3.6 0 6.2 2.2 6.2 5.2 0 3.2-2.6 5.4-6.2 5.4s-6.2-2.2-6.2-5.4c0-3 2.6-5.2 6.2-5.2zM12 10.4v2.6M10.4 13h3.2" />
+        android:fillColor="@android:color/transparent"
+        android:pathData="M8.8 8.6a3.1 3.1 0 1 0 6.2 0a3.1 3.1 0 1 0-6.2 0M4.8 20.8c0-3.3 3.2-5.8 7.2-5.8s7.2 2.5 7.2 5.8M8.9 7.6C9.2 5.4 10.5 4.2 12 4.2s2.8 1.2 3.1 3.4M8.9 7.6c-.3 1-.3 1.9-.1 2.7M15.1 7.6c.3 1 .3 1.9.1 2.7 M10.8 10.6h2.4M12 10.6v1.6"
+        android:strokeColor="#FF000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="1.6" />
 </vector>

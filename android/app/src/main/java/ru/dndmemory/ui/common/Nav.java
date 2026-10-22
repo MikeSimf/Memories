@@ -163,6 +163,22 @@ public final class Nav {
         context.startActivity(intent);
     }
 
+    /** Экран кампании сразу на нужной вкладке. */
+    public static void openCampaignTab(@NonNull Context context, @NonNull String campaignId,
+                                       @NonNull String tab) {
+        Intent intent = new Intent(context, CampaignActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        intent.putExtra(Extras.CAMPAIGN_TAB, tab);
+        context.startActivity(intent);
+    }
+
+    /** Домой: список кампаний, без накопленного стека. */
+    public static void openCampaigns(@NonNull Context context) {
+        Intent intent = new Intent(context, CampaignListActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        context.startActivity(intent);
+    }
+
     public static void openHeroes(@NonNull Context context, @NonNull String campaignId) {
         Intent intent = new Intent(context, ru.dndmemory.ui.entity.HeroListActivity.class);
         intent.putExtra(Extras.CAMPAIGN_ID, campaignId);

@@ -14,6 +14,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import ru.dndmemory.App;
 import ru.dndmemory.AppContainer;
 import ru.dndmemory.R;
+import ru.dndmemory.ui.common.Extras;
 import ru.dndmemory.data.remote.dto.UserDto;
 import ru.dndmemory.databinding.ActivitySettingsBinding;
 import ru.dndmemory.databinding.DialogPasswordBinding;
@@ -55,6 +56,37 @@ public class SettingsActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
+        applyMode(getIntent() != null
+                && getIntent().getBooleanExtra(Extras.SETTINGS_PROFILE, false));
+
+        binding.settingsOpenProfile.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(this, SettingsActivity.class);
+            intent.putExtra(Extras.SETTINGS_PROFILE, true);
+            startActivity(intent);
+        });
+        binding.settingsOpenApp.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(this, SettingsActivity.class);
+            startActivity(intent);
+        });
+        binding.settingsCheckUpdate.setOnClickListener(v ->
+                App.container(this).updateRepository().check(
+                        new ru.dndmemory.util.RepoCallback<ru.dndmemory.data.repo.UpdateRepository.UpdateInfo>() {
+                            @Override
+                            public void onSuccess(@Nullable ru.dndmemory.data.repo.UpdateRepository.UpdateInfo value) {
+                                if (value == null) {
+                                    ru.dndmemory.ui.common.ViewUtils.toast(SettingsActivity.this,
+                                            R.string.settings_no_update);
+                                } else {
+                                    ru.dndmemory.ui.common.UpdatePrompt.show(SettingsActivity.this, value);
+                                }
+                            }
+
+                            @Override
+                            public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) {
+                                ru.dndmemory.ui.common.ViewUtils.toast(SettingsActivity.this,
+                                        R.string.settings_update_check_failed);
+                            }
+                        }));
 
         binding.settingsServer.setText(getString(R.string.settings_server, viewModel.serverUrl()));
         binding.settingsAbout.setText(getString(R.string.settings_about, viewModel.version()));
@@ -225,6 +257,27 @@ public class SettingsActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.action_logout, (dialog, which) -> viewModel.logout())
                 .setNegativeButton(R.string.action_cancel, null)
                 .show();
+    }
+
+    /** Профиль и настройки приложения — два режима одного экрана. */
+    private void applyMode(boolean profileOnly) {
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(profileOnly
+                    ? R.string.settings_profile_title : R.string.settings_app_title);
+        }
+        binding.settingsOpenProfile.setVisibility(profileOnly ? android.view.View.GONE : android.view.View.VISIBLE);
+        binding.settingsOpenApp.setVisibility(profileOnly ? android.view.View.VISIBLE : android.view.View.GONE);
+        for (int i = 0; i < binding.settingsContent.getChildCount(); i++) {
+            android.view.View child = binding.settingsContent.getChildAt(i);
+            if (child == binding.settingsProfileBlock
+                    || child == binding.settingsOpenProfile
+                    || child == binding.settingsOpenApp
+                    || child == binding.settingsProgress) {
+                child.setVisibility(android.view.View.VISIBLE);
+                continue;
+            }
+            child.setVisibility(profileOnly ? android.view.View.GONE : android.view.View.VISIBLE);
+        }
     }
 
     /** Доступное обновление: кнопка и диалог, как на списке кампаний. */

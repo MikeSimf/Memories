@@ -134,6 +134,7 @@ p {
 }
 
 .page-header {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -404,6 +405,7 @@ p {
 /* ------------------------------- Карточки ------------------------------ */
 
 .card {
+  position: relative;
   background: var(--bg-elev);
   border: 1px solid var(--border);
   border-radius: var(--radius);
