@@ -40,6 +40,16 @@ public class AppProperties {
         /** Прямая ссылка на apk. */
         private String apkUrl;
         private String notes;
+        /** История версий: что изменилось — показываем в приложении и на сайте. */
+        private List<VersionNote> versions = new ArrayList<>();
+    }
+
+    /** Одна запись истории версий. */
+    @Data
+    public static class VersionNote {
+        private String version;
+        private String date;
+        private String notes;
     }
 
     @Data

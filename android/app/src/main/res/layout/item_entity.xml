@@ -78,6 +78,15 @@
 
             <!-- Вторая строка: раса/класс/игрок, краткое описание или владелец -->
             <TextView
+                android:id="@+id/item_entity_gender"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="@color/text_muted"
+                android:visibility="gone" />
+
+            <TextView
                 android:id="@+id/item_entity_subtitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.dndmemory.config.AppProperties;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,5 +34,11 @@ public class AppUpdateController {
         body.put("url", app.getApkUrl());
         body.put("notes", app.getNotes());
         return body;
+    }
+
+    /** История версий: список описаний, новые сверху. */
+    @GetMapping("/versions")
+    public List<?> versions() {
+        return properties.getApp().getVersions();
     }
 }

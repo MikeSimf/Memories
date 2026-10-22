@@ -139,6 +139,8 @@ public class SyncEngine {
 
                 String now = DateFormats.nowIso();
                 db.syncStateDao().markSynced(campaignId, now);
+                // Обновление проверяем и при синхронизации, а не только при входе.
+                ru.dndmemory.data.repo.UpdateState.refresh(api);
                 status.postValue(merged.rejected > 0 ? SyncStatus.CONFLICT : SyncStatus.IDLE);
                 lastResult.postValue(merged);
                 return merged;

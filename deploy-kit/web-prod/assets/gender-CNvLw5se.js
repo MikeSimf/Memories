@@ -1,0 +1,1 @@
+const l=[{code:"unknown",label:"Не определён"},{code:"female",label:"Ж"},{code:"male",label:"М"}];function a(e){return e==="female"?"♀":e==="male"?"♂":""}function r(e){return l.find(n=>n.code===e)?.label??"Не определён"}export{l as G,r as a,a as g};

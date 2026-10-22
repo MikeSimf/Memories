@@ -13,6 +13,7 @@ import EmptyState from '@/components/EmptyState.vue'
 import EntityAvatar from '@/components/EntityAvatar.vue'
 import MembersPanel from '@/components/MembersPanel.vue'
 import SearchBox from '@/components/SearchBox.vue'
+import { genderSymbol } from '@/types/gender'
 import { matchesText, objectMatchesQuery } from '@/db/search'
 import { useCampaignStore } from '@/stores/campaign'
 import { formatDate, formatRelative } from '@/utils/datetime'
@@ -124,6 +125,13 @@ function excerpt(object: LocalObject): string {
   return ''
 }
 
+/** Пол есть только у героя и персонажа: в карточке показываем символ. */
+function genderOf(object: LocalObject): string {
+  return object.objectType === 'HERO' || object.objectType === 'CHARACTER'
+    ? genderSymbol(object.gender)
+    : ''
+}
+
 /** Ненавязчивый текст подгрузки: сколько объектов вкладки уже пришло с сервера. */
 const tabProgressLabel = computed(() =>
   campaign.tabTotal > 0
@@ -218,6 +226,9 @@ const tabProgressLabel = computed(() =>
             </span>
             <span v-if="object.conflict" class="badge badge--danger">расхождение</span>
             <span>{{ campaign.changeSummary(object) }}</span>
+            <span v-if="genderOf(object)" class="gender-mark" title="Пол">
+              {{ genderOf(object) }}
+            </span>
           </div>
         </RouterLink>
       </div>
@@ -275,6 +286,12 @@ const tabProgressLabel = computed(() =>
 </template>
 
 <style scoped>
+.gender-mark {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1;
+}
 .card__head {
   align-items: center;
   gap: 0.6rem;

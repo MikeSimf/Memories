@@ -69,7 +69,17 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
                 (tab, position) -> tab.setText(tabTitle(position))).attach();
 
         observe();
+        observeUpdates();
         viewModel.refresh();
+    }
+
+    /** Синхронизация могла узнать о новой версии — предлагаем обновиться. */
+    private void observeUpdates() {
+        ru.dndmemory.data.repo.UpdateState.info().observe(this, info -> {
+            if (info != null && ru.dndmemory.data.repo.UpdateState.shouldPrompt(info)) {
+                ru.dndmemory.ui.common.UpdatePrompt.show(this, info);
+            }
+        });
     }
 
     private int tabTitle(int position) {

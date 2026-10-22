@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Значок расы: shadar_kai. Заливка, цвет задаётся тонированием. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M8.8 21.4C4 18.2 2.2 13 3.8 4.4c5.2 2.4 7.8 6.6 7.6 12.2zM15.2 21.4c4.8-3.2 6.6-8.4 5-17-5.2 2.4-7.8 6.6-7.6 12.2z" />
+</vector>

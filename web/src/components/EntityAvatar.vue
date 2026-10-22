@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue'
 import { fetchFileBlob } from '@/api'
 import type { LocalObject } from '@/db/schema'
 import { classIconUrl } from '@/ui/classIcons'
-import { typeIconPath, type IconKind } from '@/ui/typeIcons'
+import { typeIconFilled, typeIconPath, type IconKind } from '@/ui/typeIcons'
 
 /**
  * Кэш object URL по файлу: один и тот же аватар в списке и карточке
@@ -89,14 +89,8 @@ const iconValue = computed(() => {
   return (props.object as { race?: string | null }).race
 })
 
-/** Пол меняет причёску у народов; у локаций и предметов его нет. */
-const iconGender = computed(() =>
-  props.object.objectType === 'HERO' || props.object.objectType === 'CHARACTER'
-    ? props.object.gender
-    : null,
-)
-
-const iconPath = computed(() => typeIconPath(iconKind.value, iconValue.value, iconGender.value))
+const iconPath = computed(() => typeIconPath(iconKind.value, iconValue.value))
+const iconFilled = computed(() => typeIconFilled(iconKind.value))
 
 /** Класс есть только у героя и персонажа; у остальных второго кружка нет. */
 const klass = computed(() => {
@@ -125,7 +119,12 @@ const classColor = computed(() => hashColor(klass.value))
         stroke-linejoin="round"
         aria-hidden="true"
       >
-        <path :d="iconPath" />
+        <path
+          :d="iconPath"
+          :fill="iconFilled ? 'currentColor' : 'none'"
+          :stroke="iconFilled ? 'none' : 'currentColor'"
+          fill-rule="evenodd"
+        />
       </svg>
     </span>
 

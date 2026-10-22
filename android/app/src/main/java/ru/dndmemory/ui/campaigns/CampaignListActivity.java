@@ -60,6 +60,7 @@ public class CampaignListActivity extends AppCompatActivity implements CampaignA
         binding.campaignListFab.setOnClickListener(v -> showEditDialog(null));
 
         observe();
+        observeUpdates();
         checkForUpdates();
     }
 
@@ -80,20 +81,25 @@ public class CampaignListActivity extends AppCompatActivity implements CampaignA
         });
     }
 
+    /** Обновление приходит и при входе, и после синхронизации. */
+    private void observeUpdates() {
+        ru.dndmemory.data.repo.UpdateState.info().observe(this, info -> {
+            boolean available = info != null;
+            ViewUtils.show(binding.campaignListUpdate, available);
+            if (!available) {
+                return;
+            }
+            binding.campaignListUpdate.setText(getString(R.string.update_available_short,
+                    info.versionName == null ? "" : info.versionName));
+            binding.campaignListUpdate.setOnClickListener(v -> showUpdate(info));
+            if (ru.dndmemory.data.repo.UpdateState.shouldPrompt(info)) {
+                showUpdate(info);
+            }
+        });
+    }
+
     private void showUpdate(@NonNull final UpdateRepository.UpdateInfo info) {
-        if (isFinishing()) {
-            return;
-        }
-        new MaterialAlertDialogBuilder(this)
-                .setTitle(info.required
-                        ? R.string.update_required_title : R.string.update_available_title)
-                .setMessage(getString(info.required
-                        ? R.string.update_required_text : R.string.update_available_text,
-                        info.versionName == null ? "" : info.versionName))
-                .setCancelable(!info.required)
-                .setPositiveButton(R.string.update_download, (dialog, which) -> openUpdateLink(info.url))
-                .setNegativeButton(info.required ? null : getString(R.string.update_later), null)
-                .show();
+        ru.dndmemory.ui.common.UpdatePrompt.show(this, info);
     }
 
     private void openUpdateLink(@Nullable String url) {

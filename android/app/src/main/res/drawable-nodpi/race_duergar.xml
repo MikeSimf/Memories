@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Значок расы: duergar. Заливка, цвет задаётся тонированием. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M4.6 5.4h14.8c0 7.4-3 11.8-7.4 14.6C7.6 17.2 4.6 12.8 4.6 5.4zM7.6 8.2h8.8v1.8H7.6zM8.2 3.2 12 .8l3.8 2.4z" />
+</vector>

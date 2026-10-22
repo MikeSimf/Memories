@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Значок расы: hexblood. Заливка, цвет задаётся тонированием. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M4.6 9 2.2 2.4l5 3.4M8.8 6.6 8 1l4 2.6M15.2 6.6 16 1l4 2.6M19.4 9l4.4-3.2L21 10.6M4.2 13.6h15.6M7.2 17.2h9.6M10 20.8h4" />
+</vector>

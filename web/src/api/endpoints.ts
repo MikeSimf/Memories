@@ -46,6 +46,7 @@ import type {
   UserDto,
   VersionDto,
   AppLatestDto,
+  AppVersionDto,
 } from './types'
 
 /** Список приходит страницей; «сырой» массив приводим к странице на всякий случай. */
@@ -450,6 +451,10 @@ export const serviceApi = {
 export const appApi = {
   latest(): Promise<AppLatestDto> {
     return apiClient.request<AppLatestDto>({ path: '/api/app/latest', auth: false })
+  },
+
+  versions(): Promise<AppVersionDto[]> {
+    return apiClient.request<AppVersionDto[]>({ path: '/api/app/versions', auth: false })
   },
 }
 

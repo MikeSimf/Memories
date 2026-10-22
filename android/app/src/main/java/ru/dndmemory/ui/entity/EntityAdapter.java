@@ -128,6 +128,9 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
             binding.itemEntityType.setText(Labels.entityTypeText(context, entity.kind));
             ViewUtils.setTextOrGone(binding.itemEntitySubtitle,
                     Labels.entitySubtitle(context, entity));
+            // Пол — в конце строки: символ, а не отдельное слово.
+            String gender = Labels.genderSymbol(context, entity.gender);
+            ViewUtils.setTextOrGone(binding.itemEntityGender, gender);
 
             if (entity.hasConflict()) {
                 binding.itemEntityStatus.setText(R.string.entity_conflict);

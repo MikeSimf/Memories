@@ -844,6 +844,13 @@ export interface HealthDto {
   time: string
 }
 
+/** Одна запись истории версий (`GET /api/app/versions`). */
+export interface AppVersionDto {
+  version: string
+  date: string
+  notes: string
+}
+
 /** Данные обновления приложения для Android (`GET /api/app/latest`). */
 export interface AppLatestDto {
   versionCode: number

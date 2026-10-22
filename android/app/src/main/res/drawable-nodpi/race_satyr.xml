@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Значок расы: satyr. Заливка, цвет задаётся тонированием. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M8 9.6C5.4 8.8 3.8 6 4 2.6c3 .2 5.2 2.2 6 5.2zM16 9.6c2.6-.8 4.2-3.6 4-7-3 .2-5.2 2.2-6 5.2zM9.2 13.4c1.8.8 3.8.8 5.6 0M8.4 16.4c2.4 1.6 4.8 1.6 7.2 0" />
+</vector>

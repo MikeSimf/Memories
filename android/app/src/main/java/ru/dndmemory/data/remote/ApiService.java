@@ -18,6 +18,7 @@ import ru.dndmemory.data.remote.dto.AcceptInviteResponse;
 import ru.dndmemory.data.remote.dto.AddMemberRequest;
 import ru.dndmemory.data.remote.dto.AddMemberResponse;
 import ru.dndmemory.data.remote.dto.AppUpdateDto;
+import ru.dndmemory.data.remote.dto.AppVersionDto;
 import ru.dndmemory.data.remote.dto.AuthResponse;
 import ru.dndmemory.data.remote.dto.CampaignDto;
 import ru.dndmemory.data.remote.dto.CharacterDto;
@@ -69,6 +70,10 @@ public interface ApiService {
     /** Проверка обновления приложения: доступна без авторизации. */
     @GET("api/app/latest")
     Call<AppUpdateDto> appLatest();
+
+    /** История версий: список описаний, новые сверху. */
+    @GET("api/app/versions")
+    Call<java.util.List<AppVersionDto>> appVersions();
 
     // --- Аутентификация: только логин и пароль (раздел 3) -------------------
 

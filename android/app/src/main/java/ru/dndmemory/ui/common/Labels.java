@@ -99,6 +99,18 @@ public final class Labels {
         }
     }
 
+    /** Символ пола для строки списка: ♀, ♂ или пусто. */
+    @NonNull
+    public static String genderSymbol(@NonNull Context context, @Nullable String code) {
+        if ("female".equalsIgnoreCase(code)) {
+            return context.getString(R.string.gender_symbol_female);
+        }
+        if ("male".equalsIgnoreCase(code)) {
+            return context.getString(R.string.gender_symbol_male);
+        }
+        return "";
+    }
+
     /** Подпись пола: Ж, М или «Не определён». */
     @NonNull
     public static String gender(@NonNull Context context, @Nullable String code) {

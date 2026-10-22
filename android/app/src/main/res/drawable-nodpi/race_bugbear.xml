@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Значок расы: bugbear. Заливка, цвет задаётся тонированием. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M5.4 4.2a5 5 0 1 0 0 10a5 5 0 1 0 0-10zM18.6 4.2a5 5 0 1 0 0 10a5 5 0 1 0 0-10zM8.6 15.2h6.8v2.4H8.6z" />
+</vector>

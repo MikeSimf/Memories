@@ -2,7 +2,8 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { ApiError, apiBaseUrl, errorMessage, serviceApi } from '@/api'
+import { ApiError, apiBaseUrl, appApi, errorMessage, serviceApi } from '@/api'
+import type { AppVersionDto } from '@/api/types'
 import ApkDownload from '@/components/ApkDownload.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { countLocalChanges } from '@/db'
@@ -21,6 +22,7 @@ const phone = ref(auth.user?.phone ?? '')
 const saving = ref(false)
 const loggingOut = ref(false)
 const version = ref<string | null>(null)
+const appVersions = ref<AppVersionDto[]>([])
 const confirmLogout = ref(false)
 const unsynced = ref({ drafts: 0, pending: 0 })
 
@@ -86,6 +88,11 @@ onMounted(async () => {
     version.value = `${info.version} (${info.profile})`
   } catch {
     version.value = null
+  }
+  try {
+    appVersions.value = await appApi.versions()
+  } catch {
+    appVersions.value = []
   }
 })
 
@@ -319,6 +326,14 @@ async function logout(): Promise<void> {
       <div class="faint">
         <div>Адрес API: {{ baseUrl }}</div>
         <div v-if="version">Версия сервера: {{ version }}</div>
+      </div>
+      <div v-if="appVersions.length > 0" class="stack stack--sm">
+        <h3 style="margin: 0">История версий</h3>
+        <div v-for="note in appVersions" :key="note.version" class="faint">
+          <strong>{{ note.version }}</strong>
+          <span v-if="note.date"> · {{ note.date }}</span>
+          — {{ note.notes }}
+        </div>
       </div>
     </div>
 

@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Patterns;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
@@ -77,6 +78,8 @@ public class SettingsActivity extends AppCompatActivity {
 
         bindProfile(null);
         observe();
+        observeUpdates();
+        loadVersions();
         viewModel.loadProfile();
     }
 
@@ -222,6 +225,57 @@ public class SettingsActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.action_logout, (dialog, which) -> viewModel.logout())
                 .setNegativeButton(R.string.action_cancel, null)
                 .show();
+    }
+
+    /** Доступное обновление: кнопка и диалог, как на списке кампаний. */
+    private void observeUpdates() {
+        ru.dndmemory.data.repo.UpdateState.info().observe(this, info -> {
+            boolean available = info != null;
+            ru.dndmemory.ui.common.ViewUtils.show(binding.settingsUpdate, available);
+            if (!available) {
+                return;
+            }
+            binding.settingsUpdate.setText(getString(R.string.update_available_short,
+                    info.versionName == null ? "" : info.versionName));
+            binding.settingsUpdate.setOnClickListener(v ->
+                    ru.dndmemory.ui.common.UpdatePrompt.show(this, info));
+            if (ru.dndmemory.data.repo.UpdateState.shouldPrompt(info)) {
+                ru.dndmemory.ui.common.UpdatePrompt.show(this, info);
+            }
+        });
+    }
+
+    /** История версий: новые сверху, по строке на версию. */
+    private void loadVersions() {
+        App.container(this).updateRepository().versions(
+                new ru.dndmemory.util.RepoCallback<java.util.List<ru.dndmemory.data.remote.dto.AppVersionDto>>() {
+                    @Override
+                    public void onSuccess(@Nullable java.util.List<ru.dndmemory.data.remote.dto.AppVersionDto> value) {
+                        binding.settingsVersions.removeAllViews();
+                        if (value == null) {
+                            return;
+                        }
+                        for (ru.dndmemory.data.remote.dto.AppVersionDto note : value) {
+                            if (note == null) {
+                                continue;
+                            }
+                            android.widget.TextView row = new android.widget.TextView(SettingsActivity.this);
+                            row.setText(getString(R.string.settings_version_line,
+                                    note.version == null ? "" : note.version,
+                                    note.notes == null ? "" : note.notes));
+                            row.setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodySmall);
+                            row.setTextColor(androidx.core.content.ContextCompat.getColor(
+                                    SettingsActivity.this, R.color.text_muted));
+                            row.setPadding(0, 6, 0, 6);
+                            binding.settingsVersions.addView(row);
+                        }
+                    }
+
+                    @Override
+                    public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) {
+                        // Без сети история просто не показывается.
+                    }
+                });
     }
 
     @Override

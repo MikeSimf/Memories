@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Значок расы: genasi_air. Заливка, цвет задаётся тонированием. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M5.6 13.8a3.8 3.8 0 0 1 .6-7.6 5 5 0 0 1 9.6-.4 3.8 3.8 0 0 1 2.6 8zM4.4 17h15.2M6.8 20.2h10.4" />
+</vector>

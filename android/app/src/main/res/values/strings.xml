@@ -15,6 +15,7 @@
     <string name="update_required_text">Версия %1$s несовместима с сервером. Обновите приложение, чтобы продолжить.</string>
     <string name="update_available_text">Доступна версия %1$s. Обновиться можно сейчас или позже.</string>
     <string name="update_download">Скачать</string>
+    <string name="update_available_short">Доступно обновление %1$s</string>
     <string name="update_later">Позже</string>
     <string name="file_download_started">Скачивание началось</string>
     <string name="file_download_failed">Не удалось начать скачивание</string>
@@ -38,6 +39,8 @@
     <string name="attr_gender">Пол</string>
     <string name="gender_unknown">Не определён</string>
     <string name="gender_female">Ж</string>
+    <string name="gender_symbol_female">♀</string>
+    <string name="gender_symbol_male">♂</string>
     <string name="gender_male">М</string>
     <string name="entity_avatar">Аватар</string>
     <string name="entity_avatar_hint">Отдельная картинка для карточки и списка</string>
@@ -324,6 +327,8 @@
 
     <!-- Настройки -->
     <string name="settings_title">Настройки</string>
+    <string name="settings_updates_section">Обновления</string>
+    <string name="settings_version_line">%1$s — %2$s</string>
     <string name="settings_sync_section">Синхронизация</string>
     <string name="settings_wifi_only">Синхронизировать только по Wi-Fi</string>
     <string name="settings_sync_now">Синхронизировать сейчас</string>

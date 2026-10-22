@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Значок расы: giff. Заливка, цвет задаётся тонированием. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M3.4 11c0-4 3.8-7 8.6-7s8.6 3 8.6 7v5.4c0 3.4-3.4 6.2-8.6 6.2S3.4 19.8 3.4 16.4zM7.4 9.6a1.6 1.6 0 1 0 0 3.2a1.6 1.6 0 1 0 0-3.2zM16.6 9.6a1.6 1.6 0 1 0 0 3.2a1.6 1.6 0 1 0 0-3.2zM9.4 15h5.2v1.8H9.4z" />
+</vector>
