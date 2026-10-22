@@ -10,7 +10,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -35,7 +34,7 @@ import ru.dndmemory.util.DateFormats;
 import ru.dndmemory.util.WikiMarkdown;
 
 /** Чтение пересказа с живыми ссылками [[Имя]]. */
-public class RetellingDetailActivity extends AppCompatActivity {
+public class RetellingDetailActivity extends ru.dndmemory.ui.common.BottomNavActivity {
 
     private ActivityRetellingDetailBinding binding;
     private RetellingDetailViewModel viewModel;
@@ -228,6 +227,12 @@ public class RetellingDetailActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.action_delete, (dialog, which) -> viewModel.delete())
                 .setNegativeButton(R.string.action_cancel, null)
                 .show();
+    }
+
+    @NonNull
+    @Override
+    protected String navActiveKey() {
+        return "retellings";
     }
 
     @Override

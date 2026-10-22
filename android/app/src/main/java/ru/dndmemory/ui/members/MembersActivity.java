@@ -2,6 +2,7 @@ package ru.dndmemory.ui.members;
 
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import ru.dndmemory.databinding.ActivityMembersBinding;
@@ -31,6 +32,12 @@ public class MembersActivity extends BaseCampaignActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
         viewModel.refresh();
+    }
+
+    @NonNull
+    @Override
+    protected String navActiveKey() {
+        return "members";
     }
 
     @Override

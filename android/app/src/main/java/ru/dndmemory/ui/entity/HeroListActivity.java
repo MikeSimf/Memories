@@ -2,6 +2,7 @@ package ru.dndmemory.ui.entity;
 
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import ru.dndmemory.R;
@@ -37,6 +38,12 @@ public class HeroListActivity extends BaseCampaignActivity {
                         EntityListFragment.newInstance(EntityType.HERO.name()))
                 .commit();
         viewModel.refresh();
+    }
+
+    @NonNull
+    @Override
+    protected String navActiveKey() {
+        return "heroes";
     }
 
     @Override

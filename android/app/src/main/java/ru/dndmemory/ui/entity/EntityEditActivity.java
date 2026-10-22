@@ -8,7 +8,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -49,7 +48,7 @@ import ru.dndmemory.util.RepoCallback;
  * <p>Героя заводит и правит только владелец кампании: остальным редактор
  * не открывается (docs/roles.md).
  */
-public class EntityEditActivity extends AppCompatActivity {
+public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity {
 
     private ActivityEntityEditBinding binding;
     private EntityEditViewModel viewModel;
@@ -175,7 +174,7 @@ public class EntityEditActivity extends AppCompatActivity {
         WikiLinkEditor.attach(binding.entityEditDescriptionInput, () -> nameIndex.names());
         WikiLinkEditor.attach(binding.entityEditShortInput, () -> nameIndex.names());
 
-        binding.entityEditBottom.bind(campaignId, navKey(currentKind));
+        setActiveNav(navKey(currentKind));
         binding.entityEditSave.setOnClickListener(v -> {
             collect();
             if (!validateForm()) {

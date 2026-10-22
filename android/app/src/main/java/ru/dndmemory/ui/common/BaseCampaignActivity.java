@@ -2,7 +2,6 @@ package ru.dndmemory.ui.common;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import ru.dndmemory.App;
@@ -15,7 +14,7 @@ import ru.dndmemory.ui.campaign.CampaignViewModel;
  * вкладки работают и в {@code CampaignActivity}, и на отдельных экранах
  * «Пересказы» и «Участники».
  */
-public abstract class BaseCampaignActivity extends AppCompatActivity implements CampaignHost {
+public abstract class BaseCampaignActivity extends BottomNavActivity implements CampaignHost {
 
     @Nullable
     protected String campaignId;

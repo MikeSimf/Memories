@@ -2,6 +2,7 @@ package ru.dndmemory.ui.material;
 
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import ru.dndmemory.R;
@@ -35,6 +36,12 @@ public class MaterialsActivity extends BaseCampaignActivity {
                 .replace(R.id.section_container, new MaterialsFragment())
                 .commit();
         viewModel.refresh();
+    }
+
+    @NonNull
+    @Override
+    protected String navActiveKey() {
+        return "materials";
     }
 
     @Override

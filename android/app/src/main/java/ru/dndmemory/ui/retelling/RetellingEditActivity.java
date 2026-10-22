@@ -10,7 +10,6 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ import ru.dndmemory.util.WikiMarkdown;
  * Редактор пересказа с предпросмотром разметки. Кнопка «Опубликовать» —
  * единственный путь, которым черновик покидает устройство.
  */
-public class RetellingEditActivity extends AppCompatActivity {
+public class RetellingEditActivity extends ru.dndmemory.ui.common.BottomNavActivity {
 
     private ActivityRetellingEditBinding binding;
     private RetellingEditViewModel viewModel;
@@ -221,6 +220,12 @@ public class RetellingEditActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @NonNull
+    @Override
+    protected String navActiveKey() {
+        return "retellings";
     }
 
     @Override

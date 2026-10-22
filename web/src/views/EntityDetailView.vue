@@ -356,14 +356,18 @@ async function keepLocal(): Promise<void> {
 
       <div v-if="outgoingLinks.length > 0" class="card">
         <h2>Упоминания в тексте</h2>
-        <div class="row">
+        <div class="mention-list">
           <template v-for="link in outgoingLinks" :key="`${link.id}-${link.label}`">
             <RouterLink
-              v-if="link.resolved && link.id"
-              class="btn btn--sm"
+              v-if="link.resolved && link.id && campaign.objectById(link.id)"
+              class="mention-row"
               :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: link.id } }"
             >
-              {{ link.label }}
+              <EntityAvatar :object="campaign.objectById(link.id)!" :size="36" />
+              <span class="mention-row__main">
+                <span class="mention-row__name">{{ campaign.objectById(link.id)!.name }}</span>
+                <span class="faint">{{ OBJECT_CLASS_LABELS[campaign.objectById(link.id)!.objectType] }}</span>
+              </span>
             </RouterLink>
             <button v-else class="btn btn--sm" type="button" @click="brokenLinkName = link.label">
               {{ link.label }} (создать)

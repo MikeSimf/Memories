@@ -15,7 +15,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -52,7 +51,7 @@ import ru.dndmemory.util.WikiMarkdown;
  * у героя раса, класс, игрок и котомка; у персонажа раса и краткое описание;
  * у предмета владелец со ссылкой (docs/api.md, раздел 6).
  */
-public class EntityDetailActivity extends AppCompatActivity {
+public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivity {
 
     private ActivityEntityDetailBinding binding;
     private EntityDetailViewModel viewModel;
@@ -158,7 +157,7 @@ public class EntityDetailActivity extends AppCompatActivity {
         binding.entityTitle.setText(TextUtils.isEmpty(entity.name)
                 ? getString(R.string.attr_not_set) : entity.name);
         EntityType type = EntityType.fromOrCharacter(entity.kind);
-        binding.entityBottom.bind(campaignId, navKey(type));
+        setActiveNav(navKey(type));
         binding.entityTypeStripe.setBackgroundColor(TypeColors.of(this, type));
         ru.dndmemory.ui.common.AvatarBinder.bind(this, binding.entityAvatar, entity,
                 App.container(this).okHttpClient());
@@ -418,6 +417,19 @@ public class EntityDetailActivity extends AppCompatActivity {
         binding.entityFields.addView(row);
     }
 
+    @Nullable
+    private EntityRoom findObject(@Nullable String id) {
+        if (id == null) {
+            return null;
+        }
+        for (EntityRoom room : allObjects) {
+            if (room != null && id.equals(room.id)) {
+                return room;
+            }
+        }
+        return null;
+    }
+
     /**
      * Обратные ссылки: кто упоминает эту карточку. У локации — только герои
      * и персонажи, чтобы можно было найти «кто здесь был» по имени и аватару.
@@ -489,6 +501,23 @@ public class EntityDetailActivity extends AppCompatActivity {
         }
         ViewUtils.show(binding.entityLinksTitle, true);
         for (EntityLink link : entity.links) {
+            EntityRoom target = link.targetId == null ? null : findObject(link.targetId);
+            if (target != null) {
+                // Ссылка ведёт на объект кампании — показываем строку с аватаром.
+                android.view.View row = getLayoutInflater().inflate(
+                        R.layout.item_backlink, binding.entityLinks, false);
+                android.widget.ImageView avatar = row.findViewById(R.id.backlink_avatar);
+                android.widget.ImageView classIcon = row.findViewById(R.id.backlink_class_icon);
+                android.widget.TextView name = row.findViewById(R.id.backlink_name);
+                android.widget.TextView subtitle = row.findViewById(R.id.backlink_subtitle);
+                AvatarBinder.bind(this, avatar, target, App.container(this).okHttpClient());
+                AvatarBinder.bindClassIcon(this, classIcon, target);
+                name.setText(link.label == null || link.label.isEmpty() ? target.name : link.label);
+                subtitle.setText(Labels.entityTypeText(this, target.kind));
+                row.setOnClickListener(v -> Nav.openEntity(this, campaignId, target.id));
+                binding.entityLinks.addView(row);
+                continue;
+            }
             TextView row = new TextView(this);
             String markup = link.targetId != null
                     ? "[[" + "#" + link.targetId + "|" + (link.label == null ? "" : link.label) + "]]"

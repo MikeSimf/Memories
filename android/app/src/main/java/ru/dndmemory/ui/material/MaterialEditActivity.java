@@ -8,7 +8,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -35,7 +34,7 @@ import ru.dndmemory.util.RepoCallback;
  * Всё сохраняется локально и уходит в очередь синхронизации — можно работать
  * в самолёте, правка доедет при появлении сети.
  */
-public class MaterialEditActivity extends AppCompatActivity {
+public class MaterialEditActivity extends ru.dndmemory.ui.common.BottomNavActivity {
 
     private ActivityMaterialEditBinding binding;
     private AppContainer container;
@@ -359,6 +358,12 @@ public class MaterialEditActivity extends AppCompatActivity {
                     .setPositiveButton(R.string.action_close, null)
                     .show();
         });
+    }
+
+    @NonNull
+    @Override
+    protected String navActiveKey() {
+        return "materials";
     }
 
     @Override

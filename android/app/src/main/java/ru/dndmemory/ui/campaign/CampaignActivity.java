@@ -6,13 +6,13 @@ import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
+import ru.dndmemory.ui.common.BottomNavActivity;
 import ru.dndmemory.App;
 import ru.dndmemory.AppContainer;
 import ru.dndmemory.R;
@@ -32,7 +32,7 @@ import ru.dndmemory.ui.common.ViewUtils;
  * Герои, Пересказы, Материалы, Участники и Приглашения — отдельные разделы
  * в меню шапки (docs/api.md, раздел 6).
  */
-public class CampaignActivity extends AppCompatActivity implements CampaignHost {
+public class CampaignActivity extends BottomNavActivity implements CampaignHost {
 
     private ActivityCampaignBinding binding;
     private CampaignViewModel viewModel;
@@ -71,11 +71,11 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
         } else if ("items".equals(tab)) {
             binding.campaignPager.setCurrentItem(2, false);
         }
-        binding.campaignBottom.bind(campaignId, tab == null ? "characters" : tab);
+        setActiveNav(tab == null ? "characters" : tab);
         binding.campaignPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
-                binding.campaignBottom.bind(campaignId, tabKey(position));
+                setActiveNav(tabKey(position));
             }
         });
 
@@ -143,22 +143,6 @@ public class CampaignActivity extends AppCompatActivity implements CampaignHost 
         if (id == R.id.action_search) {
             // Поиск открывается с фильтром текущей вкладки; чип «Всё» даёт общий поиск.
             Nav.openSearch(this, campaignId, currentTabFilter());
-            return true;
-        }
-        if (id == R.id.action_heroes) {
-            Nav.openHeroes(this, campaignId);
-            return true;
-        }
-        if (id == R.id.action_materials) {
-            Nav.openMaterials(this, campaignId);
-            return true;
-        }
-        if (id == R.id.action_retellings) {
-            Nav.openRetellings(this, campaignId);
-            return true;
-        }
-        if (id == R.id.action_members) {
-            Nav.openMembers(this, campaignId);
             return true;
         }
         if (id == R.id.action_invite) {

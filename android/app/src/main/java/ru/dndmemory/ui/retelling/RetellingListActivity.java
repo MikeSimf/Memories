@@ -2,6 +2,7 @@ package ru.dndmemory.ui.retelling;
 
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import ru.dndmemory.R;
@@ -33,6 +34,12 @@ public class RetellingListActivity extends BaseCampaignActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
         viewModel.refresh();
+    }
+
+    @NonNull
+    @Override
+    protected String navActiveKey() {
+        return "retellings";
     }
 
     @Override
