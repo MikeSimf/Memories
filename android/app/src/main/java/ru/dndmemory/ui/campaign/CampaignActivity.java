@@ -118,10 +118,10 @@ public class CampaignActivity extends BottomNavActivity implements CampaignHost 
         if ("heroes".equals(tab)) {
             return 3;
         }
-        if ("materials".equals(tab)) {
+        if ("retellings".equals(tab)) {
             return 4;
         }
-        if ("retellings".equals(tab)) {
+        if ("materials".equals(tab)) {
             return 5;
         }
         return 0;
@@ -137,9 +137,9 @@ public class CampaignActivity extends BottomNavActivity implements CampaignHost 
             case 3:
                 return "heroes";
             case 4:
-                return "materials";
-            case 5:
                 return "retellings";
+            case 5:
+                return "materials";
             default:
                 return "characters";
         }

@@ -154,19 +154,14 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
             getSupportActionBar().setTitle(TextUtils.isEmpty(entity.name)
                     ? getString(R.string.entity_detail_title) : entity.name);
         }
-        binding.entityTitle.setText(TextUtils.isEmpty(entity.name)
-                ? getString(R.string.attr_not_set) : entity.name);
         EntityType type = EntityType.fromOrCharacter(entity.kind);
         setActiveNav(navKey(type));
         binding.entityTypeStripe.setBackgroundColor(TypeColors.of(this, type));
-        ru.dndmemory.ui.common.AvatarBinder.bind(this, binding.entityAvatar, entity,
-                App.container(this).okHttpClient());
-        ru.dndmemory.ui.common.AvatarBinder.bindClassIcon(this, binding.entityClassIcon, entity);
         binding.entityTypeChip.setText(Labels.entityTypeText(this, entity.kind));
         binding.entityTypeChip.setTextColor(TypeColors.of(this, type));
         binding.entityTypeChip.setBackgroundTintList(
                 android.content.res.ColorStateList.valueOf(TypeColors.soft(this, type)));
-        ViewUtils.setTextOrGone(binding.entitySubtitle, Labels.entitySubtitle(this, entity));
+        ViewUtils.show(binding.entitySubtitle, false);
         binding.entityUpdated.setText(getString(R.string.entity_detail_updated,
                 DateFormats.formatIso(entity.updatedAt)));
 
@@ -176,8 +171,10 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         binding.entityPhoto.setOnClickListener(v -> openPhoto(photoId));
 
         renderWiki(binding.entityDescription, entity.description);
-        ViewUtils.show(binding.entityDescriptionTitle,
-                !TextUtils.isEmpty(entity.description));
+        ViewUtils.show(binding.entityDescriptionTitle, true);
+        if (TextUtils.isEmpty(entity.description)) {
+            binding.entityDescription.setText(R.string.attr_not_set);
+        }
         bindFields(entity);
         bindLinks(entity);
         renderMentions();
@@ -362,7 +359,7 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
     private void addPersonRow(@NonNull CharSequence label, @Nullable CharSequence value,
                               @Nullable String icon, @Nullable String symbol) {
         if (value == null || value.length() == 0) {
-            return;
+            value = getString(R.string.attr_not_set);
         }
         android.view.View row = getLayoutInflater().inflate(
                 R.layout.item_field_row, binding.entityFields, false);
@@ -397,7 +394,7 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
     private void addFieldRow(@NonNull CharSequence label, @Nullable CharSequence value,
                              @Nullable final String linkId) {
         if (value == null || value.length() == 0) {
-            return;
+            value = getString(R.string.attr_not_set);
         }
         SpannableStringBuilder line = new SpannableStringBuilder();
         line.append(label);

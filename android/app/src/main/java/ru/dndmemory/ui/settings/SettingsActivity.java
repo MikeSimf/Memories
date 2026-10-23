@@ -307,15 +307,22 @@ public class SettingsActivity extends AppCompatActivity {
             getSupportActionBar().setTitle(profileOnly
                     ? R.string.settings_profile_title : R.string.settings_app_title);
         }
-        binding.settingsOpenProfile.setVisibility(profileOnly ? android.view.View.GONE : android.view.View.VISIBLE);
-        binding.settingsOpenApp.setVisibility(profileOnly ? android.view.View.VISIBLE : android.view.View.GONE);
+        // Переключателей между профилем и настройками нет: вход через иконки
+        // на стартовом экране.
+        binding.settingsOpenProfile.setVisibility(android.view.View.GONE);
+        binding.settingsOpenApp.setVisibility(android.view.View.GONE);
         for (int i = 0; i < binding.settingsContent.getChildCount(); i++) {
             android.view.View child = binding.settingsContent.getChildAt(i);
-            if (child == binding.settingsProfileBlock
-                    || child == binding.settingsOpenProfile
-                    || child == binding.settingsOpenApp
-                    || child == binding.settingsProgress) {
-                child.setVisibility(android.view.View.VISIBLE);
+            if (child == binding.settingsProfileBlock) {
+                child.setVisibility(profileOnly ? android.view.View.VISIBLE : android.view.View.GONE);
+                continue;
+            }
+            if (child == binding.settingsLogout) {
+                child.setVisibility(profileOnly ? android.view.View.VISIBLE : android.view.View.GONE);
+                continue;
+            }
+            if (child == binding.settingsProgress) {
+                child.setVisibility(profileOnly ? android.view.View.GONE : android.view.View.VISIBLE);
                 continue;
             }
             child.setVisibility(profileOnly ? android.view.View.GONE : android.view.View.VISIBLE);

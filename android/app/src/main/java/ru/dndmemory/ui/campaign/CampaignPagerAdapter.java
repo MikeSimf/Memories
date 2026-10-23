@@ -32,9 +32,9 @@ public class CampaignPagerAdapter extends FragmentStateAdapter {
             case 3:
                 return EntityListFragment.newInstance(EntityType.HERO.name());
             case 4:
-                return new MaterialsFragment();
-            case 5:
                 return new ru.dndmemory.ui.retelling.RetellingListFragment();
+            case 5:
+                return new MaterialsFragment();
             case 0:
             default:
                 return EntityListFragment.newInstance(EntityType.CHARACTER.name());

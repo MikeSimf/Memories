@@ -37,57 +37,6 @@
                 android:layout_marginBottom="10dp"
                 android:background="@color/type_character" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <!-- Аватар: кружок расы -->
-                    <ImageView
-                        android:id="@+id/entity_avatar"
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        android:background="@drawable/bg_avatar"
-                        android:clipToOutline="true"
-                        android:contentDescription="@string/cd_icon"
-                        android:padding="8dp"
-                        android:src="@drawable/ic_npc" />
-
-                    <!-- Класс: такой же кружок рядом -->
-                    <ImageView
-                        android:id="@+id/entity_class_icon"
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        android:layout_marginStart="8dp"
-                        android:background="@drawable/bg_avatar"
-                        android:clipToOutline="true"
-                        android:contentDescription="@string/attr_klass"
-                        android:padding="12dp"
-                        android:visibility="gone" />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/entity_title"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_weight="1"
-                    android:textAppearance="?attr/textAppearanceHeadlineSmall" />
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceHeadlineSmall" />
-
             <!-- Тип объекта: цвет и подпись, чтобы не читать строку целиком -->
             <TextView
                 android:id="@+id/entity_type_chip"
@@ -95,11 +44,11 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:background="@drawable/bg_type_chip"
-                android:paddingStart="10dp"
-                android:paddingTop="3dp"
-                android:paddingEnd="10dp"
-                android:paddingBottom="3dp"
-                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:paddingStart="14dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="6dp"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
                 tools:text="Персонаж"
                 xmlns:tools="http://schemas.android.com/tools" />
 
@@ -126,12 +75,6 @@
                 android:layout_marginTop="8dp"
                 android:orientation="vertical"
                 android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/entity_updated"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceBodySmall" />
 
             <LinearLayout
                 android:id="@+id/entity_conflict_bar"
@@ -213,6 +156,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+            <TextView
+                android:id="@+id/entity_updated"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/text_muted" />
 
             <TextView
                 android:id="@+id/entity_links_title"

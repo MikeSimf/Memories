@@ -54,8 +54,8 @@ const details = computed<Array<{ label: string; value: string }>>(() => {
   }
   if (item.objectType === 'ITEM') {
     return [
-      { label: 'Тип предмета', value: item.itemType ?? 'Неизвестно' },
-      { label: 'Владелец', value: item.ownerName ?? 'не указан' },
+      { label: 'Тип предмета', value: item.itemType ?? 'Не заполнено' },
+      { label: 'Владелец', value: item.ownerName ?? 'Не заполнено' },
       {
         label: 'Ссылка',
         value: item.ownerHeroName
@@ -67,7 +67,7 @@ const details = computed<Array<{ label: string; value: string }>>(() => {
     ]
   }
   if (item.objectType === 'LOCATION') {
-    return [{ label: 'Тип локации', value: item.locationType ?? 'Неизвестно' }]
+    return [{ label: 'Тип локации', value: item.locationType ?? 'Не заполнено' }]
   }
   return []
 })
@@ -77,13 +77,12 @@ const personRows = computed(() => {
   const item = entity.value
   if (!item || (item.objectType !== 'HERO' && item.objectType !== 'CHARACTER')) return []
   const rows: Array<{ label: string; value: string; icon: 'race' | 'class' | 'gender' | null }> = [
-    { label: 'Имя', value: item.name || '—', icon: null },
+    { label: 'Раса', value: item.race || 'Не заполнено', icon: 'race' },
+    { label: 'Класс', value: item.klass || 'Не заполнено', icon: 'class' },
+    { label: 'Пол', value: genderLabel(item.gender), icon: 'gender' },
   ]
-  if (item.race) rows.push({ label: 'Раса', value: item.race, icon: 'race' })
-  if (item.klass) rows.push({ label: 'Класс', value: item.klass, icon: 'class' })
-  rows.push({ label: 'Пол', value: genderLabel(item.gender), icon: 'gender' })
-  if (item.objectType === 'CHARACTER' && item.shortDescription) {
-    rows.push({ label: 'Кратко', value: item.shortDescription, icon: null })
+  if (item.objectType === 'CHARACTER') {
+    rows.push({ label: 'Кратко', value: item.shortDescription || 'Не заполнено', icon: null })
   }
   return rows
 })
@@ -225,7 +224,6 @@ async function keepLocal(): Promise<void> {
       <div class="page-header">
         <div class="page-header__titles">
           <div class="row entity-head">
-            <EntityAvatar :object="entity" :size="56" />
             <div>
           <h1>
             {{ entity.name }}
@@ -353,6 +351,12 @@ async function keepLocal(): Promise<void> {
         <p v-else class="faint">Описание не заполнено.</p>
       </div>
 
+      <div class="faint">
+        Создан(а) {{ campaign.userName(entity.createdBy) }}, изменён(а)
+        {{ campaign.userName(entity.updatedBy) }} · ревизия {{ entity.revision }} ·
+        {{ formatDateTime(entity.updatedAt) }}
+      </div>
+
       <div v-if="outgoingLinks.length > 0" class="card">
         <h2>Упоминания в тексте</h2>
         <div class="mention-list">
@@ -394,12 +398,6 @@ async function keepLocal(): Promise<void> {
             </span>
           </RouterLink>
         </div>
-      </div>
-
-      <div class="faint">
-        Создан(а) {{ campaign.userName(entity.createdBy) }}, изменён(а)
-        {{ campaign.userName(entity.updatedBy) }} · ревизия {{ entity.revision }} ·
-        {{ formatDateTime(entity.updatedAt) }}
       </div>
 
       <BaseModal

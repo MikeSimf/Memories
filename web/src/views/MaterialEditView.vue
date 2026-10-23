@@ -11,6 +11,7 @@ import {
   type MaterialDto,
 } from '@/api'
 import EntityImage from '@/components/EntityImage.vue'
+import MarkupText from '@/components/MarkupText.vue'
 import { useUiStore } from '@/stores/ui'
 
 /**
@@ -204,8 +205,11 @@ async function remove(): Promise<void> {
         <label class="field__label" for="material-description">Описание</label>
         <textarea id="material-description" v-model="description" class="textarea textarea--tall" />
         <span class="field__hint">
-          Поддерживается markdown и ссылки на объекты: <code>[[Имя]]</code>.
+          Поддерживает ссылки на объекты: <code>[[имя_объекта]]</code>.
         </span>
+        <div v-if="description.trim()" class="preview-box">
+          <MarkupText :text="description" />
+        </div>
       </div>
 
       <div class="field">
