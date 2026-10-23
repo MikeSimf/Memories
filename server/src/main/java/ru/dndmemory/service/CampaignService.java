@@ -135,7 +135,7 @@ public class CampaignService {
     @Transactional
     public void delete(UUID campaignId, UUID userId) {
         Member member = permissionService.requireMember(campaignId, userId);
-        permissionService.require(member, Permissions.CAMPAIGN_MANAGE);
+        permissionService.require(member, Permissions.CAMPAIGN_DELETE);
         Campaign campaign = campaignRepository.findForUpdate(campaignId)
                 .orElseThrow(() -> ApiException.notFound("Кампания"));
         campaign.setDeleted(true);

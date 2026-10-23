@@ -157,6 +157,11 @@ export const useCampaignStore = defineStore('campaign', () => {
   }))
 
   const canManageCampaign = computed(() => hasPermission(permissions.value, 'campaign.manage'))
+  /** Удаление кампании — только владелец. */
+  const canDeleteCampaign = computed(() =>
+    hasPermission(permissions.value, 'campaign.delete')
+    || campaign.value?.myRole === 'OWNER',
+  )
   const canManageMembers = computed(() => hasPermission(permissions.value, 'members.manage'))
   const canInvite = computed(() => hasPermission(permissions.value, 'invite.create'))
   const canWriteEntities = computed(() => hasPermission(permissions.value, 'entity.write'))
@@ -1101,6 +1106,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     myMembership,
     linkedHeroId,
     canManageCampaign,
+    canDeleteCampaign,
     canManageMembers,
     canInvite,
     canWriteEntities,

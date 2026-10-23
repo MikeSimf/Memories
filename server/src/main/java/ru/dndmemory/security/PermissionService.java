@@ -35,11 +35,14 @@ public class PermissionService {
         switch (member.getRole()) {
             case OWNER:
                 permissions.add(Permissions.CAMPAIGN_MANAGE);
+                permissions.add(Permissions.CAMPAIGN_DELETE);
                 permissions.add(Permissions.MEMBERS_MANAGE);
                 permissions.add(Permissions.INVITE_CREATE);
                 permissions.add(Permissions.HERO_WRITE);
                 // fall through
             case EDITOR_MASTER:
+                // Мастер ведёт кампанию вместе с владельцем, но удалять её не может.
+                permissions.add(Permissions.CAMPAIGN_MANAGE);
                 permissions.add(Permissions.ENTITY_READ);
                 permissions.add(Permissions.ENTITY_WRITE);
                 permissions.add(Permissions.RETELLING_READ);

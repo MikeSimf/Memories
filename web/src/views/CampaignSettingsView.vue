@@ -35,6 +35,7 @@ watch(
 )
 
 const canManage = computed(() => campaign.canManageCampaign)
+const canDelete = computed(() => campaign.canDeleteCampaign)
 const campaignId = computed(() => campaign.campaignId ?? '')
 
 async function save(): Promise<void> {
@@ -157,7 +158,7 @@ async function removeCampaign(): Promise<void> {
       <p class="muted">
         Кампания удаляется на сервере для всех участников. Действие необратимо.
       </p>
-      <div class="row">
+      <div v-if="canDelete" class="row">
         <button class="btn btn--danger" type="button" @click="confirmDelete = true">
           Удалить кампанию
         </button>

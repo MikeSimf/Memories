@@ -4,6 +4,8 @@ package ru.dndmemory.security;
 public final class Permissions {
 
     public static final String CAMPAIGN_MANAGE = "campaign.manage";
+    /** Удаление кампании — только владелец. */
+    public static final String CAMPAIGN_DELETE = "campaign.delete";
     public static final String MEMBERS_MANAGE = "members.manage";
     public static final String INVITE_CREATE = "invite.create";
     /** Чтение объектов всех четырёх классов — доступно и гостю. */

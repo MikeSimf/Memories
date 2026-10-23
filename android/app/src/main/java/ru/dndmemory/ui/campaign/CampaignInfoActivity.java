@@ -74,7 +74,7 @@ public class CampaignInfoActivity extends BottomNavActivity {
         binding.campaignInfoDescription.setText(TextUtils.isEmpty(campaign.description)
                 ? getString(R.string.campaign_info_no_description) : campaign.description);
         boolean canEdit = Rights.canManageCampaign(campaign);
-        boolean owner = "OWNER".equalsIgnoreCase(campaign.myRole);
+        boolean owner = Rights.canDeleteCampaign(campaign);
         ViewUtils.show(binding.campaignInfoEdit, canEdit);
         ViewUtils.show(binding.campaignInfoDelete, owner);
     }

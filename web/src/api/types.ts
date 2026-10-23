@@ -34,6 +34,7 @@ export type ObjectType = ObjectClass | 'RETELLING' | 'CAMPAIGN' | 'MEMBER' | 'MA
 /** Плоский список прав текущего пользователя в кампании (`myPermissions`). */
 export type Permission =
   | 'campaign.manage'
+  | 'campaign.delete'
   | 'members.manage'
   | 'invite.create'
   | 'entity.read'

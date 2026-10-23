@@ -175,4 +175,15 @@ public final class Rights {
     public static boolean canManageCampaign(@Nullable CampaignRoom campaign) {
         return has(campaign, CAMPAIGN_MANAGE);
     }
+
+    /** Удалять кампанию может только владелец, даже если он не в списке прав. */
+    public static boolean canDeleteCampaign(@Nullable CampaignRoom campaign) {
+        if (campaign == null) {
+            return false;
+        }
+        if (has(campaign, "campaign.delete")) {
+            return true;
+        }
+        return campaign.myRole != null && "OWNER".equalsIgnoreCase(campaign.myRole);
+    }
 }
