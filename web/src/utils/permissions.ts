@@ -100,14 +100,9 @@ export function canEditRetelling(
   subject: PermissionSubject,
   retelling: RetellingPermissionContext,
 ): boolean {
-  if (hasPermission(subject.permissions, 'retelling.publish')) return true
-  if (
-    hasPermission(subject.permissions, 'retelling.write.own') &&
-    isAuthor(subject, retelling.createdBy)
-  ) {
-    return true
-  }
-  return hasPermission(subject.permissions, 'retelling.write') && isAuthor(subject, retelling.createdBy)
+  // Правит историю только её автор.
+  return isAuthor(subject, retelling.createdBy)
+    && hasPermission(subject.permissions, 'retelling.write.own')
 }
 
 export function canDeleteRetelling(

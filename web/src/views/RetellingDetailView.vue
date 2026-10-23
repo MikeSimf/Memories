@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { errorMessage } from '@/api'
-import { RETELLING_STATUS_LABELS } from '@/api/types'
+import { OBJECT_CLASS_LABELS, RETELLING_STATUS_LABELS } from '@/api/types'
 import ConflictNotice from '@/components/ConflictNotice.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -29,6 +29,20 @@ const canEdit = computed(() =>
 const canDelete = computed(() =>
   item.value ? campaign.canDeleteRetellingItem(retellingId.value) : false,
 )
+
+/** Ссылки из текста истории — списком, как в карточках объектов. */
+const retellingLinks = computed(() => {
+  const result: Array<{ id: string; name: string; type: string }> = []
+  const seen = new Set<string>()
+  for (const link of published.value?.links ?? []) {
+    if (!link.targetId || seen.has(link.targetId)) continue
+    const object = campaign.objectById(link.targetId)
+    if (!object) continue
+    seen.add(link.targetId)
+    result.push({ id: object.id, name: object.name, type: OBJECT_CLASS_LABELS[object.objectType] })
+  }
+  return result
+})
 
 const busy = ref(false)
 const confirmDelete = ref(false)
@@ -170,6 +184,23 @@ async function keepLocal(): Promise<void> {
         <p v-else class="faint">Текст истории пуст.</p>
       </div>
 
+      <div v-if="retellingLinks.length > 0" class="card">
+        <h2>Ссылки</h2>
+        <div class="mention-list">
+          <RouterLink
+            v-for="link in retellingLinks"
+            :key="link.id"
+            class="mention-row"
+            :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: link.id } }"
+          >
+            <span class="mention-row__main">
+              <span class="mention-row__name">{{ link.name }}</span>
+              <span class="faint">{{ link.type }}</span>
+            </span>
+          </RouterLink>
+        </div>
+      </div>
+
       <div v-if="brokenLink" class="notice notice--warning">
         Ссылка «{{ brokenLink }}» не найдена.
         <div class="notice__actions">
@@ -215,3 +246,10 @@ async function keepLocal(): Promise<void> {
     </EmptyState>
   </div>
 </template>
+
+<style scoped>
+.mention-list { display: flex; flex-direction: column; gap: 6px; }
+.mention-row { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+.mention-row__main { display: flex; flex-direction: column; min-width: 0; }
+.mention-row__name { font-weight: 600; }
+</style>

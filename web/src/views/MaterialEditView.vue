@@ -12,12 +12,14 @@ import {
 } from '@/api'
 import EntityImage from '@/components/EntityImage.vue'
 import MarkupText from '@/components/MarkupText.vue'
+import { useCampaignStore } from '@/stores/campaign'
 import { useUiStore } from '@/stores/ui'
 
 /**
  * Редактор материала: название, описание, картинки и документы.
  * Сайт работает онлайн: правки сохраняются сразу на сервер, локальной копии нет.
  */
+const campaign = useCampaignStore()
 const route = useRoute()
 const router = useRouter()
 const ui = useUiStore()
@@ -27,8 +29,16 @@ const materialId = computed(() =>
   typeof route.params.materialId === 'string' ? route.params.materialId : '',
 )
 
+const canEditMaterial = computed(() => campaign.canCreate('ITEM'))
 const name = ref('')
 const description = ref('')
+const links = ref<Array<{ targetId: string | null; label: string }>>([])
+/** Ссылки из описания материала. */
+const materialLinks = computed(() =>
+  links.value
+    .map((link) => (link.targetId ? campaign.objectById(link.targetId) : null))
+    .filter((object) => object !== null),
+)
 const files = ref<AttachmentDto[]>([])
 const loading = ref(false)
 const saving = ref(false)
@@ -198,15 +208,26 @@ async function remove(): Promise<void> {
     <template v-else>
       <div class="field">
         <label class="field__label" for="material-name">Название</label>
-        <input id="material-name" v-model="name" class="input" type="text" />
+        <input id="material-name" v-model="name" class="input" type="text" :readonly="!canEditMaterial" />
       </div>
 
       <div class="field">
         <label class="field__label" for="material-description">Описание</label>
-        <textarea id="material-description" v-model="description" class="textarea textarea--tall" />
+        <textarea id="material-description" v-model="description" :readonly="!canEditMaterial" class="textarea textarea--tall" />
         <span class="field__hint">
           Поддерживает ссылки на объекты: <code>[[имя_объекта]]</code>.
         </span>
+        <div v-if="materialLinks.length > 0" class="stack stack--sm">
+          <span class="field__label">Ссылки</span>
+          <RouterLink
+            v-for="link in materialLinks"
+            :key="link.id"
+            class="mention-row"
+            :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: link.id } }"
+          >
+            <span class="mention-row__name">{{ link.name }}</span>
+          </RouterLink>
+        </div>
         <div v-if="description.trim()" class="preview-box">
           <MarkupText :text="description" />
         </div>
@@ -266,10 +287,10 @@ async function remove(): Promise<void> {
       </div>
 
       <div class="row row--end">
-        <button v-if="materialId" class="btn btn--danger" type="button" :disabled="saving" @click="remove">
+        <button v-if="materialId && canEditMaterial" class="btn btn--danger" type="button" :disabled="saving" @click="remove">
           Удалить
         </button>
-        <button class="btn btn--primary" type="button" :disabled="saving" @click="save">
+        <button v-if="canEditMaterial" class="btn btn--primary" type="button" :disabled="saving" @click="save">
           Сохранить
         </button>
       </div>
@@ -296,4 +317,9 @@ async function remove(): Promise<void> {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+</style>
+
+<style scoped>
+.mention-row { display: flex; flex-direction: column; color: inherit; text-decoration: none; }
+.mention-row__name { font-weight: 600; }
 </style>

@@ -355,7 +355,8 @@ async function logout(): Promise<void> {
     <form class="card stack" @submit.prevent="sendFeedback">
       <h2>Обратная связь</h2>
       <p class="muted" style="margin: 0">
-        Напишите, что не работает или чего не хватает. Ответим на почту аккаунта.
+        Напишите, что не работает или чего не хватает. Можно также написать в
+        <a href="https://vk.ru/i.mikea" target="_blank" rel="noopener">VK</a>.
       </p>
       <textarea
         v-model="feedbackText"

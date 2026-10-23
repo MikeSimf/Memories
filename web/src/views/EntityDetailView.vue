@@ -228,8 +228,8 @@ async function keepLocal(): Promise<void> {
           <h1>
             {{ entity.name }}
             <span v-if="entity.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />
+            <span v-if="personGender" class="entity-gender" title="Пол">{{ personGender }}</span>
           </h1>
-          <span v-if="personGender" class="entity-gender" title="Пол">{{ personGender }}</span>
           <div class="page-header__subtitle">
             <span class="badge" :class="badgeClass(entity)">
               {{ OBJECT_CLASS_LABELS[objectClass] }}
@@ -454,11 +454,29 @@ async function keepLocal(): Promise<void> {
 
 <style scoped>
 .entity-gender {
-  position: absolute;
-  top: 0;
-  right: 0;
+  margin-left: 0.5rem;
   color: var(--text-muted);
   font-size: 1.2rem;
+}
+.mention-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mention-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+.mention-row__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.mention-row__name {
+  font-weight: 600;
 }
 .person-row__value {
   display: flex;

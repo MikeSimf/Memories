@@ -170,11 +170,10 @@ public class RetellingService {
 
     /** Править чужой пересказ может только тот, у кого есть retelling.publish. */
     public void requireEditRight(Member member, Retelling retelling, UUID userId) {
-        if (retelling.getCreatedBy().equals(userId)) {
-            permissionService.require(member, Permissions.RETELLING_WRITE_OWN);
-            return;
+        if (!retelling.getCreatedBy().equals(userId)) {
+            throw ApiException.forbidden("Историю может править только её автор");
         }
-        permissionService.require(member, Permissions.RETELLING_PUBLISH);
+        permissionService.require(member, Permissions.RETELLING_WRITE_OWN);
     }
 
     public RetellingDtos.RetellingDto toDto(Retelling retelling, ObjectIndexService.ObjectContext context,
