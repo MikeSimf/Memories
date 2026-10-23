@@ -13,7 +13,7 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 28
+    latest-version-code: 27
     latest-version-name: 1.0.27
     min-version-code: 4
     apk-url: https://7f6a7dc97a7c.vps.myjino.ru/dnd-memory.apk
