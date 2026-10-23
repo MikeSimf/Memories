@@ -91,7 +91,7 @@ import type { HeroItemFormValue, ObjectFormValues, RetellingFormValues } from '@
 
 export type { ObjectFormValues, RetellingFormValues }
 
-/** Строка объединённого списка пересказов: черновики и публикации вместе. */
+/** Строка объединённого списка повествований: черновики и публикации вместе. */
 export interface RetellingListItem {
   id: string
   title: string
@@ -173,7 +173,7 @@ export const useCampaignStore = defineStore('campaign', () => {
   )
   const items = computed(() => activeObjects.value.filter((object) => isLocalObjectOf(object, 'ITEM')))
 
-  /** Краткие пересказы из карточки кампании (`api.md` §4) — без отдельного запроса. */
+  /** Краткие повествования из карточки кампании (`api.md` §4) — без отдельного запроса. */
   const retellingBriefs = computed<RetellingBriefDto[]>(() => campaign.value?.retellingBriefs ?? [])
 
   /** Все объекты, на которые можно ссылаться из разметки `[[…]]`. */
@@ -410,7 +410,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     try {
       await reload()
       // `GET /api/campaigns/{id}` отдаёт `members` и `retellings` — сохраняем их,
-      // чтобы не делать отдельные запросы за участниками и пересказами.
+      // чтобы не делать отдельные запросы за участниками и повествованиями.
       const details = await campaigns.loadDetails(id)
       if (details) campaign.value = details
       await reload()
@@ -520,7 +520,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     return base
   }
 
-  /** Значения формы по пересказу или черновику. */
+  /** Значения формы по повествованиеу или черновику. */
   function retellingFormValues(source: LocalRetelling | LocalRetellingDraft): RetellingFormValues {
     return {
       title: source.title,
@@ -779,7 +779,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     notifyLocalChange(cid)
   }
 
-  /* --------------------------- Пересказы ----------------------------- */
+  /* --------------------------- Повествования ----------------------------- */
 
   /**
    * Сохранение черновика. Черновик живёт только в `retelling_drafts` и никогда
@@ -865,7 +865,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     return retelling.id
   }
 
-  /** Новый пересказ сразу опубликованным (без черновика). */
+  /** Новый повествование сразу опубликованным (без черновика). */
   async function createPublishedRetelling(values: RetellingFormValues): Promise<string> {
     const cid = requireCampaignId()
     const now = nowIso()

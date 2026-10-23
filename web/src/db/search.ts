@@ -11,7 +11,7 @@ export interface LocalSearchItem {
   snippet: string
   revision: number
   updatedAt: string
-  /** Пересказ-черновик: существует только на устройстве. */
+  /** Повествование-черновик: существует только на устройстве. */
   isDraft: boolean
 }
 
@@ -121,7 +121,7 @@ export function objectMatchesQuery(object: LocalObject, query: string): boolean 
 /**
  * Поиск по локальной базе — та же логика, что у сервера (`api.md` §8):
  * регистронезависимый по `name`, `description` (у персонажа ещё `race` и
- * `shortDescription`), у пересказов — по заголовку и тексту. Работает без сети.
+ * `shortDescription`), у повествований — по заголовку и тексту. Работает без сети.
  */
 export async function searchLocal(
   campaignId: string,

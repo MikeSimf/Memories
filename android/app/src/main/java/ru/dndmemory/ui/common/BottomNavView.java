@@ -33,6 +33,7 @@ public class BottomNavView extends HorizontalScrollView {
     private final Map<String, Item> items = new LinkedHashMap<>();
     private String campaignId;
     private String active;
+    private OnSectionClick listener;
 
     public BottomNavView(@NonNull Context context) {
         this(context, null);
@@ -59,7 +60,6 @@ public class BottomNavView extends HorizontalScrollView {
         add("heroes", R.string.heroes_title, R.drawable.ic_heroes);
         add("retellings", R.string.tab_retellings, R.drawable.ic_retelling);
         add("materials", R.string.materials_title, R.drawable.ic_materials);
-        add("members", R.string.tab_members, R.drawable.ic_members);
         add("home", R.string.nav_home, R.drawable.ic_home);
     }
 
@@ -86,6 +86,15 @@ public class BottomNavView extends HorizontalScrollView {
         items.put(key, new Item(image, text));
     }
 
+    /** Перехват кликов: экран кампании переключает вкладки без пересоздания. */
+    public interface OnSectionClick {
+        boolean onSection(@NonNull String key);
+    }
+
+    public void setOnSectionClick(@Nullable OnSectionClick listener) {
+        this.listener = listener;
+    }
+
     /** Подключает меню к кампании и подсвечивает раздел. */
     public void bind(@NonNull String campaignId, @Nullable String active) {
         this.campaignId = campaignId;
@@ -105,6 +114,9 @@ public class BottomNavView extends HorizontalScrollView {
     }
 
     private void open(@NonNull String key) {
+        if (listener != null && listener.onSection(key)) {
+            return;
+        }
         if (campaignId == null) {
             return;
         }

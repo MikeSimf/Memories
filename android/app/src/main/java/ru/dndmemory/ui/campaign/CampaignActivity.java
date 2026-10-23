@@ -59,9 +59,8 @@ public class CampaignActivity extends BottomNavActivity implements CampaignHost 
         viewModel.setCampaignId(campaignId);
 
         setSupportActionBar(binding.campaignToolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        }
+        // На экран кампании приходят из списка кампаний: стрелка «назад» не нужна,
+        // внизу есть кнопка «Домой».
 
         binding.campaignPager.setAdapter(new CampaignPagerAdapter(this));
         binding.campaignPager.setOffscreenPageLimit(1);
@@ -72,6 +71,27 @@ public class CampaignActivity extends BottomNavActivity implements CampaignHost 
             binding.campaignPager.setCurrentItem(2, false);
         }
         setActiveNav(tab == null ? "characters" : tab);
+        binding.campaignPager.setUserInputEnabled(true);
+        if (bottomNav() != null) {
+            bottomNav().setOnSectionClick(key -> {
+                switch (key) {
+                    case "characters":
+                        binding.campaignPager.setCurrentItem(0, true);
+                        return true;
+                    case "locations":
+                        binding.campaignPager.setCurrentItem(1, true);
+                        return true;
+                    case "items":
+                        binding.campaignPager.setCurrentItem(2, true);
+                        return true;
+                    case "home":
+                        Nav.openCampaigns(this);
+                        return true;
+                    default:
+                        return false;
+                }
+            });
+        }
         binding.campaignPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
@@ -138,11 +158,25 @@ public class CampaignActivity extends BottomNavActivity implements CampaignHost 
     }
 
     @Override
+    protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        String tab = intent.getStringExtra(Extras.CAMPAIGN_TAB);
+        int index = "locations".equals(tab) ? 1 : "items".equals(tab) ? 2 : 0;
+        binding.campaignPager.setCurrentItem(index, false);
+        setActiveNav(tab == null ? "characters" : tab);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_search) {
             // Поиск открывается с фильтром текущей вкладки; чип «Всё» даёт общий поиск.
             Nav.openSearch(this, campaignId, currentTabFilter());
+            return true;
+        }
+        if (id == R.id.action_campaign_info) {
+            Nav.openCampaignInfo(this, campaignId);
             return true;
         }
         if (id == R.id.action_invite) {

@@ -11,6 +11,12 @@
     <!-- Разделы кампании: иконками в шапке, как на сайте -->
 
     <item
+        android:id="@+id/action_campaign_info"
+        android:icon="@drawable/ic_info"
+        android:title="@string/campaign_info_title"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_invite"
         android:icon="@drawable/ic_qr"
         android:title="@string/action_invite"

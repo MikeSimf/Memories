@@ -34,6 +34,9 @@ public class MaterialRoom {
     /** Файлы материала в JSON: картинки и документы. */
     public String filesJson;
 
+    /** Ссылки из описания: [{targetId, label, resolved}]. */
+    public String linksJson;
+
     public long revision;
     public String createdAt;
     public String updatedAt;

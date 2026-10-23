@@ -42,7 +42,7 @@ import ru.dndmemory.data.local.entity.SyncStateRoom;
                 MemberRoom.class,
                 MaterialRoom.class
         },
-        version = 7,
+        version = 8,
         exportSchema = false
 )
 @TypeConverters({Converters.class})
@@ -113,6 +113,14 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /** 7 → 8: ссылки из описания материала. */
+    public static final Migration MIGRATION_7_8 = new Migration(7, 8) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE `materials` ADD COLUMN `linksJson` TEXT");
+        }
+    };
+
     public abstract CampaignDao campaignDao();
 
     public abstract EntityDao entityDao();
@@ -133,7 +141,7 @@ public abstract class AppDatabase extends RoomDatabase {
         return Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, NAME)
                 // Материалы кампании появились во второй версии: таблица
                 // создаётся миграцией, локальные данные не теряются.
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                 .fallbackToDestructiveMigration()
                 .build();
     }

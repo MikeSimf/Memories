@@ -101,6 +101,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".ui.campaign.CampaignInfoActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.entity.HeroListActivity"
             android:exported="false" />
 

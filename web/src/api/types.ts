@@ -270,7 +270,7 @@ export interface CampaignListItem {
   updatedAt: string
 }
 
-/** Краткий пересказ рядом со счётчиками в карточке кампании (`api.md` §4). */
+/** Краткий повествование рядом со счётчиками в карточке кампании (`api.md` §4). */
 export interface RetellingBriefDto {
   id: string
   title: string
@@ -292,7 +292,7 @@ export interface CampaignDto {
   latestRevision: number
   /** Краткий список участников — карточка кампании открывается одним запросом. */
   members: MemberDto[]
-  /** Краткий список пересказов. */
+  /** Краткий список повествований. */
   retellings: RetellingBriefDto[]
   createdAt?: string
   updatedAt: string
@@ -600,7 +600,7 @@ export interface ObjectListQuery {
 }
 
 /* ------------------------------------------------------------------ */
-/* 7. Пересказы                                                        */
+/* 7. Повествования                                                        */
 /* ------------------------------------------------------------------ */
 
 export interface RetellingDto {
@@ -609,7 +609,7 @@ export interface RetellingDto {
   clientId: string | null
   title: string
   body: string
-  /** Герой или персонаж, от лица которого ведётся пересказ. */
+  /** Герой или персонаж, от лица которого ведётся повествование. */
   authorEntityId: string | null
   authorEntityName: string | null
   /** Дата сессии в формате `YYYY-MM-DD`. */
@@ -655,7 +655,7 @@ export interface RetellingListQuery {
 /* 8. Поиск                                                           */
 /* ------------------------------------------------------------------ */
 
-/** Что вернул поиск: любой из четырёх классов или пересказ (`api.md` §8). */
+/** Что вернул поиск: любой из четырёх классов или повествование (`api.md` §8). */
 export type SearchKind = ObjectClass | 'RETELLING'
 
 export const SEARCH_KINDS: readonly SearchKind[] = [
@@ -671,7 +671,7 @@ export const SEARCH_KIND_LABELS: Record<SearchKind, string> = {
   CHARACTER: 'Персонажи',
   LOCATION: 'Локации',
   ITEM: 'Предметы',
-  RETELLING: 'Пересказы',
+  RETELLING: 'Повествования',
 }
 
 export interface SearchResultItem {
@@ -766,7 +766,7 @@ export interface SyncPullResponse {
 
 /**
  * Полная выгрузка: страницы идут по порядку классов — герои, персонажи,
- * локации, предметы, пересказы (`sync.md` §3.3). За страницу отдаётся один класс.
+ * локации, предметы, повествования (`sync.md` §3.3). За страницу отдаётся один класс.
  */
 export interface SyncSnapshotResponse {
   latestRevision: number

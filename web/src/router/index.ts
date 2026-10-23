@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/auth'
  * Маршруты приложения.
  *
  * Кампания — вложенный раздел: `CampaignLayout` держит шапку кампании и вкладки,
- * а вложенные маршруты показывают список, карточку объекта, редактор пересказа
+ * а вложенные маршруты показывают список, карточку объекта, редактор повествования
  * и служебные экраны.
  */
 const routes: RouteRecordRaw[] = [
@@ -69,7 +69,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/CampaignTabView.vue'),
       },
       {
-        // Герои — отдельный раздел кампании, рядом с пересказами и участниками.
+        // Герои — отдельный раздел кампании, рядом с повествованиями и участниками.
         path: 'heroes',
         name: 'campaign-heroes',
         component: () => import('@/views/CampaignTabView.vue'),
@@ -99,12 +99,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Правка материала' },
       },
       {
-        // Пересказы и участники — отдельные разделы кампании, не вкладки.
+        // Повествования и участники — отдельные разделы кампании, не вкладки.
         path: 'retellings',
         name: 'campaign-retellings',
         component: () => import('@/views/CampaignTabView.vue'),
         props: { tab: 'retellings' },
-        meta: { title: 'Пересказы' },
+        meta: { title: 'Повествования' },
       },
       {
         path: 'members',
@@ -152,7 +152,7 @@ const routes: RouteRecordRaw[] = [
         path: 'retellings/new',
         name: 'retelling-new',
         component: () => import('@/views/RetellingEditView.vue'),
-        meta: { title: 'Новый пересказ' },
+        meta: { title: 'Новый повествование' },
       },
       {
         path: 'retellings/:retellingId',
@@ -163,7 +163,7 @@ const routes: RouteRecordRaw[] = [
         path: 'retellings/:retellingId/edit',
         name: 'retelling-edit',
         component: () => import('@/views/RetellingEditView.vue'),
-        meta: { title: 'Правка пересказа' },
+        meta: { title: 'Правка повествования' },
       },
     ],
   },

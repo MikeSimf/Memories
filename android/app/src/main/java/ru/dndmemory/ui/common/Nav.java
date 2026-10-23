@@ -169,6 +169,14 @@ public final class Nav {
         Intent intent = new Intent(context, CampaignActivity.class);
         intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
         intent.putExtra(Extras.CAMPAIGN_TAB, tab);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        context.startActivity(intent);
+    }
+
+    /** Карточка кампании: обложка, описание, участники. */
+    public static void openCampaignInfo(@NonNull Context context, @NonNull String campaignId) {
+        Intent intent = new Intent(context, ru.dndmemory.ui.campaign.CampaignInfoActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
         context.startActivity(intent);
     }
 
@@ -182,6 +190,14 @@ public final class Nav {
     public static void openHeroes(@NonNull Context context, @NonNull String campaignId) {
         Intent intent = new Intent(context, ru.dndmemory.ui.entity.HeroListActivity.class);
         intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        context.startActivity(intent);
+    }
+
+    public static void openMaterial(@NonNull Context context, @NonNull String campaignId,
+                                    @NonNull String materialId) {
+        Intent intent = new Intent(context, MaterialEditActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        intent.putExtra(Extras.MATERIAL_ID, materialId);
         context.startActivity(intent);
     }
 

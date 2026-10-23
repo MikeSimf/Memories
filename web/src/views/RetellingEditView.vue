@@ -23,7 +23,7 @@ const retellingId = computed(() =>
   typeof route.params.retellingId === 'string' ? route.params.retellingId : '',
 )
 
-/** Режим экрана: новый пересказ, черновик или публикация. */
+/** Режим экрана: новый повествование, черновик или публикация. */
 const mode = computed<'new' | 'draft' | 'published'>(() => {
   if (!retellingId.value) return 'new'
   if (campaign.draftById(retellingId.value)) return 'draft'
@@ -85,7 +85,7 @@ async function saveDraft(): Promise<void> {
 
 async function publish(): Promise<void> {
   if (form.value.title.trim() === '') {
-    ui.pushToast('warning', 'Укажите название пересказа')
+    ui.pushToast('warning', 'Укажите название повествования')
     return
   }
   saving.value = true
@@ -99,7 +99,7 @@ async function publish(): Promise<void> {
     } else {
       id = await campaign.createPublishedRetelling(form.value)
     }
-    ui.pushToast('success', 'Пересказ опубликован и уйдёт на сервер при синхронизации')
+    ui.pushToast('success', 'Повествование опубликован и уйдёт на сервер при синхронизации')
     await router.replace({
       name: 'retelling-detail',
       params: { campaignId: campaign.campaignId, retellingId: id },
@@ -136,15 +136,15 @@ async function savePublished(): Promise<void> {
         <h1>
           {{
             mode === 'new'
-              ? 'Новый пересказ'
+              ? 'Новый повествование'
               : mode === 'draft'
-                ? 'Черновик пересказа'
-                : 'Правка пересказа'
+                ? 'Черновик повествования'
+                : 'Правка повествования'
           }}
         </h1>
         <div class="page-header__subtitle">
           <template v-if="mode === 'published'">
-            Пересказ опубликован: правки уйдут на сервер при синхронизации.
+            Повествование опубликован: правки уйдут на сервер при синхронизации.
           </template>
           <template v-else>
             Черновик хранится только на этом устройстве и не отправляется на сервер, пока вы не
@@ -157,7 +157,7 @@ async function savePublished(): Promise<void> {
     <EmptyState
       v-if="!canWrite"
       title="Недостаточно прав"
-      hint="Создавать и править пересказы могут участники с правом retelling.write."
+      hint="Создавать и править повествования могут участники с правом retelling.write."
     >
       <button class="btn" type="button" @click="back">Назад</button>
     </EmptyState>

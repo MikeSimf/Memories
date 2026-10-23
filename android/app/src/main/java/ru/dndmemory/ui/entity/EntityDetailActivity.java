@@ -491,6 +491,78 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
             row.setOnClickListener(v -> Nav.openEntity(this, campaignId, room.id));
             binding.entityMentions.addView(row);
         }
+
+        // Повести и материалы — такие же источники упоминаний.
+        final String mentionedId = targetId;
+        final boolean onlyPeople = location;
+        ru.dndmemory.util.AppExecutors.get().io(() -> {
+            java.util.List<ru.dndmemory.data.local.entity.RetellingRoom> retellings =
+                    App.container(this).database().retellingDao().findAllNow(campaignId);
+            java.util.List<ru.dndmemory.data.local.entity.MaterialRoom> materials =
+                    App.container(this).database().materialDao().findAllNow(campaignId);
+            runOnUiThread(() -> {
+                if (binding == null || current == null || !mentionedId.equals(current.id)) {
+                    return;
+                }
+                for (ru.dndmemory.data.local.entity.RetellingRoom item : retellings) {
+                    if (item == null || item.deleted || !hasLink(item.links, mentionedId)) {
+                        continue;
+                    }
+                    addTextMention(item.title, R.string.search_kind_retelling,
+                            v -> Nav.openRetelling(this, campaignId, item.id));
+                }
+                if (!onlyPeople) {
+                    for (ru.dndmemory.data.local.entity.MaterialRoom item : materials) {
+                        if (item == null || item.deleted
+                                || !hasLink(ru.dndmemory.data.Mappers.links(item.linksJson), mentionedId)) {
+                            continue;
+                        }
+                        addTextMention(item.name, R.string.tab_materials,
+                                v -> Nav.openMaterial(this, campaignId, item.id));
+                    }
+                }
+                boolean hasAny = binding.entityMentions.getChildCount() > 0;
+                ViewUtils.show(binding.entityMentionsTitle, hasAny);
+                ViewUtils.show(binding.entityMentionsHint, hasAny && onlyPeople);
+            });
+            return null;
+        }, new ru.dndmemory.util.RepoCallback<Void>() {
+            @Override
+            public void onSuccess(@Nullable Void value) {
+            }
+
+            @Override
+            public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) {
+            }
+        });
+    }
+
+    private static boolean hasLink(@Nullable java.util.List<EntityLink> links, @NonNull String id) {
+        if (links == null) {
+            return false;
+        }
+        for (EntityLink link : links) {
+            if (link != null && id.equals(link.targetId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Строка упоминания без аватара: повествование или материал. */
+    private void addTextMention(@Nullable String name, int typeRes,
+                                @NonNull android.view.View.OnClickListener onClick) {
+        android.view.View row = getLayoutInflater().inflate(
+                R.layout.item_backlink, binding.entityMentions, false);
+        android.widget.ImageView avatar = row.findViewById(R.id.backlink_avatar);
+        android.widget.TextView title = row.findViewById(R.id.backlink_name);
+        android.widget.TextView subtitle = row.findViewById(R.id.backlink_subtitle);
+        avatar.setImageResource(R.drawable.ic_retelling);
+        avatar.setColorFilter(androidx.core.content.ContextCompat.getColor(this, R.color.text_muted));
+        title.setText(name);
+        subtitle.setText(typeRes);
+        row.setOnClickListener(onClick);
+        binding.entityMentions.addView(row);
     }
 
     private void bindLinks(@NonNull EntityRoom entity) {

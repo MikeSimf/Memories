@@ -178,6 +178,7 @@ public final class Mappers {
         room.imageFileId = dto.imageFileId;
         room.avatarFileId = dto.avatarFileId;
         room.filesJson = filesJson(dto.files);
+        room.linksJson = linksJson(dto.links);
         room.revision = dto.revision;
         room.createdAt = dto.createdAt;
         room.updatedAt = dto.updatedAt;
@@ -200,6 +201,7 @@ public final class Mappers {
         dto.imageFileId = room.imageFileId;
         dto.avatarFileId = room.avatarFileId;
         dto.files = files(room.filesJson);
+        dto.links = links(room.linksJson);
         dto.revision = room.revision;
         dto.createdAt = room.createdAt;
         dto.updatedAt = room.updatedAt;
@@ -208,6 +210,29 @@ public final class Mappers {
     }
 
     private static final Gson FILES_GSON = new Gson();
+
+    /** Ссылки из JSON-колонки; битый JSON не роняет карточку. */
+    @NonNull
+    public static java.util.List<EntityLink> links(@Nullable String json) {
+        if (json == null || json.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        try {
+            java.util.List<EntityLink> parsed = FILES_GSON.fromJson(json,
+                    new TypeToken<java.util.List<EntityLink>>() { }.getType());
+            return parsed == null ? new java.util.ArrayList<>() : parsed;
+        } catch (RuntimeException e) {
+            return new java.util.ArrayList<>();
+        }
+    }
+
+    @Nullable
+    public static String linksJson(@Nullable java.util.List<EntityLink> links) {
+        if (links == null || links.isEmpty()) {
+            return null;
+        }
+        return FILES_GSON.toJson(links);
+    }
 
     /** Файлы объекта из JSON-колонки; битый JSON не роняет список. */
     @NonNull
