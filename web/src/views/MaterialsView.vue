@@ -88,7 +88,7 @@ function excerpt(material: MaterialDto): string {
         v-for="material in materials"
         :key="material.id"
         class="card card--link card--type-item"
-        :to="{ name: 'material-edit', params: { campaignId, materialId: material.id } }"
+        :to="{ name: 'material-detail', params: { campaignId, materialId: material.id } }"
       >
         <EntityImage
           v-if="firstImage(material)"

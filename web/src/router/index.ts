@@ -105,6 +105,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Новый материал' },
       },
       {
+        path: 'materials/:materialId',
+        name: 'material-detail',
+        component: () => import('@/views/MaterialDetailView.vue'),
+        meta: { title: 'Материал' },
+      },
+      {
         path: 'materials/:materialId/edit',
         name: 'material-edit',
         component: () => import('@/views/MaterialEditView.vue'),

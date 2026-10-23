@@ -195,6 +195,15 @@ public final class Nav {
 
     public static void openMaterial(@NonNull Context context, @NonNull String campaignId,
                                     @NonNull String materialId) {
+        Intent intent = new Intent(context, ru.dndmemory.ui.material.MaterialDetailActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        intent.putExtra(Extras.MATERIAL_ID, materialId);
+        context.startActivity(intent);
+    }
+
+    /** Редактор материала открывается из карточки просмотра. */
+    public static void openMaterialEdit(@NonNull Context context, @NonNull String campaignId,
+                                        @NonNull String materialId) {
         Intent intent = new Intent(context, MaterialEditActivity.class);
         intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
         intent.putExtra(Extras.MATERIAL_ID, materialId);

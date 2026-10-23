@@ -162,8 +162,7 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         binding.entityTypeChip.setBackgroundTintList(
                 android.content.res.ColorStateList.valueOf(TypeColors.soft(this, type)));
         ViewUtils.show(binding.entitySubtitle, false);
-        binding.entityUpdated.setText(getString(R.string.entity_detail_updated,
-                DateFormats.formatIso(entity.updatedAt)));
+        renderSystemInfo(entity);
 
         // Фото грузится с сервера авторизованным клиентом и кэшируется в памяти.
         final String photoId = entity.imageFileId;
@@ -195,6 +194,46 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
             default:
                 return "characters";
         }
+    }
+
+    /** Авторы и время создания/правки плюс когда кампания синхронизировалась. */
+    private void renderSystemInfo(@NonNull EntityRoom entity) {
+        ru.dndmemory.util.AppExecutors.get().io(() -> {
+            java.util.List<ru.dndmemory.data.local.entity.MemberRoom> members =
+                    App.container(this).database().memberDao().findAllNow(campaignId);
+            String createdBy = null;
+            String updatedBy = null;
+            for (ru.dndmemory.data.local.entity.MemberRoom member : members) {
+                if (member == null || member.userId == null) {
+                    continue;
+                }
+                if (member.userId.equals(entity.createdBy)) {
+                    createdBy = member.displayName;
+                }
+                if (member.userId.equals(entity.updatedBy)) {
+                    updatedBy = member.displayName;
+                }
+            }
+            ru.dndmemory.data.local.entity.SyncStateRoom state =
+                    App.container(this).database().syncStateDao().find(campaignId);
+            String syncedAt = state == null ? null : state.lastSyncAt;
+            String createdName = createdBy == null ? "—" : createdBy;
+            String updatedName = updatedBy == null ? "—" : updatedBy;
+            runOnUiThread(() -> binding.entityUpdated.setText(getString(
+                    R.string.entity_detail_system_info,
+                    createdName, DateFormats.formatIso(entity.createdAt),
+                    updatedName, DateFormats.formatIso(entity.updatedAt),
+                    syncedAt == null ? "—" : DateFormats.formatIso(syncedAt))));
+            return null;
+        }, new ru.dndmemory.util.RepoCallback<Void>() {
+            @Override
+            public void onSuccess(@Nullable Void value) {
+            }
+
+            @Override
+            public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) {
+            }
+        });
     }
 
     /** Все файлы объекта: фото открываются, документы скачиваются. */

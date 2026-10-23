@@ -7,6 +7,7 @@
     <string name="action_retry">Повторить</string>
     <string name="action_cancel">Отмена</string>
     <string name="action_send">Отправить</string>
+    <string name="material_detail_updated">Изменён(а) %1$s · %2$s</string>
     <string name="action_save">Сохранить</string>
     <string name="action_delete">Удалить</string>
     <string name="action_edit">Редактировать</string>
@@ -211,6 +212,7 @@
     <string name="entity_filter_no_results">Ничего не найдено по фильтру</string>
     <string name="entity_detail_title">Карточка</string>
     <string name="entity_detail_type">Класс: %1$s</string>
+    <string name="entity_detail_system_info">Создал: %1$s, %2$s\nИзменил: %3$s, %4$s\nСинхронизация: %5$s</string>
     <string name="entity_detail_updated">Обновлено: %1$s</string>
     <string name="entity_detail_fields">Поля</string>
     <string name="entity_detail_description">Описание</string>
@@ -342,6 +344,7 @@
     <string name="settings_title">Настройки</string>
     <string name="settings_profile_title">Профиль</string>
     <string name="settings_app_title">Настройки приложения</string>
+    <string name="settings_latest_version">Установлена последняя версия</string>
     <string name="settings_check_update">Проверить наличие обновления</string>
     <string name="settings_no_update">Обновлений нет — у вас последняя версия</string>
     <string name="settings_update_check_failed">Не удалось проверить обновление</string>

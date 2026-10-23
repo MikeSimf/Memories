@@ -109,6 +109,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".ui.material.MaterialDetailActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.material.MaterialsActivity"
             android:exported="false" />
 

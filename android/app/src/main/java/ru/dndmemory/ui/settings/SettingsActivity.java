@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import ru.dndmemory.App;
+import ru.dndmemory.BuildConfig;
 import ru.dndmemory.AppContainer;
 import ru.dndmemory.R;
 import ru.dndmemory.ui.common.Extras;
@@ -347,6 +348,29 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
+    /** Сравнение версий вида 1.0.29: больше нуля — новее установленной. */
+    private static int compareVersions(String left, String right) {
+        String[] a = left.split("\\.");
+        String[] b = right.split("\\.");
+        int n = Math.max(a.length, b.length);
+        for (int i = 0; i < n; i++) {
+            int x = i < a.length ? parseVersion(a[i]) : 0;
+            int y = i < b.length ? parseVersion(b[i]) : 0;
+            if (x != y) {
+                return Integer.compare(x, y);
+            }
+        }
+        return 0;
+    }
+
+    private static int parseVersion(String value) {
+        try {
+            return Integer.parseInt(value.replaceAll("\\D", ""));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     /** История версий: новые сверху, по строке на версию. */
     private void loadVersions() {
         App.container(this).updateRepository().versions(
@@ -357,10 +381,13 @@ public class SettingsActivity extends AppCompatActivity {
                         if (value == null) {
                             return;
                         }
+                        String current = BuildConfig.VERSION_NAME;
+                        boolean shown = false;
                         for (ru.dndmemory.data.remote.dto.AppVersionDto note : value) {
-                            if (note == null) {
+                            if (note == null || note.version == null || compareVersions(note.version, current) <= 0) {
                                 continue;
                             }
+                            shown = true;
                             android.widget.TextView row = new android.widget.TextView(SettingsActivity.this);
                             row.setText(getString(R.string.settings_version_line,
                                     note.version == null ? "" : note.version,
@@ -369,6 +396,13 @@ public class SettingsActivity extends AppCompatActivity {
                             row.setTextColor(androidx.core.content.ContextCompat.getColor(
                                     SettingsActivity.this, R.color.text_muted));
                             row.setPadding(0, 6, 0, 6);
+                            binding.settingsVersions.addView(row);
+                        }
+                        if (!shown) {
+                            android.widget.TextView row = new android.widget.TextView(SettingsActivity.this);
+                            row.setText(R.string.settings_latest_version);
+                            row.setTextColor(androidx.core.content.ContextCompat.getColor(
+                                    SettingsActivity.this, R.color.text_muted));
                             binding.settingsVersions.addView(row);
                         }
                     }
