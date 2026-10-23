@@ -41,6 +41,14 @@ services:
       PUBLIC_URL: ${PUBLIC_URL:?Задайте PUBLIC_URL в .env}
       CORS_ORIGINS: ${CORS_ORIGINS:?Задайте CORS_ORIGINS в .env}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      MAIL_SSL: ${MAIL_SSL:-true}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-465}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
 
   # Веб-версия (готовая статика из папки web) и прокси /api на приложение.
   # Наружу смотрит только этот контейнер — на 127.0.0.1, дальше nginx сервера.

@@ -401,3 +401,33 @@ tar czf ~/dnd-files-$(date +%F).tar.gz -C /opt/dnd-memory/prod/data files
 | не открывается `8091` | порт закрыт файрволом: `sudo ufw allow 8091/tcp` |
 | `✗ порт 443 уже занят процессом «docker-proxy»` | 443 держит другой сервис (VPN): используйте вариант A, Apache на 443 не нужен |
 | старая страница вместо приложения | конфликт `server_name` в nginx — см. предупреждение `nginx-setup.sh` |
+
+## Почта: подтверждение и сброс пароля
+
+Приём писем не нужен — только исходящий SMTP-релей. Подойдёт ящик на Яндексе,
+Mail.ru, Gmail (пароль приложения) или транзакционный сервис (SendGrid, Brevo,
+Resend): у всех есть SMTP-хост, логин и пароль.
+
+Заполните в `.env` каждого экземпляра:
+
+```
+MAIL_ENABLED=true
+MAIL_HOST=smtp.yandex.ru
+MAIL_PORT=465
+MAIL_SSL=true
+MAIL_USERNAME=robot@example.com
+MAIL_PASSWORD=пароль-приложения
+MAIL_FROM=robot@example.com
+ADMIN_EMAIL=you@example.com
+```
+
+После изменения `.env` перезапустите экземпляр: `./bin/dnd.sh prod restart`.
+
+Письма уходят на подтверждение почты при регистрации и на сброс пароля.
+`ADMIN_EMAIL` — ваш аккаунт: он видит обращения обратной связи на странице
+`/feedback` в веб-версии. Пока `MAIL_ENABLED=false`, ссылки пишутся в лог
+контейнера, поэтому тест работает без почтового сервера:
+
+```bash
+docker compose -f prod/docker-compose.yml logs -f app | grep ссылка
+```

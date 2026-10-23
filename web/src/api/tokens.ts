@@ -25,6 +25,8 @@ export interface UserProfile {
   phone: string | null
   /** Признак заданного пароля: вход только по логину и паролю, поэтому всегда `true`. */
   hasPassword: boolean
+  /** Видит обращения обратной связи. */
+  admin: boolean
 }
 
 const TOKENS_KEY = 'dnd-memory.tokens'
@@ -105,6 +107,7 @@ export const userStore = {
         avatarUrl: typeof parsed.avatarUrl === 'string' ? parsed.avatarUrl : null,
         phone: typeof parsed.phone === 'string' ? parsed.phone : null,
         hasPassword: parsed.hasPassword === true,
+        admin: parsed.admin === true,
       }
     } catch {
       return null

@@ -35,6 +35,7 @@ public class AuthService {
     private final AppProperties properties;
     private final DtoMapper dtoMapper;
     private final InviteService inviteService;
+    private final EmailVerificationService emailVerificationService;
 
     @Transactional
     public AuthDtos.TokenResponse register(AuthDtos.RegisterRequest request) {
@@ -57,6 +58,8 @@ public class AuthService {
         user.setCreatedAt(Instant.now());
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
+        // Письмо с подтверждением почты; без SMTP ссылка попадёт в лог.
+        emailVerificationService.send(user);
 
         // Приглашение из QR: пользователь сразу становится участником кампании,
         // приглашение при этом гасится (одноразовое).

@@ -68,6 +68,8 @@ public class SettingsActivity extends AppCompatActivity {
             android.content.Intent intent = new android.content.Intent(this, SettingsActivity.class);
             startActivity(intent);
         });
+        binding.settingsFeedback.setOnClickListener(v -> showFeedback());
+
         binding.settingsCheckUpdate.setOnClickListener(v ->
                 App.container(this).updateRepository().check(
                         new ru.dndmemory.util.RepoCallback<ru.dndmemory.data.repo.UpdateRepository.UpdateInfo>() {
@@ -255,6 +257,46 @@ public class SettingsActivity extends AppCompatActivity {
         new MaterialAlertDialogBuilder(this)
                 .setMessage(R.string.settings_logout_confirm)
                 .setPositiveButton(R.string.action_logout, (dialog, which) -> viewModel.logout())
+                .setNegativeButton(R.string.action_cancel, null)
+                .show();
+    }
+
+    /** Обратная связь: сообщение уходит на сервер, ответ — на почту аккаунта. */
+    private void showFeedback() {
+        android.widget.EditText input = new android.widget.EditText(this);
+        input.setHint(R.string.settings_feedback_hint);
+        input.setMinLines(4);
+        input.setGravity(android.view.Gravity.TOP);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        android.widget.FrameLayout box = new android.widget.FrameLayout(this);
+        box.setPadding(pad, pad, pad, 0);
+        box.addView(input);
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.settings_feedback)
+                .setView(box)
+                .setPositiveButton(R.string.action_send, (dialog, which) -> {
+                    String message = input.getText().toString().trim();
+                    if (message.length() < 3) {
+                        return;
+                    }
+                    App.container(this).apiService().sendFeedback(
+                            new ru.dndmemory.data.remote.dto.FeedbackRequest(message, "settings"))
+                            .enqueue(new retrofit2.Callback<okhttp3.ResponseBody>() {
+                                @Override
+                                public void onResponse(@NonNull retrofit2.Call<okhttp3.ResponseBody> call,
+                                                       @NonNull retrofit2.Response<okhttp3.ResponseBody> response) {
+                                    ViewUtils.toast(SettingsActivity.this, response.isSuccessful()
+                                            ? R.string.settings_feedback_sent
+                                            : R.string.settings_feedback_failed);
+                                }
+
+                                @Override
+                                public void onFailure(@NonNull retrofit2.Call<okhttp3.ResponseBody> call,
+                                                      @NonNull Throwable t) {
+                                    ViewUtils.toast(SettingsActivity.this, R.string.settings_feedback_failed);
+                                }
+                            });
+                })
                 .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }

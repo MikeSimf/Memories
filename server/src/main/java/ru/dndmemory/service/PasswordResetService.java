@@ -37,6 +37,7 @@ public class PasswordResetService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     private final AppProperties properties;
+    private final MailService mailService;
 
     /**
      * Всегда завершается успешно: по ответу нельзя узнать, есть ли такой адрес.
@@ -62,8 +63,15 @@ public class PasswordResetService {
             request.setCreatedAt(requestedAt);
             passwordResetRepository.save(request);
 
-            log.warn("СБРОС ПАРОЛЯ: login={} email={} ссылка={}/#/reset/{}",
-                    user.getLogin(), user.getEmail(), trimSlash(properties.getPublicUrl()), token);
+            String link = trimSlash(properties.getPublicUrl()) + "/#/reset/" + token;
+            String text = "Здравствуйте, " + user.getDisplayName() + "!\n\n"
+                    + "Сброс пароля в DnD Memory:\n" + link + "\n\n"
+                    + "Ссылка действует час. Если вы не запрашивали сброс, просто проигнорируйте письмо.";
+            boolean sent = mailService.send(user.getEmail(), "Сброс пароля в DnD Memory", text);
+            if (!sent) {
+                log.warn("СБРОС ПАРОЛЯ: login={} email={} ссылка={}",
+                        user.getLogin(), user.getEmail(), link);
+            }
         });
     }
 

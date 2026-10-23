@@ -69,6 +69,12 @@ public final class AuthDtos {
     }
 
     @Data
+    public static class VerifyEmailRequest {
+        @NotBlank(message = "Нужен токен")
+        private String token;
+    }
+
+    @Data
     public static class PasswordResetRequestDto {
         @NotBlank(message = "Укажите почту")
         @Email(message = "Некорректная почта")
@@ -127,6 +133,9 @@ public final class AuthDtos {
         private String phone;
 
         private boolean hasPassword;
+
+        /** Видит обращения обратной связи. */
+        private boolean admin;
 
         private Instant createdAt;
     }

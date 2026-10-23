@@ -34,6 +34,13 @@ public final class TokenUtils {
         }
     }
 
+    /** Случайный одноразовый токен: 32 байта энтропии в base64url. */
+    public static String newOpaqueToken() {
+        byte[] bytes = new byte[32];
+        RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
     /** Случайный refresh-токен: 48 байт энтропии в base64url. */
     public static String newRefreshToken() {
         byte[] bytes = new byte[48];

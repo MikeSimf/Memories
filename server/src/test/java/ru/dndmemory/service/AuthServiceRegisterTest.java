@@ -51,6 +51,7 @@ class AuthServiceRegisterTest {
         AppProperties properties = mock(AppProperties.class);
         DtoMapper dtoMapper = mock(DtoMapper.class);
         inviteService = mock(InviteService.class);
+        EmailVerificationService emailVerificationService = mock(EmailVerificationService.class);
 
         AppProperties.Jwt jwt = new AppProperties.Jwt();
         jwt.setSecret("test-secret-for-register-tests-at-least-32-bytes");
@@ -65,7 +66,7 @@ class AuthServiceRegisterTest {
         });
 
         authService = new AuthService(userRepository, refreshTokenRepository, passwordEncoder,
-                jwtService, properties, dtoMapper, inviteService);
+                jwtService, properties, dtoMapper, inviteService, emailVerificationService);
     }
 
     private AuthDtos.RegisterRequest request(String login, String inviteToken, String platform) {

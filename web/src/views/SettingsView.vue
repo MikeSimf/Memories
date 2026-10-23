@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { ApiError, apiBaseUrl, appApi, errorMessage, serviceApi } from '@/api'
+import { ApiError, apiBaseUrl, appApi, errorMessage, feedbackApi, serviceApi } from '@/api'
 import type { AppVersionDto } from '@/api/types'
 import ApkDownload from '@/components/ApkDownload.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -23,6 +23,8 @@ const saving = ref(false)
 const loggingOut = ref(false)
 const version = ref<string | null>(null)
 const appVersions = ref<AppVersionDto[]>([])
+const feedbackText = ref('')
+const feedbackSending = ref(false)
 const confirmLogout = ref(false)
 const unsynced = ref({ drafts: 0, pending: 0 })
 
@@ -95,6 +97,21 @@ onMounted(async () => {
     appVersions.value = []
   }
 })
+
+async function sendFeedback(): Promise<void> {
+  const text = feedbackText.value.trim()
+  if (text.length < 3) return
+  feedbackSending.value = true
+  try {
+    await feedbackApi.create(text, 'settings')
+    feedbackText.value = ''
+    ui.pushToast('success', 'Спасибо! Обращение отправлено')
+  } catch (caught) {
+    ui.pushToast('error', errorMessage(caught))
+  } finally {
+    feedbackSending.value = false
+  }
+}
 
 async function saveProfile(): Promise<void> {
   profileError.value = null
@@ -336,6 +353,28 @@ async function logout(): Promise<void> {
         </div>
       </div>
     </div>
+
+    <form class="card stack" @submit.prevent="sendFeedback">
+      <h2>Обратная связь</h2>
+      <p class="muted" style="margin: 0">
+        Напишите, что не работает или чего не хватает. Ответим на почту аккаунта.
+      </p>
+      <textarea
+        v-model="feedbackText"
+        class="textarea"
+        rows="4"
+        placeholder="Сообщение…"
+      />
+      <div class="row row--between">
+        <RouterLink v-if="auth.user?.admin" class="btn btn--sm" :to="{ name: 'admin-feedback' }">
+          Мои обращения
+        </RouterLink>
+        <button class="btn btn--primary" type="submit" :disabled="feedbackSending || feedbackText.trim().length < 3">
+          <span v-if="feedbackSending" class="spinner" aria-hidden="true" />
+          Отправить
+        </button>
+      </div>
+    </form>
 
     <div class="card stack">
       <h2>Выход</h2>

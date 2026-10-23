@@ -75,6 +75,10 @@ public interface ApiService {
     @GET("api/app/versions")
     Call<java.util.List<AppVersionDto>> appVersions();
 
+    /** Обратная связь: сообщение сохраняется на сервере. */
+    @POST("api/feedback")
+    Call<okhttp3.ResponseBody> sendFeedback(@Body ru.dndmemory.data.remote.dto.FeedbackRequest body);
+
     // --- Аутентификация: только логин и пароль (раздел 3) -------------------
 
     @POST("api/auth/register")

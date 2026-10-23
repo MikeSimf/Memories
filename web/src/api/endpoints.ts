@@ -47,6 +47,7 @@ import type {
   VersionDto,
   AppLatestDto,
   AppVersionDto,
+  FeedbackDto,
 } from './types'
 
 /** Список приходит страницей; «сырой» массив приводим к странице на всякий случай. */
@@ -458,6 +459,21 @@ export const appApi = {
   },
 }
 
+/** Обратная связь: отправка и чтение админом. */
+export const feedbackApi = {
+  create(message: string, page?: string): Promise<FeedbackDto> {
+    return apiClient.request<FeedbackDto>({
+      method: 'POST',
+      path: '/api/feedback',
+      body: { message, page },
+    })
+  },
+
+  list(): Promise<FeedbackDto[]> {
+    return apiClient.request<FeedbackDto[]>({ path: '/api/admin/feedback' })
+  },
+}
+
 export interface RaceDto {
   code: string
   name: string
@@ -530,6 +546,7 @@ export const api = {
   sync: syncApi,
   service: serviceApi,
   app: appApi,
+  feedback: feedbackApi,
   races: racesApi,
   classes: classesApi,
   locationTypes: locationTypesApi,

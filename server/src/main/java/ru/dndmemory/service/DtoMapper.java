@@ -2,6 +2,7 @@ package ru.dndmemory.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import ru.dndmemory.config.AppProperties;
 import ru.dndmemory.domain.Campaign;
 import ru.dndmemory.domain.Member;
 import ru.dndmemory.domain.Retelling;
@@ -22,6 +23,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DtoMapper {
 
+    private final AppProperties properties;
+
     public AuthDtos.UserDto toUser(User user) {
         return AuthDtos.UserDto.builder()
                 .id(user.getId())
@@ -33,8 +36,15 @@ public class DtoMapper {
                 .avatarUrl(user.getAvatarFileId() == null ? null : "/api/files/" + user.getAvatarFileId())
                 .phone(user.getPhone())
                 .hasPassword(user.hasPassword())
+                .admin(isAdmin(user))
                 .createdAt(user.getCreatedAt())
                 .build();
+    }
+
+    private boolean isAdmin(User user) {
+        String admin = properties.getAdminEmail();
+        return admin != null && !admin.isEmpty()
+                && admin.trim().equalsIgnoreCase(user.getEmail());
     }
 
     public RetellingDtos.RetellingDto toRetelling(Retelling retelling, List<LinkDto> links,

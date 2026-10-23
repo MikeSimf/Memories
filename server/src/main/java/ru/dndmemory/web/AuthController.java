@@ -24,6 +24,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
+    private final ru.dndmemory.service.EmailVerificationService emailVerificationService;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
@@ -47,7 +48,14 @@ public class AuthController {
         authService.logout(request.getRefreshToken());
     }
 
-    /** Всегда 202: по ответу нельзя узнать, есть ли такой адрес (ссылка идёт в лог сервера). */
+    /** Подтверждение почты по ссылке из письма. */
+    @PostMapping("/verify-email")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void verifyEmail(@Valid @RequestBody AuthDtos.VerifyEmailRequest request) {
+        emailVerificationService.verify(request.getToken());
+    }
+
+    /** Всегда 202: по ответу нельзя узнать, есть ли такой адрес. */
     @PostMapping("/password-reset/request")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void requestPasswordReset(@Valid @RequestBody AuthDtos.PasswordResetRequestDto request) {

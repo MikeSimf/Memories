@@ -55,6 +55,16 @@ dnd:
     min-version-code: ${DND_APP_MIN_CODE:1}
     apk-url: ${DND_APP_APK_URL:}
     notes: ${DND_APP_NOTES:}
+  mail:
+    enabled: ${MAIL_ENABLED:false}
+    ssl: ${MAIL_SSL:true}
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    from: ${MAIL_FROM:}
+    from-name: ${MAIL_FROM_NAME:DnD Memory}
+  admin-email: ${ADMIN_EMAIL:}
   retention:
     change-log-days: ${DND_CHANGE_LOG_DAYS:90}
     change-log-max-rows: ${DND_CHANGE_LOG_MAX_ROWS:50000}

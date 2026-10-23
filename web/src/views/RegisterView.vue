@@ -57,7 +57,9 @@ async function submit(): Promise<void> {
       displayName: displayName.value.trim(),
       ...(inviteToken.value ? { inviteToken: inviteToken.value } : {}),
     })
-    ui.pushToast('success', inviteToken.value ? 'Аккаунт создан, вы в кампании' : 'Аккаунт создан')
+    ui.pushToast('success', inviteToken.value
+      ? 'Аккаунт создан, вы в кампании. Проверьте почту — придёт ссылка подтверждения'
+      : 'Аккаунт создан. Проверьте почту — придёт ссылка подтверждения')
     await router.replace(redirectTarget())
   } catch (caught) {
     localError.value = errorMessage(caught)

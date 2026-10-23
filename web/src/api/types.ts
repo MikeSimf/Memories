@@ -192,6 +192,8 @@ export interface UserDto {
   phone: string | null
   /** Пароль есть всегда: вход только по логину и паролю. */
   hasPassword: boolean
+  /** Видит обращения обратной связи. */
+  admin?: boolean
   createdAt?: string
 }
 
@@ -843,6 +845,17 @@ export interface HealthDto {
   status: string
   version: string
   time: string
+}
+
+/** Сообщение обратной связи. */
+export interface FeedbackDto {
+  id: string
+  userId: string
+  email: string
+  message: string
+  page: string | null
+  status: string
+  createdAt: string
 }
 
 /** Одна запись истории версий (`GET /api/app/versions`). */

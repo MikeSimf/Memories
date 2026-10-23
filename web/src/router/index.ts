@@ -37,6 +37,12 @@ const routes: RouteRecordRaw[] = [
     meta: { public: true, bare: true, title: 'Новый пароль' },
   },
   {
+    path: '/verify-email/:token',
+    name: 'verify-email',
+    component: () => import('@/views/VerifyEmailView.vue'),
+    meta: { public: true, bare: true, title: 'Подтверждение почты' },
+  },
+  {
     path: '/join/:token',
     name: 'join',
     component: () => import('@/views/JoinView.vue'),
@@ -47,6 +53,12 @@ const routes: RouteRecordRaw[] = [
     name: 'campaigns',
     component: () => import('@/views/CampaignsView.vue'),
     meta: { title: 'Кампании' },
+  },
+  {
+    path: '/feedback',
+    name: 'admin-feedback',
+    component: () => import('@/views/AdminFeedbackView.vue'),
+    meta: { title: 'Обращения', narrow: true },
   },
   {
     path: '/settings',

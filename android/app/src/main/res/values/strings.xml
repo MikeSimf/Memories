@@ -6,6 +6,7 @@
     <!-- Общие действия -->
     <string name="action_retry">Повторить</string>
     <string name="action_cancel">Отмена</string>
+    <string name="action_send">Отправить</string>
     <string name="action_save">Сохранить</string>
     <string name="action_delete">Удалить</string>
     <string name="action_edit">Редактировать</string>
@@ -343,6 +344,10 @@
     <string name="settings_check_update">Проверить наличие обновления</string>
     <string name="settings_no_update">Обновлений нет — у вас последняя версия</string>
     <string name="settings_update_check_failed">Не удалось проверить обновление</string>
+    <string name="settings_feedback">Обратная связь</string>
+    <string name="settings_feedback_hint">Напишите, что не работает или чего не хватает. Ответим на почту аккаунта.</string>
+    <string name="settings_feedback_sent">Спасибо! Обращение отправлено</string>
+    <string name="settings_feedback_failed">Не удалось отправить обращение</string>
     <string name="settings_updates_section">Обновления</string>
     <string name="settings_version_line">%1$s — %2$s</string>
     <string name="settings_sync_section">Синхронизация</string>

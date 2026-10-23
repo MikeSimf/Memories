@@ -23,6 +23,7 @@ public class AppProperties {
     private String adminToken;
 
     private App app = new App();
+    private Mail mail = new Mail();
     private Retention retention = new Retention();
     private Jwt jwt = new Jwt();
 
@@ -51,6 +52,23 @@ public class AppProperties {
         private String date;
         private String notes;
     }
+
+    /** Исходящая почта: только отправка, приём писем не нужен. */
+    @Data
+    public static class Mail {
+        private boolean enabled = false;
+        private boolean ssl = true;
+        private String host;
+        private int port = 465;
+        private String username;
+        private String password;
+        /** Адрес отправителя, например robot@example.com. */
+        private String from;
+        private String fromName = "DnD Memory";
+    }
+
+    /** Почта администратора: видит обращения обратной связи. */
+    private String adminEmail;
 
     @Data
     public static class Retention {
