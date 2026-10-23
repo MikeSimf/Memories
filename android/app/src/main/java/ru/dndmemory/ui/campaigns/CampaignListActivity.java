@@ -117,6 +117,10 @@ public class CampaignListActivity extends AppCompatActivity implements CampaignA
             Nav.openSettings(this);
             return true;
         }
+        if (id == R.id.action_profile) {
+            Nav.openProfile(this);
+            return true;
+        }
         if (id == R.id.action_logout) {
             confirmLogout();
             return true;

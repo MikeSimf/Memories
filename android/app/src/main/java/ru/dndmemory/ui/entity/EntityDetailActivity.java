@@ -290,7 +290,6 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
             switch (kind) {
                 case HERO:
                 case CHARACTER:
-                    addPersonRow(getString(R.string.attr_name_label), entity.name, null, null);
                     addPersonRow(getString(R.string.attr_race), entity.race, "race", null);
                     addPersonRow(getString(R.string.attr_klass), entity.klass, "class", null);
                     addPersonRow(getString(R.string.attr_gender), Labels.gender(this, entity.gender),
@@ -314,8 +313,8 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
             }
         }
         bindHeroItems(entity);
-        ViewUtils.show(binding.entityFieldsTitle,
-                binding.entityFields.getChildCount() > 0);
+        // Заголовок «Поля» больше не показываем: поля говорят сами за себя.
+        ViewUtils.show(binding.entityFieldsTitle, false);
     }
 
     /** Владелец предмета: ссылка важнее строки «как написано в мире». */
@@ -463,6 +462,10 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
             }
         }
         mentions.sort((left, right) -> {
+            int byType = Integer.compare(mentionOrder(left.kind), mentionOrder(right.kind));
+            if (byType != 0) {
+                return byType;
+            }
             String a = left.name == null ? "" : left.name;
             String b = right.name == null ? "" : right.name;
             return a.compareToIgnoreCase(b);
@@ -537,6 +540,29 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         });
     }
 
+    /** Порядок упоминаний: персонажи, локации, предметы, герои, истории, материалы. */
+    private static int mentionOrder(@Nullable String kind) {
+        if (kind == null) {
+            return 9;
+        }
+        switch (kind.toUpperCase(java.util.Locale.ROOT)) {
+            case "CHARACTER":
+                return 0;
+            case "LOCATION":
+                return 1;
+            case "ITEM":
+                return 2;
+            case "HERO":
+                return 3;
+            case "RETELLING":
+                return 4;
+            case "MATERIAL":
+                return 5;
+            default:
+                return 9;
+        }
+    }
+
     private static boolean hasLink(@Nullable java.util.List<EntityLink> links, @NonNull String id) {
         if (links == null) {
             return false;
@@ -572,6 +598,7 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
             return;
         }
         ViewUtils.show(binding.entityLinksTitle, true);
+        binding.entityLinksTitle.setText(R.string.entity_links);
         for (EntityLink link : entity.links) {
             EntityRoom target = link.targetId == null ? null : findObject(link.targetId);
             if (target != null) {

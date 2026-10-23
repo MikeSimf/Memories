@@ -145,7 +145,6 @@ const hasOfflineData = computed(() => campaigns.loadedFromCache)
             class="input"
             type="text"
             required
-            placeholder="Курс на Фандалин"
           />
         </div>
         <div class="field">
@@ -154,7 +153,6 @@ const hasOfflineData = computed(() => campaigns.loadedFromCache)
             id="campaign-description"
             v-model="description"
             class="textarea"
-            placeholder="Коротко о кампании"
           />
         </div>
         <div class="modal__actions">
@@ -179,7 +177,6 @@ const hasOfflineData = computed(() => campaigns.loadedFromCache)
             autocapitalize="characters"
             spellcheck="false"
             maxlength="8"
-            placeholder="7F3K9Q2M"
           />
           <span class="field__hint">
             Восемь символов из QR-кода или ссылки приглашения. Приглашение одноразовое.

@@ -105,7 +105,7 @@ async function syncNow(): Promise<void> {
       </button>
     </div>
 
-    <SearchBox v-model="query" placeholder="Имя, описание, раса, текст пересказа…" />
+    <SearchBox v-model="query" />
 
     <div class="row">
       <span class="faint">Искать среди:</span>

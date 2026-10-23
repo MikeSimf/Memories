@@ -52,7 +52,7 @@ watch(
   (user) => {
     if (!user) return
     displayName.value = user.displayName
-    email.value = user.email
+    email.value = user.email ?? ''
     phone.value = user.phone ?? ''
   },
 )
@@ -82,7 +82,7 @@ function contactError(caught: unknown): string {
 onMounted(async () => {
   if (auth.user) {
     displayName.value = auth.user.displayName
-    email.value = auth.user.email
+    email.value = auth.user.email ?? ''
     phone.value = auth.user.phone ?? ''
   }
   try {
@@ -224,7 +224,6 @@ async function logout(): Promise<void> {
             class="input"
             type="tel"
             inputmode="tel"
-            placeholder="+7 999 123-45-67"
           />
         </div>
       </div>
@@ -235,7 +234,6 @@ async function logout(): Promise<void> {
           v-model="email"
           class="input"
           type="email"
-          placeholder="gm@example.com"
         />
         <span class="field__hint">Почта обязательна: на неё оформляется сброс пароля. Телефон — необязателен.</span>
       </div>
@@ -363,7 +361,6 @@ async function logout(): Promise<void> {
         v-model="feedbackText"
         class="textarea"
         rows="4"
-        placeholder="Сообщение…"
       />
       <div class="row row--between">
         <RouterLink v-if="auth.user?.admin" class="btn btn--sm" :to="{ name: 'admin-feedback' }">

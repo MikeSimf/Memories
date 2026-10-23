@@ -32,7 +32,7 @@ public class FeedbackService {
         Feedback feedback = new Feedback();
         feedback.setId(UUID.randomUUID());
         feedback.setUserId(userId);
-        feedback.setEmail(user.getEmail());
+        feedback.setEmail(user.getEmail() == null ? "" : user.getEmail());
         feedback.setMessage(request.getMessage().trim());
         feedback.setPage(request.getPage());
         feedback.setStatus("NEW");

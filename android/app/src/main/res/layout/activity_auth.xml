@@ -127,19 +127,6 @@
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/auth_email">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/auth_register_email"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textEmailAddress"
-                        android:maxLines="1" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
                     android:hint="@string/auth_password"
                     app:passwordToggleEnabled="true">
 

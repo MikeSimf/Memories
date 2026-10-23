@@ -44,8 +44,11 @@ public class AuthService {
             throw ApiException.loginTaken();
         }
         String email = normalizeEmail(request.getEmail());
-        if (userRepository.existsByEmailIgnoreCase(email)) {
+        if (email != null && !email.isEmpty() && userRepository.existsByEmailIgnoreCase(email)) {
             throw ApiException.emailTaken();
+        }
+        if (email != null && email.isEmpty()) {
+            email = null;
         }
 
         User user = new User();
@@ -58,8 +61,10 @@ public class AuthService {
         user.setCreatedAt(Instant.now());
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
-        // Письмо с подтверждением почты; без SMTP ссылка попадёт в лог.
-        emailVerificationService.send(user);
+        // Письмо с подтверждением — только если почта указана.
+        if (user.getEmail() != null) {
+            emailVerificationService.send(user);
+        }
 
         // Приглашение из QR: пользователь сразу становится участником кампании,
         // приглашение при этом гасится (одноразовое).
@@ -129,7 +134,12 @@ public class AuthService {
         }
         if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
             String email = normalizeEmail(request.getEmail());
-            if (!email.equals(user.getEmail()) && userRepository.existsByEmailIgnoreCase(email)) {
+            if (email != null && email.isEmpty()) {
+                email = null;
+            }
+            String current = user.getEmail() == null ? "" : user.getEmail();
+            String next = email == null ? "" : email;
+            if (!next.equals(current) && email != null && userRepository.existsByEmailIgnoreCase(email)) {
                 throw ApiException.emailTaken();
             }
             user.setEmail(email);

@@ -24,8 +24,8 @@
 
     <ImageView
         android:id="@+id/field_row_icon"
-        android:layout_width="22dp"
-        android:layout_height="22dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginStart="8dp"
         android:contentDescription="@string/cd_icon"
         android:visibility="gone" />

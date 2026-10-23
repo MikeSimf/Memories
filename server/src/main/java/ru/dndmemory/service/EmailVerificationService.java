@@ -30,6 +30,9 @@ public class EmailVerificationService {
 
     @Transactional
     public void send(User user) {
+        if (user.getEmail() == null || user.getEmail().isEmpty()) {
+            return;
+        }
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         String token = TokenUtils.newOpaqueToken();
         EmailVerificationToken entity = new EmailVerificationToken();

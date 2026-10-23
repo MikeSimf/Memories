@@ -145,7 +145,7 @@
     <string name="campaign_edit_title_edit">Название кампании</string>
     <string name="campaign_field_title">Название</string>
     <string name="campaign_field_description">Описание</string>
-    <string name="campaign_counts">Участников: %1$d · Объектов: %2$d · Повествований: %3$d</string>
+    <string name="campaign_counts">Участников: %1$d · Объектов: %2$d · Историй: %3$d</string>
     <string name="campaign_updated">Обновлено: %1$s</string>
     <string name="campaign_delete_confirm">Удалить кампанию «%1$s»? Действие необратимо.</string>
     <string name="campaign_created">Кампания создана</string>
@@ -181,7 +181,7 @@
     <string name="error_race_from_list">Выберите расу из списка</string>
     <string name="error_class_from_list">Выберите класс из списка</string>
     <string name="error_check_fields">Проверьте выделенные поля</string>
-    <string name="tab_retellings">Повествования</string>
+    <string name="tab_retellings">Истории</string>
     <string name="material_list_empty">Материалов пока нет. Добавьте карту, портрет или письмо — они сохранятся на телефоне и уедут на сервер, когда появится сеть.</string>
     <string name="material_add">Добавить материал</string>
     <string name="material_photo">Фото материала</string>
@@ -192,7 +192,7 @@
     <string name="material_delete_confirm">Удалить материал «%1$s»?</string>
     <string name="material_no_photo">Без фото</string>
     <string name="tab_members">Участники</string>
-    <string name="retellings_title">Повествования</string>
+    <string name="retellings_title">Истории</string>
 
     <!-- Классы объектов (docs/api.md, раздел 2) -->
     <string name="entity_type_hero">Герой</string>
@@ -215,6 +215,7 @@
     <string name="entity_detail_fields">Поля</string>
     <string name="entity_detail_description">Описание</string>
     <string name="entity_detail_links">Упоминания</string>
+    <string name="entity_links">Ссылки</string>
     <string name="entity_mentions">Упоминают</string>
     <string name="entity_mentions_location">Здесь встречались</string>
     <string name="entity_mentions_hint">Герои и персонажи, в описании которых есть эта локация.</string>
@@ -256,11 +257,11 @@
     <string name="entity_item_quantity">Кол-во</string>
     <string name="entity_item_notes">Заметка</string>
 
-    <!-- Повествования -->
-    <string name="retelling_list_empty">Повествований пока нет</string>
+    <!-- Истории -->
+    <string name="retelling_list_empty">Историй пока нет</string>
     <string name="retelling_list_drafts">Черновики</string>
-    <string name="retelling_list_new">Новый повествование</string>
-    <string name="retelling_detail_title">Повествование</string>
+    <string name="retelling_list_new">Новый история</string>
+    <string name="retelling_detail_title">История</string>
     <string name="retelling_field_title">Заголовок</string>
     <string name="retelling_field_date">Дата сессии</string>
     <string name="retelling_field_author">От лица кого</string>
@@ -271,14 +272,14 @@
     <string name="retelling_author">От лица: %1$s</string>
     <string name="retelling_status_draft">Черновик (только на устройстве)</string>
     <string name="retelling_published">Опубликован</string>
-    <string name="retelling_delete_confirm">Удалить повествование «%1$s»?</string>
-    <string name="retelling_edit_title_new">Новый повествование</string>
-    <string name="retelling_edit_title_edit">Редактирование повествования</string>
+    <string name="retelling_delete_confirm">Удалить история «%1$s»?</string>
+    <string name="retelling_edit_title_new">Новый история</string>
+    <string name="retelling_edit_title_edit">Редактирование истории</string>
     <string name="retelling_publish_hint">Черновик хранится только на устройстве. Нажмите «Опубликовать», чтобы отправить его.</string>
     <string name="retelling_links">Упоминания</string>
     <string name="retelling_conflict">Есть расхождение с версией на сервере</string>
     <string name="retelling_draft_saved">Черновик сохранён</string>
-    <string name="retelling_published_toast">Повествование опубликовано</string>
+    <string name="retelling_published_toast">История опубликована</string>
 
     <!-- Участники -->
     <string name="members_title">Участники</string>
@@ -335,7 +336,7 @@
     <string name="search_results">Найдено: %1$d</string>
     <string name="search_local_hint">Поиск идёт по локальной базе и работает без сети</string>
     <string name="search_kind_entity">Объект</string>
-    <string name="search_kind_retelling">Повествование</string>
+    <string name="search_kind_retelling">История</string>
 
     <!-- Настройки -->
     <string name="settings_title">Настройки</string>
@@ -357,7 +358,7 @@
     <string name="settings_full_resync_hint">Удалит локальные данные кампаний и загрузит их заново. Черновики сохранятся.</string>
     <string name="settings_server">Адрес сервера: %1$s</string>
     <string name="settings_user">Пользователь: %1$s</string>
-    <string name="settings_logout_confirm">Выйти из аккаунта? Локальные данные кампаний будут удалены. Неотправленные черновики повествований тоже исчезнут.</string>
+    <string name="settings_logout_confirm">Выйти из аккаунта? Локальные данные кампаний будут удалены. Неотправленные черновики историй тоже исчезнут.</string>
     <string name="settings_about">DnD Memory, версия %1$s</string>
     <string name="settings_web_open">Открыть веб-версию</string>
     <string name="settings_resync_done">Данные загружены заново</string>

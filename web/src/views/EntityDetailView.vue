@@ -308,7 +308,6 @@ async function keepLocal(): Promise<void> {
       </div>
 
       <div v-else-if="details.length > 0" class="card">
-        <h2>Поля</h2>
         <dl class="attr-grid" style="margin: 0">
           <div v-for="row in details" :key="row.label">
             <dt class="field__label">{{ row.label }}</dt>

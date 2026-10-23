@@ -59,10 +59,25 @@ public class CampaignInfoActivity extends BottomNavActivity {
                 .get(CampaignViewModel.class);
         viewModel.setCampaignId(campaignId);
 
-        campaign = App.container(this).database().campaignDao().find(campaignId);
-        render();
         binding.campaignInfoEdit.setOnClickListener(v -> edit());
         binding.campaignInfoDelete.setOnClickListener(v -> confirmDelete());
+        // Room нельзя читать в главном потоке: карточка заполняется после загрузки.
+        AppExecutors.get().io(() -> {
+            CampaignRoom loaded = App.container(this).database().campaignDao().find(campaignId);
+            runOnUiThread(() -> {
+                campaign = loaded;
+                render();
+            });
+            return null;
+        }, new RepoCallback<Void>() {
+            @Override
+            public void onSuccess(@Nullable Void value) {
+            }
+
+            @Override
+            public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) {
+            }
+        });
         loadMembers();
     }
 

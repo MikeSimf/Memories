@@ -23,7 +23,7 @@ const retellingId = computed(() =>
   typeof route.params.retellingId === 'string' ? route.params.retellingId : '',
 )
 
-/** Режим экрана: новый повествование, черновик или публикация. */
+/** Режим экрана: новый история, черновик или публикация. */
 const mode = computed<'new' | 'draft' | 'published'>(() => {
   if (!retellingId.value) return 'new'
   if (campaign.draftById(retellingId.value)) return 'draft'
@@ -85,7 +85,7 @@ async function saveDraft(): Promise<void> {
 
 async function publish(): Promise<void> {
   if (form.value.title.trim() === '') {
-    ui.pushToast('warning', 'Укажите название повествования')
+    ui.pushToast('warning', 'Укажите название истории')
     return
   }
   saving.value = true
@@ -99,7 +99,7 @@ async function publish(): Promise<void> {
     } else {
       id = await campaign.createPublishedRetelling(form.value)
     }
-    ui.pushToast('success', 'Повествование опубликован и уйдёт на сервер при синхронизации')
+    ui.pushToast('success', 'История опубликован и уйдёт на сервер при синхронизации')
     await router.replace({
       name: 'retelling-detail',
       params: { campaignId: campaign.campaignId, retellingId: id },
@@ -136,15 +136,15 @@ async function savePublished(): Promise<void> {
         <h1>
           {{
             mode === 'new'
-              ? 'Новый повествование'
+              ? 'Новый история'
               : mode === 'draft'
-                ? 'Черновик повествования'
-                : 'Правка повествования'
+                ? 'Черновик истории'
+                : 'Правка истории'
           }}
         </h1>
         <div class="page-header__subtitle">
           <template v-if="mode === 'published'">
-            Повествование опубликован: правки уйдут на сервер при синхронизации.
+            История опубликован: правки уйдут на сервер при синхронизации.
           </template>
           <template v-else>
             Черновик хранится только на этом устройстве и не отправляется на сервер, пока вы не
@@ -157,7 +157,7 @@ async function savePublished(): Promise<void> {
     <EmptyState
       v-if="!canWrite"
       title="Недостаточно прав"
-      hint="Создавать и править повествования могут участники с правом retelling.write."
+      hint="Создавать и править истории могут участники с правом retelling.write."
     >
       <button class="btn" type="button" @click="back">Назад</button>
     </EmptyState>
@@ -171,7 +171,6 @@ async function savePublished(): Promise<void> {
           class="input"
           type="text"
           required
-          placeholder="Сессия 12: подземелье"
         />
       </div>
 
@@ -203,7 +202,6 @@ async function savePublished(): Promise<void> {
           id="retelling-body"
           v-model="form.body"
           class="textarea textarea--tall"
-          placeholder="Мы вошли в [[Подземелье волн]]…"
         />
         <span class="field__hint">
           Markdown и ссылки <code>[[Имя]]</code>, <code>[[Имя|подпись]]</code>, <code>[[#uuid|подпись]]</code>.

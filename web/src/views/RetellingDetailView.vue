@@ -43,7 +43,7 @@ async function publish(): Promise<void> {
   busy.value = true
   try {
     const id = await campaign.publishDraft(item.value.id)
-    ui.pushToast('success', 'Повествование опубликован и уйдёт на сервер при синхронизации')
+    ui.pushToast('success', 'История опубликован и уйдёт на сервер при синхронизации')
     await router.replace({
       name: 'retelling-detail',
       params: { campaignId: campaign.campaignId, retellingId: id },
@@ -61,7 +61,7 @@ async function remove(): Promise<void> {
   try {
     await campaign.removeRetelling(item.value.id)
     confirmDelete.value = false
-    ui.pushToast('success', item.value.isDraft ? 'Черновик удалён' : 'Повествование удалён')
+    ui.pushToast('success', item.value.isDraft ? 'Черновик удалён' : 'История удалён')
     await router.push({
       name: 'campaign-retellings',
       params: { campaignId: campaign.campaignId },
@@ -167,7 +167,7 @@ async function keepLocal(): Promise<void> {
           :text="item.body"
           @broken-link="brokenLink = $event.name"
         />
-        <p v-else class="faint">Текст повествования пуст.</p>
+        <p v-else class="faint">Текст истории пуст.</p>
       </div>
 
       <div v-if="brokenLink" class="notice notice--warning">
@@ -190,11 +190,11 @@ async function keepLocal(): Promise<void> {
       <ConfirmDialog
         :open="confirmDelete"
         :busy="busy"
-        title="Удалить повествование?"
+        title="Удалить история?"
         :message="
           item.isDraft
             ? 'Черновик будет удалён с устройства безвозвратно.'
-            : 'Повествование будет удалён из кампании после синхронизации.'
+            : 'История будет удалён из кампании после синхронизации.'
         "
         @cancel="confirmDelete = false"
         @confirm="remove"
@@ -203,14 +203,14 @@ async function keepLocal(): Promise<void> {
 
     <EmptyState
       v-else
-      title="Повествование не найден"
+      title="История не найден"
       hint="Возможно, он ещё не загружен на это устройство или был удалён."
     >
       <RouterLink
         class="btn"
         :to="{ name: 'campaign-retellings', params: { campaignId: campaign.campaignId } }"
       >
-        К списку повествований
+        К списку историй
       </RouterLink>
     </EmptyState>
   </div>

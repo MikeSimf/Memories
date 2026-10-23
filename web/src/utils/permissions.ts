@@ -87,13 +87,13 @@ export function canDeleteObject(subject: PermissionSubject, objectClass: ObjectC
   return canWriteClass(subject, objectClass)
 }
 
-/** Можно ли создать повествование: `retelling.write` (`roles.md` §2). */
+/** Можно ли создать история: `retelling.write` (`roles.md` §2). */
 export function canCreateRetelling(subject: PermissionSubject): boolean {
   return hasPermission(subject.permissions, 'retelling.write')
 }
 
 /**
- * Правка повествования: автор — при `retelling.write.own`, чужой — только
+ * Правка истории: автор — при `retelling.write.own`, чужой — только
  * при `retelling.publish` (`api.md` §7, `roles.md` §2, правило 4).
  */
 export function canEditRetelling(
@@ -119,7 +119,7 @@ export function canDeleteRetelling(
 }
 
 /**
- * Повествование «от лица героя»: `EDITOR_HERO` может публиковать от лица своего героя.
+ * История «от лица героя»: `EDITOR_HERO` может публиковать от лица своего героя.
  */
 export function canUseAuthorEntity(subject: PermissionSubject, authorEntityId: string | null): boolean {
   if (authorEntityId === null) return true

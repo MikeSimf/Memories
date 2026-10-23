@@ -116,9 +116,8 @@ public class AuthActivity extends AppCompatActivity {
     private void submitRegister() {
         String name = text(binding.authRegisterName.getText());
         String login = text(binding.authRegisterLogin.getText());
-        String email = text(binding.authRegisterEmail.getText());
         String password = text(binding.authRegisterPassword.getText());
-        if (name.isEmpty() || !validLogin(login) || !validEmail(email)) {
+        if (name.isEmpty() || !validLogin(login)) {
             showError(getString(R.string.error_required));
             return;
         }
@@ -126,7 +125,7 @@ public class AuthActivity extends AppCompatActivity {
             showError(getString(R.string.error_password_short));
             return;
         }
-        viewModel.register(login, email, password, name, inviteToken);
+        viewModel.register(login, "", password, name, inviteToken);
     }
 
     /** Приглашение можно ввести вручную: {@code по ссылке dndmemory://join?token=…}. */

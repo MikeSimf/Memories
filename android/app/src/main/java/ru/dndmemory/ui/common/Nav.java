@@ -224,6 +224,14 @@ public final class Nav {
         context.startActivity(intent);
     }
 
+    /** Настройки профиля: отдельный режим того же экрана настроек. */
+    public static void openProfile(@NonNull Context context) {
+        android.content.Intent intent = new android.content.Intent(context,
+                ru.dndmemory.ui.settings.SettingsActivity.class);
+        intent.putExtra(Extras.SETTINGS_PROFILE, true);
+        context.startActivity(intent);
+    }
+
     public static void openSettings(@NonNull Context context) {
         context.startActivity(new Intent(context, SettingsActivity.class));
     }

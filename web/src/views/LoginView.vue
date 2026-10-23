@@ -76,7 +76,6 @@ async function openInvite(): Promise<void> {
             autocapitalize="none"
             spellcheck="false"
             required
-            placeholder="gm"
           />
         </div>
         <div class="field">
@@ -117,7 +116,6 @@ async function openInvite(): Promise<void> {
               autocapitalize="characters"
               spellcheck="false"
               maxlength="8"
-              placeholder="7F3K9Q2M"
             />
             <span class="field__hint">Восемь символов из QR-кода приглашения.</span>
           </div>

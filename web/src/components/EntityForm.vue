@@ -51,7 +51,6 @@ onMounted(async () => {
 })
 
 const showPreview = ref(false)
-const uploading = ref(false)
 const avatarUploading = ref(false)
 
 /** Подсказки для ввода [[Имя]]: имена объектов кампании. */
@@ -193,23 +192,6 @@ function setOwnerCharacter(value: string): void {
   patch({ ownerCharacterId: value === '' ? null : value, ownerHeroId: null })
 }
 
-/** Загрузка изображения — только при наличии сети (`architecture.md` §7). */
-async function onFileSelected(event: Event): Promise<void> {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  input.value = ''
-  if (!file) return
-  uploading.value = true
-  try {
-    const uploaded = await uploadFile(file)
-    patch({ imageFileId: uploaded.id })
-    ui.pushToast('success', 'Изображение загружено')
-  } catch (caught) {
-    ui.pushToast('error', errorMessage(caught))
-  } finally {
-    uploading.value = false
-  }
-}
 </script>
 
 <template>
@@ -223,7 +205,6 @@ async function onFileSelected(event: Event): Promise<void> {
           type="text"
           required
           :value="modelValue.name"
-          placeholder="Силдар Холлвинтер"
           @input="patch({ name: ($event.target as HTMLInputElement).value })"
         />
       </div>
@@ -300,7 +281,6 @@ async function onFileSelected(event: Event): Promise<void> {
                 class="input"
                 type="text"
                 :value="item.name"
-                placeholder="Меч справедливости"
                 @input="updateItem(index, { name: ($event.target as HTMLInputElement).value })"
               />
             </div>
@@ -343,7 +323,6 @@ async function onFileSelected(event: Event): Promise<void> {
                 class="input"
                 type="text"
                 :value="item.notes"
-                placeholder="подарок мэра"
                 @input="updateItem(index, { notes: ($event.target as HTMLInputElement).value })"
               />
             </div>
@@ -398,7 +377,6 @@ async function onFileSelected(event: Event): Promise<void> {
             class="input"
             type="text"
             :value="modelValue.shortDescription"
-            placeholder="Мэр Фандалина"
             @input="patch({ shortDescription: ($event.target as HTMLInputElement).value })"
           />
         </div>
@@ -442,7 +420,6 @@ async function onFileSelected(event: Event): Promise<void> {
           class="input"
           type="text"
           :value="modelValue.ownerName"
-          placeholder="гильдия воров"
           @input="patch({ ownerName: ($event.target as HTMLInputElement).value })"
         />
         <span class="field__hint">Как написано в мире. Ссылку можно указать ниже — либо на героя, либо на персонажа.</span>
@@ -514,22 +491,6 @@ async function onFileSelected(event: Event): Promise<void> {
     </div>
 
     <div class="field">
-      <span class="field__label">Изображение</span>
-      <div v-if="modelValue.imageFileId" class="stack stack--sm">
-        <EntityImage :file-id="modelValue.imageFileId" :alt="modelValue.name || 'Изображение'" />
-        <div class="row">
-          <button class="btn btn--sm" type="button" @click="patch({ imageFileId: null })">
-            Убрать изображение
-          </button>
-        </div>
-      </div>
-      <input type="file" accept="image/*" :disabled="uploading" @change="onFileSelected" />
-      <span class="field__hint">
-        Файл до 10 МБ, загружается на сервер сразу — в офлайне прикрепление недоступно.
-      </span>
-    </div>
-
-    <div class="field">
       <div class="row row--between">
         <label class="field__label" for="object-description">Описание</label>
         <button class="btn btn--ghost btn--sm" type="button" @click="showPreview = !showPreview">
@@ -541,7 +502,6 @@ async function onFileSelected(event: Event): Promise<void> {
         ref="descriptionEl"
         class="textarea textarea--tall"
         :value="modelValue.description"
-        placeholder="Связан с [[Лира Ксенофонт|Лиры]] долгом…"
         @input="onDescriptionInput"
         @keyup="refreshHints"
         @click="refreshHints"

@@ -12,7 +12,6 @@ const auth = useAuthStore()
 const ui = useUiStore()
 
 const login = ref('')
-const email = ref('')
 const password = ref('')
 const passwordAgain = ref('')
 const displayName = ref('')
@@ -36,10 +35,6 @@ async function submit(): Promise<void> {
     localError.value = 'Логин: 3–32 символа из латинских букв, цифр, «_», «.» и «-»'
     return
   }
-  if (email.value.trim() === '') {
-    localError.value = 'Укажите почту — она нужна для сброса пароля'
-    return
-  }
   if (password.value.length < 8) {
     localError.value = 'Пароль должен быть не короче 8 символов'
     return
@@ -52,14 +47,13 @@ async function submit(): Promise<void> {
   try {
     await auth.register({
       login: login.value.trim(),
-      email: email.value.trim(),
       password: password.value,
       displayName: displayName.value.trim(),
       ...(inviteToken.value ? { inviteToken: inviteToken.value } : {}),
     })
     ui.pushToast('success', inviteToken.value
-      ? 'Аккаунт создан, вы в кампании. Проверьте почту — придёт ссылка подтверждения'
-      : 'Аккаунт создан. Проверьте почту — придёт ссылка подтверждения')
+      ? 'Аккаунт создан, вы в кампании'
+      : 'Аккаунт создан')
     await router.replace(redirectTarget())
   } catch (caught) {
     localError.value = errorMessage(caught)
@@ -95,16 +89,10 @@ async function submit(): Promise<void> {
             required
             minlength="3"
             maxlength="32"
-            placeholder="gm"
           />
           <span class="field__hint">
             Для входа: 3–32 символа из латинских a–z, цифр, «_», «.» и «-». Регистр не важен.
           </span>
-        </div>
-        <div class="field">
-          <label class="field__label" for="reg-email">Почта</label>
-          <input id="reg-email" v-model="email" class="input" type="email" autocomplete="email" required />
-          <span class="field__hint">Обязательна: на неё оформляется сброс пароля.</span>
         </div>
         <div class="field">
           <label class="field__label" for="reg-name">Имя</label>
@@ -115,7 +103,6 @@ async function submit(): Promise<void> {
             type="text"
             autocomplete="nickname"
             required
-            placeholder="Мастер"
           />
         </div>
         <div class="field">

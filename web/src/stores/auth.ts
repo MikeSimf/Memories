@@ -35,7 +35,7 @@ export const useAuthStore = defineStore('auth', () => {
     return {
       id: dto.id,
       login: dto.login ?? '',
-      email: dto.email ?? '',
+      email: dto.email ?? null,
       emailVerified: dto.emailVerified === true,
       displayName: dto.displayName,
       avatarUrl: dto.avatarUrl ?? null,

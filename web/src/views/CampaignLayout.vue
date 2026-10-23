@@ -20,7 +20,7 @@ const tabs = [
 /** Остальные разделы кампании — иконками в шапке, как в приложении. */
 const sections = [
   { key: 'heroes', label: 'Герои', route: 'campaign-heroes' },
-  { key: 'retellings', label: 'Повествования', route: 'campaign-retellings' },
+  { key: 'retellings', label: 'Истории', route: 'campaign-retellings' },
   { key: 'materials', label: 'Материалы', route: 'campaign-materials' },
   { key: 'members', label: 'Участники', route: 'campaign-members' },
 ] as const
@@ -38,7 +38,7 @@ const roleLabel = computed(() =>
   campaign.campaign ? MEMBER_ROLE_LABELS[campaign.campaign.myRole] : '',
 )
 
-/** Объекты и повествования, по которым сервер отклонил правку (`sync.md` §5). */
+/** Объекты и истории, по которым сервер отклонил правку (`sync.md` §5). */
 const conflicts = computed(() => [
   ...campaign.objects
     .filter((object) => object.conflict !== null && !object.deleted)
@@ -52,7 +52,7 @@ watch(
   campaignId,
   async (id) => {
     if (!id) return
-    // Участники и краткие повествования приходят в карточке кампании (`api.md` §4),
+    // Участники и краткие истории приходят в карточке кампании (`api.md` §4),
     // поэтому отдельных запросов за ними здесь нет.
     await campaign.open(id)
     await sync.start(id)

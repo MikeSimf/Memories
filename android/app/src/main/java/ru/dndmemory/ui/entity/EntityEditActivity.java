@@ -175,6 +175,8 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         WikiLinkEditor.attach(binding.entityEditShortInput, () -> nameIndex.names());
 
         setActiveNav(navKey(currentKind));
+        // У объектов остаётся только аватар: остальные изображения живут в материалах.
+        ViewUtils.show(binding.entityEditPhotoGroup, false);
         binding.entityEditSave.setOnClickListener(v -> {
             collect();
             if (!validateForm()) {

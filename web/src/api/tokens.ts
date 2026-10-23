@@ -17,7 +17,7 @@ export interface UserProfile {
   /** Логин для входа — в профиле только для чтения (`api.md` §3). */
   login: string
   /** Почта обязательна: контакт для сброса пароля. */
-  email: string
+  email: string | null
   emailVerified: boolean
   displayName: string
   avatarUrl: string | null
@@ -101,7 +101,7 @@ export const userStore = {
       return {
         id: parsed.id,
         login: typeof parsed.login === 'string' ? parsed.login : '',
-        email: typeof parsed.email === 'string' ? parsed.email : '',
+        email: typeof parsed.email === 'string' ? parsed.email : null,
         emailVerified: parsed.emailVerified === true,
         displayName: typeof parsed.displayName === 'string' ? parsed.displayName : '',
         avatarUrl: typeof parsed.avatarUrl === 'string' ? parsed.avatarUrl : null,

@@ -20,7 +20,7 @@ import { formatDate, formatRelative } from '@/utils/datetime'
 
 /**
  * Основные рабочие вкладки: персонажи (только НПС), локации и предметы.
- * Герои, повествования, материалы и участники — отдельные разделы кампании
+ * Герои, истории, материалы и участники — отдельные разделы кампании
  * в шапке, поэтому у каждого списка ровно один класс.
  */
 type EntityTabKey = 'characters' | 'heroes' | 'locations' | 'items'
@@ -91,7 +91,7 @@ const filteredRetellings = computed(() =>
 )
 
 const sectionTitle = computed(() => {
-  if (tab.value === 'retellings') return 'Повествования'
+  if (tab.value === 'retellings') return 'Истории'
   if (tab.value === 'members') return 'Участники'
   return TAB_TITLES[tab.value]
 })
@@ -149,7 +149,6 @@ const tabProgressLabel = computed(() =>
           v-if="tab !== 'members'"
           v-model="query"
           :debounce-ms="200"
-          :placeholder="`Поиск: ${sectionTitle.toLowerCase()}`"
         />
         <RouterLink
           v-for="cls in createClasses"
@@ -164,7 +163,7 @@ const tabProgressLabel = computed(() =>
           class="btn btn--primary btn--sm"
           :to="{ name: 'retelling-new', params: { campaignId: campaign.campaignId } }"
         >
-          + Повествование
+          + История
         </RouterLink>
       </div>
     </div>
@@ -234,7 +233,7 @@ const tabProgressLabel = computed(() =>
       </div>
     </template>
 
-    <!-- Повествования: черновики и публикации -->
+    <!-- Истории: черновики и публикации -->
     <template v-else-if="tab === 'retellings'">
       <div class="row row--between search-summary">
         <span class="faint">Найдено: {{ filteredRetellings.length }}</span>
@@ -245,8 +244,8 @@ const tabProgressLabel = computed(() =>
 
       <EmptyState
         v-if="campaign.retellingItems.length === 0"
-        title="Повествований пока нет"
-        hint="Черновик хранится только на устройстве. На сервер повествование уходит после нажатия «Опубликовать»."
+        title="Историй пока нет"
+        hint="Черновик хранится только на устройстве. На сервер история уходит после нажатия «Опубликовать»."
       />
       <EmptyState v-else-if="filteredRetellings.length === 0" title="Ничего не найдено" />
       <div v-else class="list">

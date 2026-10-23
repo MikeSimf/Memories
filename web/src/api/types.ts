@@ -182,8 +182,8 @@ export interface UserDto {
   id: string
   /** Логин для входа: 3–32 символа из `a–z`, `0–9`, `_`, `.`, `-`. */
   login: string
-  /** Почта обязательна: контакт для сброса пароля. */
-  email: string
+  /** Почта необязательна: связь через обратную связь и VK. */
+  email: string | null
   emailVerified: boolean
   displayName: string
   avatarUrl: string | null
@@ -212,7 +212,7 @@ export interface RefreshResponse {
 
 export interface RegisterRequest {
   login: string
-  email: string
+  email?: string
   password: string
   displayName: string
   /** Токен приглашения из QR: регистрация и присоединение одним запросом. */
@@ -245,7 +245,7 @@ export interface PasswordResetConfirmBody {
 export interface PatchMeRequest {
   displayName?: string
   avatarFileId?: string
-  email?: string
+  email?: string | null
   /** Пустая строка очищает телефон; сервер нормализует к `+7XXXXXXXXXX`. */
   phone?: string
 }
@@ -273,7 +273,7 @@ export interface CampaignListItem {
   updatedAt: string
 }
 
-/** Краткий повествование рядом со счётчиками в карточке кампании (`api.md` §4). */
+/** Краткий история рядом со счётчиками в карточке кампании (`api.md` §4). */
 export interface RetellingBriefDto {
   id: string
   title: string
@@ -295,7 +295,7 @@ export interface CampaignDto {
   latestRevision: number
   /** Краткий список участников — карточка кампании открывается одним запросом. */
   members: MemberDto[]
-  /** Краткий список повествований. */
+  /** Краткий список историй. */
   retellings: RetellingBriefDto[]
   createdAt?: string
   updatedAt: string
@@ -603,7 +603,7 @@ export interface ObjectListQuery {
 }
 
 /* ------------------------------------------------------------------ */
-/* 7. Повествования                                                        */
+/* 7. Истории                                                        */
 /* ------------------------------------------------------------------ */
 
 export interface RetellingDto {
@@ -612,7 +612,7 @@ export interface RetellingDto {
   clientId: string | null
   title: string
   body: string
-  /** Герой или персонаж, от лица которого ведётся повествование. */
+  /** Герой или персонаж, от лица которого ведётся история. */
   authorEntityId: string | null
   authorEntityName: string | null
   /** Дата сессии в формате `YYYY-MM-DD`. */
@@ -658,7 +658,7 @@ export interface RetellingListQuery {
 /* 8. Поиск                                                           */
 /* ------------------------------------------------------------------ */
 
-/** Что вернул поиск: любой из четырёх классов или повествование (`api.md` §8). */
+/** Что вернул поиск: любой из четырёх классов или история (`api.md` §8). */
 export type SearchKind = ObjectClass | 'RETELLING'
 
 export const SEARCH_KINDS: readonly SearchKind[] = [
@@ -674,7 +674,7 @@ export const SEARCH_KIND_LABELS: Record<SearchKind, string> = {
   CHARACTER: 'Персонажи',
   LOCATION: 'Локации',
   ITEM: 'Предметы',
-  RETELLING: 'Повествования',
+  RETELLING: 'Истории',
 }
 
 export interface SearchResultItem {
@@ -769,7 +769,7 @@ export interface SyncPullResponse {
 
 /**
  * Полная выгрузка: страницы идут по порядку классов — герои, персонажи,
- * локации, предметы, повествования (`sync.md` §3.3). За страницу отдаётся один класс.
+ * локации, предметы, истории (`sync.md` §3.3). За страницу отдаётся один класс.
  */
 export interface SyncSnapshotResponse {
   latestRevision: number

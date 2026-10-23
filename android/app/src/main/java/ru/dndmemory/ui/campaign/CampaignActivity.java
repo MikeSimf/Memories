@@ -65,24 +65,19 @@ public class CampaignActivity extends BottomNavActivity implements CampaignHost 
         binding.campaignPager.setAdapter(new CampaignPagerAdapter(this));
         binding.campaignPager.setOffscreenPageLimit(1);
         String tab = getIntent() == null ? null : getIntent().getStringExtra(Extras.CAMPAIGN_TAB);
-        if ("locations".equals(tab)) {
-            binding.campaignPager.setCurrentItem(1, false);
-        } else if ("items".equals(tab)) {
-            binding.campaignPager.setCurrentItem(2, false);
-        }
+        binding.campaignPager.setCurrentItem(indexForTab(tab), false);
         setActiveNav(tab == null ? "characters" : tab);
         binding.campaignPager.setUserInputEnabled(true);
         if (bottomNav() != null) {
             bottomNav().setOnSectionClick(key -> {
                 switch (key) {
                     case "characters":
-                        binding.campaignPager.setCurrentItem(0, true);
-                        return true;
                     case "locations":
-                        binding.campaignPager.setCurrentItem(1, true);
-                        return true;
                     case "items":
-                        binding.campaignPager.setCurrentItem(2, true);
+                    case "heroes":
+                    case "materials":
+                    case "retellings":
+                        binding.campaignPager.setCurrentItem(indexForTab(key), true);
                         return true;
                     case "home":
                         Nav.openCampaigns(this);
@@ -113,15 +108,41 @@ public class CampaignActivity extends BottomNavActivity implements CampaignHost 
         });
     }
 
+    private static int indexForTab(@Nullable String tab) {
+        if ("locations".equals(tab)) {
+            return 1;
+        }
+        if ("items".equals(tab)) {
+            return 2;
+        }
+        if ("heroes".equals(tab)) {
+            return 3;
+        }
+        if ("materials".equals(tab)) {
+            return 4;
+        }
+        if ("retellings".equals(tab)) {
+            return 5;
+        }
+        return 0;
+    }
+
     @NonNull
     private static String tabKey(int position) {
-        if (position == 1) {
-            return "locations";
+        switch (position) {
+            case 1:
+                return "locations";
+            case 2:
+                return "items";
+            case 3:
+                return "heroes";
+            case 4:
+                return "materials";
+            case 5:
+                return "retellings";
+            default:
+                return "characters";
         }
-        if (position == 2) {
-            return "items";
-        }
-        return "characters";
     }
 
     private int tabTitle(int position) {
@@ -162,8 +183,7 @@ public class CampaignActivity extends BottomNavActivity implements CampaignHost 
         super.onNewIntent(intent);
         setIntent(intent);
         String tab = intent.getStringExtra(Extras.CAMPAIGN_TAB);
-        int index = "locations".equals(tab) ? 1 : "items".equals(tab) ? 2 : 0;
-        binding.campaignPager.setCurrentItem(index, false);
+        binding.campaignPager.setCurrentItem(indexForTab(tab), false);
         setActiveNav(tab == null ? "characters" : tab);
     }
 

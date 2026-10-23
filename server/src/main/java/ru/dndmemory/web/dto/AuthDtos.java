@@ -26,8 +26,9 @@ public final class AuthDtos {
         @Pattern(regexp = "[A-Za-z0-9_.\\-]{3,32}", message = "Логин: 3–32 символа из a–z, 0–9, _ . -")
         private String login;
 
-        @NotBlank(message = "Укажите почту")
+        /** Почта необязательна: связь идёт через обратную связь и VK. */
         @Email(message = "Некорректная почта")
+        @Size(max = 320, message = "Не длиннее 320 символов")
         private String email;
 
         @NotBlank(message = "Укажите пароль")
@@ -76,8 +77,9 @@ public final class AuthDtos {
 
     @Data
     public static class PasswordResetRequestDto {
-        @NotBlank(message = "Укажите почту")
+        /** Почта необязательна: связь идёт через обратную связь и VK. */
         @Email(message = "Некорректная почта")
+        @Size(max = 320, message = "Не длиннее 320 символов")
         private String email;
     }
 
