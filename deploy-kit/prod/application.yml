@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 33
-    latest-version-name: 1.0.32
+    latest-version-code: 34
+    latest-version-name: 1.0.33
     min-version-code: 4
     apk-url: https://dnd-memory.ivmikea.ru/dnd-memory.apk
-    notes: "Сайты без портов: nginx хоста для двух доменов"
+    notes: "HTTPS через имена sslip.io и запасной вход по IP"
     versions:
+      - version: "1.0.33"
+        date: "2026-10-24"
+        notes: "HTTPS через имена sslip.io и запасной вход по IP"
       - version: "1.0.32"
         date: "2026-10-24"
         notes: "Сайты без портов: nginx хоста для двух доменов"

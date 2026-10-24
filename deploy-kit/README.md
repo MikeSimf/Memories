@@ -432,30 +432,38 @@ ADMIN_EMAIL=you@example.com
 docker compose -f prod/docker-compose.yml logs -f app | grep ссылка
 ```
 
-## Домены ivmikea.ru
+## Адреса сайтов
 
-DNS уже указывает `*.ivmikea.ru` на `81.177.139.30`. Оба сайта работают на
-обычных 80/443 без портов: на хосте стоит nginx, а контейнеры слушают только
-локальные порты.
+Свои домены `ivmikea.ru` и `mikea.su` в публичном DNS не делегированы,
+поэтому временно используем бесплатные имена `sslip.io`, которые сами
+разрешаются в IP сервера:
 
-- `https://dnd-memory.ivmikea.ru/` → `127.0.0.1:8080`;
-- `https://test-dnd-memory.ivmikea.ru/` → `127.0.0.1:8081`.
+- прод — `https://dnd.81.177.139.30.sslip.io/`;
+- тест — `https://test.81.177.139.30.sslip.io/`.
+
+Это обычные DNS-имена, поэтому Let's Encrypt выдаёт на них нормальный
+сертификат. HTTPS на голый IP `81.177.139.30` публичный CA не выпускает.
+
+Nginx на хосте разводит имена по контейнерам:
+
+- `dnd.81.177.139.30.sslip.io` → `127.0.0.1:8080`;
+- `test.81.177.139.30.sslip.io` → `127.0.0.1:8081`;
+- `http://81.177.139.30/` → прод (запасной вход по IP);
+- `http://81.177.139.30:8091/` → тест (запасной вход по IP).
 
 В `.env`:
 
 ```
 # prod
-APP_PORT=8080
-PUBLIC_URL=https://dnd-memory.ivmikea.ru/
-CORS_ORIGINS=https://dnd-memory.ivmikea.ru
+PUBLIC_URL=https://dnd.81.177.139.30.sslip.io/
+CORS_ORIGINS=https://dnd.81.177.139.30.sslip.io
 
 # test
-APP_PORT=8081
-PUBLIC_URL=https://test-dnd-memory.ivmikea.ru/
-CORS_ORIGINS=https://test-dnd-memory.ivmikea.ru
+PUBLIC_URL=https://test.81.177.139.30.sslip.io/
+CORS_ORIGINS=https://test.81.177.139.30.sslip.io
 ```
 
-Установка nginx на хосте (один раз):
+Установка nginx и сертификатов:
 
 ```bash
 sudo apt update && sudo apt install -y nginx certbot python3-certbot-nginx
@@ -463,26 +471,19 @@ sudo cp /opt/dnd-memory/nginx-host.conf /etc/nginx/sites-available/dnd-memory.co
 sudo ln -sf /etc/nginx/sites-available/dnd-memory.conf /etc/nginx/sites-enabled/dnd-memory.conf
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
-```
 
-Сертификаты:
-
-```bash
-sudo certbot --nginx -d dnd-memory.ivmikea.ru -d test-dnd-memory.ivmikea.ru
-```
-
-Certbot сам добавит `listen 443 ssl` и редирект с 80. После этого поменяйте
-`PUBLIC_URL` и `CORS_ORIGINS` теста на `https://test-dnd-memory.ivmikea.ru/`
-и перезапустите оба экземпляра:
-
-```bash
-./bin/dnd.sh prod restart
-./bin/dnd.sh test restart
+sudo LC_ALL=C.UTF-8 certbot --nginx --non-interactive --agree-tos \
+  --email makeev_in@list.ru --redirect \
+  -d dnd.81.177.139.30.sslip.io \
+  -d test.81.177.139.30.sslip.io
 ```
 
 Проверка:
 
 ```bash
-curl -s https://dnd-memory.ivmikea.ru/api/app/latest
-curl -s https://test-dnd-memory.ivmikea.ru/api/app/latest
+curl -s https://dnd.81.177.139.30.sslip.io/api/app/latest
+curl -s https://test.81.177.139.30.sslip.io/api/app/latest
 ```
+
+Когда `ivmikea.ru` или `mikea.su` делегируют, достаточно поменять
+`server_name`, `PUBLIC_URL`, `CORS_ORIGINS` и перевыпустить сертификат.
