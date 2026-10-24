@@ -6,6 +6,7 @@ import ru.dndmemory.domain.Member;
 import ru.dndmemory.domain.MemberRole;
 import ru.dndmemory.domain.MemberStatus;
 import ru.dndmemory.repo.MemberRepository;
+import ru.dndmemory.repo.UserRepository;
 import ru.dndmemory.web.ApiException;
 
 import java.util.LinkedHashSet;
@@ -23,11 +24,27 @@ import java.util.UUID;
 public class PermissionService {
 
     private final MemberRepository memberRepository;
+    private final UserRepository userRepository;
 
     public Member requireMember(UUID campaignId, UUID userId) {
-        return memberRepository.findByCampaignIdAndUserId(campaignId, userId)
+        Member member = memberRepository.findByCampaignIdAndUserId(campaignId, userId)
                 .filter(m -> m.getStatus() != MemberStatus.REMOVED)
-                .orElseThrow(() -> ApiException.forbidden("Вы не участник этой кампании"));
+                .orElse(null);
+        if (member != null) {
+            return member;
+        }
+        // Суперпользователь system работает как владелец любой кампании, но
+        // строки участника у него нет — поэтому собираем её на время запроса.
+        if (userRepository.findById(userId).map(u -> u.isSuperuser()).orElse(false)) {
+            Member synthetic = new Member();
+            synthetic.setId(new UUID(0L, 0L));
+            synthetic.setCampaignId(campaignId);
+            synthetic.setUserId(userId);
+            synthetic.setRole(MemberRole.OWNER);
+            synthetic.setStatus(MemberStatus.ACTIVE);
+            return synthetic;
+        }
+        throw ApiException.forbidden("Вы не участник этой кампании");
     }
 
     public Set<String> permissionSet(Member member) {

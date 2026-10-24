@@ -22,11 +22,14 @@ class PermissionServiceTest {
     @Mock
     private MemberRepository memberRepository;
 
+    @Mock
+    private ru.dndmemory.repo.UserRepository userRepository;
+
     private PermissionService service;
 
     @BeforeEach
     void setUp() {
-        service = new PermissionService(memberRepository);
+        service = new PermissionService(memberRepository, userRepository);
     }
 
     private Member member(MemberRole role) {

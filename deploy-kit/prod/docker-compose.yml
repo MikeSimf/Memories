@@ -49,6 +49,7 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      SYSTEM_PASSWORD: ${SYSTEM_PASSWORD:-}
 
   # Веб-версия (готовая статика из папки web) и прокси /api на приложение.
   # Наружу смотрит только этот контейнер — на 127.0.0.1, дальше nginx сервера.

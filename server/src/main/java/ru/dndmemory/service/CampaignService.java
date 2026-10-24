@@ -54,6 +54,23 @@ public class CampaignService {
 
     @Transactional(readOnly = true)
     public List<CampaignDtos.CampaignSummaryDto> list(UUID userId) {
+        if (userRepository.findById(userId).map(u -> u.isSuperuser()).orElse(false)) {
+            List<Campaign> all = campaignRepository.findAllByDeletedFalseOrderByUpdatedAtDesc();
+            List<CampaignDtos.CampaignSummaryDto> result = new ArrayList<>();
+            for (Campaign campaign : all) {
+                Member synthetic = new Member();
+                synthetic.setId(new UUID(0L, 0L));
+                synthetic.setCampaignId(campaign.getId());
+                synthetic.setUserId(userId);
+                synthetic.setRole(ru.dndmemory.domain.MemberRole.OWNER);
+                synthetic.setStatus(ru.dndmemory.domain.MemberStatus.ACTIVE);
+                result.add(dtoMapper.toCampaignSummary(campaign, synthetic,
+                        memberRepository.countByCampaignId(campaign.getId()),
+                        entityCount(campaign.getId()),
+                        retellingRepository.countByCampaignIdAndDeletedFalse(campaign.getId())));
+            }
+            return result;
+        }
         Map<UUID, Member> membership = new HashMap<>();
         for (Member member : memberRepository.findAllByUserId(userId)) {
             if (member.getStatus() != MemberStatus.REMOVED) {

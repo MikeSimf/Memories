@@ -34,6 +34,10 @@ public class User {
     private String email;
 
     /** Подтверждение почты появится вместе с SMTP; пока всегда false. */
+    /** Служебный суперпользователь: видит все кампании, в участниках не числится. */
+    @Column(nullable = false)
+    private boolean superuser;
+
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified;
 

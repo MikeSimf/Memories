@@ -65,6 +65,7 @@ dnd:
     from: ${MAIL_FROM:}
     from-name: ${MAIL_FROM_NAME:DnD Memory}
   admin-email: ${ADMIN_EMAIL:}
+  system-password: ${SYSTEM_PASSWORD:}
   retention:
     change-log-days: ${DND_CHANGE_LOG_DAYS:90}
     change-log-max-rows: ${DND_CHANGE_LOG_MAX_ROWS:50000}

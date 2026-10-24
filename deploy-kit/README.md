@@ -431,3 +431,38 @@ ADMIN_EMAIL=you@example.com
 ```bash
 docker compose -f prod/docker-compose.yml logs -f app | grep ссылка
 ```
+
+## Домены ivmikea.ru
+
+DNS уже указывает `*.ivmikea.ru` на `81.177.139.30`. В конфигах:
+
+- прод — `https://dnd-memory.ivmikea.ru/`, контейнер слушает порт 80;
+- тест — `http://test-dnd-memory.ivmikea.ru:8091/`.
+
+После обновления кода поменяйте в `prod/.env` и `test/.env`:
+
+```
+PUBLIC_URL=https://dnd-memory.ivmikea.ru/
+CORS_ORIGINS=https://dnd-memory.ivmikea.ru
+```
+
+и для теста:
+
+```
+PUBLIC_URL=http://test-dnd-memory.ivmikea.ru:8091/
+CORS_ORIGINS=http://test-dnd-memory.ivmikea.ru:8091
+```
+
+Затем `./bin/dnd.sh prod restart` и `./bin/dnd.sh test restart`.
+
+Для HTTPS выпустите сертификат на хосте (порт 80 уже занят прокси
+прод-контейнера, поэтому certbot в webroot-режиме):
+
+```bash
+sudo certbot certonly --webroot -w /opt/dnd-memory/prod/web \
+  -d dnd-memory.ivmikea.ru
+```
+
+и добавьте в nginx хоста `listen 443 ssl` с полученными сертификатами,
+проксируя на `127.0.0.1:80`. Тест можно оставить на `:8091` или также
+закрыть сертификатом.

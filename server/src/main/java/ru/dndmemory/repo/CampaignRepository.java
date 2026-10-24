@@ -17,6 +17,8 @@ public interface CampaignRepository extends JpaRepository<Campaign, UUID> {
 
     List<Campaign> findAllByIdInAndDeletedFalse(List<UUID> ids);
 
+    List<Campaign> findAllByDeletedFalseOrderByUpdatedAtDesc();
+
     /** Блокировка строки кампании на время изменения: ревизии выдаются строго по порядку. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Campaign c where c.id = :id")
