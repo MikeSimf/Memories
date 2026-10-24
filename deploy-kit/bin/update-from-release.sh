@@ -51,7 +51,7 @@ bash "$ROOT/bin/deploy-app.sh" "$TMP/app.apk" "$CODE" "$NAME" both
 
 echo
 echo "==> Проверка"
-for url in "https://7f6a7dc97a7c.vps.myjino.ru/api/health" "http://81.177.139.30:8091/api/health"; do
+for url in "http://127.0.0.1:8080/api/health" "http://127.0.0.1:8081/api/health"; do
   printf '  %s — ' "$url"
   curl -fsS --max-time 10 "$url" || printf 'не ответил'
   echo

@@ -434,35 +434,55 @@ docker compose -f prod/docker-compose.yml logs -f app | grep ссылка
 
 ## Домены ivmikea.ru
 
-DNS уже указывает `*.ivmikea.ru` на `81.177.139.30`. В конфигах:
+DNS уже указывает `*.ivmikea.ru` на `81.177.139.30`. Оба сайта работают на
+обычных 80/443 без портов: на хосте стоит nginx, а контейнеры слушают только
+локальные порты.
 
-- прод — `https://dnd-memory.ivmikea.ru/`, контейнер слушает порт 80;
-- тест — `http://test-dnd-memory.ivmikea.ru:8091/`.
+- `https://dnd-memory.ivmikea.ru/` → `127.0.0.1:8080`;
+- `https://test-dnd-memory.ivmikea.ru/` → `127.0.0.1:8081`.
 
-После обновления кода поменяйте в `prod/.env` и `test/.env`:
+В `.env`:
 
 ```
+# prod
+APP_PORT=8080
 PUBLIC_URL=https://dnd-memory.ivmikea.ru/
 CORS_ORIGINS=https://dnd-memory.ivmikea.ru
+
+# test
+APP_PORT=8081
+PUBLIC_URL=https://test-dnd-memory.ivmikea.ru/
+CORS_ORIGINS=https://test-dnd-memory.ivmikea.ru
 ```
 
-и для теста:
-
-```
-PUBLIC_URL=http://test-dnd-memory.ivmikea.ru:8091/
-CORS_ORIGINS=http://test-dnd-memory.ivmikea.ru:8091
-```
-
-Затем `./bin/dnd.sh prod restart` и `./bin/dnd.sh test restart`.
-
-Для HTTPS выпустите сертификат на хосте (порт 80 уже занят прокси
-прод-контейнера, поэтому certbot в webroot-режиме):
+Установка nginx на хосте (один раз):
 
 ```bash
-sudo certbot certonly --webroot -w /opt/dnd-memory/prod/web \
-  -d dnd-memory.ivmikea.ru
+sudo apt update && sudo apt install -y nginx certbot python3-certbot-nginx
+sudo cp /opt/dnd-memory/nginx-host.conf /etc/nginx/sites-available/dnd-memory.conf
+sudo ln -sf /etc/nginx/sites-available/dnd-memory.conf /etc/nginx/sites-enabled/dnd-memory.conf
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-и добавьте в nginx хоста `listen 443 ssl` с полученными сертификатами,
-проксируя на `127.0.0.1:80`. Тест можно оставить на `:8091` или также
-закрыть сертификатом.
+Сертификаты:
+
+```bash
+sudo certbot --nginx -d dnd-memory.ivmikea.ru -d test-dnd-memory.ivmikea.ru
+```
+
+Certbot сам добавит `listen 443 ssl` и редирект с 80. После этого поменяйте
+`PUBLIC_URL` и `CORS_ORIGINS` теста на `https://test-dnd-memory.ivmikea.ru/`
+и перезапустите оба экземпляра:
+
+```bash
+./bin/dnd.sh prod restart
+./bin/dnd.sh test restart
+```
+
+Проверка:
+
+```bash
+curl -s https://dnd-memory.ivmikea.ru/api/app/latest
+curl -s https://test-dnd-memory.ivmikea.ru/api/app/latest
+```

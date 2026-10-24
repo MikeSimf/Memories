@@ -59,7 +59,8 @@ services:
     depends_on:
       - app
     ports:
-      - "${APP_PORT:-8091}:80"
+      # Только локально: снаружи стоит nginx хоста на 80/443.
+      - "127.0.0.1:${APP_PORT:-8081}:80"
     volumes:
       - ../web-test:/usr/share/nginx/html:ro
       - ./web.conf:/etc/nginx/conf.d/default.conf:ro

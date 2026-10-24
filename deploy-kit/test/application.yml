@@ -13,45 +13,48 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 32
-    latest-version-name: 1.0.31
+    latest-version-code: 33
+    latest-version-name: 1.0.32
     min-version-code: 4
-    apk-url: http://81.177.139.30:8091/dnd-memory.apk
-    notes: Домены ivmikea.ru и служебная учётка system
+    apk-url: http://test-dnd-memory.ivmikea.ru/dnd-memory.apk
+    notes: Сайты без портов: nginx хоста для двух доменов
     versions:
+      - version: "1.0.32"
+        date: "2026-10-24"
+        notes: Сайты без портов: nginx хоста для двух доменов
       - version: "1.0.31"
         date: "2026-10-24"
-        notes: Домены ivmikea.ru и служебная учётка system
+        notes: Сайты без портов: nginx хоста для двух доменов
       - version: "1.0.30"
         date: "2026-10-23"
-        notes: Домены ivmikea.ru и служебная учётка system
+        notes: Сайты без портов: nginx хоста для двух доменов
       - version: "1.0.29"
         date: "2026-10-23"
-        notes: Домены ivmikea.ru и служебная учётка system
+        notes: Сайты без портов: nginx хоста для двух доменов
       - version: "1.0.28"
         date: "2026-10-23"
-        notes: Домены ivmikea.ru и служебная учётка system
+        notes: Сайты без портов: nginx хоста для двух доменов
       - version: "1.0.27"
         date: "2026-10-23"
-        notes: Домены ivmikea.ru и служебная учётка system
+        notes: Сайты без портов: nginx хоста для двух доменов
       - version: "1.0.26"
         date: "2026-10-23"
-        notes: Домены ivmikea.ru и служебная учётка system
+        notes: Сайты без портов: nginx хоста для двух доменов
       - version: "1.0.25"
         date: "2026-10-23"
-        notes: Домены ivmikea.ru и служебная учётка system
+        notes: Сайты без портов: nginx хоста для двух доменов
       - version: "1.0.24"
         date: "2026-10-23"
-        notes: Домены ivmikea.ru и служебная учётка system
+        notes: Сайты без портов: nginx хоста для двух доменов
       - version: "1.0.23"
         date: "2026-10-22"
-        notes: Домены ivmikea.ru и служебная учётка system
+        notes: Сайты без портов: nginx хоста для двух доменов
       - version: "1.0.22"
         date: "2026-10-22"
-        notes: Домены ivmikea.ru и служебная учётка system
+        notes: Сайты без портов: nginx хоста для двух доменов
       - version: "1.0.21"
         date: "2026-10-22"
-        notes: Домены ivmikea.ru и служебная учётка system
+        notes: Сайты без портов: nginx хоста для двух доменов
   mail:
     enabled: ${MAIL_ENABLED:false}
     ssl: ${MAIL_SSL:true}
