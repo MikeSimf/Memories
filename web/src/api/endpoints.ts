@@ -253,6 +253,9 @@ export const invitesApi = {
     return apiClient.request<InvitePreviewDto>({
       path: `/api/invites/${encodeURIComponent(token)}`,
       auth: false,
+      // Не держим нового игрока 20 секунд на спиннере: при сбое сразу
+      // показываем вход и регистрацию.
+      timeoutMs: 6000,
     })
   },
 
