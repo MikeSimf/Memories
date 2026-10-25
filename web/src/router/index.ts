@@ -55,6 +55,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Кампании' },
   },
   {
+    path: '/crashes',
+    name: 'admin-crashes',
+    component: () => import('@/views/AdminCrashesView.vue'),
+    meta: { title: 'Падения', narrow: true },
+  },
+  {
     path: '/feedback',
     name: 'admin-feedback',
     component: () => import('@/views/AdminFeedbackView.vue'),

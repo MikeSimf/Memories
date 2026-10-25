@@ -858,6 +858,16 @@ export interface FeedbackDto {
   createdAt: string
 }
 
+/** Падение мобильного приложения. */
+export interface CrashReportDto {
+  id: string
+  userId: string | null
+  appVersion: string | null
+  device: string | null
+  stacktrace: string
+  createdAt: string
+}
+
 /** Одна запись истории версий (`GET /api/app/versions`). */
 export interface AppVersionDto {
   version: string

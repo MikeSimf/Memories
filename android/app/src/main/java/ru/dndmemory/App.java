@@ -47,6 +47,7 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        ru.dndmemory.util.CrashReporter.install(this);
         final AppContainer appContainer = container(this);
 
         AppExecutors.get().io(() -> {

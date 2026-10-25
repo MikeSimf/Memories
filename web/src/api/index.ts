@@ -17,6 +17,7 @@ export {
   serviceApi,
   appApi,
   feedbackApi,
+  crashesApi,
   racesApi,
   classesApi,
   materialsApi,

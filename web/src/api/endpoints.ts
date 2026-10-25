@@ -48,6 +48,7 @@ import type {
   AppLatestDto,
   AppVersionDto,
   FeedbackDto,
+  CrashReportDto,
 } from './types'
 
 /** Список приходит страницей; «сырой» массив приводим к странице на всякий случай. */
@@ -462,6 +463,13 @@ export const appApi = {
   },
 }
 
+/** Отчёты о падениях приложения — только админ. */
+export const crashesApi = {
+  list(): Promise<CrashReportDto[]> {
+    return apiClient.request<CrashReportDto[]>({ path: '/api/admin/crashes' })
+  },
+}
+
 /** Обратная связь: отправка и чтение админом. */
 export const feedbackApi = {
   create(message: string, page?: string): Promise<FeedbackDto> {
@@ -550,6 +558,7 @@ export const api = {
   service: serviceApi,
   app: appApi,
   feedback: feedbackApi,
+  crashes: crashesApi,
   races: racesApi,
   classes: classesApi,
   locationTypes: locationTypesApi,
