@@ -434,56 +434,42 @@ docker compose -f prod/docker-compose.yml logs -f app | grep ссылка
 
 ## Адреса сайтов
 
-Свои домены `ivmikea.ru` и `mikea.su` в публичном DNS не делегированы,
-поэтому временно используем бесплатные имена `sslip.io`, которые сами
-разрешаются в IP сервера:
+Домен `imikea.ru` делегирован, оба имени резолвятся в `81.177.139.30`:
 
-- прод — `https://dnd.81.177.139.30.sslip.io/`;
-- тест — `https://test.81.177.139.30.sslip.io/`.
+- прод — `https://dnd-memory.imikea.ru/`;
+- тест — `https://test-dnd-memory.imikea.ru/`.
 
-Это обычные DNS-имена, поэтому Let's Encrypt выдаёт на них нормальный
-сертификат. HTTPS на голый IP `81.177.139.30` публичный CA не выпускает.
+Nginx на хосте:
 
-Nginx на хосте разводит имена по контейнерам:
-
-- `dnd.81.177.139.30.sslip.io` → `127.0.0.1:8080`;
-- `test.81.177.139.30.sslip.io` → `127.0.0.1:8081`;
+- `dnd-memory.imikea.ru` → `127.0.0.1:8080`;
+- `test-dnd-memory.imikea.ru` → `127.0.0.1:8081`;
 - `http://81.177.139.30/` → прод (запасной вход по IP);
 - `http://81.177.139.30:8091/` → тест (запасной вход по IP).
 
-В `.env`:
+`.env`:
 
 ```
 # prod
-PUBLIC_URL=https://dnd.81.177.139.30.sslip.io/
-CORS_ORIGINS=https://dnd.81.177.139.30.sslip.io
+PUBLIC_URL=https://dnd-memory.imikea.ru/
+CORS_ORIGINS=https://dnd-memory.imikea.ru
 
 # test
-PUBLIC_URL=https://test.81.177.139.30.sslip.io/
-CORS_ORIGINS=https://test.81.177.139.30.sslip.io
+PUBLIC_URL=https://test-dnd-memory.imikea.ru/
+CORS_ORIGINS=https://test-dnd-memory.imikea.ru
 ```
 
-Установка nginx и сертификатов:
+Сертификаты:
 
 ```bash
-sudo apt update && sudo apt install -y nginx certbot python3-certbot-nginx
-sudo cp /opt/dnd-memory/nginx-host.conf /etc/nginx/sites-available/dnd-memory.conf
-sudo ln -sf /etc/nginx/sites-available/dnd-memory.conf /etc/nginx/sites-enabled/dnd-memory.conf
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl reload nginx
-
 sudo LC_ALL=C.UTF-8 certbot --nginx --non-interactive --agree-tos \
   --email makeev_in@list.ru --redirect \
-  -d dnd.81.177.139.30.sslip.io \
-  -d test.81.177.139.30.sslip.io
+  -d dnd-memory.imikea.ru \
+  -d test-dnd-memory.imikea.ru
 ```
 
 Проверка:
 
 ```bash
-curl -s https://dnd.81.177.139.30.sslip.io/api/app/latest
-curl -s https://test.81.177.139.30.sslip.io/api/app/latest
+curl -s https://dnd-memory.imikea.ru/api/app/latest
+curl -s https://test-dnd-memory.imikea.ru/api/app/latest
 ```
-
-Когда `ivmikea.ru` или `mikea.su` делегируют, достаточно поменять
-`server_name`, `PUBLIC_URL`, `CORS_ORIGINS` и перевыпустить сертификат.

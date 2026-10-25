@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 34
-    latest-version-name: 1.0.33
+    latest-version-code: 35
+    latest-version-name: 1.0.34
     min-version-code: 4
-    apk-url: https://test.81.177.139.30.sslip.io/dnd-memory.apk
-    notes: "HTTPS через имена sslip.io и запасной вход по IP"
+    apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
+    notes: "Домены imikea.ru и HTTPS"
     versions:
+      - version: "1.0.34"
+        date: "2026-10-25"
+        notes: "Домены imikea.ru и HTTPS"
       - version: "1.0.33"
         date: "2026-10-24"
         notes: "HTTPS через имена sslip.io и запасной вход по IP"
