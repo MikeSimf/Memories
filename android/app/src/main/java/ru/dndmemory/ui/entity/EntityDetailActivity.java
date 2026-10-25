@@ -119,7 +119,9 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
 
         viewModel.allEntities().observe(this, list -> {
             allObjects = list == null ? java.util.Collections.emptyList() : list;
-            renderAllLinks(current);
+            if (current != null) {
+                renderAllLinks(current);
+            }
         });
 
         viewModel.nameIndex().observe(this, index -> {
@@ -662,7 +664,10 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
     }
 
     /** Все ссылки карточки: исходящие, обратные, владелец и его предметы. */
-    private void renderAllLinks(@NonNull EntityRoom entity) {
+    private void renderAllLinks(@Nullable EntityRoom entity) {
+        if (entity == null) {
+            return;
+        }
         java.util.LinkedHashMap<String, EntityRoom> all = new java.util.LinkedHashMap<>();
         if (entity.links == null || allObjects == null) {
             ViewUtils.show(binding.entityLinksTitle, false);
