@@ -95,7 +95,7 @@ async function submit(): Promise<void> {
           </span>
         </div>
         <div class="field">
-          <label class="field__label" for="reg-name">Имя</label>
+          <label class="field__label" for="reg-name">Отображаемое имя</label>
           <input
             id="reg-name"
             v-model="displayName"

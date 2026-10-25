@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 38
-    latest-version-name: 1.0.37
+    latest-version-code: 39
+    latest-version-name: 1.0.38
     min-version-code: 4
     apk-url: https://dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Быстрый переход к входу по приглашению"
+    notes: "Права героев и историй, единый список ссылок, имена авторов"
     versions:
+      - version: "1.0.38"
+        date: "2026-10-25"
+        notes: "Права героев и историй, единый список ссылок, имена авторов"
       - version: "1.0.37"
         date: "2026-10-25"
         notes: "Быстрый переход к входу по приглашению"

@@ -24,6 +24,9 @@ public class CampaignRoom {
     /** OWNER | EDITOR_MASTER | EDITOR_HERO | VIEWER */
     public String myRole;
 
+    /** Герой, привязанный к текущему участнику. */
+    public String myLinkedHeroId;
+
     public List<String> myPermissions = new ArrayList<>();
 
     public int memberCount;

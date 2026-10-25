@@ -53,6 +53,7 @@ public final class Mappers {
         room.title = dto.title;
         room.description = dto.description;
         room.myRole = dto.myRole;
+        room.myLinkedHeroId = dto.myLinkedHeroId;
         room.myPermissions = dto.myPermissions == null ? new ArrayList<>() : dto.myPermissions;
         room.memberCount = dto.memberCount;
         room.entityCount = dto.entityCount;
@@ -71,6 +72,7 @@ public final class Mappers {
         dto.title = room.title;
         dto.description = room.description;
         dto.myRole = room.myRole;
+        dto.myLinkedHeroId = room.myLinkedHeroId;
         dto.myPermissions = room.myPermissions;
         dto.memberCount = room.memberCount;
         dto.entityCount = room.entityCount;
@@ -131,7 +133,9 @@ public final class Mappers {
         room.filesJson = filesJson(dto.files);
         room.links = dto.links == null ? new ArrayList<EntityLink>() : new ArrayList<>(dto.links);
         room.createdBy = dto.createdBy;
+        room.createdByName = dto.createdByName;
         room.updatedBy = dto.updatedBy;
+        room.updatedByName = dto.updatedByName;
         room.revision = dto.revision;
         room.createdAt = dto.createdAt;
         room.updatedAt = dto.updatedAt;
@@ -325,7 +329,6 @@ public final class Mappers {
         room.links = dto.links == null ? new ArrayList<EntityLink>() : new ArrayList<>(dto.links);
         room.revision = dto.revision;
         room.createdBy = dto.createdBy;
-        room.updatedBy = dto.updatedBy;
         room.createdAt = dto.createdAt;
         room.updatedAt = dto.updatedAt;
         room.deleted = dto.deleted;

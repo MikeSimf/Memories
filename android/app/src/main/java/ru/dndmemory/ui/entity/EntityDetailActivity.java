@@ -119,7 +119,7 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
 
         viewModel.allEntities().observe(this, list -> {
             allObjects = list == null ? java.util.Collections.emptyList() : list;
-            renderMentions();
+            renderAllLinks(current);
         });
 
         viewModel.nameIndex().observe(this, index -> {
@@ -175,8 +175,7 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
             binding.entityDescription.setText(R.string.attr_not_set);
         }
         bindFields(entity);
-        bindLinks(entity);
-        renderMentions();
+        renderAllLinks(entity);
 
         ViewUtils.show(binding.entityConflictBar, entity.hasConflict());
     }
@@ -217,8 +216,10 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
             ru.dndmemory.data.local.entity.SyncStateRoom state =
                     App.container(this).database().syncStateDao().find(campaignId);
             String syncedAt = state == null ? null : state.lastSyncAt;
-            String createdName = createdBy == null ? "—" : createdBy;
-            String updatedName = updatedBy == null ? "—" : updatedBy;
+            String createdName = entity.createdByName != null && !entity.createdByName.isEmpty()
+                    ? entity.createdByName : (createdBy == null ? "—" : createdBy);
+            String updatedName = entity.updatedByName != null && !entity.updatedByName.isEmpty()
+                    ? entity.updatedByName : (updatedBy == null ? "—" : updatedBy);
             runOnUiThread(() -> binding.entityUpdated.setText(getString(
                     R.string.entity_detail_system_info,
                     createdName, DateFormats.formatIso(entity.createdAt),
@@ -625,6 +626,85 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         subtitle.setText(typeRes);
         row.setOnClickListener(onClick);
         binding.entityMentions.addView(row);
+    }
+
+    /** Все ссылки карточки: исходящие, обратные, владелец и его предметы. */
+    private void renderAllLinks(@NonNull EntityRoom entity) {
+        java.util.LinkedHashMap<String, EntityRoom> all = new java.util.LinkedHashMap<>();
+        for (EntityLink link : entity.links) {
+            if (link.targetId == null) continue;
+            EntityRoom target = findObject(link.targetId);
+            if (target != null && !target.id.equals(entity.id)) all.put(target.id, target);
+        }
+        for (EntityRoom item : allObjects) {
+            if (item == null || item.id.equals(entity.id)) continue;
+            for (EntityLink link : item.links) {
+                if (entity.id.equals(link.targetId)) {
+                    all.put(item.id, item);
+                    break;
+                }
+            }
+        }
+        // Владелец предмета — такая же ссылка; у владельца виден его предмет.
+        if ("ITEM".equalsIgnoreCase(entity.kind)) {
+            EntityRoom owner = findObject(entity.ownerCharacterId);
+            if (owner == null) owner = findObject(entity.ownerHeroId);
+            if (owner != null && !owner.id.equals(entity.id)) all.put(owner.id, owner);
+        }
+        for (EntityRoom item : allObjects) {
+            if (item == null || !"ITEM".equalsIgnoreCase(item.kind)) continue;
+            if (entity.id.equals(item.ownerCharacterId) || entity.id.equals(item.ownerHeroId)) {
+                all.put(item.id, item);
+            }
+        }
+
+        java.util.List<EntityRoom> sorted = new java.util.ArrayList<>(all.values());
+        sorted.sort((a, b) -> {
+            int byType = Integer.compare(linkOrder(a.kind), linkOrder(b.kind));
+            return byType != 0 ? byType : a.name.compareToIgnoreCase(b.name);
+        });
+
+        binding.entityLinks.removeAllViews();
+        binding.entityLinksTitle.setText(R.string.entity_links);
+        ViewUtils.show(binding.entityLinksTitle, !sorted.isEmpty());
+        String currentKind = null;
+        for (EntityRoom item : sorted) {
+            if (!item.kind.equalsIgnoreCase(currentKind == null ? "" : currentKind)) {
+                currentKind = item.kind;
+                android.widget.TextView header = new android.widget.TextView(this);
+                header.setText(Labels.entityTypeText(this, item.kind));
+                header.setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleSmall);
+                header.setPadding(0, 12, 0, 4);
+                binding.entityLinks.addView(header);
+            }
+            android.view.View row = getLayoutInflater().inflate(
+                    R.layout.item_backlink, binding.entityLinks, false);
+            android.widget.ImageView avatar = row.findViewById(R.id.backlink_avatar);
+            android.widget.ImageView classIcon = row.findViewById(R.id.backlink_class_icon);
+            android.widget.TextView name = row.findViewById(R.id.backlink_name);
+            android.widget.TextView subtitle = row.findViewById(R.id.backlink_subtitle);
+            AvatarBinder.bind(this, avatar, item, App.container(this).okHttpClient());
+            AvatarBinder.bindClassIcon(this, classIcon, item);
+            name.setText(item.name);
+            subtitle.setText(Labels.entityTypeText(this, item.kind));
+            row.setOnClickListener(v -> Nav.openEntity(this, campaignId, item.id));
+            binding.entityLinks.addView(row);
+        }
+        ViewUtils.show(binding.entityMentionsTitle, false);
+        binding.entityMentions.removeAllViews();
+    }
+
+    private static int linkOrder(String kind) {
+        if (kind == null) return 9;
+        switch (kind.toUpperCase(java.util.Locale.ROOT)) {
+            case "CHARACTER": return 0;
+            case "LOCATION": return 1;
+            case "ITEM": return 2;
+            case "HERO": return 3;
+            case "RETELLING": return 4;
+            case "MATERIAL": return 5;
+            default: return 9;
+        }
     }
 
     private void bindLinks(@NonNull EntityRoom entity) {

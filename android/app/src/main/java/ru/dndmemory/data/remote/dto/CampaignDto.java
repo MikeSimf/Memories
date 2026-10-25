@@ -10,6 +10,7 @@ public class CampaignDto {
     public String title;
     public String description;
     public String myRole;
+    public String myLinkedHeroId;
     public List<String> myPermissions = new ArrayList<>();
     public int memberCount;
     public int entityCount;

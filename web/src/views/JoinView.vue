@@ -209,7 +209,7 @@ async function accept(): Promise<void> {
               />
             </div>
             <div class="field">
-              <label class="field__label" for="join-name">Имя</label>
+              <label class="field__label" for="join-name">Отображаемое имя</label>
               <input id="join-name" v-model="regName" class="input" type="text" autocomplete="nickname" required />
             </div>
             <div class="field">

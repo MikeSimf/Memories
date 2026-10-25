@@ -74,6 +74,16 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
 
     @Override
     protected void requireWrite(Member member, Hero entity) {
+        // Участник, привязанный к герою, ведёт его сам; владелец и мастер — любого.
+        if (entity.getId().equals(member.getLinkedHeroId())) {
+            return;
+        }
+        permissionService.require(member, Permissions.HERO_WRITE);
+    }
+
+    @Override
+    protected void requireDelete(Member member, Hero entity) {
+        // Удалять героя может только тот, у кого есть hero.write (владелец).
         permissionService.require(member, Permissions.HERO_WRITE);
     }
 

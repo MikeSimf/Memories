@@ -564,6 +564,11 @@ export const useCampaignStore = defineStore('campaign', () => {
   }
 
   function canEdit(object: LocalObject): boolean {
+    // Участник, привязанный к герою, ведёт свою карточку; удалять её всё равно
+    // может только владелец (hero.write).
+    if (object.objectType === 'HERO' && object.id === linkedHeroId.value) {
+      return true
+    }
     return canEditObject(subject.value, object.objectType)
   }
 

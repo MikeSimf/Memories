@@ -122,7 +122,7 @@
     <string name="auth_login_field">Логин</string>
     <string name="auth_email">Почта</string>
     <string name="auth_password">Пароль</string>
-    <string name="auth_display_name">Как вас зовут</string>
+    <string name="auth_display_name">Отображаемое имя</string>
     <string name="auth_login">Войти</string>
     <string name="auth_register">Зарегистрироваться</string>
     <string name="auth_forgot_password">Забыли пароль?</string>
@@ -205,7 +205,7 @@
     <string name="entity_list_empty">Здесь пока пусто</string>
     <string name="entity_list_add">Добавить</string>
     <string name="entity_create_choose">Что создаём?</string>
-    <string name="entity_hero_owner_only">Героя заводит и правит только владелец кампании</string>
+    <string name="entity_hero_owner_only">Героя ведёт владелец кампании или игрок, привязанный к этому герою</string>
     <string name="entity_filter_hint">Фильтр: название или описание</string>
     <string name="entity_filter_found">Найдено: %1$d</string>
     <string name="entity_filter_clear">Очистить фильтр</string>
@@ -369,7 +369,7 @@
     <!-- Профиль и пароль -->
     <string name="settings_profile_section">Профиль</string>
     <string name="settings_profile_hint">Логин изменить нельзя. Почта обязательна: на неё приходит ссылка восстановления пароля.</string>
-    <string name="settings_profile_name">Имя</string>
+    <string name="settings_profile_name">Отображаемое имя</string>
     <string name="settings_profile_email">Почта</string>
     <string name="settings_profile_phone">Телефон</string>
     <string name="settings_profile_save">Сохранить профиль</string>

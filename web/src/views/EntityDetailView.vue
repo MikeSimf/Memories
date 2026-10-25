@@ -93,36 +93,37 @@ const personGender = computed(() => {
   return genderSymbol(item.gender)
 })
 
-/** Обратные ссылки считаем по локальной базе — работает и без сети (`sync.md` §8). */
-const backlinks = computed(() =>
-  campaign.activeObjects.filter(
-    (item) => item.id !== entityId.value && item.links.some((link) => link.targetId === entityId.value),
-  ),
-)
-
-/**
- * Кто упоминает эту карточку. У локации — только герои и персонажи:
- * так ищется «кто здесь был», даже если имя забылось.
- */
-const mentions = computed(() => {
-  const all = backlinks.value
-  const filtered =
-    entity.value?.objectType === 'LOCATION'
-      ? all.filter((item) => item.objectType === 'HERO' || item.objectType === 'CHARACTER')
-      : all
-  return [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'ru'))
-})
-
-const outgoingLinks = computed(() => {
-  const seen = new Set<string>()
-  const result: Array<{ id: string | null; label: string; resolved: boolean }> = []
-  for (const link of entity.value?.links ?? []) {
-    const key = `${link.targetId ?? ''}|${link.label}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    result.push({ id: link.targetId, label: link.label, resolved: link.resolved && !!link.targetId })
+/** Единый список ссылок: исходящие, обратные и владелец предмета. */
+const LINK_ORDER: ObjectClass[] = ['CHARACTER', 'LOCATION', 'ITEM', 'HERO']
+const linkGroups = computed(() => {
+  const current = entity.value
+  if (!current) return []
+  const byId = new Map<string, LocalObject>()
+  const add = (object: LocalObject | null | undefined) => {
+    if (!object || object.id === current.id) return
+    byId.set(object.id, object)
   }
-  return result
+  for (const link of current.links ?? []) {
+    if (link.targetId) add(campaign.objectById(link.targetId))
+  }
+  for (const item of campaign.activeObjects) {
+    if (item.links.some((link) => link.targetId === current.id)) add(item)
+  }
+  if (current.objectType === 'ITEM') {
+    add(campaign.objectById(current.ownerCharacterId ?? ''))
+    add(campaign.objectById(current.ownerHeroId ?? ''))
+  }
+  for (const item of campaign.activeObjects) {
+    if (item.objectType !== 'ITEM') continue
+    if (item.ownerCharacterId === current.id || item.ownerHeroId === current.id) add(item)
+  }
+  return LINK_ORDER.map((type) => ({
+    type,
+    label: OBJECT_CLASS_LABELS[type],
+    items: [...byId.values()]
+      .filter((item) => item.objectType === type)
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru')),
+  })).filter((group) => group.items.length > 0)
 })
 
 const brokenLinkName = ref<string | null>(null)
@@ -352,51 +353,30 @@ async function keepLocal(): Promise<void> {
       </div>
 
       <div class="faint">
-        Создан(а) {{ campaign.userName(entity.createdBy) }}, изменён(а)
-        {{ campaign.userName(entity.updatedBy) }} · ревизия {{ entity.revision }} ·
+        Создал(а) {{ entity.createdByName || campaign.userName(entity.createdBy) }}, изменил(а)
+        {{ entity.updatedByName || campaign.userName(entity.updatedBy) }} · ревизия {{ entity.revision }} ·
         {{ formatDateTime(entity.updatedAt) }}
       </div>
 
-      <div v-if="outgoingLinks.length > 0" class="card">
-        <h2>Упоминания в тексте</h2>
-        <div class="mention-list">
-          <template v-for="link in outgoingLinks" :key="`${link.id}-${link.label}`">
-            <RouterLink
-              v-if="link.resolved && link.id && campaign.objectById(link.id)"
-              class="mention-row"
-              :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: link.id } }"
-            >
-              <EntityAvatar :object="campaign.objectById(link.id)!" :size="36" />
-              <span class="mention-row__main">
-                <span class="mention-row__name">{{ campaign.objectById(link.id)!.name }}</span>
-                <span class="faint">{{ OBJECT_CLASS_LABELS[campaign.objectById(link.id)!.objectType] }}</span>
-              </span>
-            </RouterLink>
-            <button v-else class="btn btn--sm" type="button" @click="brokenLinkName = link.label">
-              {{ link.label }} (создать)
-            </button>
-          </template>
-        </div>
-      </div>
-
-      <div v-if="mentions.length > 0" class="card">
-        <h2>{{ entity.objectType === 'LOCATION' ? 'Здесь встречались' : 'Упоминают' }}</h2>
-        <p v-if="entity.objectType === 'LOCATION'" class="faint" style="margin-top: 0">
-          Герои и персонажи, в описании которых есть эта локация.
-        </p>
-        <div class="mention-list">
-          <RouterLink
-            v-for="item in mentions"
-            :key="item.id"
-            class="mention-row"
-            :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: item.id } }"
-          >
-            <EntityAvatar :object="item" :size="36" />
-            <span class="mention-row__main">
-              <span class="mention-row__name">{{ item.name }}</span>
-              <span class="faint">{{ OBJECT_CLASS_LABELS[item.objectType] }}</span>
-            </span>
-          </RouterLink>
+      <div v-if="linkGroups.length > 0" class="card">
+        <h2>Ссылки</h2>
+        <div class="link-groups">
+          <details v-for="group in linkGroups" :key="group.type" class="link-group" open>
+            <summary>{{ group.label }} <span class="faint">{{ group.items.length }}</span></summary>
+            <div class="mention-list">
+              <RouterLink
+                v-for="item in group.items"
+                :key="item.id"
+                class="mention-row"
+                :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: item.id } }"
+              >
+                <EntityAvatar :object="item" :size="36" />
+                <span class="mention-row__main">
+                  <span class="mention-row__name">{{ item.name }}</span>
+                </span>
+              </RouterLink>
+            </div>
+          </details>
         </div>
       </div>
 

@@ -26,7 +26,9 @@ public class EntityDto {
     public List<EntityLink> links = new ArrayList<>();
 
     public String createdBy;
+    public String createdByName;
     public String updatedBy;
+    public String updatedByName;
     public long revision;
     public String createdAt;
     public String updatedAt;

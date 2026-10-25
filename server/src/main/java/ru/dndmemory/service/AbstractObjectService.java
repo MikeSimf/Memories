@@ -122,9 +122,14 @@ public abstract class AbstractObjectService<
         permissionService.require(member, Permissions.ENTITY_WRITE);
     }
 
-    /** Право на правку и удаление объекта этого класса. */
+    /** Право на правку объекта этого класса. */
     protected void requireWrite(Member member, E entity) {
         permissionService.require(member, Permissions.ENTITY_WRITE);
+    }
+
+    /** Удаление по умолчанию — то же право, что и правка. */
+    protected void requireDelete(Member member, E entity) {
+        requireWrite(member, entity);
     }
 
     /** Поиск по названию, описанию и полям класса. */
@@ -236,7 +241,7 @@ public abstract class AbstractObjectService<
     public void delete(UUID campaignId, UUID objectId, UUID userId) {
         Member member = permissionService.requireMember(campaignId, userId);
         E entity = require(campaignId, objectId);
-        requireWrite(member, entity);
+        requireDelete(member, entity);
         Campaign campaign = campaignRepository.findForUpdate(campaignId)
                 .orElseThrow(() -> ApiException.notFound("Кампания"));
         entity.setDeleted(true);

@@ -77,6 +77,10 @@ public class RetellingService {
     public RetellingDtos.RetellingDto create(UUID campaignId, UUID userId, RetellingDtos.CreateRetellingRequest request) {
         Member member = permissionService.requireMember(campaignId, userId);
         permissionService.require(member, Permissions.RETELLING_WRITE);
+        // Без привязки к герою историю создавать нельзя; мастер и владелец — исключение.
+        if (!isManager(member) && member.getLinkedHeroId() == null) {
+            throw ApiException.forbidden("Историю пишет участник, привязанный к герою");
+        }
         rejectDraft(request.getStatus());
         Campaign campaign = campaignRepository.findForUpdate(campaignId)
                 .orElseThrow(() -> ApiException.notFound("Кампания"));
@@ -94,7 +98,8 @@ public class RetellingService {
         }
         retelling.setTitle(request.getTitle().trim());
         retelling.setBody(request.getBody());
-        retelling.setAuthorEntityId(request.getAuthorEntityId());
+        retelling.setAuthorEntityId(!isManager(member) ? member.getLinkedHeroId()
+                : request.getAuthorEntityId());
         retelling.setSessionDate(request.getSessionDate());
         retelling.setStatus(RetellingStatus.PUBLISHED);
         retelling.setUpdatedBy(userId);
@@ -126,7 +131,7 @@ public class RetellingService {
         if (request.getBody() != null) {
             retelling.setBody(request.getBody());
         }
-        if (request.getAuthorEntityId() != null) {
+        if (isManager(member) && request.getAuthorEntityId() != null) {
             retelling.setAuthorEntityId(request.getAuthorEntityId());
         }
         if (request.getSessionDate() != null) {
@@ -168,12 +173,19 @@ public class RetellingService {
                 .orElseThrow(() -> ApiException.notFound("Пересказ"));
     }
 
-    /** Править чужой пересказ может только тот, у кого есть retelling.publish. */
+    /** Автор правит свою историю, владелец и мастер — любую. */
     public void requireEditRight(Member member, Retelling retelling, UUID userId) {
+        if (isManager(member)) {
+            return;
+        }
         if (!retelling.getCreatedBy().equals(userId)) {
             throw ApiException.forbidden("Историю может править только её автор");
         }
         permissionService.require(member, Permissions.RETELLING_WRITE_OWN);
+    }
+
+    private boolean isManager(Member member) {
+        return permissionService.permissionSet(member).contains(Permissions.CAMPAIGN_MANAGE);
     }
 
     public RetellingDtos.RetellingDto toDto(Retelling retelling, ObjectIndexService.ObjectContext context,

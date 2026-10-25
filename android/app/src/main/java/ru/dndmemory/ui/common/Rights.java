@@ -116,17 +116,35 @@ public final class Rights {
         if (entity == null) {
             return false;
         }
+        // Участник, привязанный к герою, ведёт свою карточку.
+        if (EntityType.from(entity.kind) == EntityType.HERO
+                && campaign != null && entity.id.equals(campaign.myLinkedHeroId)) {
+            return true;
+        }
         return canWrite(campaign, EntityType.from(entity.kind));
     }
 
     public static boolean canDeleteEntity(@Nullable CampaignRoom campaign, @Nullable EntityRoom entity,
                                           @Nullable String currentUserId) {
+        if (entity == null) {
+            return false;
+        }
+        // Удаление героя — только с hero.write.
+        if (EntityType.from(entity.kind) == EntityType.HERO) {
+            return has(campaign, HERO_WRITE);
+        }
         return canWriteEntity(campaign, entity, currentUserId);
     }
 
     public static boolean canCreateRetelling(@Nullable CampaignRoom campaign) {
-        MemberRole role = MemberRole.from(campaign == null ? null : campaign.myRole);
-        return role != null && role.canWriteEntities();
+        if (campaign == null) {
+            return false;
+        }
+        if (has(campaign, "campaign.manage")) {
+            return true;
+        }
+        return has(campaign, RETELLING_WRITE)
+                && campaign.myLinkedHeroId != null && !campaign.myLinkedHeroId.isEmpty();
     }
 
     public static boolean canEditRetelling(@Nullable CampaignRoom campaign, @Nullable RetellingRoom retelling,

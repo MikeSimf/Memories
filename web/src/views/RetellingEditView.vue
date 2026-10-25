@@ -37,7 +37,11 @@ const showPreview = ref(false)
 
 function fillForm(): void {
   if (mode.value === 'new') {
-    form.value = { ...emptyRetellingForm(), sessionDate: todayIso() }
+    form.value = {
+      ...emptyRetellingForm(),
+      sessionDate: todayIso(),
+      authorEntityId: canChooseAuthor.value ? null : campaign.linkedHeroId,
+    }
     return
   }
   const source =
@@ -46,12 +50,21 @@ function fillForm(): void {
       : campaign.retellingById(retellingId.value)
   if (source) {
     form.value = campaign.retellingFormValues(source)
+    if (!canChooseAuthor.value) {
+      form.value.authorEntityId = campaign.linkedHeroId
+    }
   }
 }
 
 watch([mode, retellingId], fillForm, { immediate: true })
 
 const canWrite = computed(() => campaign.canWriteRetellings)
+/** Автора выбирают только владелец и мастер; остальные пишут от своего героя. */
+const canChooseAuthor = computed(() => campaign.canManageCampaign)
+const ownHeroName = computed(() => {
+  const id = campaign.linkedHeroId
+  return id ? campaign.objectName(id) : null
+})
 
 function back(): void {
   if (retellingId.value) {
@@ -182,12 +195,18 @@ async function savePublished(): Promise<void> {
         <div class="field" style="flex: 1; min-width: 220px">
           <label class="field__label" for="retelling-author">От лица кого</label>
           <EntityPicker
+            v-if="canChooseAuthor"
             :model-value="form.authorEntityId"
             :classes="AUTHOR_CLASSES"
             empty-label="— от лица мастера —"
             @update:model-value="form.authorEntityId = $event"
           />
-          <span class="field__hint">Выбор из героев и персонажей кампании (authorEntityId).</span>
+          <div v-else class="faint">
+            {{ ownHeroName || 'Нет привязанного героя' }}
+          </div>
+          <span v-if="canChooseAuthor" class="field__hint">
+            Владелец и мастер могут выбрать любого героя или персонажа.
+          </span>
         </div>
       </div>
 

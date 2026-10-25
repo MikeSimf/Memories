@@ -42,7 +42,7 @@ import ru.dndmemory.data.local.entity.SyncStateRoom;
                 MemberRoom.class,
                 MaterialRoom.class
         },
-        version = 8,
+        version = 10,
         exportSchema = false
 )
 @TypeConverters({Converters.class})
@@ -121,6 +121,23 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /** 8 → 9: привязанный герой текущего участника. */
+    public static final Migration MIGRATION_8_9 = new Migration(8, 9) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE `campaigns` ADD COLUMN `myLinkedHeroId` TEXT");
+        }
+    };
+
+    /** 9 → 10: имена автора создания и последней правки. */
+    public static final Migration MIGRATION_9_10 = new Migration(9, 10) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE `entities` ADD COLUMN `createdByName` TEXT");
+            db.execSQL("ALTER TABLE `entities` ADD COLUMN `updatedByName` TEXT");
+        }
+    };
+
     public abstract CampaignDao campaignDao();
 
     public abstract EntityDao entityDao();
@@ -141,7 +158,7 @@ public abstract class AppDatabase extends RoomDatabase {
         return Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, NAME)
                 // Материалы кампании появились во второй версии: таблица
                 // создаётся миграцией, локальные данные не теряются.
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                 .fallbackToDestructiveMigration()
                 .build();
     }

@@ -45,6 +45,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="@string/entity_detail_fields"
+                android:visibility="gone"
                 android:textAppearance="?attr/textAppearanceTitleSmall" />
 
             <!-- Герой и персонаж -->

@@ -213,7 +213,7 @@ async function logout(): Promise<void> {
       </div>
       <div class="row" style="align-items: flex-end">
         <div class="field" style="flex: 1; min-width: 200px">
-          <label class="field__label" for="profile-name">Имя</label>
+          <label class="field__label" for="profile-name">Отображаемое имя</label>
           <input id="profile-name" v-model="displayName" class="input" type="text" />
         </div>
         <div class="field" style="flex: 1; min-width: 200px">
@@ -292,7 +292,7 @@ async function logout(): Promise<void> {
           />
         </div>
       </div>
-      <span class="field__hint">Пароль от 8 символов. Телефон хранится в виде +7XXXXXXXXXX.</span>
+      <span class="field__hint">Пароль от 8 символов.</span>
 
       <p v-if="passwordError" class="notice notice--danger">{{ passwordError }}</p>
 

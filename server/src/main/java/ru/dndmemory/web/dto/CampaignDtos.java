@@ -46,6 +46,8 @@ public final class CampaignDtos {
         private String title;
         private String description;
         private MemberRole myRole;
+        /** Герой, привязанный к текущему участнику. */
+        private UUID myLinkedHeroId;
         private long memberCount;
         /** Сумма объектов всех четырёх классов. */
         private long entityCount;
@@ -64,6 +66,8 @@ public final class CampaignDtos {
         private String description;
         private UUID ownerUserId;
         private MemberRole myRole;
+        /** Герой, привязанный к текущему участнику. */
+        private UUID myLinkedHeroId;
         private List<String> myPermissions;
         private long memberCount;
         /** Сумма героев, персонажей, локаций и предметов. */

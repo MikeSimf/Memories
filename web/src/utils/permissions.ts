@@ -89,7 +89,8 @@ export function canDeleteObject(subject: PermissionSubject, objectClass: ObjectC
 
 /** Можно ли создать история: `retelling.write` (`roles.md` §2). */
 export function canCreateRetelling(subject: PermissionSubject): boolean {
-  return hasPermission(subject.permissions, 'retelling.write')
+  if (hasPermission(subject.permissions, 'campaign.manage')) return true
+  return hasPermission(subject.permissions, 'retelling.write') && subject.linkedHeroId !== null
 }
 
 /**
@@ -100,7 +101,8 @@ export function canEditRetelling(
   subject: PermissionSubject,
   retelling: RetellingPermissionContext,
 ): boolean {
-  // Правит историю только её автор.
+  // Владелец и мастер правят любую историю, участник — только свою.
+  if (hasPermission(subject.permissions, 'campaign.manage')) return true
   return isAuthor(subject, retelling.createdBy)
     && hasPermission(subject.permissions, 'retelling.write.own')
 }
@@ -118,9 +120,8 @@ export function canDeleteRetelling(
  */
 export function canUseAuthorEntity(subject: PermissionSubject, authorEntityId: string | null): boolean {
   if (authorEntityId === null) return true
-  if (hasPermission(subject.permissions, 'retelling.publish')) return true
-  if (hasPermission(subject.permissions, 'entity.write')) return true
-  return subject.linkedHeroId === authorEntityId
+  if (hasPermission(subject.permissions, 'campaign.manage')) return true
+  return subject.linkedHeroId !== null && subject.linkedHeroId === authorEntityId
 }
 
 export function isOwnRetelling(subject: PermissionSubject, retelling: RetellingDto): boolean {
