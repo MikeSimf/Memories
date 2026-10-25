@@ -214,6 +214,8 @@
     <string name="entity_detail_type">Класс: %1$s</string>
     <string name="entity_detail_system_info">Создал: %1$s, %2$s\nИзменил: %3$s, %4$s\nСинхронизация: %5$s</string>
     <string name="entity_detail_updated">Обновлено: %1$s</string>
+    <string name="quick_add_character">Добавить персонажа</string>
+    <string name="quick_add_item">Добавить предмет</string>
     <string name="entity_detail_fields">Поля</string>
     <string name="entity_detail_description">Описание</string>
     <string name="entity_detail_links">Упоминания</string>

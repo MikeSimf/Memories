@@ -63,6 +63,24 @@ watch(
 
 /** Имя из ссылки `[[…]]` — предзаполняем новую запись (`missing-names`). */
 watch(
+  () => [route.query.name, route.query.description, route.query.owner, route.query.ownerClass],
+  ([name, description, owner, ownerClass]) => {
+    if (isEdit.value) return
+    const patch: Partial<ObjectFormValues> = {}
+    if (typeof name === 'string' && form.value.name === '') patch.name = name
+    if (typeof description === 'string' && form.value.description === '') {
+      patch.description = description
+    }
+    if (typeof owner === 'string' && owner !== '') {
+      if (ownerClass === 'HERO') patch.ownerHeroId = owner
+      else patch.ownerCharacterId = owner
+    }
+    if (Object.keys(patch).length > 0) form.value = { ...form.value, ...patch }
+  },
+  { immediate: true },
+)
+
+watch(
   () => route.query.name,
   (value) => {
     if (!isEdit.value && typeof value === 'string' && form.value.name === '') {

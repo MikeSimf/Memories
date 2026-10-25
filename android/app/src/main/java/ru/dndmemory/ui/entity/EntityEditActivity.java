@@ -65,6 +65,8 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
     private EntityType currentKind = EntityType.CHARACTER;
     private String selectedPlayerUserId;
     private String selectedOwnerId;
+    private String prefillDescription;
+    private String prefillOwnerId;
 
     private final List<ItemHeroItemEditBinding> itemRows = new ArrayList<>();
 
@@ -84,6 +86,10 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         String entityId = getIntent() == null ? null : getIntent().getStringExtra(Extras.ENTITY_ID);
         String kindExtra = getIntent() == null ? null : getIntent().getStringExtra(Extras.ENTITY_TYPE);
         creating = getIntent() != null && getIntent().getBooleanExtra(Extras.CREATE_NEW, false);
+        prefillDescription = getIntent() == null ? null
+                : getIntent().getStringExtra(Extras.PREFILL_DESCRIPTION);
+        prefillOwnerId = getIntent() == null ? null
+                : getIntent().getStringExtra(Extras.PREFILL_OWNER_ID);
         if (campaignId == null) {
             finish();
             return;
@@ -352,9 +358,16 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
 
             binding.entityEditNameInput.setText(state.entity.name);
             binding.entityEditDescriptionInput.setText(state.entity.description);
+            if (creating && prefillDescription != null
+                    && binding.entityEditDescriptionInput.getText().length() == 0) {
+                binding.entityEditDescriptionInput.setText(prefillDescription);
+            }
             selectedPlayerUserId = state.entity.playerUserId;
             selectedOwnerId = state.entity.ownerHeroId != null
                     ? state.entity.ownerHeroId : state.entity.ownerCharacterId;
+            if (creating && prefillOwnerId != null) {
+                selectedOwnerId = prefillOwnerId;
+            }
 
             bindFieldsForKind();
             showPhoto(state.entity.imageFileId);

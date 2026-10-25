@@ -31,17 +31,23 @@ const canDelete = computed(() =>
 )
 
 /** Ссылки из текста истории — списком, как в карточках объектов. */
-const retellingLinks = computed(() => {
-  const result: Array<{ id: string; name: string; type: string }> = []
-  const seen = new Set<string>()
+const retellingLinkGroups = computed(() => {
+  const byId = new Map<string, NonNullable<ReturnType<typeof campaign.objectById>>>()
   for (const link of published.value?.links ?? []) {
-    if (!link.targetId || seen.has(link.targetId)) continue
+    if (!link.targetId) continue
     const object = campaign.objectById(link.targetId)
-    if (!object) continue
-    seen.add(link.targetId)
-    result.push({ id: object.id, name: object.name, type: OBJECT_CLASS_LABELS[object.objectType] })
+    if (object) byId.set(object.id, object)
   }
-  return result
+  const order = ['CHARACTER', 'LOCATION', 'ITEM', 'HERO'] as const
+  return order
+    .map((type) => ({
+      type,
+      label: OBJECT_CLASS_LABELS[type],
+      items: [...byId.values()]
+        .filter((item) => item.objectType === type)
+        .sort((a, b) => a.name.localeCompare(b.name, 'ru')),
+    }))
+    .filter((group) => group.items.length > 0)
 })
 
 const busy = ref(false)
@@ -184,20 +190,20 @@ async function keepLocal(): Promise<void> {
         <p v-else class="faint">Текст истории пуст.</p>
       </div>
 
-      <div v-if="retellingLinks.length > 0" class="card">
+      <div v-if="retellingLinkGroups.length > 0" class="card">
         <h2>Ссылки</h2>
         <div class="mention-list">
-          <RouterLink
-            v-for="link in retellingLinks"
-            :key="link.id"
-            class="mention-row"
-            :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: link.id } }"
-          >
-            <span class="mention-row__main">
-              <span class="mention-row__name">{{ link.name }}</span>
-              <span class="faint">{{ link.type }}</span>
-            </span>
-          </RouterLink>
+          <details v-for="group in retellingLinkGroups" :key="group.type" open>
+            <summary>{{ group.label }} <span class="faint">{{ group.items.length }}</span></summary>
+            <RouterLink
+              v-for="item in group.items"
+              :key="item.id"
+              class="mention-row"
+              :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: item.id } }"
+            >
+              <span class="mention-row__name">{{ item.name }}</span>
+            </RouterLink>
+          </details>
         </div>
       </div>
 

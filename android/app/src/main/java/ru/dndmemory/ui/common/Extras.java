@@ -19,6 +19,10 @@ public final class Extras {
     public static final String SEARCH_QUERY = "searchQuery";
     public static final String SEARCH_TYPE = "searchType";
     public static final String CREATE_NEW = "createNew";
+    /** Черновик нового объекта: готовое описание. */
+    public static final String PREFILL_DESCRIPTION = "prefillDescription";
+    /** Черновик нового предмета: владелец. */
+    public static final String PREFILL_OWNER_ID = "prefillOwnerId";
     public static final String AUTHOR_ENTITY_ID = "authorEntityId";
     /** Вкладка экрана входа: вход или регистрация. */
     public static final String AUTH_TAB = "authTab";

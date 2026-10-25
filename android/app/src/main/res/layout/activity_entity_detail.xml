@@ -165,6 +165,14 @@
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textColor="@color/text_muted" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/entity_quick_add"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/entity_links_title"
                 android:layout_width="match_parent"

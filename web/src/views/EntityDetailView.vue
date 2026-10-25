@@ -242,6 +242,33 @@ async function keepLocal(): Promise<void> {
           </div>
         </div>
         <RouterLink
+          v-if="entity.objectType === 'LOCATION' && canEdit"
+          class="btn btn--sm"
+          :to="{
+            name: 'entity-new',
+            params: { campaignId: campaign.campaignId },
+            query: { class: 'CHARACTER', description: `[[${entity.name}]].` },
+          }"
+        >
+          Добавить персонажа
+        </RouterLink>
+        <RouterLink
+          v-if="(entity.objectType === 'CHARACTER' || entity.objectType === 'HERO') && canEdit"
+          class="btn btn--sm"
+          :to="{
+            name: 'entity-new',
+            params: { campaignId: campaign.campaignId },
+            query: {
+              class: 'ITEM',
+              name: '',
+              owner: entity.id,
+              ownerClass: entity.objectType,
+            },
+          }"
+        >
+          Добавить предмет
+        </RouterLink>
+        <RouterLink
           v-if="canEdit"
           class="btn btn--sm"
           :to="{ name: 'entity-edit', params: { campaignId: campaign.campaignId, entityId: entity.id } }"

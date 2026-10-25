@@ -176,6 +176,7 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         }
         bindFields(entity);
         renderAllLinks(entity);
+        bindQuickAdd(entity);
 
         ViewUtils.show(binding.entityConflictBar, entity.hasConflict());
     }
@@ -626,6 +627,35 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         subtitle.setText(typeRes);
         row.setOnClickListener(onClick);
         binding.entityMentions.addView(row);
+    }
+
+    /** Быстрое создание связанного объекта из карточки. */
+    private void bindQuickAdd(@NonNull EntityRoom entity) {
+        if ("LOCATION".equalsIgnoreCase(entity.kind)) {
+            ViewUtils.show(binding.entityQuickAdd, true);
+            binding.entityQuickAdd.setText(R.string.quick_add_character);
+            binding.entityQuickAdd.setOnClickListener(v -> {
+                android.content.Intent intent = new android.content.Intent(this, EntityEditActivity.class);
+                intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+                intent.putExtra(Extras.ENTITY_TYPE, EntityType.CHARACTER.name());
+                intent.putExtra(Extras.CREATE_NEW, true);
+                intent.putExtra(Extras.PREFILL_DESCRIPTION, "[[" + entity.name + "]]. ");
+                startActivity(intent);
+            });
+        } else if ("CHARACTER".equalsIgnoreCase(entity.kind) || "HERO".equalsIgnoreCase(entity.kind)) {
+            ViewUtils.show(binding.entityQuickAdd, true);
+            binding.entityQuickAdd.setText(R.string.quick_add_item);
+            binding.entityQuickAdd.setOnClickListener(v -> {
+                android.content.Intent intent = new android.content.Intent(this, EntityEditActivity.class);
+                intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+                intent.putExtra(Extras.ENTITY_TYPE, EntityType.ITEM.name());
+                intent.putExtra(Extras.CREATE_NEW, true);
+                intent.putExtra(Extras.PREFILL_OWNER_ID, entity.id);
+                startActivity(intent);
+            });
+        } else {
+            ViewUtils.show(binding.entityQuickAdd, false);
+        }
     }
 
     /** Все ссылки карточки: исходящие, обратные, владелец и его предметы. */
