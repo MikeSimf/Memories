@@ -26,7 +26,6 @@ const INVITE_INVALID = 'Приглашение уже использовано �
 
 const mode = ref<'register' | 'login'>('register')
 const regLogin = ref('')
-const regEmail = ref('')
 const regPassword = ref('')
 const regName = ref('')
 const loginName = ref('')
@@ -88,17 +87,12 @@ async function registerAndJoin(): Promise<void> {
       error.value = 'Логин: 3–32 символа из латинских букв, цифр, «_», «.» и «-»'
       return
     }
-    if (regEmail.value.trim() === '') {
-      error.value = 'Укажите почту — она нужна для сброса пароля'
-      return
-    }
     if (regPassword.value.length < 8) {
       error.value = 'Пароль должен быть не короче 8 символов'
       return
     }
     await auth.register({
       login: regLogin.value.trim(),
-      email: regEmail.value.trim(),
       password: regPassword.value,
       displayName: regName.value.trim(),
       inviteToken: token.value,
@@ -138,22 +132,16 @@ async function accept(): Promise<void> {
     <div class="auth-card">
       <div v-if="loading" class="loading"><span class="spinner" aria-hidden="true" /> Проверяем приглашение…</div>
 
-      <template v-else-if="error && !preview">
-        <h1>Приглашение недоступно</h1>
-        <p class="notice notice--danger">{{ error }}</p>
-        <RouterLink class="btn btn--primary btn--block" :to="{ name: 'campaigns' }">К кампаниям</RouterLink>
-      </template>
-
-      <template v-else-if="preview">
+      <template v-else>
         <div class="auth-card__title">
           <img src="/icons/icon-192.svg" alt="" width="40" height="40" />
           <div>
-            <h1 style="margin: 0">{{ preview.campaignTitle }}</h1>
-            <span class="faint">Приглашение в кампанию DnD Memory</span>
+            <h1 style="margin: 0">{{ preview?.campaignTitle || 'Приглашение в кампанию' }}</h1>
+            <span class="faint">DnD Memory</span>
           </div>
         </div>
 
-        <div class="stack stack--sm">
+        <div v-if="preview" class="stack stack--sm">
           <div class="row">
             <span class="badge badge--info">{{ MEMBER_ROLE_LABELS[preview.role] }}</span>
             <span v-if="preview.linkedHeroName" class="faint">
@@ -163,6 +151,10 @@ async function accept(): Promise<void> {
           <div class="faint">Действует до {{ formatDateTime(preview.expiresAt) }}</div>
           <div class="faint">Приглашение одноразовое: после присоединения ссылка перестанет работать.</div>
         </div>
+        <p v-else-if="error" class="notice notice--warning">
+          Не удалось проверить приглашение: {{ error }}. Войдите или зарегистрируйтесь — приглашение
+          применится после входа.
+        </p>
 
         <p v-if="error" class="notice notice--danger" style="margin-top: 1rem">{{ error }}</p>
 
@@ -215,11 +207,6 @@ async function accept(): Promise<void> {
                 minlength="3"
                 maxlength="32"
               />
-            </div>
-            <div class="field">
-              <label class="field__label" for="join-email">Почта</label>
-              <input id="join-email" v-model="regEmail" class="input" type="email" autocomplete="email" required />
-              <span class="field__hint">Обязательна: на неё оформляется сброс пароля.</span>
             </div>
             <div class="field">
               <label class="field__label" for="join-name">Имя</label>
