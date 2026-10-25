@@ -242,6 +242,7 @@ p {
 }
 
 .app-header__logo {
+.app-header__name { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
   width: 28px;
   height: 28px;
   flex: none;

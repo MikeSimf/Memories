@@ -61,6 +61,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Обращения', narrow: true },
   },
   {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@/views/SettingsView.vue'),
+    meta: { title: 'Профиль', narrow: true },
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('@/views/SettingsView.vue'),

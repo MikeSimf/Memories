@@ -6,9 +6,11 @@ import ApkDownload from './ApkDownload.vue'
 import SyncIndicator from './SyncIndicator.vue'
 import ThemeToggle from './ThemeToggle.vue'
 import { useCampaignStore } from '@/stores/campaign'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const campaign = useCampaignStore()
+const auth = useAuthStore()
 
 const campaignId = computed(() =>
   typeof route.params.campaignId === 'string' ? route.params.campaignId : null,
@@ -34,10 +36,23 @@ const title = computed(() => campaign.campaign?.title ?? '')
     <ThemeToggle />
 
     <RouterLink
+      class="btn btn--ghost btn--sm"
+      :to="{ name: 'profile' }"
+      aria-label="Профиль"
+      title="Профиль"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="12" cy="8" r="3.6" />
+        <path d="M5 21c0-3.8 3.2-6.4 7-6.4s7 2.6 7 6.4" />
+      </svg>
+      <span class="app-header__name">{{ auth.user?.displayName }}</span>
+    </RouterLink>
+
+    <RouterLink
       class="btn btn--ghost btn--icon"
       :to="{ name: 'settings' }"
-      aria-label="Настройки и профиль"
-      title="Настройки и профиль"
+      aria-label="Настройки сайта"
+      title="Настройки сайта"
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <circle cx="12" cy="12" r="3.2" />

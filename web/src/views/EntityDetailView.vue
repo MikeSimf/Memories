@@ -126,6 +126,13 @@ const linkGroups = computed(() => {
   })).filter((group) => group.items.length > 0)
 })
 
+/** Истории, которые ссылаются на объект. */
+const retellingMentions = computed(() =>
+  campaign.retellings.filter((item) =>
+    (item.links ?? []).some((link) => link.targetId === entityId.value),
+  ),
+)
+
 const brokenLinkName = ref<string | null>(null)
 const brokenLinkClass = ref<ObjectClass>('CHARACTER')
 const confirmDelete = ref(false)
@@ -404,6 +411,20 @@ async function keepLocal(): Promise<void> {
               </RouterLink>
             </div>
           </details>
+        </div>
+      </div>
+
+      <div v-if="retellingMentions.length > 0" class="card">
+        <h2>Истории</h2>
+        <div class="mention-list">
+          <RouterLink
+            v-for="item in retellingMentions"
+            :key="item.id"
+            class="mention-row"
+            :to="{ name: 'retelling-detail', params: { campaignId: campaign.campaignId, retellingId: item.id } }"
+          >
+            <span class="mention-row__name">{{ item.title }}</span>
+          </RouterLink>
         </div>
       </div>
 

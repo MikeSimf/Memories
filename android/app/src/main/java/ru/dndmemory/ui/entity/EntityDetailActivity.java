@@ -201,6 +201,9 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         ru.dndmemory.util.AppExecutors.get().io(() -> {
             java.util.List<ru.dndmemory.data.local.entity.MemberRoom> members =
                     App.container(this).database().memberDao().findAllNow(campaignId);
+            if (members == null) {
+                members = new java.util.ArrayList<>();
+            }
             String createdBy = null;
             String updatedBy = null;
             for (ru.dndmemory.data.local.entity.MemberRoom member : members) {
@@ -661,6 +664,10 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
     /** Все ссылки карточки: исходящие, обратные, владелец и его предметы. */
     private void renderAllLinks(@NonNull EntityRoom entity) {
         java.util.LinkedHashMap<String, EntityRoom> all = new java.util.LinkedHashMap<>();
+        if (entity.links == null || allObjects == null) {
+            ViewUtils.show(binding.entityLinksTitle, false);
+            return;
+        }
         for (EntityLink link : entity.links) {
             if (link.targetId == null) continue;
             EntityRoom target = findObject(link.targetId);
@@ -668,6 +675,7 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         }
         for (EntityRoom item : allObjects) {
             if (item == null || item.id.equals(entity.id)) continue;
+            if (item.links == null) continue;
             for (EntityLink link : item.links) {
                 if (entity.id.equals(link.targetId)) {
                     all.put(item.id, item);
@@ -691,7 +699,9 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         java.util.List<EntityRoom> sorted = new java.util.ArrayList<>(all.values());
         sorted.sort((a, b) -> {
             int byType = Integer.compare(linkOrder(a.kind), linkOrder(b.kind));
-            return byType != 0 ? byType : a.name.compareToIgnoreCase(b.name);
+            String left = a.name == null ? "" : a.name;
+            String right = b.name == null ? "" : b.name;
+            return byType != 0 ? byType : left.compareToIgnoreCase(right);
         });
 
         binding.entityLinks.removeAllViews();

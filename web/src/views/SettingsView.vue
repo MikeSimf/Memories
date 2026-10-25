@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { ApiError, apiBaseUrl, appApi, errorMessage, feedbackApi, serviceApi } from '@/api'
 import type { AppVersionDto } from '@/api/types'
@@ -10,6 +10,7 @@ import { countLocalChanges } from '@/db'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore, type ThemeMode } from '@/stores/ui'
 
+const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const ui = useUiStore()
@@ -17,6 +18,7 @@ const ui = useUiStore()
 const displayName = ref(auth.user?.displayName ?? '')
 const email = ref(auth.user?.email ?? '')
 /** Логин показывается только для чтения: сменить его нельзя (`api.md` §3). */
+const isProfile = computed(() => route.name === 'profile')
 const loginName = computed(() => auth.user?.login ?? '')
 const phone = ref(auth.user?.phone ?? '')
 const saving = ref(false)
@@ -198,13 +200,15 @@ async function logout(): Promise<void> {
   <div class="stack">
     <div class="page-header">
       <div class="page-header__titles">
-        <h1>Настройки</h1>
-        <div class="page-header__subtitle">Профиль, почта для сброса пароля, тема оформления и данные приложения</div>
+        <h1>{{ isProfile ? 'Профиль' : 'Настройки сайта' }}</h1>
+        <div class="page-header__subtitle">
+          {{ isProfile ? 'Отображаемое имя, телефон и пароль' : 'Тема, приложение и обратная связь' }}
+        </div>
       </div>
       <RouterLink class="btn btn--sm" :to="{ name: 'campaigns' }">К кампаниям</RouterLink>
     </div>
 
-    <form class="card stack" @submit.prevent="saveProfile">
+    <form v-if="isProfile" class="card stack" @submit.prevent="saveProfile">
       <h2>Профиль</h2>
       <div class="field">
         <label class="field__label" for="profile-login">Логин</label>
@@ -308,7 +312,7 @@ async function logout(): Promise<void> {
       </div>
     </form>
 
-    <div class="card stack">
+    <div v-if="!isProfile" class="card stack">
       <h2>Тема</h2>
       <div class="row">
         <label v-for="theme in themes" :key="theme.value" class="chip" style="cursor: pointer">
@@ -324,7 +328,7 @@ async function logout(): Promise<void> {
       </div>
     </div>
 
-    <div class="card stack">
+    <div v-if="!isProfile" class="card stack">
       <h2>Приложение</h2>
       <p class="muted" style="margin: 0">
         Та же кампания в приложении для Android: работает без сети и синхронизируется,
@@ -352,7 +356,7 @@ async function logout(): Promise<void> {
       </div>
     </div>
 
-    <form class="card stack" @submit.prevent="sendFeedback">
+    <form v-if="!isProfile" class="card stack" @submit.prevent="sendFeedback">
       <h2>Обратная связь</h2>
       <p class="muted" style="margin: 0">
         Напишите, что не работает или чего не хватает. Можно также написать в
@@ -374,7 +378,7 @@ async function logout(): Promise<void> {
       </div>
     </form>
 
-    <div class="card stack">
+    <div v-if="isProfile" class="card stack">
       <h2>Выход</h2>
       <p class="muted">
         При выходе локальная база устройства очищается — данные чужого аккаунта не остаются.

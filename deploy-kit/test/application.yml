@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 40
-    latest-version-name: 1.0.39
+    latest-version-code: 41
+    latest-version-name: 1.0.40
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Быстрое создание связанных объектов и группы ссылок в историях"
+    notes: "Профиль и настройки сайта раздельно, защита карточек от падения"
     versions:
+      - version: "1.0.40"
+        date: "2026-10-25"
+        notes: "Профиль и настройки сайта раздельно, защита карточек от падения"
       - version: "1.0.39"
         date: "2026-10-25"
         notes: "Быстрое создание персонажа из локации и предмета из героя, группы ссылок в историях"
