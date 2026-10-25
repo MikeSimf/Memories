@@ -45,7 +45,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-tar czf "$OUT" README.md nginx-host.conf prod test bin web-prod web-test
+tar czf "$OUT" README.md nginx-host.conf stub prod test bin web-prod web-test
 
 echo "готово: $OUT ($(du -h "$OUT" | cut -f1))"
 echo

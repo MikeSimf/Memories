@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 35
-    latest-version-name: 1.0.34
+    latest-version-code: 36
+    latest-version-name: 1.0.35
     min-version-code: 4
     apk-url: https://dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Домены imikea.ru и HTTPS"
+    notes: "Заглушка на imikea.ru и закрытый порт 8091"
     versions:
+      - version: "1.0.35"
+        date: "2026-10-25"
+        notes: "Заглушка на imikea.ru и закрытый порт 8091"
       - version: "1.0.34"
         date: "2026-10-25"
         notes: "Домены imikea.ru и HTTPS"

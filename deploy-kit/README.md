@@ -434,42 +434,37 @@ docker compose -f prod/docker-compose.yml logs -f app | grep ссылка
 
 ## Адреса сайтов
 
-Домен `imikea.ru` делегирован, оба имени резолвятся в `81.177.139.30`:
+- `https://imikea.ru/` и `https://www.imikea.ru/` — сайт-заглушка;
+- `https://dnd-memory.imikea.ru/` — прод-приложение;
+- `https://test-dnd-memory.imikea.ru/` — тест.
 
-- прод — `https://dnd-memory.imikea.ru/`;
-- тест — `https://test-dnd-memory.imikea.ru/`.
+Порты `80` и `8091` для приложения больше не используются: `8091` закрыт,
+а корень домена отдаёт только заглушку из `/opt/dnd-memory/stub`.
 
 Nginx на хосте:
 
+- `imikea.ru`, `www.imikea.ru` → статика `stub/index.html`;
 - `dnd-memory.imikea.ru` → `127.0.0.1:8080`;
-- `test-dnd-memory.imikea.ru` → `127.0.0.1:8081`;
-- `http://81.177.139.30/` → прод (запасной вход по IP);
-- `http://81.177.139.30:8091/` → тест (запасной вход по IP).
+- `test-dnd-memory.imikea.ru` → `127.0.0.1:8081`.
 
-`.env`:
-
-```
-# prod
-PUBLIC_URL=https://dnd-memory.imikea.ru/
-CORS_ORIGINS=https://dnd-memory.imikea.ru
-
-# test
-PUBLIC_URL=https://test-dnd-memory.imikea.ru/
-CORS_ORIGINS=https://test-dnd-memory.imikea.ru
-```
-
-Сертификаты:
+Сертификат должен включать все четыре имени:
 
 ```bash
-sudo LC_ALL=C.UTF-8 certbot --nginx --non-interactive --agree-tos \
-  --email makeev_in@list.ru --redirect \
+sudo LC_ALL=C.UTF-8 certbot --nginx \
+  --cert-name dnd-memory.imikea.ru \
+  --force-renewal --expand \
+  --non-interactive --agree-tos \
+  --email makeev_in@list.ru \
   -d dnd-memory.imikea.ru \
-  -d test-dnd-memory.imikea.ru
+  -d test-dnd-memory.imikea.ru \
+  -d imikea.ru \
+  -d www.imikea.ru
 ```
 
 Проверка:
 
 ```bash
+curl -sI https://imikea.ru/ | head
 curl -s https://dnd-memory.imikea.ru/api/app/latest
 curl -s https://test-dnd-memory.imikea.ru/api/app/latest
 ```
