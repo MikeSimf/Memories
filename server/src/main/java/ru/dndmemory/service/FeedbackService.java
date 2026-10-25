@@ -55,13 +55,15 @@ public class FeedbackService {
 
     @Transactional(readOnly = true)
     public boolean isAdmin(UUID userId) {
-        String admin = properties.getAdminEmail();
-        if (admin == null || admin.trim().isEmpty()) {
-            return false;
-        }
         return userRepository.findById(userId)
-                .map(user -> admin.trim().equalsIgnoreCase(user.getEmail()))
+                .map(user -> user.isSuperuser() || isAdminEmail(user))
                 .orElse(false);
+    }
+
+    private boolean isAdminEmail(User user) {
+        String admin = properties.getAdminEmail();
+        return admin != null && !admin.trim().isEmpty()
+                && admin.trim().equalsIgnoreCase(user.getEmail());
     }
 
     private FeedbackDtos.FeedbackDto toDto(Feedback feedback) {

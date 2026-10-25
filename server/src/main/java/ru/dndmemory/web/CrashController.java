@@ -56,12 +56,17 @@ public class CrashController {
         repository.save(report);
     }
 
+    private boolean isAdminEmail(ru.dndmemory.domain.User user) {
+        String admin = properties.getAdminEmail();
+        return admin != null && !admin.isEmpty()
+                && admin.trim().equalsIgnoreCase(user.getEmail());
+    }
+
     @GetMapping("/api/admin/crashes")
     public List<CrashReport> list(@AuthenticationPrincipal UserPrincipal principal) {
-        String admin = properties.getAdminEmail();
-        boolean allowed = admin != null && !admin.isEmpty() && principal != null
+        boolean allowed = principal != null
                 && userRepository.findById(principal.getId())
-                .map(user -> admin.trim().equalsIgnoreCase(user.getEmail()))
+                .map(user -> user.isSuperuser() || isAdminEmail(user))
                 .orElse(false);
         if (!allowed) {
             throw ApiException.forbidden("Нет доступа");

@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 42
-    latest-version-name: 1.0.41
+    latest-version-code: 43
+    latest-version-name: 1.0.42
     min-version-code: 4
     apk-url: https://dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Отчёты о падениях приложения на сервер"
+    notes: "Служебная учётка system видит отчёты и обращения"
     versions:
+      - version: "1.0.42"
+        date: "2026-10-26"
+        notes: "Служебная учётка system видит отчёты и обращения"
       - version: "1.0.41"
         date: "2026-10-25"
         notes: "Отчёты о падениях приложения на сервер"

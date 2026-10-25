@@ -42,6 +42,9 @@ public class DtoMapper {
     }
 
     private boolean isAdmin(User user) {
+        if (user.isSuperuser()) {
+            return true;
+        }
         String admin = properties.getAdminEmail();
         return admin != null && !admin.isEmpty()
                 && admin.trim().equalsIgnoreCase(user.getEmail());
