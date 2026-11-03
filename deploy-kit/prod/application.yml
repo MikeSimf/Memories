@@ -15,7 +15,7 @@ dnd:
   app:
     latest-version-code: 1
     latest-version-name: 1.0
-    min-version-code: 4
+    min-version-code: 1
     apk-url: https://dnd-memory.imikea.ru/dnd-memory.apk
     notes: ""
     versions: []
