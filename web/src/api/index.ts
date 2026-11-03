@@ -18,6 +18,7 @@ export {
   appApi,
   feedbackApi,
   crashesApi,
+  adminApi,
   racesApi,
   classesApi,
   materialsApi,

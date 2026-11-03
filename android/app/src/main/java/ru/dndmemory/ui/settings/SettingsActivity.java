@@ -114,7 +114,12 @@ public class SettingsActivity extends AppCompatActivity {
         bindProfile(null);
         observe();
         observeUpdates();
-        loadVersions();
+        if (BuildConfig.IS_TEST) {
+            loadVersions();
+        } else {
+            ViewUtils.show(binding.settingsUpdatesTitle, false);
+            ViewUtils.show(binding.settingsVersions, false);
+        }
         viewModel.loadProfile();
     }
 

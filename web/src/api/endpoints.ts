@@ -49,6 +49,7 @@ import type {
   AppVersionDto,
   FeedbackDto,
   CrashReportDto,
+  PasswordResetDto,
 } from './types'
 
 /** Список приходит страницей; «сырой» массив приводим к странице на всякий случай. */
@@ -470,6 +471,20 @@ export const crashesApi = {
   },
 }
 
+/** Админские ссылки на сброс пароля. */
+export const adminApi = {
+  passwordResets(): Promise<PasswordResetDto[]> {
+    return apiClient.request<PasswordResetDto[]>({ path: '/api/admin/system/password-resets' })
+  },
+  createResetLink(email: string): Promise<{ url: string }> {
+    return apiClient.request<{ url: string }>({
+      method: 'POST',
+      path: '/api/admin/system/password-resets',
+      body: { email },
+    })
+  },
+}
+
 /** Обратная связь: отправка и чтение админом. */
 export const feedbackApi = {
   create(message: string, page?: string): Promise<FeedbackDto> {
@@ -559,6 +574,7 @@ export const api = {
   app: appApi,
   feedback: feedbackApi,
   crashes: crashesApi,
+  admin: adminApi,
   races: racesApi,
   classes: classesApi,
   locationTypes: locationTypesApi,

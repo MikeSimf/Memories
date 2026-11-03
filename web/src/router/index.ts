@@ -55,6 +55,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Кампании' },
   },
   {
+    path: '/password-resets',
+    name: 'admin-password-resets',
+    component: () => import('@/views/AdminPasswordResetsView.vue'),
+    meta: { title: 'Сброс пароля', narrow: true },
+  },
+  {
     path: '/crashes',
     name: 'admin-crashes',
     component: () => import('@/views/AdminCrashesView.vue'),

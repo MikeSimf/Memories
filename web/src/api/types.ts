@@ -858,6 +858,16 @@ export interface FeedbackDto {
   createdAt: string
 }
 
+/** Ожидающий сброс пароля. */
+export interface PasswordResetDto {
+  id: string
+  login: string
+  email: string
+  token: string
+  requestedAt: string
+  expiresAt: string
+}
+
 /** Падение мобильного приложения. */
 export interface CrashReportDto {
   id: string

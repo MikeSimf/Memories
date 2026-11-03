@@ -25,6 +25,30 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
+    flavorDimensions 'channel'
+    productFlavors {
+        // Боевое приложение: отдельный applicationId и своя версия 1.0.
+        prod {
+            dimension 'channel'
+            applicationId 'ru.dndmemory'
+            versionCode 1
+            versionName '1.0'
+            resValue 'string', 'app_name', 'DnD Memory'
+            buildConfigField 'String', 'DND_SERVER_URL', '"https://dnd-memory.imikea.ru/"'
+            buildConfigField 'boolean', 'IS_TEST', 'false'
+        }
+        // Тестовое приложение ставится рядом с боевым и обновляется отдельно.
+        qa {
+            dimension 'channel'
+            applicationId 'ru.dndmemory.test'
+            versionCode 45
+            versionName '1.0.44'
+            resValue 'string', 'app_name', 'DnD Memory Test'
+            buildConfigField 'String', 'DND_SERVER_URL', '"https://test-dnd-memory.imikea.ru/"'
+            buildConfigField 'boolean', 'IS_TEST', 'true'
+        }
+    }
+
     buildTypes {
         debug {
             minifyEnabled false

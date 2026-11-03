@@ -75,6 +75,28 @@ public class PasswordResetService {
         });
     }
 
+    /** Ссылка сброса для админа: создаёт запрос и сразу возвращает URL. */
+    @Transactional
+    public String createLink(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw ApiException.badRequest("Укажите почту");
+        }
+        User user = userRepository.findByEmailIgnoreCase(email.trim().toLowerCase(Locale.ROOT))
+                .orElseThrow(() -> ApiException.notFound("Пользователь с такой почтой не найден"));
+        Instant requestedAt = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+        String token = TokenUtils.passwordResetToken(properties.getJwt().getSecret(),
+                user.getId(), requestedAt);
+        PasswordResetRequest request = new PasswordResetRequest();
+        request.setId(UUID.randomUUID());
+        request.setUserId(user.getId());
+        request.setTokenHash(TokenUtils.sha256(token));
+        request.setExpiresAt(requestedAt.plus(TOKEN_HOURS, ChronoUnit.HOURS));
+        request.setUsed(false);
+        request.setCreatedAt(requestedAt);
+        passwordResetRepository.save(request);
+        return trimSlash(properties.getPublicUrl()) + "/#/reset/" + token;
+    }
+
     /** Новый пароль по токену; все сессии пользователя гасятся. */
     @Transactional
     public void confirm(String token, String newPassword) {

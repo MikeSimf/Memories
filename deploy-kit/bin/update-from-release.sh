@@ -28,7 +28,8 @@ trap 'rm -rf "$TMP"' EXIT
 echo "==> Скачиваю сборку"
 curl -fL --retry 3 --retry-delay 2 -o "$TMP/kit.tar.gz" "$BASE/dnd-memory-deploy-kit.tar.gz"
 curl -fL --retry 3 --retry-delay 2 -o "$TMP/app.jar" "$BASE/dnd-memory-server.jar"
-curl -fL --retry 3 --retry-delay 2 -o "$TMP/app.apk" "$BASE/dnd-memory-test.apk"
+curl -fL --retry 3 --retry-delay 2 -o "$TMP/prod.apk" "$BASE/dnd-memory-prod.apk"
+curl -fL --retry 3 --retry-delay 2 -o "$TMP/test.apk" "$BASE/dnd-memory-test.apk"
 ok "скачано"
 
 echo "==> Распаковываю статику и скрипты в $ROOT"
@@ -47,7 +48,12 @@ done
 [ -n "$CODE" ] && [ -n "$NAME" ] || die "Не нашёл версию в $ROOT/prod/application.yml"
 
 # Перезапуск подхватывает новый jar и новые version-code/name из конфига.
-bash "$ROOT/bin/deploy-app.sh" "$TMP/app.apk" "$CODE" "$NAME" both
+PROD_CODE=$(sed -n 's/^    latest-version-code: //p' "$ROOT/prod/application.yml" | head -1)
+PROD_NAME=$(sed -n 's/^    latest-version-name: //p' "$ROOT/prod/application.yml" | head -1)
+TEST_CODE=$(sed -n 's/^    latest-version-code: //p' "$ROOT/test/application.yml" | head -1)
+TEST_NAME=$(sed -n 's/^    latest-version-name: //p' "$ROOT/test/application.yml" | head -1)
+bash "$ROOT/bin/deploy-app.sh" "$TMP/prod.apk" "$PROD_CODE" "$PROD_NAME" prod
+bash "$ROOT/bin/deploy-app.sh" "$TMP/test.apk" "$TEST_CODE" "$TEST_NAME" test
 
 echo
 echo "==> Проверка"

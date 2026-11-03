@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 44
-    latest-version-name: 1.0.43
+    latest-version-code: 45
+    latest-version-name: 1.0.44
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Исправлено падение карточки при пустом объекте"
+    notes: "Тестовая сборка: профиль, админ-страницы, раздельные приложения"
     versions:
+      - version: "1.0.44"
+        date: "2026-11-03"
+        notes: "Админ-страницы, обратная связь и раздельные приложения"
       - version: "1.0.43"
         date: "2026-10-26"
         notes: "Исправлено падение карточки при пустом объекте"
