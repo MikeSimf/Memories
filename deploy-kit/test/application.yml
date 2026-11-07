@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 45
-    latest-version-name: 1.0.44
+    latest-version-code: 46
+    latest-version-name: 1.0.45
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Тестовая сборка: профиль, админ-страницы, раздельные приложения"
+    notes: "Исправлена бесконечная загрузка ссылки сброса пароля"
     versions:
+      - version: "1.0.45"
+        date: "2026-11-07"
+        notes: "Исправлена бесконечная загрузка ссылки сброса пароля"
       - version: "1.0.44"
         date: "2026-11-03"
         notes: "Админ-страницы, обратная связь и раздельные приложения"

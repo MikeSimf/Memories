@@ -226,7 +226,9 @@ router.beforeEach((to) => {
   // Ссылка сброса пароля приходит в виде `…/#/reset/<token>` (`api.md` §3):
   // перенаправляем её на обычный маршрут `/reset/:token`.
   const hash = window.location.hash
-  if (hash.startsWith('#/reset/')) {
+  // Только при первом переходе: после редиректа hash остаётся в адресе,
+  // и без проверки имени маршрута получается бесконечный редирект.
+  if (to.name !== 'password-reset-confirm' && hash.startsWith('#/reset/')) {
     const token = decodeURIComponent(hash.slice('#/reset/'.length))
     if (token) return { name: 'password-reset-confirm', params: { token }, replace: true }
   }
