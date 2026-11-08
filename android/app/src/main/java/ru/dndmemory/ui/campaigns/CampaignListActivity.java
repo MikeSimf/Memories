@@ -170,8 +170,13 @@ public class CampaignListActivity extends AppCompatActivity implements CampaignA
             }
         });
 
-        // Первичная загрузка: показываем локальные данные и обновляем их из сети.
-        viewModel.refresh();
+        // Показываем локальные данные сразу. Сеть — только если она есть:
+        // без интернета приложение остаётся рабочим.
+        if (ru.dndmemory.util.NetworkUtils.isOnline(this)) {
+            viewModel.refresh();
+        } else {
+            binding.campaignListSyncStatus.setText(R.string.offline_local_data);
+        }
     }
 
     private void showEditDialog(@Nullable final CampaignRoom campaign) {

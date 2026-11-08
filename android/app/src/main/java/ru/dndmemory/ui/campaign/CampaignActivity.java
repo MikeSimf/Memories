@@ -96,7 +96,9 @@ public class CampaignActivity extends BottomNavActivity implements CampaignHost 
 
         observe();
         observeUpdates();
-        viewModel.refresh();
+        if (ru.dndmemory.util.NetworkUtils.isOnline(this)) {
+            viewModel.refresh();
+        }
     }
 
     /** Синхронизация могла узнать о новой версии — предлагаем обновиться. */

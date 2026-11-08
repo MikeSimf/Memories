@@ -146,6 +146,7 @@
     <string name="campaign_edit_title_edit">Название кампании</string>
     <string name="campaign_field_title">Название</string>
     <string name="campaign_field_description">Описание</string>
+    <string name="offline_local_data">Нет сети — показаны сохранённые данные</string>
     <string name="campaign_counts">Участников: %1$d · Объектов: %2$d · Историй: %3$d</string>
     <string name="campaign_updated">Обновлено: %1$s</string>
     <string name="campaign_delete_confirm">Удалить кампанию «%1$s»? Действие необратимо.</string>
