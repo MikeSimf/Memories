@@ -131,6 +131,17 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
             // Пол — в конце строки: символ, а не отдельное слово.
             String gender = Labels.genderSymbol(context, entity.gender);
             ViewUtils.setTextOrGone(binding.itemEntityGender, gender);
+            if ("alive".equalsIgnoreCase(entity.lifeStatus)) {
+                binding.itemEntityLife.setImageResource(R.drawable.ic_life_alive);
+                binding.itemEntityLife.setColorFilter(ContextCompat.getColor(context, R.color.badge_published));
+                ViewUtils.show(binding.itemEntityLife, true);
+            } else if ("dead".equalsIgnoreCase(entity.lifeStatus)) {
+                binding.itemEntityLife.setImageResource(R.drawable.ic_life_dead);
+                binding.itemEntityLife.setColorFilter(ContextCompat.getColor(context, R.color.badge_conflict));
+                ViewUtils.show(binding.itemEntityLife, true);
+            } else {
+                ViewUtils.show(binding.itemEntityLife, false);
+            }
 
             if (entity.hasConflict()) {
                 binding.itemEntityStatus.setText(R.string.entity_conflict);

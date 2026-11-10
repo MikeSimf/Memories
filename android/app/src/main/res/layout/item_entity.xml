@@ -75,6 +75,14 @@
                     android:layout_weight="1"
                     android:textAppearance="?attr/textAppearanceTitleMedium" />
 
+                <ImageView
+                    android:id="@+id/item_entity_life"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginStart="6dp"
+                    android:contentDescription="@string/attr_life_status"
+                    android:visibility="gone" />
+
                 <TextView
                     android:id="@+id/item_entity_gender"
                     android:layout_width="wrap_content"

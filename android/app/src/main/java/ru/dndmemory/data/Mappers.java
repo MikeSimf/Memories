@@ -127,6 +127,7 @@ public final class Mappers {
         room.kind = kind.name();
         room.name = dto.name;
         room.gender = dto.gender;
+        room.lifeStatus = dto.lifeStatus;
         room.description = dto.description;
         room.imageFileId = dto.imageFileId;
         room.avatarFileId = dto.avatarFileId;
@@ -275,6 +276,7 @@ public final class Mappers {
         dto.name = room.name;
         dto.description = room.description;
         dto.gender = room.gender;
+        dto.lifeStatus = room.lifeStatus;
         dto.imageFileId = room.imageFileId;
         dto.avatarFileId = room.avatarFileId;
         dto.files = files(room.filesJson);

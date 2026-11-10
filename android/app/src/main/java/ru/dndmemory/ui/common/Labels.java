@@ -113,6 +113,12 @@ public final class Labels {
 
     /** Подпись пола: Ж, М или «Не определён». */
     @NonNull
+    public static CharSequence lifeStatus(@NonNull Context context, @Nullable String code) {
+        if ("alive".equalsIgnoreCase(code)) return context.getString(R.string.life_alive);
+        if ("dead".equalsIgnoreCase(code)) return context.getString(R.string.life_dead);
+        return context.getString(R.string.life_unknown);
+    }
+
     public static String gender(@NonNull Context context, @Nullable String code) {
         if ("female".equalsIgnoreCase(code)) {
             return context.getString(R.string.gender_female);

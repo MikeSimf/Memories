@@ -32,6 +32,7 @@ public class MaterialDetailActivity extends BottomNavActivity {
     private String campaignId;
     private String materialId;
     private MaterialRoom material;
+    private final MaterialImagesAdapter imagesAdapter = new MaterialImagesAdapter();
     private boolean canEdit;
 
     @Override
@@ -79,6 +80,9 @@ public class MaterialDetailActivity extends BottomNavActivity {
             return;
         }
         binding.materialDetailName.setText(material.name);
+        imagesAdapter.submit(ru.dndmemory.data.Mappers.files(material.filesJson));
+        binding.materialDetailPager.setAdapter(imagesAdapter);
+        ViewUtils.show(binding.materialDetailPager, imagesAdapter.count() > 0);
         binding.materialDetailDescription.setText(TextUtils.isEmpty(material.description)
                 ? getString(R.string.attr_not_set) : material.description);
         ViewUtils.show(binding.materialDetailEdit, canEdit);

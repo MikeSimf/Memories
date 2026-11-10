@@ -43,7 +43,7 @@ public class MaterialsFragment extends Fragment implements MaterialAdapter.Liste
         CampaignHost host = (CampaignHost) requireActivity();
         campaignId = host.campaignId();
 
-        adapter = new MaterialAdapter(this);
+        adapter = new MaterialAdapter(material -> Nav.openMaterial(requireContext(), campaignId, material.id));
         binding.materialsRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.materialsRecycler.setAdapter(adapter);
 

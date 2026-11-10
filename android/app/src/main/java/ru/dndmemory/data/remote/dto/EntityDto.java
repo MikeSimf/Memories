@@ -21,6 +21,7 @@ public class EntityDto {
     public String imageFileId;
     public String avatarFileId;
     public String gender;
+    public String lifeStatus;
     public java.util.List<ru.dndmemory.data.model.Attachment> files;
 
     public List<EntityLink> links = new ArrayList<>();

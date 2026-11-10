@@ -114,6 +114,10 @@ public final class TypeIcons {
         put(RACES, new String[]{"дроу"}, R.drawable.race_elf);
         put(RACES, new String[]{"неизвестно"}, R.drawable.race_unknown);
         put(RACES, new String[]{"без расы"}, R.drawable.race_unknown);
+        put(LOCATIONS, new String[]{"country", "страна"}, "M4 20V5l5-2 6 2 5-2v15l-5 2-6-2zM9 3v15M15 5v15");
+        put(LOCATIONS, new String[]{"object", "объект"}, "M4 20V8l8-5 8 5v12zM4 8h16M9 20v-6h6v6");
+        put(LOCATIONS, new String[]{"family", "семейство"}, "M8 10a2.6 2.6 0 1 0 0-5.2a2.6 2.6 0 1 0 0 5.2M16 10a2.4 2.4 0 1 0 0-4.8a2.4 2.4 0 1 0 0 4.8M3.4 20c0-3 2-5 4.6-5s4.6 2 4.6 5M13 20c0-2.6 1.6-4.4 3.8-4.4s3.8 1.8 3.8 4.4");
+        put(LOCATIONS, new String[]{"room", "помещение"}, "M4 20V4h16v16M4 20h16M9 20V9h6v11");
         put(LOCATIONS, new String[]{"unknown", "неизвестно"}, "M12 3.4a8.6 8.6 0 1 0 0 17.2a8.6 8.6 0 1 0 0-17.2M9.4 9.2a2.6 2.6 0 1 1 4.2 2.2c-.9.6-1.6 1.2-1.6 2.4M12 17.2h.01");
         put(LOCATIONS, new String[]{"city", "город"}, "M3.4 20V9.6h4V6h3.2v3.6h3.2V4.4h3.2V9.6h4V20zM6.4 12.4h1.2M6.4 15.6h1.2M16.4 12.4h1.2M16.4 15.6h1.2M11.6 13.2h1.2v2.4h-1.2z");
         put(LOCATIONS, new String[]{"village", "деревня"}, "M3.4 20v-6.6L12 6l8.6 7.4V20zM9.4 20v-4.6h5.2V20");

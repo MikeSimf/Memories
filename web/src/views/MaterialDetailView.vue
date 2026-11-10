@@ -17,10 +17,9 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const canEdit = computed(() => campaign.canCreate('ITEM'))
 
-const imageId = computed(() => {
-  const file = (material.value?.files ?? []).find((item) => (item.contentType ?? '').startsWith('image/'))
-  return file?.id ?? material.value?.avatarFileId ?? material.value?.imageFileId ?? null
-})
+const imageFiles = computed(() =>
+  (material.value?.files ?? []).filter((item) => (item.contentType ?? '').startsWith('image/')),
+)
 
 const links = computed(() =>
   (material.value?.links ?? [])
@@ -66,7 +65,11 @@ watch(materialId, load)
     <div v-if="loading" class="loading"><span class="spinner" /> Загружаем…</div>
     <p v-else-if="error" class="notice notice--danger">{{ error }}</p>
     <template v-else-if="material">
-      <EntityImage v-if="imageId" :file-id="imageId" :alt="material.name" />
+      <div v-if="imageFiles.length > 0" class="material-gallery">
+        <div v-for="file in imageFiles" :key="file.id" class="material-gallery__item">
+          <EntityImage :file-id="file.id" :alt="material.name" />
+        </div>
+      </div>
       <div class="card">
         <MarkupText v-if="material.description" :text="material.description" />
         <p v-else class="faint">Не заполнено</p>
@@ -106,4 +109,16 @@ watch(materialId, load)
 .mention-list { display: flex; flex-direction: column; gap: 6px; }
 .mention-row { display: flex; align-items: center; color: inherit; text-decoration: none; }
 .mention-row__name { font-weight: 600; }
+.material-gallery {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
+}
+.material-gallery__item {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+}
 </style>

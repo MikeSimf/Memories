@@ -31,6 +31,10 @@ public class Character extends GameEntitySupport
     @Column(length = 96)
     private String klass;
 
+    /** Жив, мёртв или неизвестно. */
+    @Column(name = "life_status", nullable = false, length = 16)
+    private String lifeStatus = "unknown";
+
     /** Пол: female, male или unknown. */
     @Column(length = 16, nullable = false)
     private String gender = "unknown";

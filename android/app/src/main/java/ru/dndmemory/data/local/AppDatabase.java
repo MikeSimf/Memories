@@ -42,7 +42,7 @@ import ru.dndmemory.data.local.entity.SyncStateRoom;
                 MemberRoom.class,
                 MaterialRoom.class
         },
-        version = 10,
+        version = 11,
         exportSchema = false
 )
 @TypeConverters({Converters.class})
@@ -138,6 +138,14 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    /** 10 → 11: статус жизни героя и персонажа. */
+    public static final Migration MIGRATION_10_11 = new Migration(10, 11) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            db.execSQL("ALTER TABLE `entities` ADD COLUMN `lifeStatus` TEXT");
+        }
+    };
+
     public abstract CampaignDao campaignDao();
 
     public abstract EntityDao entityDao();
@@ -158,7 +166,7 @@ public abstract class AppDatabase extends RoomDatabase {
         return Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, NAME)
                 // Материалы кампании появились во второй версии: таблица
                 // создаётся миграцией, локальные данные не теряются.
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
                 .fallbackToDestructiveMigration()
                 .build();
     }

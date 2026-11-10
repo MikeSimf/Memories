@@ -25,6 +25,7 @@ public final class CharacterDtos {
         private String race;
         private String klass;
         private String gender;
+        private String lifeStatus;
         private String shortDescription;
     }
 
@@ -51,6 +52,7 @@ public final class CharacterDtos {
 
         /** female | male | unknown. */
         private String gender;
+        private String lifeStatus;
 
         private String shortDescription;
     }
@@ -74,6 +76,7 @@ public final class CharacterDtos {
         private String klass;
 
         private String gender;
+        private String lifeStatus;
 
         private String shortDescription;
     }

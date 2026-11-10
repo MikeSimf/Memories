@@ -164,6 +164,12 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         binding.entityTypeChip.setBackgroundTintList(
                 android.content.res.ColorStateList.valueOf(TypeColors.soft(this, type)));
         ViewUtils.show(binding.entitySubtitle, false);
+        boolean person = type == EntityType.HERO || type == EntityType.CHARACTER;
+        ViewUtils.show(binding.entityAvatarTop, person && entity.avatarFileId != null);
+        if (person && entity.avatarFileId != null) {
+            AvatarBinder.bind(this, binding.entityAvatarTop, entity,
+                    App.container(this).okHttpClient());
+        }
         renderSystemInfo(entity);
 
         // Фото грузится с сервера авторизованным клиентом и кэшируется в памяти.
@@ -337,6 +343,8 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
                     addPersonRow(getString(R.string.attr_klass), entity.klass, "class", null);
                     addPersonRow(getString(R.string.attr_gender), Labels.gender(this, entity.gender),
                             null, Labels.genderSymbol(this, entity.gender));
+                    addPersonRow(getString(R.string.attr_life_status),
+                            Labels.lifeStatus(this, entity.lifeStatus), null, null);
                     if (kind == EntityType.CHARACTER) {
                         addPersonRow(getString(R.string.attr_short_description),
                                 entity.shortDescription, null, null);

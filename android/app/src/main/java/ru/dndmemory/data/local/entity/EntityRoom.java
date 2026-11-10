@@ -54,6 +54,7 @@ public class EntityRoom {
 
     /** female | male | unknown. */
     public String gender;
+    public String lifeStatus;
 
     /** Кто отыгрывает героя — ссылка на пользователя, необязательна. */
     public String playerUserId;

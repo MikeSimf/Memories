@@ -221,6 +221,24 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         applyDefault(binding.entityEditItemType, container.raceRepository().cachedItemTypes());
     }
 
+    private java.util.List<String> lifeLabels() {
+        return java.util.Arrays.asList(getString(R.string.life_unknown),
+                getString(R.string.life_alive), getString(R.string.life_dead));
+    }
+
+    private String lifeLabel(@Nullable String code) {
+        if ("alive".equals(code)) return getString(R.string.life_alive);
+        if ("dead".equals(code)) return getString(R.string.life_dead);
+        return getString(R.string.life_unknown);
+    }
+
+    private String lifeCode(@Nullable CharSequence label) {
+        String value = label == null ? "" : label.toString();
+        if (value.equals(getString(R.string.life_alive))) return "alive";
+        if (value.equals(getString(R.string.life_dead))) return "dead";
+        return "unknown";
+    }
+
     /** Подписи поля «Пол»: порядок совпадает с кодами в {@link #genderCode}. */
     @NonNull
     private java.util.List<String> genderLabels() {
@@ -590,6 +608,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
 
         ViewUtils.show(binding.entityEditRaceGroup, hero || character);
         ViewUtils.show(binding.entityEditGenderGroup, hero || character);
+        ViewUtils.show(binding.entityEditLifeGroup, hero || character);
         ViewUtils.show(binding.entityEditKlassGroup, hero || character);
         ViewUtils.show(binding.entityEditPlayerGroup, hero);
         ViewUtils.show(binding.entityEditShortGroup, character);
@@ -602,6 +621,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         if (draft != null) {
             binding.entityEditRaceInput.setText(draft.race);
             binding.entityEditGender.setText(genderLabel(draft.gender), false);
+            binding.entityEditLife.setText(lifeLabel(draft.lifeStatus), false);
             binding.entityEditKlassInput.setText(draft.klass);
             binding.entityEditLocationType.setText(draft.locationType);
             binding.entityEditItemType.setText(draft.itemType);
@@ -634,6 +654,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         }
         ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditPlayer, labels);
         ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditGender, genderLabels());
+        ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditLife, lifeLabels());
         EntityRoom draft = currentDraft();
         String currentId = selectedPlayerUserId != null ? selectedPlayerUserId
                 : (draft == null ? null : draft.playerUserId);
@@ -839,6 +860,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         if (currentKind == EntityType.HERO) {
             viewModel.setRace(text(binding.entityEditRaceInput.getText()));
             viewModel.setGender(genderCode(text(binding.entityEditGender.getText())));
+            viewModel.setLifeStatus(lifeCode(text(binding.entityEditLife.getText())));
             viewModel.setKlass(text(binding.entityEditKlassInput.getText()));
             MemberRoom player = memberById(selectedPlayerUserId);
             viewModel.setPlayerUserId(selectedPlayerUserId,

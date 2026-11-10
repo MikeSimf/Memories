@@ -25,13 +25,11 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <ImageView
-                android:id="@+id/material_detail_image"
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/material_detail_pager"
                 android:layout_width="match_parent"
-                android:layout_height="220dp"
+                android:layout_height="260dp"
                 android:background="@color/colorSurfaceVariant"
-                android:contentDescription="@string/materials_title"
-                android:scaleType="centerCrop"
                 android:visibility="gone" />
 
             <TextView
