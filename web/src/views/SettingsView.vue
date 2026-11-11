@@ -117,15 +117,11 @@ async function sendFeedback(): Promise<void> {
 
 async function saveProfile(): Promise<void> {
   profileError.value = null
-  if (email.value.trim() === '') {
-    profileError.value = 'Почта обязательна: на неё оформляется сброс пароля'
-    return
-  }
   saving.value = true
   try {
     await auth.updateProfile({
       displayName: displayName.value.trim(),
-      email: email.value.trim(),
+      email: email.value.trim() || null,
       phone: phone.value.trim(),
     })
     ui.pushToast('success', 'Профиль обновлён')

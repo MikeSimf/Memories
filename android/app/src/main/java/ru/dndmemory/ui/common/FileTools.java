@@ -17,7 +17,7 @@ import java.io.InputStream;
 public final class FileTools {
 
     /** Сервер принимает файлы до 10 МБ; проверяем заранее, чтобы не гонять зря. */
-    public static final int MAX_BYTES = 10 * 1024 * 1024;
+    public static final int MAX_BYTES = 100 * 1024 * 1024;
 
     private FileTools() {
     }

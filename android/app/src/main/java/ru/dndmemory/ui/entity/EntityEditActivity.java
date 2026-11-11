@@ -221,22 +221,28 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         applyDefault(binding.entityEditItemType, container.raceRepository().cachedItemTypes());
     }
 
-    private java.util.List<String> lifeLabels() {
-        return java.util.Arrays.asList(getString(R.string.life_unknown),
-                getString(R.string.life_alive), getString(R.string.life_dead));
-    }
+    private String lifeStatus = "alive";
 
-    private String lifeLabel(@Nullable String code) {
-        if ("alive".equals(code)) return getString(R.string.life_alive);
-        if ("dead".equals(code)) return getString(R.string.life_dead);
-        return getString(R.string.life_unknown);
-    }
-
-    private String lifeCode(@Nullable CharSequence label) {
-        String value = label == null ? "" : label.toString();
-        if (value.equals(getString(R.string.life_alive))) return "alive";
-        if (value.equals(getString(R.string.life_dead))) return "dead";
-        return "unknown";
+    private void renderLifeCheck() {
+        int label;
+        int icon;
+        boolean checked;
+        if ("dead".equals(lifeStatus)) {
+            label = R.string.life_dead;
+            icon = R.drawable.life_check_dead;
+            checked = false;
+        } else if ("unknown".equals(lifeStatus)) {
+            label = R.string.life_unknown;
+            icon = R.drawable.life_check_unknown;
+            checked = false;
+        } else {
+            label = R.string.life_alive;
+            icon = R.drawable.life_check_alive;
+            checked = true;
+        }
+        binding.entityEditLifeCheck.setText(label);
+        binding.entityEditLifeCheck.setButtonDrawable(icon);
+        binding.entityEditLifeCheck.setChecked(checked);
     }
 
     /** Подписи поля «Пол»: порядок совпадает с кодами в {@link #genderCode}. */
@@ -608,7 +614,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
 
         ViewUtils.show(binding.entityEditRaceGroup, hero || character);
         ViewUtils.show(binding.entityEditGenderGroup, hero || character);
-        ViewUtils.show(binding.entityEditLifeGroup, hero || character);
+        ViewUtils.show(binding.entityEditLifeCheck, hero || character);
         ViewUtils.show(binding.entityEditKlassGroup, hero || character);
         ViewUtils.show(binding.entityEditPlayerGroup, hero);
         ViewUtils.show(binding.entityEditShortGroup, character);
@@ -621,7 +627,8 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         if (draft != null) {
             binding.entityEditRaceInput.setText(draft.race);
             binding.entityEditGender.setText(genderLabel(draft.gender), false);
-            binding.entityEditLife.setText(lifeLabel(draft.lifeStatus), false);
+            lifeStatus = draft.lifeStatus == null ? "alive" : draft.lifeStatus;
+            renderLifeCheck();
             binding.entityEditKlassInput.setText(draft.klass);
             binding.entityEditLocationType.setText(draft.locationType);
             binding.entityEditItemType.setText(draft.itemType);
@@ -654,7 +661,12 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         }
         ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditPlayer, labels);
         ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditGender, genderLabels());
-        ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditLife, lifeLabels());
+        binding.entityEditLifeCheck.setOnClickListener(v -> {
+            if ("alive".equals(lifeStatus)) lifeStatus = "dead";
+            else if ("dead".equals(lifeStatus)) lifeStatus = "unknown";
+            else lifeStatus = "alive";
+            renderLifeCheck();
+        });
         EntityRoom draft = currentDraft();
         String currentId = selectedPlayerUserId != null ? selectedPlayerUserId
                 : (draft == null ? null : draft.playerUserId);
@@ -860,7 +872,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         if (currentKind == EntityType.HERO) {
             viewModel.setRace(text(binding.entityEditRaceInput.getText()));
             viewModel.setGender(genderCode(text(binding.entityEditGender.getText())));
-            viewModel.setLifeStatus(lifeCode(text(binding.entityEditLife.getText())));
+            viewModel.setLifeStatus(lifeStatus);
             viewModel.setKlass(text(binding.entityEditKlassInput.getText()));
             MemberRoom player = memberById(selectedPlayerUserId);
             viewModel.setPlayerUserId(selectedPlayerUserId,

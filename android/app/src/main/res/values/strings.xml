@@ -7,7 +7,7 @@
     <string name="action_retry">Повторить</string>
     <string name="action_cancel">Отмена</string>
     <string name="action_send">Отправить</string>
-    <string name="material_detail_updated">Изменён(а) %1$s · %2$s</string>
+    <string name="material_detail_updated">Изменён: %1$s</string>
     <string name="action_save">Сохранить</string>
     <string name="action_delete">Удалить</string>
     <string name="action_edit">Редактировать</string>

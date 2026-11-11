@@ -84,21 +84,14 @@
                     android:inputType="none" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Статус жизни: у героя и персонажа -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/entity_edit_life_group"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            <!-- Статус жизни: галка — жив, пусто — мёртв, ? — неизвестно -->
+            <CheckBox
+                android:id="@+id/entity_edit_life_check"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/attr_life_status"
-                android:visibility="gone">
-
-                <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                    android:id="@+id/entity_edit_life"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="none" />
-            </com.google.android.material.textfield.TextInputLayout>
+                android:text="@string/life_alive"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:visibility="gone" />
 
             <!-- Только герой -->
             <com.google.android.material.textfield.TextInputLayout

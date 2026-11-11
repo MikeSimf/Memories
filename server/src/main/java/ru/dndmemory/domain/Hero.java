@@ -35,7 +35,7 @@ public class Hero extends GameEntitySupport
 
     /** Жив, мёртв или неизвестно. */
     @Column(name = "life_status", nullable = false, length = 16)
-    private String lifeStatus = "unknown";
+    private String lifeStatus = "alive";
 
     /** Пол: female, male или unknown. */
     @Column(length = 16, nullable = false)
