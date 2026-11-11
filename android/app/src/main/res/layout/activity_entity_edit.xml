@@ -84,6 +84,15 @@
                     android:inputType="none" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <TextView
+                android:id="@+id/entity_edit_life_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/attr_life_status"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:visibility="gone" />
+
             <!-- Статус жизни: галка — жив, пусто — мёртв, ? — неизвестно -->
             <CheckBox
                 android:id="@+id/entity_edit_life_check"

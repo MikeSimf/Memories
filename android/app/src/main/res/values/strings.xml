@@ -195,6 +195,7 @@
     <string name="material_edit_title_edit">Материал</string>
     <string name="material_name">Название</string>
     <string name="material_description">Описание</string>
+    <string name="material_files">Документы</string>
     <string name="material_delete_confirm">Удалить материал «%1$s»?</string>
     <string name="material_no_photo">Без фото</string>
     <string name="tab_members">Участники</string>

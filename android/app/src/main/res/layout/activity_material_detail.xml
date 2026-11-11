@@ -62,6 +62,21 @@
                 android:orientation="vertical" />
 
             <TextView
+                android:id="@+id/material_detail_files_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/material_files"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/material_detail_files"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <TextView
                 android:id="@+id/material_detail_updated"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

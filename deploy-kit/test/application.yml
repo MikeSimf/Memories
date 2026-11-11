@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 49
-    latest-version-name: 1.0.48
+    latest-version-code: 50
+    latest-version-name: 1.0.49
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Галерея материалов, статус жизни, лимит 100 МБ"
+    notes: "Статус жизни, документы материалов, лимит 100 МБ"
     versions:
+      - version: "1.0.49"
+        date: "2026-11-11"
+        notes: "Статус жизни, документы материалов, лимит 100 МБ"
       - version: "1.0.48"
         date: "2026-11-11"
         notes: "Галерея, статус жизни, лимит файлов 100 МБ"

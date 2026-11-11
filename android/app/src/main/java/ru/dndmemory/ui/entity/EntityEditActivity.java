@@ -615,6 +615,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         ViewUtils.show(binding.entityEditRaceGroup, hero || character);
         ViewUtils.show(binding.entityEditGenderGroup, hero || character);
         ViewUtils.show(binding.entityEditLifeCheck, hero || character);
+        ViewUtils.show(binding.entityEditLifeLabel, hero || character);
         ViewUtils.show(binding.entityEditKlassGroup, hero || character);
         ViewUtils.show(binding.entityEditPlayerGroup, hero);
         ViewUtils.show(binding.entityEditShortGroup, character);
@@ -881,6 +882,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         } else if (currentKind == EntityType.CHARACTER) {
             viewModel.setRace(text(binding.entityEditRaceInput.getText()));
             viewModel.setGender(genderCode(text(binding.entityEditGender.getText())));
+            viewModel.setLifeStatus(lifeStatus);
             viewModel.setKlass(text(binding.entityEditKlassInput.getText()));
             viewModel.setShortDescription(text(binding.entityEditShortInput.getText()));
         } else if (currentKind == EntityType.LOCATION) {

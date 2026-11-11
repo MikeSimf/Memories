@@ -104,7 +104,42 @@ public class MaterialDetailActivity extends BottomNavActivity {
             }
             binding.materialDetailLinks.addView(row);
         }
+        renderFiles();
         binding.materialDetailUpdated.setText(getString(R.string.material_detail_updated, material.updatedAt));
+    }
+
+    private void renderFiles() {
+        binding.materialDetailFiles.removeAllViews();
+        java.util.List<ru.dndmemory.data.model.Attachment> files =
+                ru.dndmemory.data.Mappers.files(material.filesJson);
+        java.util.List<ru.dndmemory.data.model.Attachment> documents = new java.util.ArrayList<>();
+        for (ru.dndmemory.data.model.Attachment file : files) {
+            if (file != null && !file.isImage()) {
+                documents.add(file);
+            }
+        }
+        ViewUtils.show(binding.materialDetailFilesTitle, !documents.isEmpty());
+        for (final ru.dndmemory.data.model.Attachment file : documents) {
+            android.widget.LinearLayout row = (android.widget.LinearLayout) getLayoutInflater()
+                    .inflate(R.layout.item_attachment, binding.materialDetailFiles, false);
+            android.widget.TextView name = row.findViewById(R.id.attachment_name);
+            android.widget.ImageView thumb = row.findViewById(R.id.attachment_thumb);
+            com.google.android.material.button.MaterialButton action =
+                    row.findViewById(R.id.attachment_action);
+            name.setText(file.name == null || file.name.isEmpty() ? file.id : file.name);
+            thumb.setImageResource(R.drawable.ic_materials);
+            boolean downloaded = ru.dndmemory.ui.common.FileDownloads.isDownloaded(this, file.id);
+            action.setText(downloaded ? R.string.file_open : R.string.update_download);
+            action.setOnClickListener(v -> {
+                if (ru.dndmemory.ui.common.FileDownloads.isDownloaded(this, file.id)) {
+                    ru.dndmemory.ui.common.FileDownloads.open(this, file.id);
+                } else {
+                    ru.dndmemory.ui.common.FileDownloads.download(this, file.id,
+                            material.name, file.contentType, () -> runOnUiThread(this::renderFiles));
+                }
+            });
+            binding.materialDetailFiles.addView(row);
+        }
     }
 
     private void confirmDelete() {

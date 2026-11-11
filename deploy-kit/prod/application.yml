@@ -13,8 +13,8 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 4
-    latest-version-name: 1.3
+    latest-version-code: 5
+    latest-version-name: 1.4
     min-version-code: 1
     apk-url: https://dnd-memory.imikea.ru/dnd-memory.apk
     notes: ""
