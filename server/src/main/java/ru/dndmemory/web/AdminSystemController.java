@@ -2,7 +2,9 @@ package ru.dndmemory.web;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +30,7 @@ public class AdminSystemController {
     private final PasswordResetService passwordResetService;
     private final UserRepository userRepository;
     private final AppProperties properties;
+    private final ru.dndmemory.service.GlobalDictionaryService dictionaries;
 
     @GetMapping("/users")
     public java.util.List<java.util.Map<String, Object>> users(
@@ -46,6 +49,32 @@ public class AdminSystemController {
             result.add(row);
         }
         return result;
+    }
+
+    @GetMapping("/dictionaries")
+    public java.util.Map<String, java.util.List<String>> dictionaries(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        requireAdmin(principal);
+        return dictionaries.all();
+    }
+
+    public static class DictionaryRequest {
+        public String kind;
+        public String name;
+    }
+
+    @PostMapping("/dictionaries")
+    public void addDictionary(@AuthenticationPrincipal UserPrincipal principal,
+                              @RequestBody DictionaryRequest request) {
+        requireAdmin(principal);
+        dictionaries.add(request.kind, request.name);
+    }
+
+    @DeleteMapping("/dictionaries")
+    public void removeDictionary(@AuthenticationPrincipal UserPrincipal principal,
+                                 @RequestParam String kind, @RequestParam String name) {
+        requireAdmin(principal);
+        dictionaries.remove(kind, name);
     }
 
     @GetMapping("/password-resets")

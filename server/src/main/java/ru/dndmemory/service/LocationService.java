@@ -21,6 +21,7 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
 
     private final LocationRepository locationRepository;
     private final CampaignDictionaryService dictionaryService;
+    private final CardTemplateService cardTemplateService;
 
     public LocationService(LocationRepository locationRepository,
                            CampaignRepository campaignRepository,
@@ -30,11 +31,13 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
                            ObjectIndexService objectIndexService,
                            ConflictRecorder conflictRecorder,
                            ObjectMapper objectMapper,
-                       CampaignDictionaryService dictionaryService) {
+                       CampaignDictionaryService dictionaryService,
+                       CardTemplateService cardTemplateService) {
         super(campaignRepository, memberRepository, permissionService, changeRecorder,
                 objectIndexService, conflictRecorder, objectMapper);
         this.locationRepository = locationRepository;
         this.dictionaryService = dictionaryService;
+        this.cardTemplateService = cardTemplateService;
     }
 
     @Override
@@ -79,6 +82,7 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
                 .imageFileId(location.getImageFileId())
                 .avatarFileId(location.getAvatarFileId())
                 .locationType(location.getLocationType())
+                .cardTemplateId(cardTemplate("LOCATION", location))
                 .links(objectIndexService.links(context, location.getDescription()))
                 .createdBy(location.getCreatedBy())
                 .createdByName(context.userName(location.getCreatedBy()))
@@ -89,6 +93,15 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
                 .updatedAt(location.getUpdatedAt())
                 .deleted(location.isDeleted())
                 .build();
+    }
+
+    private java.util.UUID cardTemplate(String type, Location location) {
+        java.util.Map<String, Object> fields = new java.util.HashMap<>();
+        fields.put("type", type);
+        fields.put("name", location.getName());
+        fields.put("locationType", location.getLocationType());
+        ru.dndmemory.domain.CardTemplate template = cardTemplateService.match(type, "LIST", fields);
+        return template == null ? null : template.getId();
     }
 
     @Override

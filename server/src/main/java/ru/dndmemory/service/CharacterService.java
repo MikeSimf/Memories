@@ -22,6 +22,7 @@ public class CharacterService extends AbstractObjectService<Character, Character
 
     private final CharacterRepository characterRepository;
     private final CampaignDictionaryService dictionaryService;
+    private final CardTemplateService cardTemplateService;
 
     public CharacterService(CharacterRepository characterRepository,
                             CampaignRepository campaignRepository,
@@ -31,11 +32,13 @@ public class CharacterService extends AbstractObjectService<Character, Character
                             ObjectIndexService objectIndexService,
                             ConflictRecorder conflictRecorder,
                             ObjectMapper objectMapper,
-                       CampaignDictionaryService dictionaryService) {
+                       CampaignDictionaryService dictionaryService,
+                       CardTemplateService cardTemplateService) {
         super(campaignRepository, memberRepository, permissionService, changeRecorder,
                 objectIndexService, conflictRecorder, objectMapper);
         this.characterRepository = characterRepository;
         this.dictionaryService = dictionaryService;
+        this.cardTemplateService = cardTemplateService;
     }
 
     @Override
@@ -101,8 +104,21 @@ public class CharacterService extends AbstractObjectService<Character, Character
                 .klass(character.getKlass())
                 .gender(character.getGender())
                 .alive(character.getAlive())
+                .cardTemplateId(cardTemplate("CHARACTER", character))
                 .shortDescription(character.getShortDescription())
                 .build();
+    }
+
+    private java.util.UUID cardTemplate(String type, Character character) {
+        java.util.Map<String, Object> fields = new java.util.HashMap<>();
+        fields.put("type", type);
+        fields.put("name", character.getName());
+        fields.put("race", character.getRace());
+        fields.put("klass", character.getKlass());
+        fields.put("gender", character.getGender());
+        fields.put("alive", character.getAlive());
+        ru.dndmemory.domain.CardTemplate template = cardTemplateService.match(type, "LIST", fields);
+        return template == null ? null : template.getId();
     }
 
     @Override

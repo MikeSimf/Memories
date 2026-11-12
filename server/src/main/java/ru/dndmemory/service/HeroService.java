@@ -31,6 +31,7 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
 
     private final HeroRepository heroRepository;
     private final CampaignDictionaryService dictionaryService;
+    private final CardTemplateService cardTemplateService;
     private final HeroItemRepository heroItemRepository;
 
     public HeroService(HeroRepository heroRepository,
@@ -42,11 +43,13 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
                        ObjectIndexService objectIndexService,
                        ConflictRecorder conflictRecorder,
                        ObjectMapper objectMapper,
-                       CampaignDictionaryService dictionaryService) {
+                       CampaignDictionaryService dictionaryService,
+                       CardTemplateService cardTemplateService) {
         super(campaignRepository, memberRepository, permissionService, changeRecorder,
                 objectIndexService, conflictRecorder, objectMapper);
         this.heroRepository = heroRepository;
         this.dictionaryService = dictionaryService;
+        this.cardTemplateService = cardTemplateService;
         this.heroItemRepository = heroItemRepository;
     }
 
@@ -134,10 +137,23 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
                 .klass(hero.getKlass())
                 .gender(hero.getGender())
                 .alive(hero.getAlive())
+                .cardTemplateId(cardTemplate("HERO", hero))
                 .playerUserId(hero.getPlayerUserId())
                 .playerName(context.userName(hero.getPlayerUserId()))
                 .items(items)
                 .build();
+    }
+
+    private java.util.UUID cardTemplate(String type, Hero hero) {
+        java.util.Map<String, Object> fields = new java.util.HashMap<>();
+        fields.put("type", type);
+        fields.put("name", hero.getName());
+        fields.put("race", hero.getRace());
+        fields.put("klass", hero.getKlass());
+        fields.put("gender", hero.getGender());
+        fields.put("alive", hero.getAlive());
+        ru.dndmemory.domain.CardTemplate template = cardTemplateService.match(type, "LIST", fields);
+        return template == null ? null : template.getId();
     }
 
     @Override

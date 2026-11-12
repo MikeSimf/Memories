@@ -22,6 +22,7 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
 
     private final ItemRepository itemRepository;
     private final CampaignDictionaryService dictionaryService;
+    private final CardTemplateService cardTemplateService;
 
     public ItemService(ItemRepository itemRepository,
                        CampaignRepository campaignRepository,
@@ -31,11 +32,13 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
                        ObjectIndexService objectIndexService,
                        ConflictRecorder conflictRecorder,
                        ObjectMapper objectMapper,
-                       CampaignDictionaryService dictionaryService) {
+                       CampaignDictionaryService dictionaryService,
+                       CardTemplateService cardTemplateService) {
         super(campaignRepository, memberRepository, permissionService, changeRecorder,
                 objectIndexService, conflictRecorder, objectMapper);
         this.itemRepository = itemRepository;
         this.dictionaryService = dictionaryService;
+        this.cardTemplateService = cardTemplateService;
     }
 
     @Override
@@ -105,7 +108,19 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
                 .magic(item.getMagic())
                 .hasSetting(item.isHasSetting())
                 .configuredHeroId(item.getConfiguredHeroId())
+                .cardTemplateId(cardTemplate("ITEM", item))
                 .build();
+    }
+
+    private java.util.UUID cardTemplate(String type, Item item) {
+        java.util.Map<String, Object> fields = new java.util.HashMap<>();
+        fields.put("type", type);
+        fields.put("name", item.getName());
+        fields.put("itemType", item.getItemType());
+        fields.put("magic", item.getMagic());
+        fields.put("hasSetting", item.isHasSetting());
+        ru.dndmemory.domain.CardTemplate template = cardTemplateService.match(type, "LIST", fields);
+        return template == null ? null : template.getId();
     }
 
     @Override

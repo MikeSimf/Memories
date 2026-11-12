@@ -33,6 +33,8 @@ public class ObjectDto {
     private List<LinkDto> links;
     private UUID createdBy;
     private String createdByName;
+    /** Шаблон карточки списка, выбранный по формуле. */
+    private UUID cardTemplateId;
     private UUID updatedBy;
     private String updatedByName;
     private long revision;

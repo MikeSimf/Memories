@@ -61,6 +61,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Сброс пароля', narrow: true },
   },
   {
+    path: '/admin/dictionaries',
+    name: 'admin-dictionaries',
+    component: () => import('@/views/AdminDictionariesView.vue'),
+    meta: { title: 'Справочники', narrow: true },
+  },
+  {
     path: '/admin/cards',
     name: 'admin-cards',
     component: () => import('@/views/AdminCardsView.vue'),

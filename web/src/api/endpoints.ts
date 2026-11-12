@@ -527,6 +527,18 @@ export const adminApi = {
   passwordResets(): Promise<PasswordResetDto[]> {
     return apiClient.request<PasswordResetDto[]>({ path: '/api/admin/system/password-resets' })
   },
+  dictionaries(): Promise<Record<string, string[]>> {
+    return apiClient.request<Record<string, string[]>>({ path: '/api/admin/system/dictionaries' })
+  },
+  addDictionary(kind: string, name: string): Promise<void> {
+    return apiClient.request<void>({ method: 'POST', path: '/api/admin/system/dictionaries', body: { kind, name } })
+  },
+  removeDictionary(kind: string, name: string): Promise<void> {
+    return apiClient.request<void>({
+      method: 'DELETE',
+      path: `/api/admin/system/dictionaries?kind=${encodeURIComponent(kind)}&name=${encodeURIComponent(name)}`,
+    })
+  },
   users(): Promise<AdminUserDto[]> {
     return apiClient.request<AdminUserDto[]>({ path: '/api/admin/system/users' })
   },
