@@ -164,11 +164,12 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         binding.entityTypeChip.setBackgroundTintList(
                 android.content.res.ColorStateList.valueOf(TypeColors.soft(this, type)));
         ViewUtils.show(binding.entitySubtitle, false);
-        boolean person = type == EntityType.HERO || type == EntityType.CHARACTER;
-        ViewUtils.show(binding.entityAvatarTop, person && entity.avatarFileId != null);
-        if (person && entity.avatarFileId != null) {
+        ViewUtils.show(binding.entityAvatarTop, entity.avatarFileId != null);
+        if (entity.avatarFileId != null) {
             AvatarBinder.bind(this, binding.entityAvatarTop, entity,
                     App.container(this).okHttpClient());
+            final String avatarId = entity.avatarFileId;
+            binding.entityAvatarTop.setOnClickListener(v -> openPhoto(avatarId));
         }
         renderSystemInfo(entity);
 

@@ -364,6 +364,7 @@ async function logout(): Promise<void> {
         rows="4"
       />
       <div class="row row--between">
+        <RouterLink v-if="auth.user?.admin" class="btn btn--sm" :to="{ name: 'admin' }">Кабинет</RouterLink>
         <RouterLink v-if="auth.user?.admin" class="btn btn--sm" :to="{ name: 'admin-password-resets' }">Сброс пароля</RouterLink>
         <RouterLink v-if="auth.user?.admin" class="btn btn--sm" :to="{ name: 'admin-crashes' }">Падения</RouterLink>
         <RouterLink v-if="auth.user?.admin" class="btn btn--sm" :to="{ name: 'admin-feedback' }">

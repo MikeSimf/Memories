@@ -29,6 +29,25 @@ public class AdminSystemController {
     private final UserRepository userRepository;
     private final AppProperties properties;
 
+    @GetMapping("/users")
+    public java.util.List<java.util.Map<String, Object>> users(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        requireAdmin(principal);
+        java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
+        for (ru.dndmemory.domain.User user : userRepository.findAll()) {
+            java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
+            row.put("id", user.getId());
+            row.put("login", user.getLogin());
+            row.put("displayName", user.getDisplayName());
+            row.put("email", user.getEmail());
+            row.put("superuser", user.isSuperuser());
+            row.put("createdAt", user.getCreatedAt());
+            row.put("updatedAt", user.getUpdatedAt());
+            result.add(row);
+        }
+        return result;
+    }
+
     @GetMapping("/password-resets")
     public List<AdminDtos.PasswordResetDto> pending(@AuthenticationPrincipal UserPrincipal principal) {
         requireAdmin(principal);

@@ -137,6 +137,7 @@ const retellingMentions = computed(() =>
   ),
 )
 
+const avatarOpen = ref(false)
 const brokenLinkName = ref<string | null>(null)
 const brokenLinkClass = ref<ObjectClass>('CHARACTER')
 const confirmDelete = ref(false)
@@ -236,6 +237,9 @@ async function keepLocal(): Promise<void> {
       <div class="page-header">
         <div class="page-header__titles">
           <div class="row entity-head">
+            <button v-if="entity.avatarFileId" class="avatar-open" type="button" @click="avatarOpen = true">
+              <EntityImage :file-id="entity.avatarFileId" :alt="entity.name" />
+            </button>
             <div>
           <h1>
             {{ entity.name }}
@@ -433,6 +437,14 @@ async function keepLocal(): Promise<void> {
       </div>
 
       <BaseModal
+        :open="avatarOpen"
+        title="Аватар"
+        @close="avatarOpen = false"
+      >
+        <EntityImage v-if="entity.avatarFileId" :file-id="entity.avatarFileId" :alt="entity.name" />
+      </BaseModal>
+
+      <BaseModal
         :open="brokenLinkName !== null"
         title="Создать объект по ссылке"
         @close="brokenLinkName = null"
@@ -533,4 +545,5 @@ async function keepLocal(): Promise<void> {
 .person-row__symbol {
   color: var(--text-muted);
 }
+.avatar-open { padding: 0; border: 0; background: none; cursor: zoom-in; width: 64px; height: 64px; flex: none; }
 </style>

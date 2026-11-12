@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 52
-    latest-version-name: 1.0.51
+    latest-version-code: 53
+    latest-version-name: 1.0.52
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Справочники кампании и передача владения"
+    notes: "Кабинет system, просмотр аватарок и флаги"
     versions:
+      - version: "1.0.52"
+        date: "2026-11-12"
+        notes: "Кабинет system, аватарки и флаги"
       - version: "1.0.51"
         date: "2026-11-12"
         notes: "Справочники кампании и передача владения"

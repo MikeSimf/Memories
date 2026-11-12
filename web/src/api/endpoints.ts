@@ -51,6 +51,7 @@ import type {
   CrashReportDto,
   PasswordResetDto,
   DictionaryEntryDto,
+  AdminUserDto,
 } from './types'
 
 /** Список приходит страницей; «сырой» массив приводим к странице на всякий случай. */
@@ -492,6 +493,9 @@ export const dictionariesApi = {
 export const adminApi = {
   passwordResets(): Promise<PasswordResetDto[]> {
     return apiClient.request<PasswordResetDto[]>({ path: '/api/admin/system/password-resets' })
+  },
+  users(): Promise<AdminUserDto[]> {
+    return apiClient.request<AdminUserDto[]>({ path: '/api/admin/system/users' })
   },
   createResetLink(email: string): Promise<{ url: string }> {
     return apiClient.request<{ url: string }>({

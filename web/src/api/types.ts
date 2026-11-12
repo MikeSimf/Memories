@@ -884,6 +884,17 @@ export interface CrashReportDto {
   createdAt: string
 }
 
+/** Пользователь в кабинете system. */
+export interface AdminUserDto {
+  id: string
+  login: string
+  displayName: string
+  email: string | null
+  superuser: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 /** Значение справочника кампании. */
 export interface DictionaryEntryDto {
   kind: string
