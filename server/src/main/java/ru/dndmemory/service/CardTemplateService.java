@@ -21,6 +21,28 @@ public class CardTemplateService {
 
     private final CardTemplateRepository repository;
 
+    public static class BlockDto {
+        public String id;
+        public String field;
+        public String display;
+        public float x;
+        public float y;
+        public float width;
+        public float height;
+        public float fontSize;
+    }
+
+    public static class CardDto {
+        public String id;
+        public String name;
+        public String objectType;
+        public String kind;
+        public String formula;
+        public int priority;
+        public boolean isDefault;
+        public List<BlockDto> blocks = new ArrayList<>();
+    }
+
     public static class BlockRequest {
         public String field;
         public String display = "TEXT";
@@ -43,12 +65,16 @@ public class CardTemplateService {
     }
 
     @Transactional(readOnly = true)
-    public List<CardTemplate> all() {
-        return repository.findAllByOrderByObjectTypeAscPriorityDesc();
+    public List<CardDto> all() {
+        List<CardDto> result = new ArrayList<>();
+        for (CardTemplate template : repository.findAllByOrderByObjectTypeAscPriorityDesc()) {
+            result.add(toDto(template));
+        }
+        return result;
     }
 
     @Transactional
-    public CardTemplate save(SaveRequest request) {
+    public CardDto save(SaveRequest request) {
         if (request.name == null || request.name.trim().isEmpty()) {
             throw ApiException.badRequest("Укажите название карточки");
         }
@@ -86,7 +112,32 @@ public class CardTemplateService {
             block.setSortOrder(order++);
             template.getBlocks().add(block);
         }
-        return repository.save(template);
+        template = repository.save(template);
+        return toDto(template);
+    }
+
+    private CardDto toDto(CardTemplate template) {
+        CardDto dto = new CardDto();
+        dto.id = template.getId() == null ? null : template.getId().toString();
+        dto.name = template.getName();
+        dto.objectType = template.getObjectType();
+        dto.kind = template.getKind();
+        dto.formula = template.getFormula();
+        dto.priority = template.getPriority();
+        dto.isDefault = template.isDefault();
+        for (CardBlock block : template.getBlocks()) {
+            BlockDto item = new BlockDto();
+            item.id = block.getId() == null ? null : block.getId().toString();
+            item.field = block.getField();
+            item.display = block.getDisplay();
+            item.x = block.getX();
+            item.y = block.getY();
+            item.width = block.getWidth();
+            item.height = block.getHeight();
+            item.fontSize = block.getFontSize();
+            dto.blocks.add(item);
+        }
+        return dto;
     }
 
     @Transactional

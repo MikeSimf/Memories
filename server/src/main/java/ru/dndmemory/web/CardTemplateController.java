@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import ru.dndmemory.config.AppProperties;
-import ru.dndmemory.domain.CardTemplate;
+
 import ru.dndmemory.repo.UserRepository;
 import ru.dndmemory.security.UserPrincipal;
 import ru.dndmemory.service.CardTemplateService;
@@ -24,13 +24,13 @@ public class CardTemplateController {
     private final AppProperties properties;
 
     @GetMapping
-    public List<CardTemplate> list(@AuthenticationPrincipal UserPrincipal principal) {
+    public List<CardTemplateService.CardDto> list(@AuthenticationPrincipal UserPrincipal principal) {
         requireAdmin(principal);
         return service.all();
     }
 
     @PostMapping
-    public CardTemplate save(@AuthenticationPrincipal UserPrincipal principal,
+    public CardTemplateService.CardDto save(@AuthenticationPrincipal UserPrincipal principal,
                              @Valid @RequestBody CardTemplateService.SaveRequest request) {
         requireAdmin(principal);
         return service.save(request);

@@ -9,6 +9,7 @@ const error = ref<string | null>(null)
 const editing = ref<Partial<CardTemplateDto> | null>(null)
 const fields = ['avatar', 'name', 'type', 'race', 'klass', 'gender', 'alive', 'shortDescription', 'itemType', 'locationType', 'magic', 'hasSetting', 'ownerName']
 const classes: ObjectClass[] = ['CHARACTER', 'HERO', 'LOCATION', 'ITEM']
+let drag: { index: number; mode: 'move' | 'resize'; startX: number; startY: number; x: number; y: number; w: number; h: number } | null = null
 
 function blank(): Partial<CardTemplateDto> {
   return { name: 'Стандартная', objectType: 'CHARACTER', kind: 'LIST', formula: 'true', priority: 0, isDefault: false, blocks: [] }
@@ -21,6 +22,38 @@ function edit(template?: CardTemplateDto): void {
 function addBlock(): void {
   if (!editing.value) return
   editing.value.blocks = [...(editing.value.blocks ?? []), { field: 'name', display: 'TEXT', x: 8, y: 8, width: 160, height: 24, fontSize: 14 }]
+}
+
+function startDrag(index: number, event: PointerEvent, mode: 'move' | 'resize'): void {
+  const block = editing.value?.blocks?.[index]
+  if (!block) return
+  drag = { index, mode, startX: event.clientX, startY: event.clientY, x: block.x, y: block.y, w: block.width, h: block.height }
+  window.addEventListener('pointermove', onDrag)
+  window.addEventListener('pointerup', stopDrag, { once: true })
+}
+
+function onDrag(event: PointerEvent): void {
+  if (!drag || !editing.value?.blocks) return
+  const block = editing.value.blocks[drag.index]
+  if (!block) return
+  const dx = event.clientX - drag.startX
+  const dy = event.clientY - drag.startY
+  if (drag.mode === 'move') {
+    block.x = Math.max(0, Math.round(drag.x + dx))
+    block.y = Math.max(0, Math.round(drag.y + dy))
+  } else {
+    block.width = Math.max(20, Math.round(drag.w + dx))
+    block.height = Math.max(12, Math.round(drag.h + dy))
+  }
+}
+
+function stopDrag(): void {
+  drag = null
+  window.removeEventListener('pointermove', onDrag)
+}
+
+function blockValue(field: string): string {
+  return { name: 'Имя', type: 'Персонаж', race: 'Эльф', klass: 'Волшебник', gender: 'женский', alive: 'жив', itemType: 'Артефакт', magic: 'да', ownerName: 'Лира' }[field] ?? field
 }
 
 async function save(): Promise<void> {
@@ -82,6 +115,20 @@ onMounted(load)
         <input v-model="editing.formula" class="input" placeholder="type = 'ARTEFACT' and magic = true" />
         <span class="field__hint">Ошибка в формуле считается ложью. true — подходит всем.</span>
       </div>
+      <h3>Предпросмотр — перетаскивайте блоки, тяните угол для размера</h3>
+      <div class="card-canvas">
+        <div
+          v-for="(block, index) in editing.blocks"
+          :key="index"
+          class="card-canvas__block"
+          :style="{ left: block.x + 'px', top: block.y + 'px', width: block.width + 'px', height: block.height + 'px', fontSize: block.fontSize + 'px' }"
+          @pointerdown="startDrag(index, $event, 'move')"
+        >
+          {{ block.field === 'avatar' ? 'аватар' : blockValue(block.field) }}
+          <span class="card-canvas__resize" @pointerdown.stop="startDrag(index, $event, 'resize')" />
+        </div>
+      </div>
+
       <h3>Поля</h3>
       <div v-for="(block, index) in editing.blocks" :key="index" class="row" style="flex-wrap: wrap; align-items: flex-end">
         <div class="field"><label class="field__label">Поле</label>
@@ -107,4 +154,40 @@ onMounted(load)
       <div class="row"><button class="btn btn--sm" type="button" @click="edit(template)">Изменить</button><button class="btn btn--danger btn--sm" type="button" @click="remove(template)">Удалить</button></div>
     </div>
   </div>
+<style scoped>
+.card-canvas {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  height: 160px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg-elev);
+  overflow: hidden;
+  touch-action: none;
+}
+.card-canvas__block {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  padding: 2px 4px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  cursor: move;
+  user-select: none;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.card-canvas__resize {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--accent);
+  cursor: nwse-resize;
+}
+</style>
 </template>

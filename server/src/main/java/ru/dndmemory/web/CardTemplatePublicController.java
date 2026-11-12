@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ru.dndmemory.domain.CardTemplate;
+
 import ru.dndmemory.security.PermissionService;
 import ru.dndmemory.security.UserPrincipal;
 import ru.dndmemory.service.CardTemplateService;
@@ -46,12 +46,12 @@ public class CardTemplatePublicController {
     }
 
     @GetMapping("/api/campaigns/{campaignId}/cards")
-    public List<CardTemplate> list(@PathVariable UUID campaignId,
+    public List<CardTemplateService.CardDto> list(@PathVariable UUID campaignId,
                                    @AuthenticationPrincipal UserPrincipal principal,
                                    @RequestParam(defaultValue = "LIST") String kind) {
         permissionService.requireMember(campaignId, principal.getId());
         return service.all().stream()
-                .filter(template -> kind.equals(template.getKind()))
+                .filter(template -> kind.equals(template.kind))
                 .collect(java.util.stream.Collectors.toList());
     }
 }
