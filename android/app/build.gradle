@@ -41,8 +41,8 @@ android {
         qa {
             dimension 'channel'
             applicationId 'ru.dndmemory.test'
-            versionCode 53
-            versionName '1.0.52'
+            versionCode 54
+            versionName '1.0.53'
             resValue 'string', 'app_name', 'DnD Memory Test'
             buildConfigField 'String', 'DND_SERVER_URL', '"https://test-dnd-memory.imikea.ru/"'
             buildConfigField 'boolean', 'IS_TEST', 'true'

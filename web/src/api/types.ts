@@ -884,6 +884,30 @@ export interface CrashReportDto {
   createdAt: string
 }
 
+/** Блок шаблона карточки. */
+export interface CardBlockDto {
+  id?: string
+  field: string
+  display: 'TEXT' | 'ICON'
+  x: number
+  y: number
+  width: number
+  height: number
+  fontSize: number
+}
+
+/** Шаблон карточки списка. */
+export interface CardTemplateDto {
+  id: string
+  name: string
+  objectType: 'HERO' | 'CHARACTER' | 'LOCATION' | 'ITEM'
+  kind: 'LIST' | 'DETAIL'
+  formula: string
+  priority: number
+  isDefault: boolean
+  blocks: CardBlockDto[]
+}
+
 /** Пользователь в кабинете system. */
 export interface AdminUserDto {
   id: string

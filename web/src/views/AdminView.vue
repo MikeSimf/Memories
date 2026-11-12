@@ -51,6 +51,7 @@ onMounted(load)
         <h1>Кабинет system</h1>
         <div class="page-header__subtitle">Пользователи, обращения, ошибки и ссылки сброса</div>
       </div>
+      <RouterLink class="btn btn--sm" :to="{ name: 'admin-cards' }">Карточки</RouterLink>
       <RouterLink class="btn btn--sm" :to="{ name: 'settings' }">Настройки</RouterLink>
     </div>
 

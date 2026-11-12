@@ -19,6 +19,7 @@ export {
   feedbackApi,
   crashesApi,
   dictionariesApi,
+  cardsApi,
   adminApi,
   racesApi,
   classesApi,

@@ -52,6 +52,7 @@ import type {
   PasswordResetDto,
   DictionaryEntryDto,
   AdminUserDto,
+  CardTemplateDto,
 } from './types'
 
 /** Список приходит страницей; «сырой» массив приводим к странице на всякий случай. */
@@ -473,6 +474,23 @@ export const crashesApi = {
   },
 }
 
+/** Конструктор карточек списков. */
+export const cardsApi = {
+  list(): Promise<CardTemplateDto[]> {
+    return apiClient.request<CardTemplateDto[]>({ path: '/api/admin/cards' })
+  },
+  save(template: Partial<CardTemplateDto>): Promise<CardTemplateDto> {
+    return apiClient.request<CardTemplateDto>({
+      method: 'POST',
+      path: '/api/admin/cards',
+      body: template,
+    })
+  },
+  remove(id: string): Promise<void> {
+    return apiClient.request<void>({ method: 'DELETE', path: `/api/admin/cards/${id}` })
+  },
+}
+
 /** Справочники кампании. */
 export const dictionariesApi = {
   list(campaignId: string): Promise<DictionaryEntryDto[]> {
@@ -596,6 +614,7 @@ export const api = {
   feedback: feedbackApi,
   crashes: crashesApi,
   dictionaries: dictionariesApi,
+  cards: cardsApi,
   admin: adminApi,
   races: racesApi,
   classes: classesApi,
