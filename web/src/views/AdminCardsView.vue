@@ -12,7 +12,19 @@ const classes: ObjectClass[] = ['CHARACTER', 'HERO', 'LOCATION', 'ITEM']
 let drag: { index: number; mode: 'move' | 'resize'; startX: number; startY: number; x: number; y: number; w: number; h: number } | null = null
 
 function blank(): Partial<CardTemplateDto> {
-  return { name: 'Стандартная', objectType: 'CHARACTER', kind: 'LIST', formula: 'true', priority: 0, isDefault: false, blocks: [] }
+  return {
+    name: 'Стандартная',
+    objectType: 'CHARACTER',
+    kind: 'LIST',
+    formula: 'true',
+    priority: 0,
+    isDefault: false,
+    blocks: [
+      { field: 'avatar', display: 'ICON', x: 8, y: 8, width: 48, height: 48, fontSize: 14 },
+      { field: 'name', display: 'TEXT', x: 64, y: 10, width: 220, height: 26, fontSize: 16 },
+      { field: 'race', display: 'TEXT', x: 64, y: 42, width: 180, height: 20, fontSize: 14 },
+    ],
+  }
 }
 
 function edit(template?: CardTemplateDto): void {
@@ -115,8 +127,12 @@ onMounted(load)
         <input v-model="editing.formula" class="input" placeholder="type = 'ARTEFACT' and magic = true" />
         <span class="field__hint">Ошибка в формуле считается ложью. true — подходит всем.</span>
       </div>
-      <h3>Предпросмотр — перетаскивайте блоки, тяните угол для размера</h3>
+      <h3>Предпросмотр</h3>
+      <p class="faint" style="margin: 0">Перетаскивайте блоки, за правый нижний угол — размер. Появляется здесь, когда открыт редактор карточки.</p>
       <div class="card-canvas">
+        <div v-if="(editing.blocks?.length ?? 0) === 0" class="faint" style="padding: 12px">
+          Добавьте поля кнопкой ниже — они появятся здесь.
+        </div>
         <div
           v-for="(block, index) in editing.blocks"
           :key="index"
