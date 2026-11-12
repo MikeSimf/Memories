@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminNav from '@/components/AdminNav.vue'
 
@@ -66,7 +66,11 @@ async function remove(value: string): Promise<void> {
   }
 }
 
-onMounted(load)
+watch(() => route.query.kind, (value) => {
+  if (typeof value === 'string') kind.value = value
+  void load()
+}, { immediate: true })
+
 </script>
 
 <template>

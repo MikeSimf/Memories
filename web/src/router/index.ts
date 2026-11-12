@@ -64,19 +64,19 @@ const routes: RouteRecordRaw[] = [
     path: '/admin/dictionaries',
     name: 'admin-dictionaries',
     component: () => import('@/views/AdminDictionariesView.vue'),
-    meta: { title: 'Справочники', narrow: true },
+    meta: { title: 'Справочники' },
   },
   {
     path: '/admin/cards',
     name: 'admin-cards',
     component: () => import('@/views/AdminCardsView.vue'),
-    meta: { title: 'Карточки', narrow: true },
+    meta: { title: 'Карточки' },
   },
   {
     path: '/admin',
     name: 'admin',
     component: () => import('@/views/AdminView.vue'),
-    meta: { title: 'Кабинет system', narrow: true },
+    meta: { title: 'Кабинет system' },
   },
   {
     path: '/crashes',
