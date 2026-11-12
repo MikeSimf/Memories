@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 59
-    latest-version-name: 1.0.58
+    latest-version-code: 60
+    latest-version-name: 1.0.59
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Конструктор карточек: сохранение и перетаскивание"
+    notes: "Карточки: выделение, углы, значки и сохранение"
     versions:
+      - version: "1.0.59"
+        date: "2026-11-12"
+        notes: "Карточки: выделение, углы, значки"
       - version: "1.0.58"
         date: "2026-11-12"
         notes: "Сохранение карточек и drag-and-drop"

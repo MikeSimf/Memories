@@ -7,6 +7,10 @@ import { genderLabel } from '@/types/gender'
 
 const props = defineProps<{ object: LocalObject; template: CardTemplateDto }>()
 
+function icon(field: string): string {
+  return { race: 'Р', klass: '✦', gender: '♀', alive: '♥', type: '◆', itemType: '⚔', ownerName: '♜', avatar: '▣' }[field] ?? '◆'
+}
+
 function value(field: string): string {
   const object = props.object as unknown as Record<string, unknown>
   if (field === 'type') return object.objectType as string
@@ -42,6 +46,7 @@ const blocks = computed(() => props.template.blocks ?? [])
       <template v-if="block.field === 'avatar'">
         <img v-if="object.avatarFileId" class="custom-card__avatar" :src="`/api/files/${object.avatarFileId}`" alt="" />
       </template>
+      <template v-else-if="block.display === 'ICON'">{{ icon(block.field) }}</template>
       <template v-else>{{ value(block.field) }}</template>
     </div>
   </div>

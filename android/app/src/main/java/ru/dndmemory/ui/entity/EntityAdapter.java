@@ -209,9 +209,19 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
                 params.leftMargin = (int) block.x;
                 params.topMargin = (int) block.y;
                 text.setLayoutParams(params);
-                text.setText(cardValue(entity, block.field));
+                text.setText("ICON".equals(block.display) ? iconValue(block.field) : cardValue(entity, block.field));
                 binding.customCardRoot.addView(text);
             }
+        }
+
+        private String iconValue(@Nullable String field) {
+            if ("race".equals(field)) return "Р";
+            if ("klass".equals(field)) return "✦";
+            if ("gender".equals(field)) return "♀";
+            if ("alive".equals(field)) return "♥";
+            if ("itemType".equals(field)) return "⚔";
+            if ("ownerName".equals(field)) return "♜";
+            return "◆";
         }
 
         private String cardValue(@NonNull EntityRoom entity, @Nullable String field) {
