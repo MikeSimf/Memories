@@ -115,6 +115,9 @@ public class ObjectIndexService {
         }
 
         Map<UUID, String> userNames = new HashMap<>();
+        // system не участник кампаний, но его имя нужно как автор изменений.
+        userRepository.findByLogin("system").ifPresent(
+                user -> userNames.put(user.getId(), user.getDisplayName()));
         if (!userIds.isEmpty()) {
             for (User user : userRepository.findAllById(userIds)) {
                 userNames.put(user.getId(), user.getDisplayName());

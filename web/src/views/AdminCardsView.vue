@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 
 import { cardsApi, errorMessage, type CardTemplateDto } from '@/api'
+import AdminNav from '@/components/AdminNav.vue'
 import { classIconUrl } from '@/ui/classIcons'
 import { typeIconPath } from '@/ui/typeIcons'
 import type { ObjectClass } from '@/api/types'
@@ -162,17 +163,52 @@ function duplicate(template: CardTemplateDto): void {
 }
 
 async function createDefaults(): Promise<void> {
-  const base = (objectType: CardTemplateDto['objectType'], label: string): Partial<CardTemplateDto> => ({
-    name: `Стандартная: ${label}`, objectType, kind: 'LIST', formula: 'true', priority: 0, isDefault: false,
-    blocks: [
-      { field: 'avatar', display: 'ICON', x: 8, y: 8, width: 48, height: 48, fontSize: 14 },
-      { field: 'name', display: 'TEXT', x: 64, y: 6, width: 220, height: 26, fontSize: 16 },
-      { field: 'race', display: 'TEXT', x: 64, y: 34, width: 180, height: 20, fontSize: 13 },
-      { field: 'type', display: 'TEXT', x: 64, y: 58, width: 180, height: 18, fontSize: 12 },
-    ],
-  })
-  for (const [type, label] of [['CHARACTER','Персонаж'],['HERO','Герой'],['LOCATION','Локация'],['ITEM','Предмет']] as const) {
-    await cardsApi.save(base(type, label))
+  const block = (field: string, display: 'TEXT' | 'ICON', x: number, y: number, width: number, height: number, fontSize: number) =>
+    ({ field, display, x, y, width, height, fontSize })
+  const common = [
+    block('avatar', 'ICON', 8, 8, 44, 44, 14),
+    block('name', 'TEXT', 60, 4, 232, 26, 16),
+  ]
+  const variants: Array<[CardTemplateDto['objectType'], string, ReturnType<typeof block>[]]> = [
+    ['CHARACTER', 'Персонаж', [
+      ...common,
+      block('race', 'TEXT', 60, 32, 180, 18, 13),
+      block('klass', 'TEXT', 60, 52, 180, 18, 13),
+      block('gender', 'ICON', 268, 4, 24, 22, 16),
+      block('alive', 'ICON', 268, 28, 24, 22, 16),
+      block('type', 'TEXT', 8, 74, 120, 18, 12),
+    ]],
+    ['HERO', 'Герой', [
+      ...common,
+      block('race', 'TEXT', 60, 32, 180, 18, 13),
+      block('klass', 'TEXT', 60, 52, 180, 18, 13),
+      block('gender', 'ICON', 268, 4, 24, 22, 16),
+      block('alive', 'ICON', 268, 28, 24, 22, 16),
+      block('type', 'TEXT', 8, 74, 120, 18, 12),
+    ]],
+    ['LOCATION', 'Локация', [
+      ...common,
+      block('locationType', 'TEXT', 60, 32, 220, 18, 13),
+      block('type', 'TEXT', 8, 74, 120, 18, 12),
+    ]],
+    ['ITEM', 'Предмет', [
+      ...common,
+      block('itemType', 'TEXT', 60, 32, 220, 18, 13),
+      block('ownerName', 'TEXT', 60, 52, 220, 18, 13),
+      block('magic', 'ICON', 268, 4, 24, 22, 16),
+      block('type', 'TEXT', 8, 74, 120, 18, 12),
+    ]],
+  ]
+  for (const [objectType, label, blocks] of variants) {
+    await cardsApi.save({
+      name: `Стандартная: ${label}`,
+      objectType,
+      kind: 'LIST',
+      formula: 'true',
+      priority: 0,
+      isDefault: true,
+      blocks,
+    })
   }
   await load()
 }
@@ -201,6 +237,10 @@ onMounted(load)
       <label class="btn btn--sm">Загрузить JSON<input type="file" accept="application/json" hidden @change="importJson" /></label>
       <RouterLink class="btn btn--sm" :to="{ name: 'admin' }">Кабинет</RouterLink>
     </div>
+
+    <div class="admin-layout">
+      <AdminNav />
+      <div class="admin-layout__main stack">
     <p v-if="error" class="notice notice--danger">{{ error }}</p>
 
     <div v-if="editing" class="card stack">
@@ -310,6 +350,8 @@ onMounted(load)
       <div class="row"><button class="btn btn--sm" type="button" @click="edit(template)">Изменить</button>
         <button class="btn btn--sm" type="button" @click="duplicate(template)">Копировать</button><button class="btn btn--danger btn--sm" type="button" @click="remove(template)">Удалить</button></div>
     </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -319,8 +361,8 @@ onMounted(load)
   user-select: none;
   -webkit-user-select: none;
   width: 100%;
-  max-width: 420px;
-  height: 160px;
+  max-width: 300px;
+  height: 110px;
   border: 1px dashed #8a8aa3;
   border-radius: 10px;
   background-color: #fafafa;
@@ -372,4 +414,7 @@ onMounted(load)
 .card-canvas__handle--e { right: -5px; top: calc(50% - 4.5px); cursor: ew-resize; }
 .card-canvas__handle--w { left: -5px; top: calc(50% - 4.5px); cursor: ew-resize; }
 .field-row--active { outline: 1px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+.admin-layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 12px; align-items: start; }
+.admin-layout__main { min-width: 0; }
+@media (max-width: 760px) { .admin-layout { grid-template-columns: 1fr; } }
 </style>

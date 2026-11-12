@@ -46,7 +46,7 @@ public class SystemUserInitializer implements CommandLineRunner {
             user.setCreatedAt(Instant.now());
             log.info("Создана служебная учётка system");
         }
-        user.setDisplayName("Менеджер ссылок");
+        user.setDisplayName("Администратор");
         user.setPasswordHash(passwordEncoder.encode(systemPassword.trim()));
         user.setSuperuser(true);
         user.setEmailVerified(false);
