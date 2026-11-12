@@ -143,7 +143,7 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
             ViewUtils.setTextOrGone(binding.itemEntitySubtitle,
                     Labels.entitySubtitle(context, entity));
             // Пол — в конце строки: символ, а не отдельное слово.
-            boolean person = "HERO".equalsIgnoreCase(entity.kind) || "CHARACTER".equalsIgnoreCase(entity.kind);
+            boolean person = "CHARACTER".equalsIgnoreCase(entity.kind);
             ViewUtils.show(binding.itemEntityLifeDot, person);
             if (person) {
                 int color = "alive".equalsIgnoreCase(entity.lifeStatus) ? R.color.life_alive_color

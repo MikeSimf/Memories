@@ -80,6 +80,7 @@ export function objectFromDto<C extends ObjectClass>(
         ...local,
         objectType: 'HERO',
         race: hero.race ?? null,
+        alive: hero.alive ?? null,
         gender: hero.gender ?? null,
         klass: hero.klass ?? null,
         playerUserId: hero.playerUserId ?? null,
@@ -93,6 +94,7 @@ export function objectFromDto<C extends ObjectClass>(
         ...local,
         objectType: 'CHARACTER',
         race: character.race ?? null,
+        alive: character.alive ?? null,
         gender: character.gender ?? null,
         klass: character.klass ?? null,
         shortDescription: character.shortDescription ?? null,
@@ -109,6 +111,9 @@ export function objectFromDto<C extends ObjectClass>(
         ownerHeroName: item.ownerHeroName ?? null,
         ownerCharacterId: item.ownerCharacterId ?? null,
         ownerCharacterName: item.ownerCharacterName ?? null,
+        magic: item.magic ?? null,
+        hasSetting: item.hasSetting === true,
+        configuredHeroId: item.configuredHeroId ?? null,
       } as LocalObjectOf<C>
     }
     default: {

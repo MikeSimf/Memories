@@ -33,7 +33,7 @@ public class Character extends GameEntitySupport
 
     /** TRUE — жив, FALSE — мёртв, NULL — неизвестно. */
     @Column(nullable = true)
-    private Boolean alive;
+    private Boolean alive = Boolean.TRUE;
 
     /** Пол: female, male или unknown. */
     @Column(length = 16, nullable = false)

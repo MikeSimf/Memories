@@ -13,12 +13,18 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 65
-    latest-version-name: 1.0.64
+    latest-version-code: 67
+    latest-version-name: 1.0.66
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Истории может отправлять любой игрок"
+    notes: "Статус персонажей: жив по умолчанию, шарики только у персонажей"
     versions:
+      - version: "1.0.66"
+        date: "2026-11-12"
+        notes: "Живые персонажи и шарики только у персонажей"
+      - version: "1.0.65"
+        date: "2026-11-12"
+        notes: "Карточки отключены и вкладка Материалы"
       - version: "1.0.64"
         date: "2026-11-12"
         notes: "Истории от любого лица для всех игроков"

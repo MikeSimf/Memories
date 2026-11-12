@@ -95,7 +95,7 @@ const blocks = computed(() => props.template.blocks ?? [])
       </template>
       <template v-else>
         <span
-          v-if="block.field === 'name' && (object.objectType === 'HERO' || object.objectType === 'CHARACTER')"
+          v-if="block.field === 'name' && object.objectType === 'CHARACTER'"
           class="life-dot"
           :class="object.alive === true ? 'life-dot--alive' : object.alive === false ? 'life-dot--dead' : 'life-dot--unknown'"
         />

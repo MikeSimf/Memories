@@ -243,7 +243,7 @@ async function keepLocal(): Promise<void> {
             <div>
           <h1>
             <span
-              v-if="entity.objectType === 'HERO' || entity.objectType === 'CHARACTER'"
+              v-if="entity.objectType === 'CHARACTER'"
               class="life-dot"
               :class="entity.alive === true ? 'life-dot--alive' : entity.alive === false ? 'life-dot--dead' : 'life-dot--unknown'"
               :title="entity.alive === true ? 'жив' : entity.alive === false ? 'мёртв' : 'неизвестно'"

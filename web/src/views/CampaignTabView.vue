@@ -51,6 +51,7 @@ const query = ref('')
 const cardTemplates = ref<CardTemplateDto[]>([])
 const matchedCards = ref<Record<string, string>>({})
 const cardsReady = ref(false)
+const CARDS_ENABLED = false
 const tab = computed<TabKey>(() => {
   const fromProps = props.tab
   const fromRoute = typeof route.params.tab === 'string' ? route.params.tab : ''
@@ -123,6 +124,12 @@ function templateFor(object: LocalObject): CardTemplateDto | null {
 }
 
 async function loadCards(): Promise<void> {
+  if (!CARDS_ENABLED) {
+    cardTemplates.value = []
+    matchedCards.value = {}
+    cardsReady.value = true
+    return
+  }
   if (!campaign.campaignId) return
   cardsReady.value = false
   try {
@@ -277,7 +284,7 @@ const tabProgressLabel = computed(() =>
             <EntityAvatar :object="object" :size="40" />
             <h3 class="card__title">
               <span
-                v-if="object.objectType === 'HERO' || object.objectType === 'CHARACTER'"
+                v-if="object.objectType === 'CHARACTER'"
                 class="life-dot"
                 :class="object.alive === true ? 'life-dot--alive' : object.alive === false ? 'life-dot--dead' : 'life-dot--unknown'"
                 :title="object.alive === true ? 'жив' : object.alive === false ? 'мёртв' : 'неизвестно'"

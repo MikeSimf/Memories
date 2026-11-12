@@ -12,12 +12,12 @@ const sync = useSyncStore()
 
 /** Основные рабочие вкладки: персонажи, локации, предметы. */
 const tabs = [
-  { key: 'characters', label: 'Персонажи' },
-  { key: 'locations', label: 'Локации' },
-  { key: 'items', label: 'Предметы' },
-  { key: 'heroes', label: 'Герои' },
-  { key: 'retellings', label: 'Истории' },
-  { key: 'materials', label: 'Материалы' },
+  { key: 'characters', label: 'Персонажи', route: 'campaign-tab' },
+  { key: 'locations', label: 'Локации', route: 'campaign-tab' },
+  { key: 'items', label: 'Предметы', route: 'campaign-tab' },
+  { key: 'heroes', label: 'Герои', route: 'campaign-heroes' },
+  { key: 'retellings', label: 'Истории', route: 'campaign-retellings' },
+  { key: 'materials', label: 'Материалы', route: 'campaign-materials' },
 ] as const
 
 /** Дополнительных разделов в шапке больше нет. */
@@ -174,7 +174,7 @@ onBeforeUnmount(() => {
         :key="tab.key"
         class="tab"
         :class="{ 'tab--active': activeTab === tab.key }"
-        :to="{ name: 'campaign-tab', params: { campaignId, tab: tab.key } }"
+        :to="{ name: tab.route, params: { campaignId, tab: tab.key } }"
       >
         {{ tab.label }}
       </RouterLink>

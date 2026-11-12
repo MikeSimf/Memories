@@ -115,7 +115,8 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
         adapter = new EntityAdapter(this);
         binding.entityListRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.entityListRecycler.setAdapter(adapter);
-        loadCardTemplates(campaignId);
+        // Карточки временно отключены: работают стандартные карточки.
+        // loadCardTemplates(campaignId);
 
         setupSwipes();
         setupFilter();
