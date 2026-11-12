@@ -115,6 +115,7 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
         adapter = new EntityAdapter(this);
         binding.entityListRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.entityListRecycler.setAdapter(adapter);
+        loadCardTemplates(campaignId);
 
         setupSwipes();
         setupFilter();
@@ -269,6 +270,28 @@ public class EntityListFragment extends Fragment implements EntityAdapter.Listen
      * Влево — меню действий над одной записью, вправо — режим выбора.
      * Свайпы отключаются, пока идёт выбор: иначе жест конфликтует с нажатиями.
      */
+    private void loadCardTemplates(String campaignId) {
+        ru.dndmemory.App.container(requireContext()).apiService()
+                .cardTemplates(campaignId, "LIST")
+                .enqueue(new retrofit2.Callback<java.util.List<ru.dndmemory.data.remote.dto.CardTemplateDto>>() {
+                    @Override
+                    public void onResponse(@NonNull retrofit2.Call<java.util.List<ru.dndmemory.data.remote.dto.CardTemplateDto>> call,
+                                           @NonNull retrofit2.Response<java.util.List<ru.dndmemory.data.remote.dto.CardTemplateDto>> response) {
+                        if (!isAdded() || response.body() == null) return;
+                        java.util.Map<String, ru.dndmemory.data.remote.dto.CardTemplateDto> map = new java.util.HashMap<>();
+                        for (ru.dndmemory.data.remote.dto.CardTemplateDto template : response.body()) {
+                            if (template != null && template.id != null) map.put(template.id, template);
+                        }
+                        adapter.setTemplates(map);
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull retrofit2.Call<java.util.List<ru.dndmemory.data.remote.dto.CardTemplateDto>> call,
+                                          @NonNull Throwable t) {
+                    }
+                });
+    }
+
     private void setupSwipes() {
         ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(
                 0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {

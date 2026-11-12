@@ -75,6 +75,12 @@ public interface ApiService {
     @GET("api/app/versions")
     Call<java.util.List<AppVersionDto>> appVersions();
 
+    /** Шаблоны карточек списка для кампании. */
+    @GET("api/campaigns/{campaignId}/cards")
+    Call<java.util.List<ru.dndmemory.data.remote.dto.CardTemplateDto>> cardTemplates(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @retrofit2.http.Query("kind") String kind);
+
     /** Обратная связь: сообщение сохраняется на сервере. */
     @POST("api/feedback")
     Call<okhttp3.ResponseBody> sendFeedback(@Body ru.dndmemory.data.remote.dto.FeedbackRequest body);

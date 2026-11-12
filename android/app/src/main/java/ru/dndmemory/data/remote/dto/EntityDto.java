@@ -26,6 +26,7 @@ public class EntityDto {
     public Boolean magic;
     public Boolean hasSetting;
     public String configuredHeroId;
+    public String cardTemplateId;
     public java.util.List<ru.dndmemory.data.model.Attachment> files;
 
     public List<EntityLink> links = new ArrayList<>();

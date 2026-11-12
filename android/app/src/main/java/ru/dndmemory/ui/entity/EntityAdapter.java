@@ -15,7 +15,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import ru.dndmemory.R;
 import ru.dndmemory.data.local.entity.EntityRoom;
 import ru.dndmemory.data.model.EntityType;
+import ru.dndmemory.databinding.ItemCustomCardBinding;
 import ru.dndmemory.databinding.ItemEntityBinding;
+import ru.dndmemory.data.remote.dto.CardTemplateDto;
+import ru.dndmemory.data.remote.dto.CardBlockDto;
 import ru.dndmemory.ui.common.Labels;
 import ru.dndmemory.ui.common.TypeColors;
 import ru.dndmemory.ui.common.ViewUtils;
@@ -60,6 +63,17 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
     private final Listener listener;
     private final java.util.Set<String> selected = new java.util.HashSet<>();
     private boolean selectionMode;
+    private java.util.Map<String, CardTemplateDto> templates = java.util.Collections.emptyMap();
+
+    public void setTemplates(@NonNull java.util.Map<String, CardTemplateDto> value) {
+        templates = value;
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return templates.containsKey(getItem(position).cardTemplateId) ? 1 : 0;
+    }
 
     public EntityAdapter(@NonNull Listener listener) {
         super(DIFF);
@@ -155,6 +169,66 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
                 ViewUtils.show(binding.itemEntityStatus, true);
             } else {
                 ViewUtils.show(binding.itemEntityStatus, false);
+            }
+        }
+    }
+
+    /** Карточка, нарисованная по шаблону: блоки в абсолютных координатах. */
+    static final class CustomHolder extends RecyclerView.ViewHolder {
+        private final ItemCustomCardBinding binding;
+
+        CustomHolder(ItemCustomCardBinding binding) {
+            super(binding.getRoot());
+            this.binding = binding;
+        }
+
+        void bind(@NonNull EntityRoom entity, @Nullable CardTemplateDto template) {
+            binding.customCardRoot.removeAllViews();
+            if (template == null || template.blocks == null) return;
+            for (CardBlockDto block : template.blocks) {
+                if (block == null) continue;
+                if ("avatar".equals(block.field)) {
+                    android.widget.ImageView image = new android.widget.ImageView(itemView.getContext());
+                    image.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
+                    android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(
+                            Math.max(1, (int) block.width), Math.max(1, (int) block.height));
+                    params.leftMargin = (int) block.x;
+                    params.topMargin = (int) block.y;
+                    image.setLayoutParams(params);
+                    ru.dndmemory.ui.common.AvatarBinder.bind(itemView.getContext(), image, entity,
+                            ru.dndmemory.App.container(itemView.getContext()).okHttpClient());
+                    binding.customCardRoot.addView(image);
+                    continue;
+                }
+                android.widget.TextView text = new android.widget.TextView(itemView.getContext());
+                text.setTextSize(block.fontSize > 0 ? block.fontSize : 14);
+                text.setMaxLines(1);
+                text.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                android.widget.FrameLayout.LayoutParams params = new android.widget.FrameLayout.LayoutParams(
+                        Math.max(1, (int) block.width), Math.max(1, (int) block.height));
+                params.leftMargin = (int) block.x;
+                params.topMargin = (int) block.y;
+                text.setLayoutParams(params);
+                text.setText(cardValue(entity, block.field));
+                binding.customCardRoot.addView(text);
+            }
+        }
+
+        private String cardValue(@NonNull EntityRoom entity, @Nullable String field) {
+            if (field == null) return "";
+            Context context = itemView.getContext();
+            switch (field) {
+                case "name": return entity.name == null ? "" : entity.name;
+                case "type": return Labels.entityTypeText(context, entity.kind).toString();
+                case "race": return entity.race == null ? "" : entity.race;
+                case "klass": return entity.klass == null ? "" : entity.klass;
+                case "gender": return Labels.gender(context, entity.gender).toString();
+                case "alive": return Labels.lifeStatus(context, entity.lifeStatus).toString();
+                case "shortDescription": return entity.shortDescription == null ? "" : entity.shortDescription;
+                case "itemType": return entity.itemType == null ? "" : entity.itemType;
+                case "locationType": return entity.locationType == null ? "" : entity.locationType;
+                case "ownerName": return entity.ownerName == null ? "" : entity.ownerName;
+                default: return "";
             }
         }
     }
