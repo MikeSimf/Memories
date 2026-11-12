@@ -22,7 +22,10 @@ const existing = computed(() => (isEdit.value ? campaign.objectById(entityId.val
 const saving = ref(false)
 /** Класс объекта: при создании выбирается, при правке берётся у самой записи. */
 const objectClass = ref<ObjectClass>(initialClass())
-const form = ref<ObjectFormValues>(emptyObjectForm())
+const form = ref<ObjectFormValues>({
+  ...emptyObjectForm(),
+  alive: objectClass.value === 'HERO' || objectClass.value === 'CHARACTER' ? true : null,
+})
 
 function initialClass(): ObjectClass {
   const fromQuery = route.query.class

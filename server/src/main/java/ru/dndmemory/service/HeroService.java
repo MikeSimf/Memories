@@ -164,6 +164,11 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
         if (payload.has("gender")) {
             hero.setGender(gender(payload.get("gender")));
         }
+        if (payload.has("lifeStatus") && !payload.has("alive")) {
+            String life = text(payload.get("lifeStatus"));
+            hero.setAlive("alive".equals(life) ? Boolean.TRUE
+                    : ("dead".equals(life) ? Boolean.FALSE : null));
+        }
         if (payload.has("alive")) {
             com.fasterxml.jackson.databind.JsonNode alive = payload.get("alive");
             hero.setAlive(alive == null || alive.isNull() ? null : alive.asBoolean());
