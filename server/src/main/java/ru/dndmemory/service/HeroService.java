@@ -30,6 +30,7 @@ import java.util.UUID;
 public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
 
     private final HeroRepository heroRepository;
+    private final CampaignDictionaryService dictionaryService;
     private final HeroItemRepository heroItemRepository;
 
     public HeroService(HeroRepository heroRepository,
@@ -40,10 +41,12 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
                        ChangeRecorder changeRecorder,
                        ObjectIndexService objectIndexService,
                        ConflictRecorder conflictRecorder,
-                       ObjectMapper objectMapper) {
+                       ObjectMapper objectMapper,
+                       CampaignDictionaryService dictionaryService) {
         super(campaignRepository, memberRepository, permissionService, changeRecorder,
                 objectIndexService, conflictRecorder, objectMapper);
         this.heroRepository = heroRepository;
+        this.dictionaryService = dictionaryService;
         this.heroItemRepository = heroItemRepository;
     }
 
@@ -157,6 +160,10 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
         }
         if (payload.has("race")) {
             hero.setRace(text(payload.get("race")));
+            if (hero.getRace() != null
+                    && !dictionaryService.isEnabled(hero.getCampaignId(), CampaignDictionaryService.RACE, hero.getRace())) {
+                hero.setRace("Неизвестно");
+            }
         }
         if (payload.has("klass")) {
             hero.setKlass(text(payload.get("klass")));

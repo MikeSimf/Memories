@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
-import { errorMessage } from '@/api'
+import { dictionariesApi, errorMessage, type DictionaryEntryDto } from '@/api'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { clearCampaignData } from '@/db'
 import { useCampaignStore } from '@/stores/campaign'
@@ -22,6 +22,13 @@ const description = ref('')
 const saving = ref(false)
 const confirmDelete = ref(false)
 const busy = ref(false)
+const dictionaries = ref<DictionaryEntryDto[]>([])
+const dictionaryKind = ['RACE', 'ITEM_TYPE', 'LOCATION_TYPE'] as const
+const dictionaryTitles: Record<string, string> = {
+  RACE: 'Расы',
+  ITEM_TYPE: 'Типы предметов',
+  LOCATION_TYPE: 'Типы локаций',
+}
 
 watch(
   () => campaign.campaign,
@@ -37,6 +44,25 @@ watch(
 const canManage = computed(() => campaign.canManageCampaign)
 const canDelete = computed(() => campaign.canDeleteCampaign)
 const campaignId = computed(() => campaign.campaignId ?? '')
+
+watch(campaignId, () => { if (campaignId.value) void loadDictionaries() }, { immediate: true })
+
+async function loadDictionaries(): Promise<void> {
+  try {
+    dictionaries.value = await dictionariesApi.list(campaignId.value)
+  } catch (caught) {
+    ui.pushToast('error', errorMessage(caught))
+  }
+}
+
+async function toggleDictionary(kind: string, entry: DictionaryEntryDto): Promise<void> {
+  try {
+    await dictionariesApi.set(campaignId.value, kind, entry.name, !entry.enabled)
+    await loadDictionaries()
+  } catch (caught) {
+    ui.pushToast('error', errorMessage(caught))
+  }
+}
 
 async function save(): Promise<void> {
   saving.value = true
@@ -151,6 +177,27 @@ async function removeCampaign(): Promise<void> {
         Полная перезагрузка запрашивает snapshot кампании — это же действие выполняется
         автоматически, если журнал изменений на сервере уже скомпактирован.
       </p>
+    </div>
+
+    <div v-if="canManage" class="card stack">
+      <h2>Справочники</h2>
+      <p class="muted">Снятые галки скрывают значение при создании. Используемые значения снять нельзя.</p>
+      <div v-for="kind in dictionaryKind" :key="kind" class="stack stack--sm">
+        <strong>{{ dictionaryTitles[kind] }}</strong>
+        <label
+          v-for="entry in dictionaries.filter((item) => item.kind === kind)"
+          :key="entry.name"
+          class="row"
+        >
+          <input
+            type="checkbox"
+            :checked="entry.enabled"
+            :disabled="entry.used"
+            @change="toggleDictionary(kind, entry)"
+          />
+          {{ entry.name }} <span v-if="entry.used" class="faint">— используется</span>
+        </label>
+      </div>
     </div>
 
     <div v-if="canManage" class="card stack">

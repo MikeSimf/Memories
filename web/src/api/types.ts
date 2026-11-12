@@ -884,6 +884,14 @@ export interface CrashReportDto {
   createdAt: string
 }
 
+/** Значение справочника кампании. */
+export interface DictionaryEntryDto {
+  kind: string
+  name: string
+  enabled: boolean
+  used: boolean
+}
+
 /** Одна запись истории версий (`GET /api/app/versions`). */
 export interface AppVersionDto {
   version: string

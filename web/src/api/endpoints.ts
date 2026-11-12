@@ -50,6 +50,7 @@ import type {
   FeedbackDto,
   CrashReportDto,
   PasswordResetDto,
+  DictionaryEntryDto,
 } from './types'
 
 /** Список приходит страницей; «сырой» массив приводим к странице на всякий случай. */
@@ -471,6 +472,22 @@ export const crashesApi = {
   },
 }
 
+/** Справочники кампании. */
+export const dictionariesApi = {
+  list(campaignId: string): Promise<DictionaryEntryDto[]> {
+    return apiClient.request<DictionaryEntryDto[]>({
+      path: `/api/campaigns/${encodeURIComponent(campaignId)}/dictionaries`,
+    })
+  },
+  set(campaignId: string, kind: string, name: string, enabled: boolean): Promise<void> {
+    return apiClient.request<void>({
+      method: 'PATCH',
+      path: `/api/campaigns/${encodeURIComponent(campaignId)}/dictionaries`,
+      body: { kind, name, enabled },
+    })
+  },
+}
+
 /** Админские ссылки на сброс пароля. */
 export const adminApi = {
   passwordResets(): Promise<PasswordResetDto[]> {
@@ -574,6 +591,7 @@ export const api = {
   app: appApi,
   feedback: feedbackApi,
   crashes: crashesApi,
+  dictionaries: dictionariesApi,
   admin: adminApi,
   races: racesApi,
   classes: classesApi,

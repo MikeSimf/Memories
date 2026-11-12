@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 
-import { classesApi, errorMessage, itemTypesApi, locationTypesApi, racesApi, uploadFile } from '@/api'
+import { classesApi, dictionariesApi, errorMessage, itemTypesApi, locationTypesApi, racesApi, uploadFile } from '@/api'
 import type { ObjectClass } from '@/api/types'
 import EntityImage from './EntityImage.vue'
 import TriStateField from './TriStateField.vue'
@@ -46,6 +46,18 @@ onMounted(async () => {
     classes.value = (await classesApi.list()).map((item) => item.name)
     locationTypes.value = (await locationTypesApi.list()).map((item) => item.name)
     itemTypes.value = (await itemTypesApi.list()).map((item) => item.name)
+    if (campaign.campaignId) {
+      const dict = await dictionariesApi.list(campaign.campaignId)
+      const enabled = (kind: string): Set<string> => new Set(
+        dict.filter((entry) => entry.kind === kind && entry.enabled).map((entry) => entry.name),
+      )
+      const racesOn = enabled('RACE')
+      const itemsOn = enabled('ITEM_TYPE')
+      const locationsOn = enabled('LOCATION_TYPE')
+      if (racesOn.size > 0) races.value = races.value.filter((name) => racesOn.has(name))
+      if (itemsOn.size > 0) itemTypes.value = itemTypes.value.filter((name) => itemsOn.has(name))
+      if (locationsOn.size > 0) locationTypes.value = locationTypes.value.filter((name) => locationsOn.has(name))
+    }
   } catch {
     // Без сети остаётся обычный ввод.
   }

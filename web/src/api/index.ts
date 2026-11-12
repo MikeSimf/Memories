@@ -18,6 +18,7 @@ export {
   appApi,
   feedbackApi,
   crashesApi,
+  dictionariesApi,
   adminApi,
   racesApi,
   classesApi,

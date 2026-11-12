@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 51
-    latest-version-name: 1.0.50
+    latest-version-code: 52
+    latest-version-name: 1.0.51
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Nullable-флаги: статус, магический, настройка артефакта"
+    notes: "Справочники кампании и передача владения"
     versions:
+      - version: "1.0.51"
+        date: "2026-11-12"
+        notes: "Справочники кампании и передача владения"
       - version: "1.0.50"
         date: "2026-11-12"
         notes: "Nullable-флаги и настройка артефактов"

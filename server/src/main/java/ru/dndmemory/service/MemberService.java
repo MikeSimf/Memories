@@ -146,9 +146,12 @@ public class MemberService {
         if (target.getId().equals(actor.getId())) {
             throw ApiException.validation("Вы уже владелец кампании");
         }
+        if (target.getRole() != MemberRole.EDITOR_MASTER) {
+            throw ApiException.validation("Передать кампанию можно только мастеру");
+        }
         target.setRole(MemberRole.OWNER);
         target.setUpdatedAt(Instant.now());
-        actor.setRole(MemberRole.EDITOR_MASTER);
+        actor.setRole(MemberRole.EDITOR_HERO);
         actor.setUpdatedAt(Instant.now());
         campaign.setOwnerUserId(target.getUserId());
         campaign.setUpdatedAt(Instant.now());

@@ -20,6 +20,7 @@ import java.util.UUID;
 public class LocationService extends AbstractObjectService<Location, LocationDtos.LocationDto> {
 
     private final LocationRepository locationRepository;
+    private final CampaignDictionaryService dictionaryService;
 
     public LocationService(LocationRepository locationRepository,
                            CampaignRepository campaignRepository,
@@ -28,10 +29,12 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
                            ChangeRecorder changeRecorder,
                            ObjectIndexService objectIndexService,
                            ConflictRecorder conflictRecorder,
-                           ObjectMapper objectMapper) {
+                           ObjectMapper objectMapper,
+                       CampaignDictionaryService dictionaryService) {
         super(campaignRepository, memberRepository, permissionService, changeRecorder,
                 objectIndexService, conflictRecorder, objectMapper);
         this.locationRepository = locationRepository;
+        this.dictionaryService = dictionaryService;
     }
 
     @Override
@@ -99,6 +102,10 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
         }
         if (payload.has("locationType")) {
             location.setLocationType(text(payload.get("locationType")));
+            if (location.getLocationType() != null
+                    && !dictionaryService.isEnabled(location.getCampaignId(), CampaignDictionaryService.LOCATION_TYPE, location.getLocationType())) {
+                location.setLocationType("Неизвестно");
+            }
         }
         if (payload.has("description")) {
             location.setDescription(text(payload.get("description")));

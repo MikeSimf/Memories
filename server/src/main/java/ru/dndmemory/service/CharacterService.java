@@ -21,6 +21,7 @@ import java.util.UUID;
 public class CharacterService extends AbstractObjectService<Character, CharacterDtos.CharacterDto> {
 
     private final CharacterRepository characterRepository;
+    private final CampaignDictionaryService dictionaryService;
 
     public CharacterService(CharacterRepository characterRepository,
                             CampaignRepository campaignRepository,
@@ -29,10 +30,12 @@ public class CharacterService extends AbstractObjectService<Character, Character
                             ChangeRecorder changeRecorder,
                             ObjectIndexService objectIndexService,
                             ConflictRecorder conflictRecorder,
-                            ObjectMapper objectMapper) {
+                            ObjectMapper objectMapper,
+                       CampaignDictionaryService dictionaryService) {
         super(campaignRepository, memberRepository, permissionService, changeRecorder,
                 objectIndexService, conflictRecorder, objectMapper);
         this.characterRepository = characterRepository;
+        this.dictionaryService = dictionaryService;
     }
 
     @Override
@@ -122,6 +125,10 @@ public class CharacterService extends AbstractObjectService<Character, Character
         }
         if (payload.has("race")) {
             character.setRace(text(payload.get("race")));
+            if (character.getRace() != null
+                    && !dictionaryService.isEnabled(character.getCampaignId(), CampaignDictionaryService.RACE, character.getRace())) {
+                character.setRace("Неизвестно");
+            }
         }
         if (payload.has("klass")) {
             character.setKlass(text(payload.get("klass")));

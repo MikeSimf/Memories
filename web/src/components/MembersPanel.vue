@@ -56,6 +56,19 @@ async function submitAdd(): Promise<void> {
   }
 }
 
+async function transfer(memberId: string): Promise<void> {
+  if (!confirm('Передать кампанию этому мастеру? Вы станете игроком.')) return
+  busy.value = true
+  try {
+    await campaign.transferOwnership(memberId)
+    ui.pushToast('success', 'Кампания передана')
+  } catch (caught) {
+    ui.pushToast('error', errorMessage(caught))
+  } finally {
+    busy.value = false
+  }
+}
+
 async function changeRole(memberId: string, value: string): Promise<void> {
   busy.value = true
   try {
@@ -162,6 +175,16 @@ async function copy(text: string): Promise<void> {
             @update:model-value="changeHero(member.id, $event)"
           />
         </div>
+
+        <button
+          v-if="canManage && member.role === 'EDITOR_MASTER' && campaign.campaign?.myRole === 'OWNER'"
+          class="btn btn--sm"
+          type="button"
+          :disabled="busy"
+          @click="transfer(member.id)"
+        >
+          Передать кампанию
+        </button>
 
         <button
           v-if="canManage"

@@ -21,6 +21,7 @@ import java.util.UUID;
 public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
 
     private final ItemRepository itemRepository;
+    private final CampaignDictionaryService dictionaryService;
 
     public ItemService(ItemRepository itemRepository,
                        CampaignRepository campaignRepository,
@@ -29,10 +30,12 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
                        ChangeRecorder changeRecorder,
                        ObjectIndexService objectIndexService,
                        ConflictRecorder conflictRecorder,
-                       ObjectMapper objectMapper) {
+                       ObjectMapper objectMapper,
+                       CampaignDictionaryService dictionaryService) {
         super(campaignRepository, memberRepository, permissionService, changeRecorder,
                 objectIndexService, conflictRecorder, objectMapper);
         this.itemRepository = itemRepository;
+        this.dictionaryService = dictionaryService;
     }
 
     @Override
@@ -116,6 +119,10 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
         }
         if (payload.has("itemType")) {
             item.setItemType(text(payload.get("itemType")));
+            if (item.getItemType() != null
+                    && !dictionaryService.isEnabled(item.getCampaignId(), CampaignDictionaryService.ITEM_TYPE, item.getItemType())) {
+                item.setItemType("Неизвестно");
+            }
         }
         if (payload.has("description")) {
             item.setDescription(text(payload.get("description")));

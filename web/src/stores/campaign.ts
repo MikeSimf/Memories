@@ -1063,6 +1063,14 @@ export const useCampaignStore = defineStore('campaign', () => {
     await updateMember(memberId, { role })
   }
 
+  /** Передача владения мастеру: бывший владелец становится игроком. */
+  async function transferOwnership(memberId: string): Promise<void> {
+    const id = requireCampaignId()
+    await membersApi.transferOwnership(id, memberId)
+    await reloadMembers()
+    await reload()
+  }
+
   /** Привязка участника к герою: `linkedHeroId` вместо прежнего `linkedEntityId`. */
   async function linkMemberToHero(memberId: string, linkedHeroId: string | null): Promise<void> {
     await updateMember(memberId, { linkedHeroId })
@@ -1173,6 +1181,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     updateMember,
     removeMember,
     changeRole,
+    transferOwnership,
     linkMemberToHero,
     reloadInvites,
     createInvite,
