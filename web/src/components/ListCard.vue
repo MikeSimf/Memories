@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 import type { CardTemplateDto } from '@/api'
 import type { LocalObject } from '@/db/schema'
+import EntityImage from '@/components/EntityImage.vue'
 import { classIconUrl } from '@/ui/classIcons'
 import { typeIconPath } from '@/ui/typeIcons'
 import { genderLabel } from '@/types/gender'
@@ -64,7 +65,7 @@ const blocks = computed(() => props.template.blocks ?? [])
     >
       <template v-if="block.field === 'text' || block.text">{{ block.text }}</template>
       <template v-else-if="block.field === 'avatar'">
-        <img v-if="object.avatarFileId" class="custom-card__avatar" :src="`/api/files/${object.avatarFileId}`" alt="" />
+        <EntityImage v-if="object.avatarFileId" class="custom-card__avatar" :file-id="object.avatarFileId" alt="" />
       </template>
       <template v-else-if="block.display === 'ICON'">
         <svg

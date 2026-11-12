@@ -2,6 +2,8 @@
 import { onMounted, ref } from 'vue'
 
 import { cardsApi, errorMessage, type CardTemplateDto } from '@/api'
+import { classIconUrl } from '@/ui/classIcons'
+import { typeIconPath } from '@/ui/typeIcons'
 import type { ObjectClass } from '@/api/types'
 
 const templates = ref<CardTemplateDto[]>([])
@@ -90,8 +92,18 @@ function stopDrag(): void {
   window.removeEventListener('pointermove', onDrag)
 }
 
-function iconValue(field: string): string {
-  return { race: '🧝', klass: '✦', gender: '♀', alive: '♥', type: '◆', itemType: '⚔', ownerName: '♜', avatar: '▣' }[field] ?? '◆'
+function previewIconKind(field: string): 'RACE' | 'LOCATION' | 'ITEM' | null {
+  if (field === 'race') return 'RACE'
+  if (field === 'locationType') return 'LOCATION'
+  if (field === 'itemType') return 'ITEM'
+  return null
+}
+
+function previewIconValue(field: string): string {
+  if (field === 'race') return 'Эльф'
+  if (field === 'locationType') return 'Город'
+  if (field === 'itemType') return 'Артефакт'
+  return ''
 }
 
 function blockValue(field: string): string {
@@ -223,8 +235,31 @@ onMounted(load)
           @pointerdown.prevent="selectAndDrag(index, $event, 'move')"
         >
           <template v-if="block.field === 'text' || block.text">{{ block.text }}</template>
-          <template v-else-if="block.field === 'avatar'">аватар</template>
-          <template v-else-if="block.display === 'ICON'">{{ iconValue(block.field) }}</template>
+          <template v-else-if="block.field === 'avatar'">
+            <img class="card-canvas__avatar" src="/icons/icon-192.svg" alt="аватар" />
+          </template>
+          <template v-else-if="block.display === 'ICON'">
+            <svg
+              v-if="previewIconKind(block.field)"
+              class="card-canvas__icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path :d="typeIconPath(previewIconKind(block.field)!, previewIconValue(block.field))" />
+            </svg>
+            <span
+              v-else-if="block.field === 'klass'"
+              class="card-canvas__mask"
+              :style="{ maskImage: 'url(' + classIconUrl('Волшебник') + ')', WebkitMaskImage: 'url(' + classIconUrl('Волшебник') + ')' }"
+            />
+            <span v-else-if="block.field === 'gender'">♀</span>
+            <span v-else-if="block.field === 'alive'">♥</span>
+            <span v-else>◆</span>
+          </template>
           <template v-else>{{ blockValue(block.field) }}</template>
           <span
             v-for="corner in corners"
@@ -317,6 +352,9 @@ onMounted(load)
   box-shadow: 0 0 0 1px var(--accent);
   background: rgba(79, 195, 247, .3);
 }
+.card-canvas__avatar { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.card-canvas__icon { width: 100%; height: 100%; max-width: 26px; max-height: 26px; }
+.card-canvas__mask { width: 100%; height: 100%; max-width: 24px; max-height: 24px; background: currentColor; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
 .card-canvas__handle {
   position: absolute;
   width: 9px;
