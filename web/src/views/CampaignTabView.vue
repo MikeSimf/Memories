@@ -276,6 +276,12 @@ const tabProgressLabel = computed(() =>
           <div class="row card__head">
             <EntityAvatar :object="object" :size="40" />
             <h3 class="card__title">
+              <span
+                v-if="object.objectType === 'HERO' || object.objectType === 'CHARACTER'"
+                class="life-dot"
+                :class="object.alive === true ? 'life-dot--alive' : object.alive === false ? 'life-dot--dead' : 'life-dot--unknown'"
+                :title="object.alive === true ? 'жив' : object.alive === false ? 'мёртв' : 'неизвестно'"
+              />
               {{ object.name }}
               <span v-if="object.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />
             </h3>
@@ -363,4 +369,8 @@ const tabProgressLabel = computed(() =>
 .search-summary {
   min-height: 28px;
 }
+.life-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.life-dot--alive { background: #2e7d32; box-shadow: 0 0 0 2px rgba(46,125,50,.22); }
+.life-dot--dead { background: #c62828; box-shadow: 0 0 0 2px rgba(198,40,40,.22); }
+.life-dot--unknown { background: #8a8a8a; box-shadow: 0 0 0 2px rgba(138,138,138,.22); }
 </style>

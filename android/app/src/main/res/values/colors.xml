@@ -39,6 +39,7 @@
     <!-- Бейджи -->
     <color name="badge_dirty">#B36B00</color>
     <color name="badge_conflict">#C62828</color>
+    <color name="life_alive_color">#2E7D32</color>
     <color name="badge_published">#2E7D32</color>
 
     <!-- Пустое состояние и подписи -->

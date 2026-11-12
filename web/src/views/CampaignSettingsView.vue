@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { dictionariesApi, errorMessage, type DictionaryEntryDto } from '@/api'
+import MembersPanel from '@/components/MembersPanel.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { clearCampaignData } from '@/db'
 import { useCampaignStore } from '@/stores/campaign'
@@ -178,6 +179,8 @@ async function removeCampaign(): Promise<void> {
         автоматически, если журнал изменений на сервере уже скомпактирован.
       </p>
     </div>
+
+    <MembersPanel />
 
     <div v-if="canManage" class="card stack">
       <h2>Справочники</h2>

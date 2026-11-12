@@ -242,6 +242,12 @@ async function keepLocal(): Promise<void> {
             </button>
             <div>
           <h1>
+            <span
+              v-if="entity.objectType === 'HERO' || entity.objectType === 'CHARACTER'"
+              class="life-dot"
+              :class="entity.alive === true ? 'life-dot--alive' : entity.alive === false ? 'life-dot--dead' : 'life-dot--unknown'"
+              :title="entity.alive === true ? 'жив' : entity.alive === false ? 'мёртв' : 'неизвестно'"
+            />
             {{ entity.name }}
             <span v-if="entity.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />
             <span v-if="personGender" class="entity-gender" title="Пол">{{ personGender }}</span>
@@ -546,4 +552,8 @@ async function keepLocal(): Promise<void> {
   color: var(--text-muted);
 }
 .avatar-open { padding: 0; border: 0; background: none; cursor: zoom-in; width: 64px; height: 64px; flex: none; }
+.life-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+.life-dot--alive { background: #2e7d32; box-shadow: 0 0 0 2px rgba(46,125,50,.22); }
+.life-dot--dead { background: #c62828; box-shadow: 0 0 0 2px rgba(198,40,40,.22); }
+.life-dot--unknown { background: #8a8a8a; box-shadow: 0 0 0 2px rgba(138,138,138,.22); }
 </style>

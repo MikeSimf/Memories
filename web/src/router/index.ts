@@ -112,7 +112,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         // Три вкладки объектов: персонажи (герои и НПС вместе), локации, предметы.
-        path: ':tab(characters|locations|items)',
+        path: ':tab(characters|locations|items|heroes|retellings|materials)',
         name: 'campaign-tab',
         component: () => import('@/views/CampaignTabView.vue'),
       },

@@ -93,7 +93,14 @@ const blocks = computed(() => props.template.blocks ?? [])
         </span>
         <span v-else-if="block.field === 'type'" class="custom-card__icon-text">◆</span>
       </template>
-      <template v-else>{{ value(block.field) }}</template>
+      <template v-else>
+        <span
+          v-if="block.field === 'name' && (object.objectType === 'HERO' || object.objectType === 'CHARACTER')"
+          class="life-dot"
+          :class="object.alive === true ? 'life-dot--alive' : object.alive === false ? 'life-dot--dead' : 'life-dot--unknown'"
+        />
+        {{ value(block.field) }}
+      </template>
     </div>
   </div>
 </template>
@@ -113,4 +120,8 @@ const blocks = computed(() => props.template.blocks ?? [])
   -webkit-mask: center / contain no-repeat;
   mask: center / contain no-repeat;
 }
+.life-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; flex: none; }
+.life-dot--alive { background: #2e7d32; box-shadow: 0 0 0 2px rgba(46,125,50,.22); }
+.life-dot--dead { background: #c62828; box-shadow: 0 0 0 2px rgba(198,40,40,.22); }
+.life-dot--unknown { background: #8a8a8a; box-shadow: 0 0 0 2px rgba(138,138,138,.22); }
 </style>
