@@ -489,6 +489,21 @@ export const cardsApi = {
   remove(id: string): Promise<void> {
     return apiClient.request<void>({ method: 'DELETE', path: `/api/admin/cards/${id}` })
   },
+  forCampaign(campaignId: string, kind = 'LIST'): Promise<CardTemplateDto[]> {
+    return apiClient.request<CardTemplateDto[]>({
+      path: `/api/campaigns/${encodeURIComponent(campaignId)}/cards?kind=${kind}`,
+    })
+  },
+  match(
+    campaignId: string,
+    requests: Array<{ objectType: string; kind: string; fields: Record<string, unknown> }>,
+  ): Promise<Array<string | null>> {
+    return apiClient.request<Array<string | null>>({
+      method: 'POST',
+      path: `/api/campaigns/${encodeURIComponent(campaignId)}/cards/match`,
+      body: requests,
+    })
+  },
 }
 
 /** Справочники кампании. */

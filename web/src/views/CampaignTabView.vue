@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import {
@@ -11,10 +11,12 @@ import {
 import type { LocalObject } from '@/db/schema'
 import EmptyState from '@/components/EmptyState.vue'
 import EntityAvatar from '@/components/EntityAvatar.vue'
+import ListCard from '@/components/ListCard.vue'
 import MembersPanel from '@/components/MembersPanel.vue'
 import SearchBox from '@/components/SearchBox.vue'
 import { genderSymbol } from '@/types/gender'
 import { matchesText, objectMatchesQuery } from '@/db/search'
+import { cardsApi, type CardTemplateDto } from '@/api'
 import { useCampaignStore } from '@/stores/campaign'
 import { formatDate, formatRelative } from '@/utils/datetime'
 
@@ -46,6 +48,8 @@ const route = useRoute()
 const campaign = useCampaignStore()
 
 const query = ref('')
+const cardTemplates = ref<CardTemplateDto[]>([])
+const matchedCards = ref<Record<string, string>>({})
 const tab = computed<TabKey>(() => {
   const fromProps = props.tab
   const fromRoute = typeof route.params.tab === 'string' ? route.params.tab : ''
@@ -100,6 +104,54 @@ const sectionTitle = computed(() => {
 const createClasses = computed<ObjectClass[]>(() =>
   objectClasses.value ? objectClasses.value.filter((cls) => campaign.canCreate(cls)) : [],
 )
+
+function objectFields(object: LocalObject): Record<string, unknown> {
+  const row = object as unknown as Record<string, unknown>
+  return {
+    name: row.name, objectType: row.objectType, type: row.objectType,
+    race: row.race, klass: row.klass, gender: row.gender, alive: row.alive,
+    shortDescription: row.shortDescription, itemType: row.itemType,
+    locationType: row.locationType, magic: row.magic,
+    hasSetting: row.hasSetting, ownerName: row.ownerName,
+  }
+}
+
+function templateFor(object: LocalObject): CardTemplateDto | null {
+  const id = matchedCards.value[object.id]
+  return id ? cardTemplates.value.find((item) => item.id === id) ?? null : null
+}
+
+async function loadCards(): Promise<void> {
+  if (!campaign.campaignId) return
+  try {
+    const templates = await cardsApi.forCampaign(campaign.campaignId)
+    cardTemplates.value = templates
+    if (templates.length === 0) {
+      matchedCards.value = {}
+      return
+    }
+    const objects = filteredObjects.value
+    if (objects.length === 0) {
+      matchedCards.value = {}
+      return
+    }
+    const ids = await cardsApi.match(
+      campaign.campaignId,
+      objects.map((object) => ({ objectType: object.objectType, kind: 'LIST', fields: objectFields(object) })),
+    )
+    const next: Record<string, string> = {}
+    objects.forEach((object, index) => {
+      if (ids[index]) next[object.id] = ids[index] as string
+    })
+    matchedCards.value = next
+  } catch {
+    cardTemplates.value = []
+    matchedCards.value = {}
+  }
+}
+
+watch(filteredObjects, () => { void loadCards() })
+onMounted(() => { void loadCards() })
 
 /** Полоска слева: тип виден сразу, ещё до чтения бейджа. */
 function typeCardClass(object: LocalObject): string {
@@ -211,6 +263,8 @@ const tabProgressLabel = computed(() =>
           :class="typeCardClass(object)"
           :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: object.id } }"
         >
+          <ListCard v-if="templateFor(object)" :object="object" :template="templateFor(object)!" />
+          <template v-else>
           <span v-if="genderOf(object)" class="card__gender" title="Пол">
             {{ genderOf(object) }}
           </span>
@@ -229,6 +283,7 @@ const tabProgressLabel = computed(() =>
             <span v-if="object.conflict" class="badge badge--danger">расхождение</span>
             <span>{{ campaign.changeSummary(object) }}</span>
           </div>
+          </template>
         </RouterLink>
       </div>
     </template>
