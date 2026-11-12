@@ -196,6 +196,18 @@ public class EntityEditViewModel extends ViewModel {
     }
 
     /** Владелец предмета «как написано в мире». */
+    public void setMagic(@Nullable Boolean magic) {
+        if (draft != null) draft.magic = magic;
+    }
+
+    public void setHasSetting(boolean value) {
+        if (draft != null) draft.hasSetting = value;
+    }
+
+    public void setConfiguredHeroId(@Nullable String id) {
+        if (draft != null) draft.configuredHeroId = nullable(id);
+    }
+
     public void setOwnerName(@Nullable String ownerName) {
         if (draft != null) {
             draft.ownerName = nullable(ownerName);

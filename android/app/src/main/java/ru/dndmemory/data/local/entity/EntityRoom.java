@@ -56,6 +56,9 @@ public class EntityRoom {
     public String gender;
     public String lifeStatus;
     public String cardTemplateId;
+    public Boolean magic;
+    public boolean hasSetting;
+    public String configuredHeroId;
 
     /** Кто отыгрывает героя — ссылка на пользователя, необязательна. */
     public String playerUserId;

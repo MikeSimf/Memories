@@ -128,6 +128,9 @@ public final class Mappers {
         room.name = dto.name;
         room.gender = dto.gender;
         room.cardTemplateId = dto.cardTemplateId;
+        room.magic = dto.magic;
+        room.hasSetting = dto.hasSetting != null && dto.hasSetting;
+        room.configuredHeroId = dto.configuredHeroId;
         room.lifeStatus = dto.alive == null ? "unknown" : (dto.alive ? "alive" : "dead");
         room.description = dto.description;
         room.imageFileId = dto.imageFileId;
@@ -279,6 +282,9 @@ public final class Mappers {
         dto.gender = room.gender;
         dto.lifeStatus = room.lifeStatus;
         dto.cardTemplateId = room.cardTemplateId;
+        dto.magic = room.magic;
+        dto.hasSetting = room.hasSetting;
+        dto.configuredHeroId = room.configuredHeroId;
         dto.alive = "alive".equals(room.lifeStatus) ? Boolean.TRUE
                 : ("dead".equals(room.lifeStatus) ? Boolean.FALSE : null);
         dto.imageFileId = room.imageFileId;

@@ -222,6 +222,9 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
     }
 
     private String lifeStatus = "alive";
+    private Boolean itemMagic;
+    private boolean hasSetting;
+    private String configuredHeroId;
 
     private void renderLifeCheck() {
         int label;
@@ -633,6 +636,29 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
             binding.entityEditKlassInput.setText(draft.klass);
             binding.entityEditLocationType.setText(draft.locationType);
             binding.entityEditItemType.setText(draft.itemType);
+            itemMagic = draft.magic;
+            hasSetting = draft.hasSetting;
+            configuredHeroId = draft.configuredHeroId;
+            binding.entityEditMagicCheck.setOnClickListener(v -> {
+                itemMagic = itemMagic == null ? Boolean.TRUE : (itemMagic ? Boolean.FALSE : null);
+                renderArtifactFields();
+            });
+            binding.entityEditHasSettingCheck.setChecked(hasSetting);
+            binding.entityEditHasSettingCheck.setOnCheckedChangeListener((button, checked) -> {
+                hasSetting = checked;
+                renderArtifactFields();
+            });
+            java.util.List<String> heroNames = new java.util.ArrayList<>();
+            for (EntityRoom heroEntity : ownerCandidates(EntityType.HERO)) heroNames.add(displayName(heroEntity));
+            ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditConfiguredHero, heroNames);
+            EntityRoom configured = ownerById(configuredHeroId);
+            binding.entityEditConfiguredHero.setText(configured == null ? "" : displayName(configured), false);
+            binding.entityEditConfiguredHero.setOnItemClickListener((parent, view, position, id) -> {
+                Object chosen = parent.getItemAtPosition(position);
+                EntityRoom chosenHero = ownerByName(chosen == null ? null : chosen.toString());
+                configuredHeroId = chosenHero == null ? null : chosenHero.id;
+            });
+            renderArtifactFields();
             binding.entityEditShortInput.setText(draft.shortDescription);
             binding.entityEditNameInput.setText(draft.name);
             binding.entityEditDescriptionInput.setText(draft.description);
@@ -715,6 +741,40 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         EntityRoom owner = ownerById(currentId);
         selectedOwnerId = owner == null ? null : owner.id;
         binding.entityEditOwnerLink.setText(owner == null ? "" : displayName(owner), false);
+    }
+
+    private void renderArtifactFields() {
+        boolean artifact = "Артефакт".equalsIgnoreCase(text(binding.entityEditItemType.getText()));
+        ViewUtils.show(binding.entityEditMagicLabel, artifact);
+        ViewUtils.show(binding.entityEditMagicCheck, artifact);
+        ViewUtils.show(binding.entityEditHasSettingCheck, artifact);
+        ViewUtils.show(binding.entityEditConfiguredGroup, artifact && hasSetting);
+        if (!artifact) {
+            itemMagic = null;
+            hasSetting = false;
+            configuredHeroId = null;
+        }
+        if (artifact) {
+            int label;
+            int icon;
+            boolean checked;
+            if (itemMagic == null) {
+                label = R.string.item_magic_unknown;
+                icon = R.drawable.life_check_unknown;
+                checked = false;
+            } else if (itemMagic) {
+                label = R.string.item_magic_yes;
+                icon = R.drawable.life_check_alive;
+                checked = true;
+            } else {
+                label = R.string.item_magic_no;
+                icon = R.drawable.life_check_dead;
+                checked = false;
+            }
+            binding.entityEditMagicCheck.setText(label);
+            binding.entityEditMagicCheck.setButtonDrawable(icon);
+            binding.entityEditMagicCheck.setChecked(checked);
+        }
     }
 
     /** Подсказки владельца: имена героев и персонажей кампании. */
@@ -889,6 +949,10 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
             viewModel.setLocationType(text(binding.entityEditLocationType.getText()));
         } else if (currentKind == EntityType.ITEM) {
             viewModel.setItemType(text(binding.entityEditItemType.getText()));
+            boolean artifact = "Артефакт".equalsIgnoreCase(text(binding.entityEditItemType.getText()));
+            viewModel.setMagic(artifact ? itemMagic : null);
+            viewModel.setHasSetting(artifact && hasSetting);
+            viewModel.setConfiguredHeroId(artifact && hasSetting ? configuredHeroId : null);
             String ownerText = text(binding.entityEditOwnerLink.getText());
             EntityRoom owner = ownerByName(ownerText);
             viewModel.setOwnerLink(owner);

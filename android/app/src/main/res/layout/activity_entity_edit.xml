@@ -187,6 +187,45 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Только предмет: один владелец, сразу ссылка на героя/персонажа -->
+            <!-- Артефакт: магический, настройка и настроен на героя -->
+            <TextView
+                android:id="@+id/entity_edit_magic_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/item_magic"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:visibility="gone" />
+
+            <CheckBox
+                android:id="@+id/entity_edit_magic_check"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/item_magic_unknown"
+                android:visibility="gone" />
+
+            <CheckBox
+                android:id="@+id/entity_edit_has_setting_check"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/item_has_setting"
+                android:visibility="gone" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/entity_edit_configured_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/item_configured_hero"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                    android:id="@+id/entity_edit_configured_hero"
+                    style="@style/Widget.Material3.AutoCompleteTextView.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
+
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/entity_edit_owner_link_group"
                 android:layout_width="match_parent"
