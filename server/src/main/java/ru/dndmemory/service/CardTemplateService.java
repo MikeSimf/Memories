@@ -30,6 +30,7 @@ public class CardTemplateService {
         public float width;
         public float height;
         public float fontSize;
+        public int sortOrder;
     }
 
     public static class CardDto {
@@ -135,6 +136,7 @@ public class CardTemplateService {
             item.width = block.getWidth();
             item.height = block.getHeight();
             item.fontSize = block.getFontSize();
+            item.sortOrder = block.getSortOrder();
             dto.blocks.add(item);
         }
         return dto;

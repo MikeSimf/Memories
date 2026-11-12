@@ -112,6 +112,52 @@ async function remove(template: CardTemplateDto): Promise<void> {
   }
 }
 
+function exportJson(): void {
+  const blob = new Blob([JSON.stringify(templates.value, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'card-templates.json'
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+async function importJson(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  try {
+    const data = JSON.parse(await file.text()) as CardTemplateDto[]
+    for (const item of data) {
+      await cardsApi.save({ ...item, id: undefined })
+    }
+    await load()
+  } catch (caught) {
+    error.value = errorMessage(caught)
+  }
+}
+
+function duplicate(template: CardTemplateDto): void {
+  editing.value = { ...JSON.parse(JSON.stringify(template)), id: undefined, name: `${template.name} (копия)` }
+}
+
+async function createDefaults(): Promise<void> {
+  const base = (objectType: CardTemplateDto['objectType'], label: string): Partial<CardTemplateDto> => ({
+    name: `Стандартная: ${label}`, objectType, kind: 'LIST', formula: 'true', priority: 0, isDefault: false,
+    blocks: [
+      { field: 'avatar', display: 'ICON', x: 8, y: 8, width: 48, height: 48, fontSize: 14 },
+      { field: 'name', display: 'TEXT', x: 64, y: 6, width: 220, height: 26, fontSize: 16 },
+      { field: 'race', display: 'TEXT', x: 64, y: 34, width: 180, height: 20, fontSize: 13 },
+      { field: 'type', display: 'TEXT', x: 64, y: 58, width: 180, height: 18, fontSize: 12 },
+    ],
+  })
+  for (const [type, label] of [['CHARACTER','Персонаж'],['HERO','Герой'],['LOCATION','Локация'],['ITEM','Предмет']] as const) {
+    await cardsApi.save(base(type, label))
+  }
+  await load()
+}
+
 async function load(): Promise<void> {
   try {
     templates.value = await cardsApi.list()
@@ -131,6 +177,9 @@ onMounted(load)
         <div class="page-header__subtitle">Шаблоны, условия и приоритеты</div>
       </div>
       <button class="btn btn--primary" type="button" @click="edit()">Новая карточка</button>
+      <button class="btn btn--sm" type="button" @click="createDefaults">Создать стандартные</button>
+      <button class="btn btn--sm" type="button" @click="exportJson">Выгрузить JSON</button>
+      <label class="btn btn--sm">Загрузить JSON<input type="file" accept="application/json" hidden @change="importJson" /></label>
       <RouterLink class="btn btn--sm" :to="{ name: 'admin' }">Кабинет</RouterLink>
     </div>
     <p v-if="error" class="notice notice--danger">{{ error }}</p>
@@ -148,7 +197,7 @@ onMounted(load)
       <div class="field">
         <label class="field__label">Условие</label>
         <input v-model="editing.formula" class="input" placeholder="type = 'ARTEFACT' and magic = true" />
-        <span class="field__hint">Ошибка в формуле считается ложью. true — подходит всем.</span>
+        <span class="field__hint">Ошибка в формуле считается ложью. true — подходит всем. Пример: race = 'Эльф'</span>
       </div>
       <h3>Предпросмотр</h3>
       <p class="faint" style="margin: 0">
@@ -208,7 +257,8 @@ onMounted(load)
       <div class="row row--between"><strong>{{ template.name }}</strong><span class="badge">{{ template.objectType }}</span><span class="faint">приоритет {{ template.priority }}</span><span v-if="template.isDefault" class="badge badge--info">по умолчанию</span></div>
       <code>{{ template.formula }}</code>
       <div class="faint">полей: {{ template.blocks?.length ?? 0 }}</div>
-      <div class="row"><button class="btn btn--sm" type="button" @click="edit(template)">Изменить</button><button class="btn btn--danger btn--sm" type="button" @click="remove(template)">Удалить</button></div>
+      <div class="row"><button class="btn btn--sm" type="button" @click="edit(template)">Изменить</button>
+        <button class="btn btn--sm" type="button" @click="duplicate(template)">Копировать</button><button class="btn btn--danger btn--sm" type="button" @click="remove(template)">Удалить</button></div>
     </div>
   </div>
 </template>

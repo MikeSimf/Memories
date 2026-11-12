@@ -50,6 +50,7 @@ const campaign = useCampaignStore()
 const query = ref('')
 const cardTemplates = ref<CardTemplateDto[]>([])
 const matchedCards = ref<Record<string, string>>({})
+const cardsReady = ref(false)
 const tab = computed<TabKey>(() => {
   const fromProps = props.tab
   const fromRoute = typeof route.params.tab === 'string' ? route.params.tab : ''
@@ -123,6 +124,7 @@ function templateFor(object: LocalObject): CardTemplateDto | null {
 
 async function loadCards(): Promise<void> {
   if (!campaign.campaignId) return
+  cardsReady.value = false
   try {
     const templates = await cardsApi.forCampaign(campaign.campaignId)
     cardTemplates.value = templates
@@ -147,6 +149,8 @@ async function loadCards(): Promise<void> {
   } catch {
     cardTemplates.value = []
     matchedCards.value = {}
+  } finally {
+    cardsReady.value = true
   }
 }
 
@@ -241,8 +245,9 @@ const tabProgressLabel = computed(() =>
         </button>
       </div>
 
+      <div v-if="!cardsReady" class="loading"><span class="spinner" /> Готовим карточки…</div>
       <EmptyState
-        v-if="objects.length === 0"
+        v-else-if="objects.length === 0"
         :title="`Пока нет: ${sectionTitle.toLowerCase()}`"
         :hint="
           createClasses.length > 0
