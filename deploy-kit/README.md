@@ -468,3 +468,39 @@ curl -sI https://imikea.ru/ | head
 curl -s https://dnd-memory.imikea.ru/api/app/latest
 curl -s https://test-dnd-memory.imikea.ru/api/app/latest
 ```
+
+## Раздельные релизы prod и test
+
+Артефакты больше не лежат в одном релизе:
+
+- прод — тег `prod-v1.5`;
+- тест — тег `test-v1.0.63`.
+
+Прод-комплект содержит только `prod/` и `web-prod/`, тестовый — только `test/`
+и `web-test/`. Распаковка одного комплекта не затрагивает второй экземпляр.
+
+### Прод
+
+```bash
+cd /opt/dnd-memory
+sudo curl -fL -o /tmp/prod-kit.tar.gz \
+  https://github.com/MikeSimf/Memories/releases/download/prod-v1.5/dnd-memory-deploy-kit.tar.gz
+sudo tar xzf /tmp/prod-kit.tar.gz -C /opt/dnd-memory
+sudo curl -fL -o /tmp/prod.jar \
+  https://github.com/MikeSimf/Memories/releases/download/prod-v1.5/dnd-memory-server.jar
+sudo cp /tmp/prod.jar prod/app.jar
+sudo ./bin/dnd.sh prod restart
+```
+
+### Тест
+
+```bash
+cd /opt/dnd-memory
+sudo curl -fL -o /tmp/test-kit.tar.gz \
+  https://github.com/MikeSimf/Memories/releases/download/test-v1.0.63/dnd-memory-deploy-kit.tar.gz
+sudo tar xzf /tmp/test-kit.tar.gz -C /opt/dnd-memory
+sudo curl -fL -o /tmp/test.jar \
+  https://github.com/MikeSimf/Memories/releases/download/test-v1.0.63/dnd-memory-server.jar
+sudo cp /tmp/test.jar test/app.jar
+sudo ./bin/dnd.sh test restart
+```
