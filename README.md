@@ -40,6 +40,7 @@
 
 | Документ | О чём |
 |---|---|
+| [`docs/passport.md`](docs/passport.md) | Паспорт проекта: назначение, структура, контуры |
 | [`docs/getting-started.md`](docs/getting-started.md) | Как забрать код и открыть его в IntelliJ IDEA, Android Studio, VS Code |
 | [`docs/master-guide.md`](docs/master-guide.md) | Памятка мастера: роли, выдача доступа по QR, частые вопросы |
 | [`docs/architecture.md`](docs/architecture.md) | Архитектура и принятые решения |
