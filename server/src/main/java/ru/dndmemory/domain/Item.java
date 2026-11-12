@@ -36,6 +36,18 @@ public class Item extends GameEntitySupport
     @Column(name = "owner_character_id")
     private UUID ownerCharacterId;
 
+    /** TRUE / FALSE / NULL — магический ли предмет. */
+    @Column(nullable = true)
+    private Boolean magic;
+
+    /** Есть ли у предмета настройка (только артефакты). */
+    @Column(name = "has_setting", nullable = false)
+    private boolean hasSetting;
+
+    /** Герой, на которого настроен артефакт. */
+    @Column(name = "configured_hero_id")
+    private UUID configuredHeroId;
+
     @Override
     public String matchKey() {
         return normalizePart(getName());

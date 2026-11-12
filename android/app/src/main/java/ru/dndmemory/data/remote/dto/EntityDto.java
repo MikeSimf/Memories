@@ -22,6 +22,10 @@ public class EntityDto {
     public String avatarFileId;
     public String gender;
     public String lifeStatus;
+    public Boolean alive;
+    public Boolean magic;
+    public Boolean hasSetting;
+    public String configuredHeroId;
     public java.util.List<ru.dndmemory.data.model.Attachment> files;
 
     public List<EntityLink> links = new ArrayList<>();

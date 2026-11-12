@@ -482,11 +482,16 @@ export const useCampaignStore = defineStore('campaign', () => {
       ownerName: '',
       ownerHeroId: null,
       ownerCharacterId: null,
+      alive: null,
+      magic: null,
+      hasSetting: false,
+      configuredHeroId: null,
     }
     if (object.objectType === 'HERO') {
       return {
         ...base,
         race: object.race ?? '',
+        alive: object.alive ?? null,
         klass: object.klass ?? '',
         gender: object.gender ?? 'unknown',
         playerUserId: object.playerUserId,
@@ -520,6 +525,9 @@ export const useCampaignStore = defineStore('campaign', () => {
         ownerName: object.ownerName ?? '',
         ownerHeroId: object.ownerHeroId,
         ownerCharacterId: object.ownerCharacterId,
+        magic: object.magic ?? null,
+        hasSetting: object.hasSetting === true,
+        configuredHeroId: object.configuredHeroId ?? null,
       }
     }
     return base
@@ -672,6 +680,7 @@ export const useCampaignStore = defineStore('campaign', () => {
         objectType: 'HERO',
         race: optional(values.race),
         gender: optional(values.gender),
+        alive: values.alive,
         klass: optional(values.klass),
         playerUserId: values.playerUserId,
         playerName: playerNameFor(values.playerUserId),
@@ -686,6 +695,7 @@ export const useCampaignStore = defineStore('campaign', () => {
         objectType: 'CHARACTER',
         race: optional(values.race),
         gender: optional(values.gender),
+        alive: values.alive,
         klass: optional(values.klass),
         shortDescription: optional(values.shortDescription),
       }
@@ -707,6 +717,9 @@ export const useCampaignStore = defineStore('campaign', () => {
         ownerCharacterName: ownerCharacterId
           ? (objectById(ownerCharacterId)?.name ?? null)
           : null,
+        magic: values.magic,
+        hasSetting: values.hasSetting,
+        configuredHeroId: values.configuredHeroId,
       }
       item.links = linksFor([item.description])
       return item

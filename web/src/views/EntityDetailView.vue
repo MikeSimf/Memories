@@ -55,6 +55,9 @@ const details = computed<Array<{ label: string; value: string }>>(() => {
   if (item.objectType === 'ITEM') {
     return [
       { label: 'Тип предмета', value: item.itemType ?? 'Не заполнено' },
+      { label: 'Магический', value: item.magic === true ? 'да' : item.magic === false ? 'нет' : 'неизвестно' },
+      { label: 'Есть настройка', value: item.hasSetting ? 'да' : 'нет' },
+      { label: 'Настроен на героя', value: campaign.objectName(item.configuredHeroId ?? '') ?? '—' },
       { label: 'Владелец', value: item.ownerName ?? 'Не заполнено' },
       {
         label: 'Ссылка',
@@ -80,6 +83,7 @@ const personRows = computed(() => {
     { label: 'Раса', value: item.race || 'Не заполнено', icon: 'race' },
     { label: 'Класс', value: item.klass || 'Не заполнено', icon: 'class' },
     { label: 'Пол', value: genderLabel(item.gender), icon: 'gender' },
+    { label: 'Статус', value: item.alive === true ? 'жив' : item.alive === false ? 'мёртв' : 'неизвестно', icon: null },
   ]
   if (item.objectType === 'CHARACTER') {
     rows.push({ label: 'Кратко', value: item.shortDescription || 'Не заполнено', icon: null })

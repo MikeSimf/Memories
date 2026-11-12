@@ -97,7 +97,7 @@ public class CharacterService extends AbstractObjectService<Character, Character
                 .race(character.getRace())
                 .klass(character.getKlass())
                 .gender(character.getGender())
-                .lifeStatus(character.getLifeStatus())
+                .alive(character.getAlive())
                 .shortDescription(character.getShortDescription())
                 .build();
     }
@@ -129,9 +129,9 @@ public class CharacterService extends AbstractObjectService<Character, Character
         if (payload.has("gender")) {
             character.setGender(gender(payload.get("gender")));
         }
-        if (payload.has("lifeStatus")) {
-            String life = text(payload.get("lifeStatus"));
-            character.setLifeStatus("dead".equals(life) || "alive".equals(life) ? life : "unknown");
+        if (payload.has("alive")) {
+            com.fasterxml.jackson.databind.JsonNode alive = payload.get("alive");
+            character.setAlive(alive == null || alive.isNull() ? null : alive.asBoolean());
         }
         if (payload.has("shortDescription")) {
             character.setShortDescription(text(payload.get("shortDescription")));

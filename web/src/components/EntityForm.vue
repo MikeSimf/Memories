@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from 'vue'
 import { classesApi, errorMessage, itemTypesApi, locationTypesApi, racesApi, uploadFile } from '@/api'
 import type { ObjectClass } from '@/api/types'
 import EntityImage from './EntityImage.vue'
+import TriStateField from './TriStateField.vue'
 import MarkupText from './MarkupText.vue'
 import { useCampaignStore } from '@/stores/campaign'
 import { useUiStore } from '@/stores/ui'
@@ -381,6 +382,13 @@ function setOwnerCharacter(value: string): void {
           />
         </div>
       </div>
+      <TriStateField
+        label="Статус"
+        :model-value="modelValue.alive"
+        true-label="жив"
+        false-label="мёртв"
+        @update:model-value="patch({ alive: $event })"
+      />
       <span class="field__hint">По расе и краткому описанию тоже идёт поиск.</span>
     </template>
 
@@ -413,6 +421,40 @@ function setOwnerCharacter(value: string): void {
           <option v-for="item in itemTypes" :key="item" :value="item">{{ item }}</option>
         </select>
       </div>
+      <template v-if="modelValue.itemType === 'Артефакт'">
+        <TriStateField
+          label="Магический"
+          :model-value="modelValue.magic"
+          true-label="да"
+          false-label="нет"
+          @update:model-value="patch({ magic: $event })"
+        />
+        <div class="field">
+          <label class="field__label" for="item-has-setting">
+            <input
+              id="item-has-setting"
+              type="checkbox"
+              :checked="modelValue.hasSetting"
+              @change="patch({ hasSetting: ($event.target as HTMLInputElement).checked, configuredHeroId: ($event.target as HTMLInputElement).checked ? modelValue.configuredHeroId : null })"
+            />
+            Есть настройка
+          </label>
+        </div>
+        <div v-if="modelValue.hasSetting" class="field">
+          <label class="field__label" for="item-configured-hero">Настроен на героя</label>
+          <select
+            id="item-configured-hero"
+            class="select"
+            :value="modelValue.configuredHeroId ?? ''"
+            @change="patch({ configuredHeroId: ($event.target as HTMLSelectElement).value || null })"
+          >
+            <option value="">не выбран</option>
+            <option v-for="hero in campaign.activeObjects.filter((o) => o.objectType === 'HERO')" :key="hero.id" :value="hero.id">
+              {{ hero.name }}
+            </option>
+          </select>
+        </div>
+      </template>
       <div class="field">
         <label class="field__label" for="item-owner">Владелец</label>
         <input

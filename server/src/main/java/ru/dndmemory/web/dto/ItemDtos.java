@@ -28,6 +28,9 @@ public final class ItemDtos {
         private UUID ownerHeroId;
         private String ownerHeroName;
         private UUID ownerCharacterId;
+        private Boolean magic;
+        private Boolean hasSetting;
+        private UUID configuredHeroId;
         private String ownerCharacterName;
     }
 

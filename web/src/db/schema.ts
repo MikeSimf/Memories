@@ -69,6 +69,7 @@ export interface LocalHero extends LocalObjectBase {
   objectType: 'HERO'
   race: string | null
   gender: string | null
+  alive: boolean | null
   klass: string | null
   playerUserId: string | null
   playerName: string | null
@@ -80,6 +81,7 @@ export interface LocalCharacter extends LocalObjectBase {
   objectType: 'CHARACTER'
   race: string | null
   gender: string | null
+  alive: boolean | null
   klass: string | null
   shortDescription: string | null
 }
@@ -99,6 +101,9 @@ export interface LocalItem extends LocalObjectBase {
   ownerHeroName: string | null
   ownerCharacterId: string | null
   ownerCharacterName: string | null
+  magic: boolean | null
+  hasSetting: boolean
+  configuredHeroId: string | null
 }
 
 export type LocalObject = LocalHero | LocalCharacter | LocalLocation | LocalItem

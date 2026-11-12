@@ -410,6 +410,12 @@ export interface ObjectDto {
   imageFileId: string | null
   /** Аватар: отдельная картинка, не из галереи. */
   avatarFileId: string | null
+  /** TRUE — жив, FALSE — мёртв, NULL — неизвестно. */
+  alive?: boolean | null
+  /** TRUE / FALSE / NULL — магический предмет. */
+  magic?: boolean | null
+  hasSetting?: boolean
+  configuredHeroId?: string | null
   links: EntityLinkDto[]
   createdBy: string
   createdByName: string

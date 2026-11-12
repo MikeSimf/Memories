@@ -37,6 +37,11 @@ export interface ObjectFormValues {
   ownerName: string
   ownerHeroId: string | null
   ownerCharacterId: string | null
+  /** TRUE / FALSE / NULL. */
+  alive: boolean | null
+  magic: boolean | null
+  hasSetting: boolean
+  configuredHeroId: string | null
 }
 
 /** Значения формы пересказа. */
@@ -70,6 +75,10 @@ export function emptyObjectForm(name = ''): ObjectFormValues {
     ownerName: '',
     ownerHeroId: null,
     ownerCharacterId: null,
+    alive: null,
+    magic: null,
+    hasSetting: false,
+    configuredHeroId: null,
   }
 }
 

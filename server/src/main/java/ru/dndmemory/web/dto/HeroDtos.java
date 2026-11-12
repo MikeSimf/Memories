@@ -40,7 +40,7 @@ public final class HeroDtos {
         private String race;
         private String klass;
         private String gender;
-        private String lifeStatus;
+        private Boolean alive;
         private UUID playerUserId;
         private String playerName;
         private List<HeroItemDto> items;
@@ -88,7 +88,7 @@ public final class HeroDtos {
 
         /** female | male | unknown. */
         private String gender;
-        private String lifeStatus;
+        private Boolean alive;
 
         private UUID playerUserId;
 
@@ -116,7 +116,7 @@ public final class HeroDtos {
         private String klass;
 
         private String gender;
-        private String lifeStatus;
+        private Boolean alive;
 
         private UUID playerUserId;
 

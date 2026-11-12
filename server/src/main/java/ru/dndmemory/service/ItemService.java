@@ -99,6 +99,9 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
                 .ownerHeroName(context.nameOf(item.getOwnerHeroId()))
                 .ownerCharacterId(item.getOwnerCharacterId())
                 .ownerCharacterName(context.nameOf(item.getOwnerCharacterId()))
+                .magic(item.getMagic())
+                .hasSetting(item.isHasSetting())
+                .configuredHeroId(item.getConfiguredHeroId())
                 .build();
     }
 
@@ -131,6 +134,17 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
         }
         if (payload.has("ownerCharacterId")) {
             item.setOwnerCharacterId(uuidOrNull(payload.get("ownerCharacterId")));
+        }
+        if (payload.has("magic")) {
+            com.fasterxml.jackson.databind.JsonNode magic = payload.get("magic");
+            item.setMagic(magic == null || magic.isNull() ? null : magic.asBoolean());
+        }
+        if (payload.has("hasSetting")) {
+            com.fasterxml.jackson.databind.JsonNode has = payload.get("hasSetting");
+            item.setHasSetting(has != null && !has.isNull() && has.asBoolean());
+        }
+        if (payload.has("configuredHeroId")) {
+            item.setConfiguredHeroId(uuidOrNull(payload.get("configuredHeroId")));
         }
     }
 }

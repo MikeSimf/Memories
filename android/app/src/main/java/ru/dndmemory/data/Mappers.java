@@ -127,7 +127,7 @@ public final class Mappers {
         room.kind = kind.name();
         room.name = dto.name;
         room.gender = dto.gender;
-        room.lifeStatus = dto.lifeStatus;
+        room.lifeStatus = dto.alive == null ? "unknown" : (dto.alive ? "alive" : "dead");
         room.description = dto.description;
         room.imageFileId = dto.imageFileId;
         room.avatarFileId = dto.avatarFileId;
@@ -277,6 +277,8 @@ public final class Mappers {
         dto.description = room.description;
         dto.gender = room.gender;
         dto.lifeStatus = room.lifeStatus;
+        dto.alive = "alive".equals(room.lifeStatus) ? Boolean.TRUE
+                : ("dead".equals(room.lifeStatus) ? Boolean.FALSE : null);
         dto.imageFileId = room.imageFileId;
         dto.avatarFileId = room.avatarFileId;
         dto.files = files(room.filesJson);
