@@ -51,7 +51,11 @@ for inst in prod test; do
 
   FILES="$ROOT/$inst/data/files"
   if [ -d "$FILES" ]; then
-    if [ "$MODE" = "full" ]; then
+    if [ -e "$DIR/files.tar.gz" ]; then
+      # Снимок за сегодня уже есть (например, полный в 03 часа) — не трогаем:
+      # иначе следующая часовая копия заменила бы готовый архив ссылкой.
+      ok "$inst: снимок файлов за $DAY уже есть ($(du -h "$DIR/files.tar.gz" | cut -f1))"
+    elif [ "$MODE" = "full" ]; then
       if tar czf "$DIR/files.tar.gz" -C "$ROOT/$inst/data" files 2>/dev/null; then
         ok "$inst: файлы $(du -h "$DIR/files.tar.gz" | cut -f1)"
       else
@@ -67,7 +71,7 @@ for inst in prod test; do
         if ln -sLf "$LAST" "$DIR/files.tar.gz"; then
           ok "$inst: файлы — ссылка на $(basename "$(dirname "$LAST")")"
         else
-          warn "$inst: не удалось прорезать ссылку на снимок файлов"
+          warn "$inst: не удалось поставить ссылку на снимок файлов"
         fi
       else
         if tar czf "$DIR/files.tar.gz" -C "$ROOT/$inst/data" files 2>/dev/null; then
