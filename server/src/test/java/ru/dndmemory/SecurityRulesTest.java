@@ -63,7 +63,9 @@ class SecurityRulesTest {
                 .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn()));
         assertEquals(400, status(mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn()));
-        assertEquals(400, status(mockMvc.perform(post("/api/auth/password-reset/request")
+        // Пустая почта — не ошибка: ответ всегда 202, чтобы по нему нельзя было узнать,
+        // есть ли такой адрес (см. PasswordResetService.request).
+        assertEquals(202, status(mockMvc.perform(post("/api/auth/password-reset/request")
                 .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn()));
         assertEquals(400, status(mockMvc.perform(post("/api/auth/password-reset/confirm")
                 .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn()));

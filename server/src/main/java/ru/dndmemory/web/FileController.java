@@ -57,17 +57,22 @@ public class FileController {
         } catch (Exception e) {
             mediaType = MediaType.APPLICATION_OCTET_STREAM;
         }
-        String fileName = name == null || name.isBlank()
-                ? meta.getFileName()
-                : FileNames.forDownload(name, meta.getFileName());
-        // Русские буквы в заголовке недопустимы без кодирования: отдаём ASCII-имя
-        // и дублируем исходное в filename*, как требует RFC 6266.
-        String encoded = java.net.URLEncoder.encode(fileName, java.nio.charset.StandardCharsets.UTF_8)
+        // В filename= по RFC 6266 разрешён только ASCII. С кириллической буквой внутри
+        // Tomcat выбрасывает заголовок целиком — вместе с корректным filename*, — и
+        // пользователь получает файл с именем из URL. Поэтому в filename= всегда идёт
+        // транслит, а исходное имя остаётся percent-закодированным в filename*.
+        boolean named = name != null && !name.isBlank();
+        String ascii = FileNames.forDownload(named ? name : null, meta.getFileName());
+        String original = named ? name : meta.getFileName();
+        if (original == null || original.isBlank()) {
+            original = ascii;
+        }
+        String encoded = java.net.URLEncoder.encode(original, java.nio.charset.StandardCharsets.UTF_8)
                 .replace("+", "%20");
         return ResponseEntity.ok()
                 .contentType(mediaType)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + fileName + "\"; filename*=UTF-8''" + encoded)
+                        "inline; filename=\"" + ascii + "\"; filename*=UTF-8''" + encoded)
                 .body(resource);
     }
 }

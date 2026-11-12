@@ -163,10 +163,10 @@ public class SyncService {
             server = new Retelling();
             server.setId(objectId);
             server.setCampaignId(campaign.getId());
-            server.setClientId(payload != null && payload.hasNonNull("clientId")
-                    ? UUID.fromString(payload.get("clientId").asText()) : objectId);
             server.setCreatedBy(userId);
             server.setCreatedAt(parseInstant(payload, "createdAt", Instant.now()));
+            UUID fromPayload = payload == null ? null : uuidOrNull(payload.get("clientId"));
+            server.setClientId(fromPayload != null ? fromPayload : objectId);
         } else {
             try {
                 retellingService.requireEditRight(member, server, userId);
@@ -189,22 +189,26 @@ public class SyncService {
             status = "CONFLICT_RESOLVED";
         }
 
+        // Название проверяем до того, как трогать сущность. Иначе отклонённая правка
+        // осталась бы в базе: Hibernate флашнет изменённый объект при коммите, а ревизия
+        // и запись в журнал не появятся — клиент получит «отказ» на испорченных данных.
+        String title = payload != null && payload.hasNonNull("title")
+                ? payload.get("title").asText() : server.getTitle();
+        if (title == null || title.trim().isEmpty()) {
+            return rejected(campaign, userId, change, "validation_failed", null);
+        }
+
         if (payload != null) {
-            if (payload.hasNonNull("title")) {
-                server.setTitle(payload.get("title").asText());
-            }
+            server.setTitle(title);
             if (payload.has("body")) {
                 server.setBody(text(payload.get("body")));
             }
-            if (payload.hasNonNull("authorEntityId")) {
-                server.setAuthorEntityId(UUID.fromString(payload.get("authorEntityId").asText()));
+            if (payload.has("authorEntityId")) {
+                server.setAuthorEntityId(uuidOrNull(payload.get("authorEntityId")));
             }
-            if (payload.hasNonNull("sessionDate")) {
-                server.setSessionDate(LocalDate.parse(payload.get("sessionDate").asText()));
+            if (payload.has("sessionDate")) {
+                server.setSessionDate(parseDate(payload.get("sessionDate")));
             }
-        }
-        if (server.getTitle() == null || server.getTitle().trim().isEmpty()) {
-            return rejected(campaign, userId, change, "validation_failed", null);
         }
         server.setStatus(RetellingStatus.PUBLISHED);
         server.setUpdatedBy(userId);
@@ -481,31 +485,41 @@ public class SyncService {
     }
 
     private Instant parseInstant(JsonNode payload, String field, Instant fallback) {
-        if (payload == null || !payload.hasNonNull(field)) {
-            return fallback;
-        }
-        try {
-            return Instant.parse(payload.get(field).asText());
-        } catch (Exception e) {
-            return fallback;
-        }
+        return PayloadValues.instant(payload, field, fallback);
     }
 
-    private String encodeCursor(int kindIndex, int offset) {
+    /**
+     * Дата сессии. Пустая строка означает «дату сняли» и даёт null: телефон иногда
+     * присылает {@code "sessionDate": ""}, а {@code LocalDate.parse("")} бросает
+     * исключение, которое роняло весь пуш и откатывало уже принятые правки.
+     */
+    private LocalDate parseDate(JsonNode node) {
+        return PayloadValues.date(node);
+    }
+
+    /** UUID из payload без исключения на мусорном значении: null вместо 500 на весь батч. */
+    private UUID uuidOrNull(JsonNode node) {
+        return PayloadValues.optionalUuid(node);
+    }
+
+    /** Курсор страницы снимка: «какие объекты и с какого смещения». Видны в тестах. */
+    static String encodeCursor(int kindIndex, int offset) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(
                 (kindIndex + ":" + offset).getBytes(StandardCharsets.UTF_8));
     }
 
-    private int decodeKind(String cursor) {
+    static int decodeKind(String cursor) {
         int[] decoded = decodeCursor(cursor);
-        return Math.min(Math.max(decoded[0], 0), 4);
+        // 5 — это пересказы: без них курсор второй страницы пересказов превращался
+        // в курсор материалов, и клиент зацикливался на первой странице.
+        return Math.min(Math.max(decoded[0], 0), 5);
     }
 
-    private int decodeOffset(String cursor) {
+    static int decodeOffset(String cursor) {
         return Math.max(decodeCursor(cursor)[1], 0);
     }
 
-    private int[] decodeCursor(String cursor) {
+    private static int[] decodeCursor(String cursor) {
         if (cursor == null || cursor.trim().isEmpty()) {
             return new int[]{0, 0};
         }
