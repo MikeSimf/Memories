@@ -10,7 +10,7 @@ const editing = ref<Partial<CardTemplateDto> | null>(null)
 const fields = ['avatar', 'name', 'type', 'race', 'klass', 'gender', 'alive', 'shortDescription', 'itemType', 'locationType', 'magic', 'hasSetting', 'ownerName']
 const classes: ObjectClass[] = ['CHARACTER', 'HERO', 'LOCATION', 'ITEM']
 const selectedIndex = ref<number | null>(null)
-const corners = ['nw', 'ne', 'sw', 'se'] as const
+const corners = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const
 let drag: { index: number; mode: string; startX: number; startY: number; x: number; y: number; w: number; h: number } | null = null
 
 function blank(): Partial<CardTemplateDto> {
@@ -31,6 +31,13 @@ function blank(): Partial<CardTemplateDto> {
 
 function edit(template?: CardTemplateDto): void {
   editing.value = template ? JSON.parse(JSON.stringify(template)) : blank()
+}
+
+function addText(): void {
+  if (!editing.value) return
+  editing.value.blocks = [...(editing.value.blocks ?? []), {
+    field: 'text', display: 'TEXT', text: 'Статус', x: 12, y: 90, width: 120, height: 22, fontSize: 14,
+  }]
 }
 
 function addBlock(): void {
@@ -212,10 +219,11 @@ onMounted(load)
           :key="index"
           class="card-canvas__block"
           :class="{ 'card-canvas__block--active': selectedIndex === index }"
-          :style="{ left: block.x + 'px', top: block.y + 'px', width: block.width + 'px', height: block.height + 'px', fontSize: block.fontSize + 'px' }"
+          :style="{ left: block.x + 'px', top: block.y + 'px', width: block.width + 'px', height: block.height + 'px', fontSize: block.fontSize + 'px', color: block.color || undefined }"
           @pointerdown.prevent="selectAndDrag(index, $event, 'move')"
         >
-          <template v-if="block.field === 'avatar'">аватар</template>
+          <template v-if="block.field === 'text' || block.text">{{ block.text }}</template>
+          <template v-else-if="block.field === 'avatar'">аватар</template>
           <template v-else-if="block.display === 'ICON'">{{ iconValue(block.field) }}</template>
           <template v-else>{{ blockValue(block.field) }}</template>
           <span
@@ -237,19 +245,26 @@ onMounted(load)
         :class="{ 'field-row--active': selectedIndex === index }"
         @click="selectedIndex = index"
       >
-        <div class="field"><label class="field__label">Поле</label>
-          <select v-model="block.field" class="select"><option v-for="field in fields" :key="field" :value="field">{{ field }}</option></select>
-        </div>
-        <div class="field"><label class="field__label">Вид</label>
-          <select v-model="block.display" class="select"><option value="TEXT">текст</option><option value="ICON">значок</option></select>
-        </div>
+        <template v-if="block.field === 'text'">
+          <div class="field"><label class="field__label">Текст</label><input v-model="block.text" class="input" /></div>
+        </template>
+        <template v-else>
+          <div class="field"><label class="field__label">Поле</label>
+            <select v-model="block.field" class="select"><option v-for="field in fields" :key="field" :value="field">{{ field }}</option></select>
+          </div>
+          <div class="field"><label class="field__label">Вид</label>
+            <select v-model="block.display" class="select"><option value="TEXT">текст</option><option value="ICON">значок</option></select>
+          </div>
+        </template>
+        <div class="field" style="width: 70px"><label class="field__label">Шрифт</label><input v-model.number="block.fontSize" class="input" type="number" min="8" /></div>
+        <div class="field" style="width: 70px"><label class="field__label">Цвет</label><input v-model="block.color" class="input" type="color" /></div>
         <div class="field" style="width: 70px"><label class="field__label">X</label><input v-model.number="block.x" class="input" type="number" /></div>
         <div class="field" style="width: 70px"><label class="field__label">Y</label><input v-model.number="block.y" class="input" type="number" /></div>
         <div class="field" style="width: 80px"><label class="field__label">Ш</label><input v-model.number="block.width" class="input" type="number" /></div>
         <div class="field" style="width: 80px"><label class="field__label">В</label><input v-model.number="block.height" class="input" type="number" /></div>
         <button class="btn btn--danger btn--sm" type="button" @click.stop="editing.blocks?.splice(index, 1)">Убрать</button>
       </div>
-      <button class="btn btn--sm" type="button" @click="addBlock">Добавить поле</button>
+      <div class="row"><button class="btn btn--sm" type="button" @click="addBlock">Добавить поле</button><button class="btn btn--sm" type="button" @click="addText">Добавить текст</button></div>
       <div class="row"><button class="btn btn--primary" type="button" @click="save">Сохранить</button><button class="btn" type="button" @click="editing = null">Отмена</button></div>
     </div>
 
@@ -271,9 +286,13 @@ onMounted(load)
   width: 100%;
   max-width: 420px;
   height: 160px;
-  border: 1px dashed var(--border);
+  border: 1px dashed #8a8aa3;
   border-radius: 10px;
-  background: var(--bg-elev);
+  background-color: #fafafa;
+  background-image:
+    linear-gradient(to right, rgba(30,30,47,.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30,30,47,.08) 1px, transparent 1px);
+  background-size: 10px 10px;
   overflow: hidden;
   touch-action: none;
 }
@@ -285,9 +304,10 @@ onMounted(load)
   display: flex;
   align-items: center;
   padding: 2px 4px;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border: 1px solid #4fc3f7;
   border-radius: 4px;
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: rgba(79, 195, 247, .16);
+  color: #10222e;
   cursor: move;
   overflow: hidden;
   white-space: nowrap;
@@ -295,7 +315,7 @@ onMounted(load)
 .card-canvas__block--active {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  background: rgba(79, 195, 247, .3);
 }
 .card-canvas__handle {
   position: absolute;
@@ -309,5 +329,9 @@ onMounted(load)
 .card-canvas__handle--ne { right: -5px; top: -5px; cursor: nesw-resize; }
 .card-canvas__handle--sw { left: -5px; bottom: -5px; cursor: nesw-resize; }
 .card-canvas__handle--se { right: -5px; bottom: -5px; cursor: nwse-resize; }
+.card-canvas__handle--n { left: calc(50% - 4.5px); top: -5px; cursor: ns-resize; }
+.card-canvas__handle--s { left: calc(50% - 4.5px); bottom: -5px; cursor: ns-resize; }
+.card-canvas__handle--e { right: -5px; top: calc(50% - 4.5px); cursor: ew-resize; }
+.card-canvas__handle--w { left: -5px; top: calc(50% - 4.5px); cursor: ew-resize; }
 .field-row--active { outline: 1px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
 </style>

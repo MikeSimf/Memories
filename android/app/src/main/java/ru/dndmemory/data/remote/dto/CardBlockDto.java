@@ -9,4 +9,7 @@ public class CardBlockDto {
     public float width;
     public float height;
     public float fontSize;
+    public String text;
+    public String color;
+    public int zIndex;
 }

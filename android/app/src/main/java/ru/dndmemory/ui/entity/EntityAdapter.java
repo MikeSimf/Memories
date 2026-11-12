@@ -209,7 +209,14 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
                 params.leftMargin = (int) block.x;
                 params.topMargin = (int) block.y;
                 text.setLayoutParams(params);
-                text.setText("ICON".equals(block.display) ? iconValue(block.field) : cardValue(entity, block.field));
+                if (block.text != null || "text".equals(block.field)) {
+                    text.setText(block.text == null ? "" : block.text);
+                } else {
+                    text.setText("ICON".equals(block.display) ? iconValue(block.field) : cardValue(entity, block.field));
+                }
+                if (block.color != null && block.color.matches("#[0-9a-fA-F]{6,8}")) {
+                    text.setTextColor(android.graphics.Color.parseColor(block.color));
+                }
                 binding.customCardRoot.addView(text);
             }
         }

@@ -894,6 +894,9 @@ export interface CardBlockDto {
   width: number
   height: number
   fontSize: number
+  text?: string | null
+  color?: string | null
+  zIndex?: number
 }
 
 /** Шаблон карточки списка. */

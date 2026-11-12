@@ -31,6 +31,9 @@ public class CardTemplateService {
         public float height;
         public float fontSize;
         public int sortOrder;
+        public String text;
+        public String color;
+        public int zIndex;
     }
 
     public static class CardDto {
@@ -52,6 +55,9 @@ public class CardTemplateService {
         public float width = 100;
         public float height = 24;
         public float fontSize = 14;
+        public String text;
+        public String color;
+        public int zIndex;
     }
 
     public static class SaveRequest {
@@ -111,6 +117,9 @@ public class CardTemplateService {
             block.setHeight(blockRequest.height);
             block.setFontSize(blockRequest.fontSize);
             block.setSortOrder(order++);
+            block.setTextValue(blockRequest.text);
+            block.setColor(blockRequest.color);
+            block.setZIndex(blockRequest.zIndex);
             template.getBlocks().add(block);
         }
         template = repository.save(template);
@@ -137,6 +146,9 @@ public class CardTemplateService {
             item.height = block.getHeight();
             item.fontSize = block.getFontSize();
             item.sortOrder = block.getSortOrder();
+            item.text = block.getTextValue();
+            item.color = block.getColor();
+            item.zIndex = block.getZIndex();
             dto.blocks.add(item);
         }
         return dto;

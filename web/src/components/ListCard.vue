@@ -58,9 +58,12 @@ const blocks = computed(() => props.template.blocks ?? [])
         width: `${block.width}px`,
         height: `${block.height}px`,
         fontSize: `${block.fontSize}px`,
+        color: block.color || undefined,
+        zIndex: block.zIndex ?? 0,
       }"
     >
-      <template v-if="block.field === 'avatar'">
+      <template v-if="block.field === 'text' || block.text">{{ block.text }}</template>
+      <template v-else-if="block.field === 'avatar'">
         <img v-if="object.avatarFileId" class="custom-card__avatar" :src="`/api/files/${object.avatarFileId}`" alt="" />
       </template>
       <template v-else-if="block.display === 'ICON'">

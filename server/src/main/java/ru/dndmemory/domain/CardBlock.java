@@ -48,4 +48,14 @@ public class CardBlock {
 
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
+
+    /** Текстовая подпись, если блок не привязан к полю. */
+    @Column(name = "text_value", columnDefinition = "text")
+    private String textValue;
+
+    @Column(length = 16)
+    private String color;
+
+    @Column(name = "z_index", nullable = false)
+    private int zIndex;
 }
