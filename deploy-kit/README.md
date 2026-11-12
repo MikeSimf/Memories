@@ -54,6 +54,9 @@ sha256sum /tmp/kit.tar.gz /tmp/dnd-memory-server.jar   # сверить с ре�
     deploy-web.sh      ← выложить новую сборку веб-версии
     deploy-app.sh      ← выложить apk и сменить версию
     diagnose.sh        ← статусы, логи, место и память
+    backup.sh          ← резервные копии базы и картинок (cron)
+    restore.sh         ← восстановление из копии
+    monitor.sh         ← часовая проверка живости и известных болячек (cron)
     apache-setup.sh    ← публикация по HTTPS через Apache
     nginx-setup.sh     ← публикация по HTTPS через nginx
     dnd-memory.service ← автозапуск через systemd
@@ -374,16 +377,46 @@ cd android
 
 ## Резервные копии
 
-```bash
-# база рабочего экземпляра
-docker exec dnd-prod-db pg_dump -U dnd -d dnd | gzip > ~/dnd-prod-$(date +%F).sql.gz
+`bin/backup.sh` снимает дамп базы (изнутри контейнера, пароль наружу не выходит)
+и архив загруженных картинок. Лежит в `/var/backups/dnd-memory/<контур>/<дата>/`,
+хранит 14 дней:
 
-# картинки
-tar czf ~/dnd-files-$(date +%F).tar.gz -C /opt/dnd-memory/prod/data files
+```bash
+sudo bash bin/backup.sh          # оба экземпляра, прямо сейчас
+sudo bash bin/backup.sh prod     # только рабочий
+tail -3 /var/backups/dnd-memory/backup.log     # когда было и сколько места занято
 ```
+
+Картинки полностью копируются только в 03 часа, в остальное время на свежий снимок
+ставится символльная ссылка — часовой cron не съедает диск. Запуск по расписанию:
+
+```bash
+sudo crontab -e
+# 17 * * * * /opt/dnd-memory/bin/backup.sh >> /var/backups/dnd-memory/cron.log 2>&1
+# 47 * * * * /opt/dnd-memory/bin/monitor.sh
+```
+
+Восстановление — дамп перезаписывает базу целиком, поэтому по запущенному экземпляру
+скрипт отказывается работать:
+
+```bash
+./bin/dnd.sh test down
+sudo bash bin/restore.sh test /var/backups/dnd-memory/test/$(date +%F)/db.sql.gz
+./bin/dnd.sh test up
+```
+
+Картинки при желании распаковываются третьим аргументом; прежняя папка при этом
+остается в `data/files.before-restore`.
+
+`bin/monitor.sh` раз в час пишет одну строку в `/var/log/dnd-monitor.log`: живы ли
+экземпляры и не вернулись ли конкретные ошибки, которые уже чинили (битые
+`Content-Disposition`, падение пуша на пустой дате, необработанные исключения).
+Счётчик `пуш=` показывает, был ли вообще трафик — без него нули ничего не значат.
 
 Данные базы лежат в томе `dnd-prod_pg-data` (не в папке), поэтому `stop.sh` их не
 удаляет. Удалить данные насовсем — только `docker compose down -v`.
+
+Права на секреты: `.env` обоих контуров — `600 root:root`.
 
 ## Если что-то не так
 
