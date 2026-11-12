@@ -137,14 +137,7 @@ public final class Rights {
     }
 
     public static boolean canCreateRetelling(@Nullable CampaignRoom campaign) {
-        if (campaign == null) {
-            return false;
-        }
-        if (has(campaign, "campaign.manage")) {
-            return true;
-        }
-        return has(campaign, RETELLING_WRITE)
-                && campaign.myLinkedHeroId != null && !campaign.myLinkedHeroId.isEmpty();
+        return campaign != null && has(campaign, RETELLING_WRITE);
     }
 
     public static boolean canEditRetelling(@Nullable CampaignRoom campaign, @Nullable RetellingRoom retelling,

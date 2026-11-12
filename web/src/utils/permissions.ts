@@ -89,8 +89,7 @@ export function canDeleteObject(subject: PermissionSubject, objectClass: ObjectC
 
 /** Можно ли создать история: `retelling.write` (`roles.md` §2). */
 export function canCreateRetelling(subject: PermissionSubject): boolean {
-  if (hasPermission(subject.permissions, 'campaign.manage')) return true
-  return hasPermission(subject.permissions, 'retelling.write') && subject.linkedHeroId !== null
+  return hasPermission(subject.permissions, 'retelling.write')
 }
 
 /**

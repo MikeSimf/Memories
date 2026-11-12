@@ -37,11 +37,7 @@ const showPreview = ref(false)
 
 function fillForm(): void {
   if (mode.value === 'new') {
-    form.value = {
-      ...emptyRetellingForm(),
-      sessionDate: todayIso(),
-      authorEntityId: canChooseAuthor.value ? null : campaign.linkedHeroId,
-    }
+    form.value = { ...emptyRetellingForm(), sessionDate: todayIso() }
     return
   }
   const source =
@@ -50,17 +46,14 @@ function fillForm(): void {
       : campaign.retellingById(retellingId.value)
   if (source) {
     form.value = campaign.retellingFormValues(source)
-    if (!canChooseAuthor.value) {
-      form.value.authorEntityId = campaign.linkedHeroId
-    }
   }
 }
 
 watch([mode, retellingId], fillForm, { immediate: true })
 
 const canWrite = computed(() => campaign.canWriteRetellings)
-/** Автора выбирают только владелец и мастер; остальные пишут от своего героя. */
-const canChooseAuthor = computed(() => campaign.canManageCampaign)
+/** Автор выбирается свободно: историю может отправить любой игрок. */
+const canChooseAuthor = computed(() => true)
 const ownHeroName = computed(() => {
   const id = campaign.linkedHeroId
   return id ? campaign.objectName(id) : null

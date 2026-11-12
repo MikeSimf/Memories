@@ -77,10 +77,6 @@ public class RetellingService {
     public RetellingDtos.RetellingDto create(UUID campaignId, UUID userId, RetellingDtos.CreateRetellingRequest request) {
         Member member = permissionService.requireMember(campaignId, userId);
         permissionService.require(member, Permissions.RETELLING_WRITE);
-        // Без привязки к герою историю создавать нельзя; мастер и владелец — исключение.
-        if (!isManager(member) && member.getLinkedHeroId() == null) {
-            throw ApiException.forbidden("Историю пишет участник, привязанный к герою");
-        }
         rejectDraft(request.getStatus());
         Campaign campaign = campaignRepository.findForUpdate(campaignId)
                 .orElseThrow(() -> ApiException.notFound("Кампания"));
@@ -98,8 +94,7 @@ public class RetellingService {
         }
         retelling.setTitle(request.getTitle().trim());
         retelling.setBody(request.getBody());
-        retelling.setAuthorEntityId(!isManager(member) ? member.getLinkedHeroId()
-                : request.getAuthorEntityId());
+        retelling.setAuthorEntityId(request.getAuthorEntityId());
         retelling.setSessionDate(request.getSessionDate());
         retelling.setStatus(RetellingStatus.PUBLISHED);
         retelling.setUpdatedBy(userId);
@@ -131,7 +126,7 @@ public class RetellingService {
         if (request.getBody() != null) {
             retelling.setBody(request.getBody());
         }
-        if (isManager(member) && request.getAuthorEntityId() != null) {
+        if (request.getAuthorEntityId() != null) {
             retelling.setAuthorEntityId(request.getAuthorEntityId());
         }
         if (request.getSessionDate() != null) {
