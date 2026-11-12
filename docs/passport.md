@@ -98,7 +98,7 @@ nginx (хост) ──► web-контейнер (статика + /api)
 - `retellings`, `materials`, `files`;
 - `change_log` — журнал синхронизации;
 - `feedback`, `crash_reports`;
-- `races`, `classes`, `item_types`, `location_types`;
+- `races`, `character_classes`, `item_types`, `location_types`;
 - `campaign_dictionary_disabled` — запрещённые значения справочников;
 - `card_templates`, `card_blocks` — конструктор карточек (в списках временно отключён).
 
