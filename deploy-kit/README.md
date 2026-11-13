@@ -507,7 +507,7 @@ curl -s https://test-dnd-memory.imikea.ru/api/app/latest
 Артефакты больше не лежат в одном релизе:
 
 - прод — тег `prod-v1.8`;
-- тест — тег `test-v1.0.66`.
+- тест — тег `test-v1.0.67`.
 
 Прод-комплект содержит только `prod/` и `web-prod/`, тестовый — только `test/`
 и `web-test/`. Распаковка одного комплекта не затрагивает второй экземпляр.
@@ -530,10 +530,10 @@ sudo ./bin/dnd.sh prod restart
 ```bash
 cd /opt/dnd-memory
 sudo curl -fL -o /tmp/test-kit.tar.gz \
-  https://github.com/MikeSimf/Memories/releases/download/test-v1.0.66/dnd-memory-deploy-kit.tar.gz
+  https://github.com/MikeSimf/Memories/releases/download/test-v1.0.67/dnd-memory-deploy-kit.tar.gz
 sudo tar xzf /tmp/test-kit.tar.gz -C /opt/dnd-memory
 sudo curl -fL -o /tmp/test.jar \
-  https://github.com/MikeSimf/Memories/releases/download/test-v1.0.66/dnd-memory-server.jar
+  https://github.com/MikeSimf/Memories/releases/download/test-v1.0.67/dnd-memory-server.jar
 sudo cp /tmp/test.jar test/app.jar
 sudo ./bin/dnd.sh test restart
 ```
