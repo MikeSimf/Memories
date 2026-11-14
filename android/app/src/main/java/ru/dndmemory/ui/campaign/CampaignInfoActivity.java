@@ -65,6 +65,7 @@ public class CampaignInfoActivity extends BottomNavActivity {
 
         setupSections();
         binding.campaignInfoEdit.setOnClickListener(v -> edit());
+        binding.campaignInfoManageMembers.setOnClickListener(v -> Nav.openMembers(this, campaignId));
         binding.campaignInfoDelete.setOnClickListener(v -> confirmDelete());
         // Room нельзя читать в главном потоке: карточка заполняется после загрузки.
         AppExecutors.get().io(() -> {
@@ -209,6 +210,7 @@ public class CampaignInfoActivity extends BottomNavActivity {
                 ? getString(R.string.campaign_info_no_description) : campaign.description);
         boolean canEdit = Rights.canManageCampaign(campaign);
         boolean owner = Rights.canDeleteCampaign(campaign);
+        ViewUtils.show(binding.campaignInfoManageMembers, Rights.canInvite(campaign));
         ViewUtils.show(binding.campaignInfoEdit, canEdit);
         ViewUtils.show(binding.campaignInfoDelete, owner);
     }
@@ -221,9 +223,17 @@ public class CampaignInfoActivity extends BottomNavActivity {
                 binding.campaignInfoMembers.removeAllViews();
                 for (MemberRoom member : members) {
                     android.widget.TextView row = new android.widget.TextView(this);
-                    row.setText(getString(R.string.campaign_info_member,
-                            member.displayName == null ? "" : member.displayName,
-                            Labels.roleText(this, member.role)));
+                    StringBuilder text = new StringBuilder(
+                            member.displayName == null ? "" : member.displayName);
+                    text.append(" · ").append(Labels.roleText(this, member.role));
+                    if (member.status != null && !"ACTIVE".equals(member.status)) {
+                        text.append(" · ").append(getString(Labels.memberStatus(member.status)));
+                    }
+                    if (member.linkedHeroName != null && !member.linkedHeroName.isEmpty()) {
+                        text.append(" · ").append(getString(R.string.members_linked_hero))
+                                .append(": ").append(member.linkedHeroName);
+                    }
+                    row.setText(text.toString());
                     row.setPadding(0, 6, 0, 6);
                     binding.campaignInfoMembers.addView(row);
                 }
@@ -243,6 +253,12 @@ public class CampaignInfoActivity extends BottomNavActivity {
             public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) {
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (campaignId != null) loadMembers();
     }
 
     private void edit() {

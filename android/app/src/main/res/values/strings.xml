@@ -310,6 +310,7 @@
     <string name="retelling_published_toast">История опубликована</string>
 
     <!-- Участники -->
+    <string name="members_manage">Управление участниками</string>
     <string name="members_title">Участники</string>
     <string name="members_empty">Участников пока нет</string>
     <string name="members_my_role">Ваша роль: %1$s</string>
