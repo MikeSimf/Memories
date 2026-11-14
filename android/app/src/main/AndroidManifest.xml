@@ -121,6 +121,14 @@
             android:exported="false" />
 
         <activity
+            android:name=".ui.map.MapsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.map.MapViewActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.invite.InviteActivity"
             android:exported="false" />
 

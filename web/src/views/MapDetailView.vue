@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import { errorMessage, mapsApi, type InteractiveMapDetailDto, type MapMarkerDto } from '@/api'
 import EntityImage from '@/components/EntityImage.vue'
 import { useCampaignStore } from '@/stores/campaign'
+import { typeIconPath } from '@/ui/typeIcons'
 
 const route = useRoute()
 const campaign = useCampaignStore()
@@ -125,6 +126,18 @@ function openGroup(group: { markers: MapMarkerDto[] }): void {
   scale.value = Math.min(4, scale.value * 1.6)
 }
 
+function markerIcon(marker: MapMarkerDto): string {
+  if (marker.objectType === 'HERO' || marker.objectType === 'CHARACTER') {
+    return 'M12 4.4a3.4 3.4 0 1 0 0 6.8a3.4 3.4 0 1 0 0-6.8M5 20.4c0-3.4 3.1-6 7-6s7 2.6 7 6'
+  }
+  if (marker.objectType === 'LOCATION') return typeIconPath('LOCATION', '')
+  return typeIconPath('ITEM', '')
+}
+
+function markerClass(marker: MapMarkerDto): string {
+  return `map-marker--${marker.objectType.toLowerCase()}`
+}
+
 function objectTypeLabel(type: string): string {
   return { HERO: 'Герой', CHARACTER: 'Персонаж', LOCATION: 'Локация', ITEM: 'Предмет' }[type] ?? type
 }
@@ -164,46 +177,51 @@ onMounted(load)
         @click="mapClick"
       >
         <div class="map-canvas" :style="{ transform: `translate(${tx}px, ${ty}px) scale(${scale})` }">
-          <EntityImage v-if="map.imageFileId" :file-id="map.imageFileId" class="map-image" alt="" />
+          <div v-if="map.imageFileId" class="map-image"><EntityImage :file-id="map.imageFileId" alt="" :interactive="false" :max-height="10000" /></div>
           <div v-else class="map-image map-image--empty">Фон не загружен</div>
           <button
             v-for="(group, index) in markerGroups"
             :key="index"
             class="map-marker"
-            :class="{ 'map-marker--cluster': group.markers.length > 1 }"
+            :class="[markerClass(group.markers[0]), { 'map-marker--cluster': group.markers.length > 1 }]"
             :style="{ left: `${group.x * 100}%`, top: `${group.y * 100}%` }"
             :title="group.markers.map((item) => item.name).join(', ')"
             type="button"
             @click.stop="openGroup(group)"
           >
             <template v-if="group.markers.length > 1">{{ group.markers.length }}</template>
-            <EntityImage v-else-if="group.markers[0].avatarFileId" :file-id="group.markers[0].avatarFileId" class="map-marker__image" alt="" />
-            <span v-else class="map-marker__dot" />
+            <svg v-else class="map-marker__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path :d="markerIcon(group.markers[0])" />
+            </svg>
           </button>
         </div>
       </div>
 
-      <div v-if="selectedMarker" class="card stack marker-popup">
-        <strong>{{ selectedMarker.name }}</strong>
-        <span class="faint">{{ objectTypeLabel(selectedMarker.objectType) }}</span>
-        <div class="row">
-          <RouterLink class="btn btn--sm" :to="{ name: 'entity-detail', params: { campaignId, entityId: selectedMarker.entityId } }">Открыть</RouterLink>
-          <button v-if="canEdit" class="btn btn--danger btn--sm" type="button" @click="deleteMarker">Удалить метку</button>
-          <button class="btn btn--sm" type="button" @click="selectedMarker = null">Закрыть</button>
+      <div v-if="selectedMarker" class="map-modal" @click.self="selectedMarker = null">
+        <div class="card stack map-modal__card">
+          <strong>{{ selectedMarker.name }}</strong>
+          <span class="faint">{{ objectTypeLabel(selectedMarker.objectType) }}</span>
+          <div class="row">
+            <RouterLink class="btn btn--sm" :to="{ name: 'entity-detail', params: { campaignId, entityId: selectedMarker.entityId } }">Открыть</RouterLink>
+            <button v-if="canEdit" class="btn btn--danger btn--sm" type="button" @click="deleteMarker">Удалить метку</button>
+            <button class="btn btn--sm" type="button" @click="selectedMarker = null">Закрыть</button>
+          </div>
         </div>
       </div>
 
-      <div v-if="pick" class="card stack marker-popup">
-        <strong>Что находится в этой точке?</strong>
-        <select v-model="chosenEntityId" class="select">
-          <option value="" disabled>Выберите объект</option>
-          <option v-for="object in available" :key="object.id" :value="object.id">
-            {{ objectTypeLabel(object.objectType) }} · {{ object.name }}
-          </option>
-        </select>
-        <div class="row">
-          <button class="btn btn--primary" :disabled="!chosenEntityId" type="button" @click="addMarker">Поставить метку</button>
-          <button class="btn" type="button" @click="pick = null">Отмена</button>
+      <div v-if="pick" class="map-modal" @click.self="pick = null">
+        <div class="card stack map-modal__card">
+          <strong>Что находится в этой точке?</strong>
+          <select v-model="chosenEntityId" class="select">
+            <option value="" disabled>Выберите объект</option>
+            <option v-for="object in available" :key="object.id" :value="object.id">
+              {{ objectTypeLabel(object.objectType) }} · {{ object.name }}
+            </option>
+          </select>
+          <div class="row">
+            <button class="btn btn--primary" :disabled="!chosenEntityId" type="button" @click="addMarker">Поставить метку</button>
+            <button class="btn" type="button" @click="pick = null">Отмена</button>
+          </div>
         </div>
       </div>
     </template>
@@ -211,13 +229,19 @@ onMounted(load)
 </template>
 
 <style scoped>
-.map-viewport { height: 62vh; min-height: 360px; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: #1b1b1b; cursor: grab; touch-action: none; }
-.map-canvas { position: relative; width: 100%; height: 100%; transform-origin: 0 0; }
-.map-image { width: 100%; height: 100%; object-fit: contain; user-select: none; pointer-events: none; }
-.map-image--empty { display: grid; place-items: center; color: #aaa; }
-.map-marker { position: absolute; width: 30px; height: 30px; padding: 0; border: 2px solid #fff; border-radius: 50% 50% 50% 0; transform: translate(-50%, -100%) rotate(-45deg); background: #c46a2a; cursor: pointer; }
+.map-viewport { height: auto; min-height: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: #1b1b1b; cursor: grab; touch-action: none; }
+.map-canvas { position: relative; width: 100%; transform-origin: 0 0; }
+.map-image { display: block; width: 100%; cursor: grab; }
+.map-image img { display: block; width: 100%; height: auto; cursor: inherit; user-select: none; pointer-events: none; }
+.map-image--empty { display: grid; place-items: center; color: #aaa; min-height: 240px; }
+.map-marker { position: absolute; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 2px solid #fff; border-radius: 50% 50% 50% 0; transform: translate(-50%, -100%) rotate(-45deg); background: #c46a2a; color: #fff; cursor: pointer; box-shadow: 0 2px 8px #0008; }
+.map-marker--character, .map-marker--hero { background: #2f6bff; }
+.map-marker--location { background: #0f9d76; }
+.map-marker--item { background: #b9770f; }
+.map-marker__icon { width: 19px; height: 19px; transform: rotate(45deg); }
 .map-marker__image { width: 100%; height: 100%; object-fit: cover; border-radius: 50% 50% 50% 0; transform: rotate(45deg); }
 .map-marker--cluster { display: grid; place-items: center; background: #c46a2a; color: #fff; font-weight: 700; border-radius: 50%; transform: translate(-50%, -50%); }
 .map-marker__dot { display: block; width: 100%; height: 100%; border-radius: 50% 50% 50% 0; }
-.marker-popup { max-width: 420px; }
+.map-modal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 20px; background: rgba(0,0,0,.45); }
+.map-modal__card { width: min(420px, 100%); }
 </style>

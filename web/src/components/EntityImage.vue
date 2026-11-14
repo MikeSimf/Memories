@@ -8,8 +8,8 @@ import { fetchFileBlob } from '@/api'
  * скачивается с токеном и показывается через object URL.
  */
 const props = withDefaults(
-  defineProps<{ fileId: string | null; alt?: string; maxHeight?: number }>(),
-  { alt: 'Изображение объекта', maxHeight: 280 },
+  defineProps<{ fileId: string | null; alt?: string; maxHeight?: number; interactive?: boolean }>(),
+  { alt: 'Изображение объекта', maxHeight: 280, interactive: true },
 )
 
 const objectUrl = ref<string | null>(null)
@@ -47,7 +47,8 @@ onBeforeUnmount(revoke)
     :src="objectUrl"
     :alt="alt"
     :style="{ maxHeight: `${maxHeight}px` }"
-    @click="zoom = true"
+    :class="{ 'entity-image--interactive': interactive }"
+    @click="interactive && (zoom = true)"
   />
   <span v-else-if="failed" class="faint">Изображение недоступно без сети</span>
   <Teleport to="body">
