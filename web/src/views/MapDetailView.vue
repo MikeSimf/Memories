@@ -23,6 +23,13 @@ const adding = ref(false)
 const pick = ref<{ x: number; y: number } | null>(null)
 const chosenEntityId = ref('')
 const selectedMarker = ref<MapMarkerDto | null>(null)
+const filters = ref<Record<string, boolean>>({ HERO: true, CHARACTER: true, LOCATION: true, ITEM: true })
+const objectTypes = [
+  { key: 'CHARACTER', label: 'Персонажи' },
+  { key: 'HERO', label: 'Герои' },
+  { key: 'LOCATION', label: 'Локации' },
+  { key: 'ITEM', label: 'Предметы' },
+]
 
 const canEdit = computed(() => campaign.canCreate('LOCATION'))
 
@@ -30,7 +37,7 @@ const markerGroups = computed(() => {
   if (!map.value) return []
   const cell = scale.value >= 1.8 ? 0.001 : 0.06
   const groups = new Map<string, MapMarkerDto[]>()
-  for (const marker of map.value.markers) {
+  for (const marker of map.value.markers.filter((item) => filters.value[item.objectType])) {
     const key = `${Math.round(marker.x / cell)}:${Math.round(marker.y / cell)}`
     const list = groups.get(key) ?? []
     list.push(marker)
@@ -60,7 +67,7 @@ async function load(): Promise<void> {
 }
 
 function zoom(delta: number): void {
-  scale.value = Math.max(0.6, Math.min(4, scale.value + delta))
+  scale.value = Math.max(1, Math.min(4, scale.value + delta))
 }
 
 function wheel(event: WheelEvent): void {
@@ -98,10 +105,11 @@ function mapClick(event: MouseEvent): void {
 async function addMarker(): Promise<void> {
   if (!pick.value || !chosenEntityId.value) return
   try {
-    await mapsApi.addMarker(campaignId, mapId, chosenEntityId.value, pick.value.x, pick.value.y)
+    const marker = await mapsApi.addMarker(campaignId, mapId, chosenEntityId.value, pick.value.x, pick.value.y)
+    map.value?.markers.push(marker)
+    if (map.value) map.value.markerCount = map.value.markers.length
     pick.value = null
     adding.value = false
-    await load()
   } catch (caught) {
     error.value = errorMessage(caught)
   }
@@ -110,9 +118,13 @@ async function addMarker(): Promise<void> {
 async function deleteMarker(): Promise<void> {
   if (!selectedMarker.value) return
   try {
-    await mapsApi.removeMarker(campaignId, mapId, selectedMarker.value.id)
+    const id = selectedMarker.value.id
+    await mapsApi.removeMarker(campaignId, mapId, id)
+    if (map.value) {
+      map.value.markers = map.value.markers.filter((marker) => marker.id !== id)
+      map.value.markerCount = map.value.markers.length
+    }
     selectedMarker.value = null
-    await load()
   } catch (caught) {
     error.value = errorMessage(caught)
   }
@@ -158,15 +170,21 @@ onMounted(load)
     <p v-if="error" class="notice notice--danger">{{ error }}</p>
     <div v-if="loading" class="loading"><span class="spinner" /> Загружаем карту…</div>
     <template v-else-if="map">
-      <div class="row">
+      <div class="row map-controls">
         <button class="btn btn--sm" type="button" @click="zoom(0.25)">+</button>
         <button class="btn btn--sm" type="button" @click="zoom(-0.25)">−</button>
         <button class="btn btn--sm" type="button" @click="scale = 1; tx = 0; ty = 0">Сбросить</button>
         <button v-if="canEdit" class="btn btn--sm" :class="{ 'btn--primary': adding }" type="button" @click="adding = !adding">
           {{ adding ? 'Выберите точку на карте' : 'Добавить метку' }}
         </button>
+        <span class="map-filters">
+          <label v-for="type in objectTypes" :key="type.key">
+            <input v-model="filters[type.key]" type="checkbox" /> {{ type.label }}
+          </label>
+        </span>
       </div>
 
+      <div class="map-stage">
       <div
         class="map-viewport"
         @wheel="wheel"
@@ -177,7 +195,7 @@ onMounted(load)
         @click="mapClick"
       >
         <div class="map-canvas" :style="{ transform: `translate(${tx}px, ${ty}px) scale(${scale})` }">
-          <div v-if="map.imageFileId" class="map-image"><EntityImage :file-id="map.imageFileId" alt="" :interactive="false" :max-height="10000" /></div>
+          <div v-if="map.imageFileId" class="map-image"><EntityImage :file-id="map.imageFileId" alt="" :interactive="false" :max-height="0" /></div>
           <div v-else class="map-image map-image--empty">Фон не загружен</div>
           <button
             v-for="(group, index) in markerGroups"
@@ -194,6 +212,10 @@ onMounted(load)
               <path :d="markerIcon(group.markers[0])" />
             </svg>
           </button>
+        </div>
+      </div>
+        <div class="map-zoom">
+          <input v-model.number="scale" type="range" min="1" max="4" step="0.05" aria-label="Масштаб карты" />
         </div>
       </div>
 
@@ -229,10 +251,16 @@ onMounted(load)
 </template>
 
 <style scoped>
-.map-viewport { height: auto; min-height: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: #1b1b1b; cursor: grab; touch-action: none; }
-.map-canvas { position: relative; width: 100%; transform-origin: 0 0; }
-.map-image { display: block; width: 100%; cursor: grab; }
-.map-image :deep(img) { display: block; width: 100%; height: auto; cursor: inherit; user-select: none; pointer-events: none; }
+.map-stage { display: flex; align-items: stretch; gap: 10px; }
+.map-viewport { flex: 0 1 auto; width: fit-content; max-width: calc(100% - 44px); min-width: 0; height: clamp(320px, calc(100vh - 330px), 680px); overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: #1b1b1b; cursor: grab; touch-action: none; display: flex; align-items: center; justify-content: center; }
+.map-zoom { display: flex; align-items: center; padding: 4px; }
+.map-zoom input { writing-mode: vertical-lr; direction: rtl; width: 22px; height: 220px; accent-color: var(--accent); }
+.map-controls { flex-wrap: wrap; }
+.map-filters { display: flex; flex-wrap: wrap; gap: 8px; font-size: .85rem; }
+.map-filters label { display: inline-flex; gap: 4px; align-items: center; }
+.map-canvas { position: relative; flex: 0 0 auto; max-width: 100%; max-height: 100%; transform-origin: 0 0; }
+.map-image { display: block; position: relative; max-width: 100%; max-height: 100%; cursor: grab; }
+.map-image :deep(img) { display: block; max-width: 100%; max-height: calc(100vh - 330px); width: auto; height: auto; cursor: inherit; user-select: none; pointer-events: none; }
 .map-image--empty { display: grid; place-items: center; color: #aaa; min-height: 240px; }
 .map-marker { position: absolute; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 2px solid #fff; border-radius: 50% 50% 50% 0; transform: translate(-50%, -100%) rotate(-45deg); background: #c46a2a; color: #fff; cursor: pointer; box-shadow: 0 2px 8px #0008; }
 .map-marker--character, .map-marker--hero { background: #2f6bff; }

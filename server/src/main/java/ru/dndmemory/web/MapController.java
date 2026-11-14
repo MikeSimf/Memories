@@ -49,10 +49,10 @@ public class MapController {
     }
 
     @PostMapping("/{mapId}/markers")
-    public void addMarker(@PathVariable UUID campaignId, @PathVariable UUID mapId,
+    public MapService.MarkerDto addMarker(@PathVariable UUID campaignId, @PathVariable UUID mapId,
                           @AuthenticationPrincipal UserPrincipal principal,
                           @RequestBody MapService.MarkerRequest request) {
-        service.addMarker(campaignId, mapId, principal.getId(), request);
+        return service.addMarker(campaignId, mapId, principal.getId(), request);
     }
 
     @DeleteMapping("/{mapId}/markers/{markerId}")

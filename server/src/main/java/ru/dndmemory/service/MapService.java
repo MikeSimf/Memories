@@ -152,7 +152,7 @@ public class MapService {
     }
 
     @Transactional
-    public void addMarker(UUID campaignId, UUID mapId, UUID userId, MarkerRequest request) {
+    public MarkerDto addMarker(UUID campaignId, UUID mapId, UUID userId, MarkerRequest request) {
         permissions.require(permissions.requireMember(campaignId, userId),
                 ru.dndmemory.security.Permissions.ENTITY_WRITE);
         UUID entityId = uuidOrNull(request.entityId);
@@ -167,6 +167,10 @@ public class MapService {
         jdbc.update("insert into map_markers (id, map_id, entity_id, x, y, created_by) values (?, ?, ?, ?, ?, ?) "
                         + "on conflict (map_id, entity_id) do update set x = excluded.x, y = excluded.y",
                 UUID.randomUUID(), mapId, entityId, clamp(request.x), clamp(request.y), userId);
+        for (MarkerDto marker : get(campaignId, mapId, userId).markers) {
+            if (entityId.toString().equals(marker.entityId)) return marker;
+        }
+        throw ApiException.notFound("Метка не найдена");
     }
 
     @Transactional

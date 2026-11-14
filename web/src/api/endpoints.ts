@@ -683,7 +683,7 @@ export const mapsApi = {
   remove(campaignId: string, mapId: string): Promise<void> {
     return apiClient.request({ path: `/api/campaigns/${campaignId}/maps/${mapId}`, method: 'DELETE' })
   },
-  addMarker(campaignId: string, mapId: string, entityId: string, x: number, y: number): Promise<void> {
+  addMarker(campaignId: string, mapId: string, entityId: string, x: number, y: number): Promise<import('./types').MapMarkerDto> {
     return apiClient.request({ path: `/api/campaigns/${campaignId}/maps/${mapId}/markers`, method: 'POST', body: { entityId, x, y } })
   },
   removeMarker(campaignId: string, mapId: string, markerId: string): Promise<void> {

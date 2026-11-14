@@ -46,7 +46,7 @@ onBeforeUnmount(revoke)
     class="entity-image"
     :src="objectUrl"
     :alt="alt"
-    :style="{ maxHeight: `${maxHeight}px` }"
+    :style="maxHeight > 0 ? { maxHeight: `${maxHeight}px` } : undefined"
     :class="{ 'entity-image--interactive': interactive }"
     @click="interactive && (zoom = true)"
   />
