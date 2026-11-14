@@ -26,4 +26,7 @@ public class CharacterClass {
 
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
+
+    @Column(name = "icon_file_id")
+    private java.util.UUID iconFileId;
 }

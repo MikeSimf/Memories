@@ -25,12 +25,38 @@ public class GlobalDictionaryService {
     public static final String LOCATION_TYPE = "LOCATION_TYPE";
 
     @Transactional(readOnly = true)
-    public Map<String, List<String>> all() {
-        Map<String, List<String>> result = new LinkedHashMap<>();
-        result.put(RACE, names("select name from races order by name"));
-        result.put(CLASS, names("select name from character_classes order by sort_order, name"));
-        result.put(ITEM_TYPE, names("select name from item_types order by sort_order, name"));
-        result.put(LOCATION_TYPE, names("select name from location_types order by sort_order, name"));
+    public static class Item {
+        public String name;
+        public String iconFileId;
+
+        Item(String name, String iconFileId) {
+            this.name = name;
+            this.iconFileId = iconFileId;
+        }
+    }
+
+    public Map<String, List<Item>> all() {
+        Map<String, List<Item>> result = new LinkedHashMap<>();
+        result.put(RACE, items("select name, icon_file_id from races order by name"));
+        result.put(CLASS, items("select name, icon_file_id from character_classes order by sort_order, name"));
+        result.put(ITEM_TYPE, items("select name, icon_file_id from item_types order by sort_order, name"));
+        result.put(LOCATION_TYPE, items("select name, icon_file_id from location_types order by sort_order, name"));
+        return result;
+    }
+
+    @Transactional
+    public void setIcon(String kind, String name, String iconFileId) {
+        String table = table(kind);
+        jdbc.update("update " + table + " set icon_file_id = ? where name = ?",
+                iconFileId == null || iconFileId.isBlank() ? null : java.util.UUID.fromString(iconFileId), name);
+    }
+
+    private List<Item> items(String sql) {
+        List<Item> result = new ArrayList<>();
+        jdbc.query(sql, rs -> {
+            String icon = rs.getString("icon_file_id");
+            result.add(new Item(rs.getString("name"), icon));
+        });
         return result;
     }
 

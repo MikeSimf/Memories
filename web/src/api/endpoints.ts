@@ -51,6 +51,7 @@ import type {
   CrashReportDto,
   PasswordResetDto,
   DictionaryEntryDto,
+  DictionaryItemDto,
   AdminUserDto,
   CardTemplateDto,
 } from './types'
@@ -527,8 +528,13 @@ export const adminApi = {
   passwordResets(): Promise<PasswordResetDto[]> {
     return apiClient.request<PasswordResetDto[]>({ path: '/api/admin/system/password-resets' })
   },
-  dictionaries(): Promise<Record<string, string[]>> {
-    return apiClient.request<Record<string, string[]>>({ path: '/api/admin/system/dictionaries' })
+  dictionaries(): Promise<Record<string, DictionaryItemDto[]>> {
+    return apiClient.request<Record<string, DictionaryItemDto[]>>({ path: '/api/admin/system/dictionaries' })
+  },
+  setDictionaryIcon(kind: string, name: string, iconFileId: string | null): Promise<void> {
+    return apiClient.request<void>({
+      method: 'POST', path: '/api/admin/system/dictionaries/icon', body: { kind, name, iconFileId },
+    })
   },
   addDictionary(kind: string, name: string): Promise<void> {
     return apiClient.request<void>({ method: 'POST', path: '/api/admin/system/dictionaries', body: { kind, name } })

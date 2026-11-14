@@ -52,7 +52,7 @@ public class AdminSystemController {
     }
 
     @GetMapping("/dictionaries")
-    public java.util.Map<String, java.util.List<String>> dictionaries(
+    public java.util.Map<String, java.util.List<ru.dndmemory.service.GlobalDictionaryService.Item>> dictionaries(
             @AuthenticationPrincipal UserPrincipal principal) {
         requireAdmin(principal);
         return dictionaries.all();
@@ -75,6 +75,19 @@ public class AdminSystemController {
                                  @RequestParam String kind, @RequestParam String name) {
         requireAdmin(principal);
         dictionaries.remove(kind, name);
+    }
+
+    public static class IconRequest {
+        public String kind;
+        public String name;
+        public String iconFileId;
+    }
+
+    @PostMapping("/dictionaries/icon")
+    public void setDictionaryIcon(@AuthenticationPrincipal UserPrincipal principal,
+                                  @RequestBody IconRequest request) {
+        requireAdmin(principal);
+        dictionaries.setIcon(request.kind, request.name, request.iconFileId);
     }
 
     @GetMapping("/password-resets")

@@ -31,8 +31,8 @@ android {
         prod {
             dimension 'channel'
             applicationId 'ru.dndmemory'
-            versionCode 9
-            versionName '1.8'
+            versionCode 10
+            versionName '1.9'
             resValue 'string', 'app_name', 'DnD Memory'
             buildConfigField 'String', 'DND_SERVER_URL', '"https://dnd-memory.imikea.ru/"'
             buildConfigField 'boolean', 'IS_TEST', 'false'
@@ -41,8 +41,8 @@ android {
         qa {
             dimension 'channel'
             applicationId 'ru.dndmemory.test'
-            versionCode 68
-            versionName '1.0.67'
+            versionCode 69
+            versionName '1.0.68'
             resValue 'string', 'app_name', 'DnD Memory Test'
             buildConfigField 'String', 'DND_SERVER_URL', '"https://test-dnd-memory.imikea.ru/"'
             buildConfigField 'boolean', 'IS_TEST', 'true'

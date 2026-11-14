@@ -922,6 +922,12 @@ export interface AdminUserDto {
   updatedAt: string
 }
 
+/** Значение глобального справочника. */
+export interface DictionaryItemDto {
+  name: string
+  iconFileId: string | null
+}
+
 /** Значение справочника кампании. */
 export interface DictionaryEntryDto {
   kind: string

@@ -45,6 +45,7 @@ watch(
 const canManage = computed(() => campaign.canManageCampaign)
 const canDelete = computed(() => campaign.canDeleteCampaign)
 const campaignId = computed(() => campaign.campaignId ?? '')
+const section = ref<'main' | 'members' | 'dictionaries' | 'sync' | 'danger'>('main')
 
 watch(campaignId, () => { if (campaignId.value) void loadDictionaries() }, { immediate: true })
 
@@ -127,7 +128,16 @@ async function removeCampaign(): Promise<void> {
       </div>
     </div>
 
-    <form class="card stack" @submit.prevent="save">
+    <div class="settings-layout">
+      <aside class="settings-nav">
+        <button class="settings-nav__item" :class="{ 'settings-nav__item--active': section === 'main' }" type="button" @click="section = 'main'">Основное</button>
+        <button class="settings-nav__item" :class="{ 'settings-nav__item--active': section === 'members' }" type="button" @click="section = 'members'">Участники</button>
+        <button class="settings-nav__item" :class="{ 'settings-nav__item--active': section === 'dictionaries' }" type="button" @click="section = 'dictionaries'">Справочники</button>
+        <button class="settings-nav__item" :class="{ 'settings-nav__item--active': section === 'sync' }" type="button" @click="section = 'sync'">Синхронизация</button>
+        <button class="settings-nav__item settings-nav__item--danger" :class="{ 'settings-nav__item--active': section === 'danger' }" type="button" @click="section = 'danger'">Опасная зона</button>
+      </aside>
+      <div class="settings-main stack">
+    <form v-if="section === 'main'" class="card stack" @submit.prevent="save">
       <h2>Название и описание</h2>
       <div class="field">
         <label class="field__label" for="settings-title">Название</label>
@@ -153,7 +163,7 @@ async function removeCampaign(): Promise<void> {
       </div>
     </form>
 
-    <div class="card stack">
+    <div v-if="section === 'sync'" class="card stack">
       <h2>Синхронизация</h2>
       <div class="faint">
         <div>Кампания: {{ campaign.campaign?.entityCount ?? 0 }} объектов, {{ campaign.campaign?.retellingCount ?? 0 }} пересказов, {{ campaign.campaign?.memberCount ?? 0 }} участников.</div>
@@ -180,9 +190,9 @@ async function removeCampaign(): Promise<void> {
       </p>
     </div>
 
-    <MembersPanel />
+    <MembersPanel v-if="section === 'members'" />
 
-    <div v-if="canManage" class="card stack">
+    <div v-if="section === 'dictionaries' && canManage" class="card stack">
       <h2>Справочники</h2>
       <p class="muted">Снятые галки скрывают значение при создании. Используемые значения снять нельзя.</p>
       <div v-for="kind in dictionaryKind" :key="kind" class="stack stack--sm">
@@ -203,7 +213,7 @@ async function removeCampaign(): Promise<void> {
       </div>
     </div>
 
-    <div v-if="canManage" class="card stack">
+    <div v-if="section === 'danger' && canManage" class="card stack">
       <h2>Удаление кампании</h2>
       <p class="muted">
         Кампания удаляется на сервере для всех участников. Действие необратимо.
@@ -224,5 +234,7 @@ async function removeCampaign(): Promise<void> {
       @cancel="confirmDelete = false"
       @confirm="removeCampaign"
     />
+      </div>
+    </div>
   </div>
 </template>

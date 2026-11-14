@@ -3,11 +3,12 @@ import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AdminNav from '@/components/AdminNav.vue'
 
-import { adminApi, errorMessage } from '@/api'
+import { adminApi, errorMessage, uploadFile } from '@/api'
+import type { DictionaryItemDto } from '@/api'
 import { classIconUrl } from '@/ui/classIcons'
 import { typeIconPath } from '@/ui/typeIcons'
 
-const data = ref<Record<string, string[]>>({})
+const data = ref<Record<string, DictionaryItemDto[]>>({})
 const route = useRoute()
 const kind = ref(String(route.query.kind ?? 'RACE'))
 const name = ref('')
@@ -26,6 +27,20 @@ async function load(): Promise<void> {
   }
 }
 
+async function changeIcon(item: DictionaryItemDto, event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  try {
+    const uploaded = await uploadFile(file)
+    await adminApi.setDictionaryIcon(kind.value, item.name, uploaded.id)
+    await load()
+  } catch (caught) {
+    error.value = errorMessage(caught)
+  }
+}
+
 async function add(): Promise<void> {
   if (!name.value.trim()) return
   try {
@@ -37,12 +52,13 @@ async function add(): Promise<void> {
   }
 }
 
-async function rename(value: string): Promise<void> {
-  const next = prompt('Новое название', value)
-  if (!next || next.trim() === value) return
+async function rename(item: DictionaryItemDto): Promise<void> {
+  const next = prompt('Новое название', item.name)
+  if (!next || next.trim() === item.name) return
   try {
     await adminApi.addDictionary(kind.value, next.trim())
-    await adminApi.removeDictionary(kind.value, value)
+    await adminApi.setDictionaryIcon(kind.value, next.trim(), item.iconFileId)
+    await adminApi.removeDictionary(kind.value, item.name)
     await load()
   } catch (caught) {
     error.value = errorMessage(caught)
@@ -56,10 +72,10 @@ function iconKind(): 'RACE' | 'LOCATION' | 'ITEM' | null {
   return null
 }
 
-async function remove(value: string): Promise<void> {
-  if (!confirm(`Удалить «${value}»?`)) return
+async function remove(item: DictionaryItemDto): Promise<void> {
+  if (!confirm(`Удалить «${item.name}»?`)) return
   try {
-    await adminApi.removeDictionary(kind.value, value)
+    await adminApi.removeDictionary(kind.value, item.name)
     await load()
   } catch (caught) {
     error.value = errorMessage(caught)
@@ -95,19 +111,24 @@ watch(() => route.query.kind, (value) => {
     </div>
     <div class="card stack">
       <div class="dict-row dict-row--head"><span>Название</span><span>Картинка</span><span></span></div>
-      <div v-for="item in items" :key="item" class="dict-row">
-        <span>{{ item }}</span>
+      <div v-for="item in items" :key="item.name" class="dict-row">
+        <span>{{ item.name }}</span>
         <span class="dict-icon">
-          <svg v-if="iconKind()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-            <path :d="typeIconPath(iconKind()!, item)" />
+          <img v-if="item.iconFileId" :src="`/api/files/${item.iconFileId}`" alt="" />
+          <svg v-else-if="iconKind()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path :d="typeIconPath(iconKind()!, item.name)" />
           </svg>
           <span
-            v-else-if="kind === 'CLASS' && classIconUrl(item)"
+            v-else-if="kind === 'CLASS' && classIconUrl(item.name)"
             class="dict-icon__mask"
-            :style="{ maskImage: 'url(' + classIconUrl(item) + ')', WebkitMaskImage: 'url(' + classIconUrl(item) + ')' }"
+            :style="{ maskImage: 'url(' + classIconUrl(item.name) + ')', WebkitMaskImage: 'url(' + classIconUrl(item.name) + ')' }"
           />
         </span>
         <span class="row">
+          <label class="btn btn--sm">
+            Картинка
+            <input type="file" accept="image/*" hidden @change="changeIcon(item, $event)" />
+          </label>
           <button class="btn btn--sm" type="button" @click="rename(item)">Изменить</button>
           <button class="btn btn--danger btn--sm" type="button" @click="remove(item)">Удалить</button>
         </span>
