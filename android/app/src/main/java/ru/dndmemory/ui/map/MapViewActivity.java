@@ -43,11 +43,10 @@ public class MapViewActivity extends BaseCampaignActivity {
         root.addView(canvas, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
         setContentView(root);
-        canvas.setListener(marker -> new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-                .setTitle(marker.name)
-                .setMessage(typeLabel(marker.objectType))
-                .setPositiveButton("i", (dialog, which) -> Nav.openEntity(this, campaignId, marker.entityId))
-                .setNegativeButton(R.string.action_close, null)
+        canvas.setListener(marker -> com.google.android.material.snackbar.Snackbar
+                .make(canvas, marker.name + " · " + typeLabel(marker.objectType),
+                        com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+                .setAction("i", v -> Nav.openEntity(this, campaignId, marker.entityId))
                 .show());
         load();
     }
