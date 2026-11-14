@@ -61,7 +61,11 @@ public final class ApkInstaller {
             }
             File target = file(app, versionCode);
             File part = new File(dir, target.getName() + ".part");
-            OkHttpClient client = new OkHttpClient();
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                    .readTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+                    .writeTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+                    .build();
             Request request = new Request.Builder().url(url).build();
             try (Response response = client.newCall(request).execute()) {
                 ResponseBody body = response.body();
