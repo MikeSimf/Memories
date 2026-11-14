@@ -21,6 +21,7 @@ const dragging = ref(false)
 const dragStart = ref({ x: 0, y: 0, tx: 0, ty: 0 })
 const adding = ref(false)
 const dragMoved = ref(false)
+const hovered = ref<{ x: number; y: number; text: string } | null>(null)
 const pick = ref<{ x: number; y: number } | null>(null)
 const chosenEntityId = ref('')
 const selectedMarker = ref<MapMarkerDto | null>(null)
@@ -224,12 +225,15 @@ onMounted(load)
             :title="group.markers.map((item) => item.name).join(', ')"
             type="button"
             @click.stop="openGroup(group)"
+            @mouseenter="hovered = { x: group.x, y: group.y, text: group.markers.length > 1 ? group.markers.map((item) => item.name).join(', ') : group.markers[0].name + ' · ' + objectTypeLabel(group.markers[0].objectType) }"
+            @mouseleave="hovered = null"
           >
             <template v-if="group.markers.length > 1">{{ group.markers.length }}</template>
             <svg v-else class="map-marker__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path :d="markerIcon(group.markers[0])" />
             </svg>
           </button>
+          <div v-if="hovered" class="map-hover" :style="{ left: `${hovered.x * 100}%`, top: `${hovered.y * 100}%` }">{{ hovered.text }}</div>
         </div>
       </div>
         <div class="map-zoom">
@@ -315,6 +319,7 @@ onMounted(load)
 .map-marker--character, .map-marker--hero { background: #2f6bff; }
 .map-marker--location { background: #0f9d76; }
 .map-marker--item { background: #b9770f; }
+.map-hover { position: absolute; z-index: 5; transform: translate(-50%, -140%); padding: 6px 10px; border-radius: 8px; background: rgba(20,20,20,.92); color: #fff; font-size: .85rem; white-space: nowrap; max-width: 280px; overflow: hidden; text-overflow: ellipsis; pointer-events: none; box-shadow: 0 4px 16px #0006; }
 .map-marker__icon { width: 19px; height: 19px; transform: rotate(45deg); }
 .map-marker__image { width: 100%; height: 100%; object-fit: cover; border-radius: 50% 50% 50% 0; transform: rotate(45deg); }
 .map-marker--cluster { display: grid; place-items: center; background: #c46a2a; color: #fff; font-weight: 700; border-radius: 50%; transform: translate(-50%, -50%); }
