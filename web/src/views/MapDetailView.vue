@@ -232,7 +232,7 @@ onMounted(load)
 .map-viewport { height: auto; min-height: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: #1b1b1b; cursor: grab; touch-action: none; }
 .map-canvas { position: relative; width: 100%; transform-origin: 0 0; }
 .map-image { display: block; width: 100%; cursor: grab; }
-.map-image img { display: block; width: 100%; height: auto; cursor: inherit; user-select: none; pointer-events: none; }
+.map-image :deep(img) { display: block; width: 100%; height: auto; cursor: inherit; user-select: none; pointer-events: none; }
 .map-image--empty { display: grid; place-items: center; color: #aaa; min-height: 240px; }
 .map-marker { position: absolute; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 2px solid #fff; border-radius: 50% 50% 50% 0; transform: translate(-50%, -100%) rotate(-45deg); background: #c46a2a; color: #fff; cursor: pointer; box-shadow: 0 2px 8px #0008; }
 .map-marker--character, .map-marker--hero { background: #2f6bff; }
