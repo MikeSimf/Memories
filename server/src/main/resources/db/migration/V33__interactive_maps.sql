@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS interactive_maps (
     campaign_id   UUID NOT NULL REFERENCES campaigns (id) ON DELETE CASCADE,
     name          VARCHAR(160) NOT NULL,
     description   TEXT,
-    image_file_id UUID REFERENCES files (id) ON DELETE SET NULL,
+    image_file_id UUID REFERENCES stored_files (id) ON DELETE SET NULL,
     created_by    UUID,
     updated_by    UUID,
     revision      BIGINT NOT NULL DEFAULT 1,
