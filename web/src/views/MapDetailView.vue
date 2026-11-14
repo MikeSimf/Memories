@@ -36,6 +36,14 @@ const canEdit = computed(() => campaign.canCreate('LOCATION'))
 
 const listedMarkers = computed(() => (map.value?.markers ?? []).filter((marker) => filters.value[marker.objectType]))
 
+const groupedMarkers = computed(() => {
+  const order = ['CHARACTER', 'HERO', 'LOCATION', 'ITEM']
+  const labels: Record<string, string> = { CHARACTER: 'Персонажи', HERO: 'Герои', LOCATION: 'Локации', ITEM: 'Предметы' }
+  return order
+    .map((type) => ({ type, label: labels[type], markers: listedMarkers.value.filter((marker) => marker.objectType === type) }))
+    .filter((group) => group.markers.length > 0)
+})
+
 const markerGroups = computed(() => {
   if (!map.value) return []
   const cell = scale.value >= 1.8 ? 0.001 : 0.06
@@ -180,8 +188,6 @@ onMounted(load)
     <div v-if="loading" class="loading"><span class="spinner" /> Загружаем карту…</div>
     <template v-else-if="map">
       <div class="row map-controls">
-        <button class="btn btn--sm" type="button" @click="zoom(0.25)">+</button>
-        <button class="btn btn--sm" type="button" @click="zoom(-0.25)">−</button>
         <button class="btn btn--sm" type="button" @click="scale = 1; tx = 0; ty = 0">Сбросить</button>
         <button v-if="canEdit" class="btn btn--sm" :class="{ 'btn--primary': adding }" type="button" @click="adding = !adding">
           {{ adding ? 'Выберите точку на карте' : 'Добавить метку' }}
@@ -225,23 +231,28 @@ onMounted(load)
         </div>
       </div>
         <div class="map-zoom">
+          <button class="map-zoom__button" type="button" aria-label="Приблизить" @click="zoom(0.25)">+</button>
           <input v-model.number="scale" type="range" min="1" max="4" step="0.05" aria-label="Масштаб карты" />
+          <button class="map-zoom__button" type="button" aria-label="Отдалить" @click="zoom(-0.25)">−</button>
         </div>
       </div>
       <aside class="map-side">
         <strong>На карте</strong>
-        <button
-          v-for="marker in listedMarkers"
-          :key="marker.id"
-          class="map-side__item"
-          type="button"
-          @click="selectedMarker = marker"
-        >
-          <span class="map-side__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path :d="markerIcon(marker)" /></svg>
-          </span>
-          <span>{{ marker.name }}</span>
-        </button>
+        <template v-for="group in groupedMarkers" :key="group.type">
+          <div class="map-side__title">{{ group.label }} · {{ group.markers.length }}</div>
+          <button
+            v-for="marker in group.markers"
+            :key="marker.id"
+            class="map-side__item"
+            type="button"
+            @click="selectedMarker = marker"
+          >
+            <span class="map-side__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path :d="markerIcon(marker)" /></svg>
+            </span>
+            <span>{{ marker.name }}</span>
+          </button>
+        </template>
         <p v-if="listedMarkers.length === 0" class="faint">Нет меток выбранных типов.</p>
       </aside>
       </div>
@@ -281,17 +292,20 @@ onMounted(load)
 .map-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 12px; align-items: start; }
 .map-stage { display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 0; }
 .map-side { display: flex; flex-direction: column; gap: 4px; max-height: clamp(320px, calc(100vh - 330px), 680px); overflow: auto; border: 1px solid var(--border); border-radius: 12px; padding: 10px; background: var(--bg-elev); }
+.map-side__title { margin: 8px 0 2px; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
 .map-side__item { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: transparent; color: inherit; text-align: left; padding: 6px; border-radius: 8px; cursor: pointer; font: inherit; }
 .map-side__item:hover { background: rgba(127,127,127,.14); }
 .map-side__icon { width: 18px; height: 18px; flex: none; }
 .map-side__icon svg { width: 18px; height: 18px; }
 .map-viewport { flex: 0 1 auto; width: fit-content; max-width: calc(100% - 44px); min-width: 0; height: auto; max-height: clamp(320px, calc(100vh - 330px), 680px); overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: #1b1b1b; cursor: grab; touch-action: none; display: flex; align-items: center; justify-content: center; }
-.map-zoom { display: flex; align-items: center; padding: 4px; }
+.map-zoom { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px; }
+.map-zoom__button { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elev); color: inherit; font-size: 18px; line-height: 1; cursor: pointer; }
+.map-zoom__button:hover { border-color: var(--accent); }
 .map-zoom input { writing-mode: vertical-lr; direction: rtl; width: 22px; height: 220px; accent-color: var(--accent); }
 .map-controls { flex-wrap: wrap; }
 .map-filters { display: flex; flex-wrap: wrap; gap: 8px; font-size: .85rem; }
 .map-filters label { display: inline-flex; gap: 4px; align-items: center; }
-.map-canvas { position: relative; flex: 0 0 auto; max-width: 100%; max-height: 100%; transform-origin: 0 0; }
+.map-canvas { position: relative; flex: 0 0 auto; max-width: 100%; max-height: 100%; will-change: transform; transform-origin: 0 0; }
 .map-image { display: block; position: relative; max-width: 100%; max-height: 100%; cursor: grab; }
 .map-image :deep(img) { display: block; max-width: 100%; max-height: calc(100vh - 330px); width: auto; height: auto; cursor: inherit; user-select: none; pointer-events: none; }
 .map-image--empty { display: grid; place-items: center; color: #aaa; min-height: 240px; }
