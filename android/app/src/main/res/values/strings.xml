@@ -183,7 +183,8 @@
     <string name="campaign_dictionary_items">Типы предметов</string>
     <string name="campaign_dictionary_locations">Типы локаций</string>
     <string name="campaign_section_main">Основное</string>
-    <string name="campaign_info_title">Кампания</string>
+    <string name="campaign_dictionary_count">выбрано %1$d из %2$d</string>
+    <string name="campaign_info_title">Сведения</string>
     <string name="campaign_info_edit">Редактировать кампанию</string>
     <string name="campaign_info_delete">Удалить кампанию</string>
     <string name="campaign_info_delete_confirm">Удалить кампанию со всеми объектами? Действие необратимо.</string>

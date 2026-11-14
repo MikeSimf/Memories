@@ -32,9 +32,11 @@ public class CampaignDictionaryService {
         private final String kind;
         private final String name;
         private final boolean enabled;
+        private final String iconFileId;
         private final boolean used;
 
-        public Entry(String kind, String name, boolean enabled, boolean used) {
+        public Entry(String kind, String name, boolean enabled, String iconFileId, boolean used) {
+            this.iconFileId = iconFileId;
             this.kind = kind;
             this.name = name;
             this.enabled = enabled;
@@ -47,6 +49,10 @@ public class CampaignDictionaryService {
 
         public String getName() {
             return name;
+        }
+
+        public String getIconFileId() {
+            return iconFileId;
         }
 
         public boolean isEnabled() {
@@ -66,8 +72,10 @@ public class CampaignDictionaryService {
             Set<String> disabled = new LinkedHashSet<>(jdbc.queryForList(
                     "select name from campaign_dictionary_disabled where campaign_id = ? and kind = ?",
                     String.class, campaignId, kind));
+            java.util.Map<String, String> icons = icons(kind);
             for (String name : names(kind)) {
-                result.add(new Entry(kind, name, !disabled.contains(name), used(campaignId, kind, name) > 0));
+                result.add(new Entry(kind, name, !disabled.contains(name), icons.get(name),
+                        used(campaignId, kind, name) > 0));
             }
         }
         return result;
@@ -98,6 +106,15 @@ public class CampaignDictionaryService {
                 "select count(*) from campaign_dictionary_disabled where campaign_id = ? and kind = ? and name = ?",
                 Integer.class, campaignId, kind, name);
         return count == null || count == 0;
+    }
+
+    private java.util.Map<String, String> icons(String kind) {
+        java.util.Map<String, String> result = new java.util.HashMap<>();
+        String table = RACE.equals(kind) ? "races" : ITEM_TYPE.equals(kind) ? "item_types" : "location_types";
+        jdbc.query("select name, icon_file_id from " + table, rs -> {
+            result.put(rs.getString("name"), rs.getString("icon_file_id"));
+        });
+        return result;
     }
 
     private List<String> names(String kind) {

@@ -201,15 +201,6 @@ public class CampaignActivity extends BottomNavActivity implements CampaignHost 
             Nav.openCampaignInfo(this, campaignId);
             return true;
         }
-        if (id == R.id.action_invite) {
-            CampaignRoom campaign = viewModel.campaign().getValue();
-            if (!Rights.canInvite(campaign)) {
-                ViewUtils.toast(this, R.string.members_manage_forbidden);
-                return true;
-            }
-            Nav.openInvites(this, campaignId);
-            return true;
-        }
         if (id == R.id.action_refresh) {
             viewModel.refresh();
             return true;

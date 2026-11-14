@@ -3,6 +3,9 @@ package ru.dndmemory.ui.campaign;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.CheckBox;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
@@ -65,6 +68,7 @@ public class CampaignInfoActivity extends BottomNavActivity {
 
         setupSections();
         binding.campaignInfoEdit.setOnClickListener(v -> edit());
+        binding.campaignInfoInvites.setOnClickListener(v -> Nav.openInvites(this, campaignId));
         binding.campaignInfoManageMembers.setOnClickListener(v -> Nav.openMembers(this, campaignId));
         binding.campaignInfoDelete.setOnClickListener(v -> confirmDelete());
         // Room нельзя читать в главном потоке: карточка заполняется после загрузки.
@@ -155,27 +159,81 @@ public class CampaignInfoActivity extends BottomNavActivity {
         if (entries == null || entries.isEmpty()) {
             return;
         }
-        String currentKind = null;
+        java.util.Map<String, List<ru.dndmemory.data.remote.dto.DictionaryEntryDto>> groups = new java.util.LinkedHashMap<>();
         for (ru.dndmemory.data.remote.dto.DictionaryEntryDto entry : entries) {
-            if (!entry.kind.equals(currentKind)) {
-                currentKind = entry.kind;
-                android.widget.TextView title = new android.widget.TextView(this);
-                title.setText(dictionaryKindTitle(currentKind));
-                title.setPadding(0, 12, 0, 4);
-                binding.campaignInfoDictionaries.addView(title);
+            List<ru.dndmemory.data.remote.dto.DictionaryEntryDto> list = groups.get(entry.kind);
+            if (list == null) {
+                list = new ArrayList<>();
+                groups.put(entry.kind, list);
             }
+            list.add(entry);
+        }
+        for (java.util.Map.Entry<String, List<ru.dndmemory.data.remote.dto.DictionaryEntryDto>> group : groups.entrySet()) {
+            binding.campaignInfoDictionaries.addView(dictionaryGroup(group.getKey(), group.getValue()));
+        }
+    }
+
+    @NonNull
+    private android.view.View dictionaryGroup(@NonNull String kind,
+                                                @NonNull List<ru.dndmemory.data.remote.dto.DictionaryEntryDto> entries) {
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        header.setPadding(0, 16, 0, 10);
+        TextView title = new TextView(this);
+        title.setText(dictionaryKindTitle(kind));
+        title.setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_TitleMedium);
+        header.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        int selected = 0;
+        for (ru.dndmemory.data.remote.dto.DictionaryEntryDto entry : entries) if (entry.enabled) selected++;
+        TextView count = new TextView(this);
+        count.setText(getString(R.string.campaign_dictionary_count, selected, entries.size()));
+        count.setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodySmall);
+        header.addView(count);
+        TextView arrow = new TextView(this);
+        arrow.setText("▾");
+        arrow.setPadding(12, 0, 0, 0);
+        header.addView(arrow);
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        header.setOnClickListener(v -> {
+            boolean show = body.getVisibility() != android.view.View.VISIBLE;
+            body.setVisibility(show ? android.view.View.VISIBLE : android.view.View.GONE);
+            arrow.setText(show ? "▾" : "▸");
+        });
+        root.addView(header);
+        root.addView(body);
+
+        okhttp3.OkHttpClient client = App.container(this).okHttpClient();
+        for (ru.dndmemory.data.remote.dto.DictionaryEntryDto entry : entries) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+            row.setMinimumHeight((int) (44 * getResources().getDisplayMetrics().density));
+            ImageView icon = new ImageView(this);
+            icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            int size = (int) (30 * getResources().getDisplayMetrics().density);
+            row.addView(icon, new LinearLayout.LayoutParams(size, size));
+            if (entry.iconFileId != null && !entry.iconFileId.isEmpty()) {
+                ru.dndmemory.ui.common.ImageLoader.load(client, entry.iconFileId, icon);
+            }
+            TextView name = new TextView(this);
+            name.setText(entry.name);
+            name.setPadding((int) (12 * getResources().getDisplayMetrics().density), 0, 0, 0);
+            row.addView(name, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
             CheckBox box = new CheckBox(this);
-            box.setText(entry.name);
             box.setChecked(entry.enabled);
             boolean canManage = campaign != null && Rights.canManageCampaign(campaign);
             box.setEnabled(canManage && !(entry.used && entry.enabled));
             box.setOnCheckedChangeListener((button, checked) -> {
                 if (!canManage) return;
-                java.util.Map<String, Object> body = new java.util.HashMap<>();
-                body.put("kind", entry.kind);
-                body.put("name", entry.name);
-                body.put("enabled", checked);
-                App.container(this).apiService().patchDictionary(campaignId, body).enqueue(
+                java.util.Map<String, Object> payload = new java.util.HashMap<>();
+                payload.put("kind", entry.kind);
+                payload.put("name", entry.name);
+                payload.put("enabled", checked);
+                App.container(this).apiService().patchDictionary(campaignId, payload).enqueue(
                         new retrofit2.Callback<Void>() {
                             @Override
                             public void onResponse(@NonNull retrofit2.Call<Void> call, @NonNull retrofit2.Response<Void> response) {
@@ -190,8 +248,10 @@ public class CampaignInfoActivity extends BottomNavActivity {
                             }
                         });
             });
-            binding.campaignInfoDictionaries.addView(box);
+            row.addView(box);
+            body.addView(row);
         }
+        return root;
     }
 
     @NonNull
@@ -211,6 +271,7 @@ public class CampaignInfoActivity extends BottomNavActivity {
         boolean canEdit = Rights.canManageCampaign(campaign);
         boolean owner = Rights.canDeleteCampaign(campaign);
         ViewUtils.show(binding.campaignInfoManageMembers, Rights.canInvite(campaign));
+        ViewUtils.show(binding.campaignInfoInvites, Rights.canInvite(campaign));
         ViewUtils.show(binding.campaignInfoEdit, canEdit);
         ViewUtils.show(binding.campaignInfoDelete, owner);
     }
