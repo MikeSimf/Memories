@@ -108,7 +108,7 @@ public class CampaignListActivity extends AppCompatActivity implements CampaignA
             return;
         }
         // Скачиваем и сразу открываем установщик: искать apk в загрузках не нужно.
-        ru.dndmemory.ui.common.ApkInstaller.downloadAndInstall(this, url);
+        ru.dndmemory.ui.common.ApkInstaller.downloadAndInstall(this, url, 0);
     }
 
     private boolean onMenu(@NonNull MenuItem item) {

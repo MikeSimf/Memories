@@ -71,7 +71,8 @@ public final class FileDownloads {
             return;
         }
         final Context app = context.getApplicationContext();
-        ViewUtils.toast(app, R.string.file_download_started);
+        final DownloadProgressDialog progress = DownloadProgressDialog.show(context,
+                context.getString(R.string.download_progress));
         AppExecutors.get().io(() -> {
             File dir = new File(app.getExternalFilesDir(null), "files");
             if (!dir.exists() && !dir.mkdirs()) {
@@ -95,12 +96,18 @@ public final class FileDownloads {
                     name = "file-" + fileId.substring(0, Math.min(8, fileId.length()));
                 }
                 File target = new File(dir, safeName(name));
+                long total = body.contentLength();
+                long done = 0;
                 try (InputStream in = body.byteStream();
                      OutputStream out = new FileOutputStream(target)) {
                     byte[] buffer = new byte[8192];
                     int read;
                     while ((read = in.read(buffer)) > 0) {
                         out.write(buffer, 0, read);
+                        done += read;
+                        if (progress != null && total > 0) {
+                            progress.progress((int) (done * 100 / total));
+                        }
                     }
                 }
                 prefs(app).edit()
@@ -115,6 +122,7 @@ public final class FileDownloads {
         }, new RepoCallback<File>() {
             @Override
             public void onSuccess(@Nullable File file) {
+                if (progress != null) progress.dismiss();
                 ViewUtils.toast(app, R.string.file_downloaded);
                 if (onDone != null) {
                     onDone.run();
@@ -123,6 +131,7 @@ public final class FileDownloads {
 
             @Override
             public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) {
+                if (progress != null) progress.dismiss();
                 ViewUtils.toast(app, R.string.file_download_failed);
             }
         });

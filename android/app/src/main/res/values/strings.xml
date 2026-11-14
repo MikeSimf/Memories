@@ -17,6 +17,8 @@
     <string name="update_required_text">Версия %1$s несовместима с сервером. Обновите приложение, чтобы продолжить.</string>
     <string name="update_available_text">Доступна версия %1$s. Обновиться можно сейчас или позже.</string>
     <string name="update_download">Скачать</string>
+    <string name="update_install">Установить</string>
+    <string name="download_progress">Скачивание…</string>
     <string name="update_available_short">Доступно обновление %1$s</string>
     <string name="update_later">Позже</string>
     <string name="file_download_started">Скачивание началось</string>

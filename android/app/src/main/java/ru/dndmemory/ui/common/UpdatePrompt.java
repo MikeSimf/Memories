@@ -27,8 +27,10 @@ public final class UpdatePrompt {
                         ? R.string.update_required_text : R.string.update_available_text,
                         info.versionName == null ? "" : info.versionName))
                 .setCancelable(!info.required)
-                .setPositiveButton(R.string.update_download, (dialog, which) ->
-                        ApkInstaller.downloadAndInstall(activity, info.url))
+                .setPositiveButton(
+                        ApkInstaller.hasDownloaded(activity, info.versionCode)
+                                ? R.string.update_install : R.string.update_download,
+                        (dialog, which) -> ApkInstaller.downloadAndInstall(activity, info.url, info.versionCode))
                 .setNegativeButton(info.required ? null : activity.getString(R.string.update_later), null)
                 .show();
     }

@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 71
-    latest-version-name: 1.0.70
+    latest-version-code: 72
+    latest-version-name: 1.0.71
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Таблицы справочников и кабинета, вход в кабинет"
+    notes: "Прогресс загрузки обновлений и документов"
     versions:
+      - version: "1.0.71"
+        date: "2026-11-14"
+        notes: "Прогресс загрузки обновлений и документов"
       - version: "1.0.70"
         date: "2026-11-14"
         notes: "Таблицы и вход в кабинет"
