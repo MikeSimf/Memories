@@ -13,11 +13,11 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 11
-    latest-version-name: 1.10
+    latest-version-code: 12
+    latest-version-name: 1.11
     min-version-code: 1
     apk-url: https://dnd-memory.imikea.ru/dnd-memory.apk
-    notes: ""
+    notes: "Интерактивные карты и настройки"
     versions: []
   mail:
     enabled: ${MAIL_ENABLED:false}
