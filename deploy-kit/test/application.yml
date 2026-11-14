@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 80
-    latest-version-name: 1.0.79
+    latest-version-code: 81
+    latest-version-name: 1.0.80
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Подсказка при нажатии на метку карты"
+    notes: "Зум карты пальцами вокруг точки касания"
     versions:
+      - version: "1.0.80"
+        date: "2026-11-15"
+        notes: "Зум карты пальцами"
       - version: "1.0.79"
         date: "2026-11-15"
         notes: "Подсказка метки карты"

@@ -56,7 +56,15 @@ public class MapCanvasView extends View {
         scaleDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
             public boolean onScale(ScaleGestureDetector detector) {
+                float oldScale = scale;
                 scale = Math.max(minScale, Math.min(6f, scale * detector.getScaleFactor()));
+                if (oldScale > 0 && scale != oldScale) {
+                    float fx = detector.getFocusX();
+                    float fy = detector.getFocusY();
+                    // Точка под пальцами остаётся на месте: масштабируем вокруг неё.
+                    tx = fx - (fx - tx) * (scale / oldScale);
+                    ty = fy - (fy - ty) * (scale / oldScale);
+                }
                 invalidate();
                 return true;
             }
