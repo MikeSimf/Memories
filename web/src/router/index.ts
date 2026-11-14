@@ -129,6 +129,30 @@ const routes: RouteRecordRaw[] = [
         redirect: (to) => ({ name: 'campaign-tab', params: { campaignId: to.params.campaignId, tab: 'characters' } }),
       },
       {
+        path: 'maps',
+        name: 'campaign-maps',
+        component: () => import('@/views/MapsView.vue'),
+        meta: { title: 'Интерактивные карты' },
+      },
+      {
+        path: 'maps/new',
+        name: 'map-new',
+        component: () => import('@/views/MapEditView.vue'),
+        meta: { title: 'Новая карта' },
+      },
+      {
+        path: 'maps/:mapId',
+        name: 'map-detail',
+        component: () => import('@/views/MapDetailView.vue'),
+        meta: { title: 'Карта' },
+      },
+      {
+        path: 'maps/:mapId/edit',
+        name: 'map-edit',
+        component: () => import('@/views/MapEditView.vue'),
+        meta: { title: 'Правка карты' },
+      },
+      {
         path: 'materials',
         name: 'campaign-materials',
         component: () => import('@/views/MaterialsView.vue'),

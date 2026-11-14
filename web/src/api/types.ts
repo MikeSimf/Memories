@@ -958,3 +958,30 @@ export interface VersionDto {
   buildTime: string
   profile: string
 }
+
+/* ------------------------------------------------------------------ */
+/* Интерактивные карты                                                 */
+/* ------------------------------------------------------------------ */
+
+export interface MapMarkerDto {
+  id: string
+  entityId: string
+  name: string
+  objectType: ObjectClass
+  avatarFileId: string | null
+  x: number
+  y: number
+}
+
+export interface InteractiveMapDto {
+  id: string
+  name: string
+  description: string | null
+  imageFileId: string | null
+  markerCount: number
+  updatedAt: string
+}
+
+export interface InteractiveMapDetailDto extends InteractiveMapDto {
+  markers: MapMarkerDto[]
+}

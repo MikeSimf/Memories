@@ -201,6 +201,10 @@ public class CampaignActivity extends BottomNavActivity implements CampaignHost 
             Nav.openCampaignInfo(this, campaignId);
             return true;
         }
+        if (id == R.id.action_maps) {
+            Nav.openMaps(this, campaignId);
+            return true;
+        }
         if (id == R.id.action_refresh) {
             viewModel.refresh();
             return true;

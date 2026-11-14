@@ -26,5 +26,6 @@ export {
   materialsApi,
   locationTypesApi,
   itemTypesApi,
+  mapsApi,
 } from './endpoints'
 export type { RaceDto } from './endpoints'

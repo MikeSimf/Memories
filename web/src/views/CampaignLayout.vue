@@ -17,6 +17,7 @@ const tabs = [
   { key: 'items', label: 'Предметы', route: 'campaign-tab' },
   { key: 'heroes', label: 'Герои', route: 'campaign-heroes' },
   { key: 'retellings', label: 'Истории', route: 'campaign-retellings' },
+  { key: 'maps', label: 'Карты', route: 'campaign-maps' },
   { key: 'materials', label: 'Материалы', route: 'campaign-materials' },
 ] as const
 
@@ -28,6 +29,7 @@ const activeTab = computed(() => {
   const name = route.name
   if (name === 'campaign-heroes') return 'heroes'
   if (name === 'campaign-retellings') return 'retellings'
+  if (name === 'campaign-maps' || name === 'map-new' || name === 'map-detail' || name === 'map-edit') return 'maps'
   if (name === 'campaign-materials' || name === 'material-new' || name === 'material-edit') return 'materials'
   if (name === 'campaign-members') return 'members'
   return typeof route.params.tab === 'string' ? route.params.tab : ''

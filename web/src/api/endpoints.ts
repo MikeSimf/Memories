@@ -666,3 +666,27 @@ export const api = {
   itemTypes: itemTypesApi,
   materials: materialsApi,
 }
+
+export const mapsApi = {
+  list(campaignId: string): Promise<import('./types').InteractiveMapDto[]> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/maps` })
+  },
+  get(campaignId: string, mapId: string): Promise<import('./types').InteractiveMapDetailDto> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/maps/${mapId}` })
+  },
+  create(campaignId: string, body: Record<string, unknown>): Promise<import('./types').InteractiveMapDetailDto> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/maps`, method: 'POST', body })
+  },
+  update(campaignId: string, mapId: string, body: Record<string, unknown>): Promise<import('./types').InteractiveMapDetailDto> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/maps/${mapId}`, method: 'PATCH', body })
+  },
+  remove(campaignId: string, mapId: string): Promise<void> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/maps/${mapId}`, method: 'DELETE' })
+  },
+  addMarker(campaignId: string, mapId: string, entityId: string, x: number, y: number): Promise<void> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/maps/${mapId}/markers`, method: 'POST', body: { entityId, x, y } })
+  },
+  removeMarker(campaignId: string, mapId: string, markerId: string): Promise<void> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/maps/${mapId}/markers/${markerId}`, method: 'DELETE' })
+  },
+}

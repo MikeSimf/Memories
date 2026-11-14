@@ -59,7 +59,7 @@ public final class ApkInstaller {
             if (!dir.exists() && !dir.mkdirs()) {
                 throw new IllegalStateException("Нет папки для загрузки");
             }
-            File target = file(app, versionCode);
+            File target = new File(dir, "dnd-memory-" + versionCode + ".apk");
             File part = new File(dir, target.getName() + ".part");
             OkHttpClient client = new OkHttpClient.Builder()
                     .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)

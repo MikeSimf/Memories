@@ -94,6 +94,19 @@ public final class Nav {
         context.startActivity(intent);
     }
 
+    public static void openMaps(@NonNull Context context, @NonNull String campaignId) {
+        android.content.Intent intent = new android.content.Intent(context, ru.dndmemory.ui.map.MapsActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        context.startActivity(intent);
+    }
+
+    public static void openMap(@NonNull Context context, @NonNull String campaignId, @NonNull String mapId) {
+        android.content.Intent intent = new android.content.Intent(context, ru.dndmemory.ui.map.MapViewActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        intent.putExtra("mapId", mapId);
+        context.startActivity(intent);
+    }
+
     public static void openEntity(@NonNull Context context, @NonNull String campaignId,
                                   @NonNull String entityId) {
         Intent intent = new Intent(context, EntityDetailActivity.class);

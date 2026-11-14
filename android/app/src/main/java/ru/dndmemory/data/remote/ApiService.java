@@ -91,6 +91,15 @@ public interface ApiService {
             @retrofit2.http.Path("campaignId") String campaignId,
             @Body java.util.Map<String, Object> body);
 
+    @GET("api/campaigns/{campaignId}/maps")
+    Call<java.util.List<ru.dndmemory.data.remote.dto.MapDto>> maps(
+            @retrofit2.http.Path("campaignId") String campaignId);
+
+    @GET("api/campaigns/{campaignId}/maps/{mapId}")
+    Call<ru.dndmemory.data.remote.dto.MapDto> map(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @retrofit2.http.Path("mapId") String mapId);
+
     /** Обратная связь: сообщение сохраняется на сервере. */
     @POST("api/feedback")
     Call<okhttp3.ResponseBody> sendFeedback(@Body ru.dndmemory.data.remote.dto.FeedbackRequest body);
