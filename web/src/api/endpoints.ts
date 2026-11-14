@@ -536,6 +536,12 @@ export const adminApi = {
       method: 'POST', path: '/api/admin/system/dictionaries/rename', body: { kind, oldName, newName },
     })
   },
+  deleteFeedback(id: string): Promise<void> {
+    return apiClient.request<void>({ method: 'DELETE', path: `/api/admin/system/feedback/${id}` })
+  },
+  deleteCrash(id: string): Promise<void> {
+    return apiClient.request<void>({ method: 'DELETE', path: `/api/admin/system/crashes/${id}` })
+  },
   setDictionaryIcon(kind: string, name: string, iconFileId: string | null): Promise<void> {
     return apiClient.request<void>({
       method: 'POST', path: '/api/admin/system/dictionaries/icon', body: { kind, name, iconFileId },

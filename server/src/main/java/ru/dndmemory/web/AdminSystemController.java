@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.PathVariable;
 import ru.dndmemory.config.AppProperties;
 import ru.dndmemory.repo.UserRepository;
 import ru.dndmemory.security.UserPrincipal;
@@ -31,6 +33,7 @@ public class AdminSystemController {
     private final UserRepository userRepository;
     private final AppProperties properties;
     private final ru.dndmemory.service.GlobalDictionaryService dictionaries;
+    private final JdbcTemplate jdbc;
 
     @GetMapping("/users")
     public java.util.List<java.util.Map<String, Object>> users(
@@ -101,6 +104,18 @@ public class AdminSystemController {
                                   @RequestBody IconRequest request) {
         requireAdmin(principal);
         dictionaries.setIcon(request.kind, request.name, request.iconFileId);
+    }
+
+    @DeleteMapping("/feedback/{id}")
+    public void deleteFeedback(@AuthenticationPrincipal UserPrincipal principal, @PathVariable java.util.UUID id) {
+        requireAdmin(principal);
+        jdbc.update("delete from feedback where id = ?", id);
+    }
+
+    @DeleteMapping("/crashes/{id}")
+    public void deleteCrash(@AuthenticationPrincipal UserPrincipal principal, @PathVariable java.util.UUID id) {
+        requireAdmin(principal);
+        jdbc.update("delete from crash_reports where id = ?", id);
     }
 
     @GetMapping("/password-resets")

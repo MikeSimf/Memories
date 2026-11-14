@@ -12,11 +12,11 @@ const data = ref<Record<string, DictionaryItemDto[]>>({})
 const route = useRoute()
 const kind = ref(String(route.query.kind ?? 'RACE'))
 const name = ref('')
+const adding = ref(false)
 const error = ref<string | null>(null)
 const titles: Record<string, string> = {
   RACE: 'Расы', CLASS: 'Классы', ITEM_TYPE: 'Типы предметов', LOCATION_TYPE: 'Типы локаций',
 }
-const kinds = computed(() => Object.keys(data.value))
 const items = computed(() => data.value[kind.value] ?? [])
 
 async function load(): Promise<void> {
@@ -100,15 +100,17 @@ watch(() => route.query.kind, (value) => {
     <div class="admin-layout">
       <AdminNav />
       <div class="admin-layout__main stack">
-    <div class="row">
-      <select v-model="kind" class="select">
-        <option v-for="value in kinds" :key="value" :value="value">{{ titles[value] || value }}</option>
-      </select>
-      <input v-model="name" class="input" placeholder="Новое значение" />
-      <button class="btn btn--primary" type="button" @click="add">Добавить</button>
+    <div class="row row--between">
+      <strong>{{ titles[kind] }}</strong>
+      <button class="btn btn--primary" type="button" @click="adding = true">Добавить</button>
+    </div>
+    <div v-if="adding" class="card row">
+      <input v-model="name" class="input" placeholder="Название нового значения" @keyup.enter="add" />
+      <button class="btn btn--primary" type="button" @click="add(); adding = false">Сохранить</button>
+      <button class="btn" type="button" @click="adding = false; name = ''">Отмена</button>
     </div>
     <div class="card stack">
-      <div class="dict-row dict-row--head"><span>Название</span><span>Картинка</span><span></span></div>
+      <div class="dict-row dict-row--head"><span>Название</span><span>Картинка</span><span>Действия</span></div>
       <div v-for="item in items" :key="item.name" class="dict-row">
         <span>{{ item.name }}</span>
         <span class="dict-icon">
@@ -127,7 +129,7 @@ watch(() => route.query.kind, (value) => {
             Картинка
             <input type="file" accept="image/*" hidden @change="changeIcon(item, $event)" />
           </label>
-          <button class="btn btn--sm" type="button" @click="rename(item)">Изменить</button>
+          <button class="btn btn--sm" type="button" @click="rename(item)">Редактировать</button>
           <button class="btn btn--danger btn--sm" type="button" @click="remove(item)">Удалить</button>
         </span>
       </div>

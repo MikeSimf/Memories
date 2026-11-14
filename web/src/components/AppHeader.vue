@@ -49,6 +49,20 @@ const title = computed(() => campaign.campaign?.title ?? '')
     </RouterLink>
 
     <RouterLink
+      v-if="auth.user?.admin"
+      class="btn btn--ghost btn--sm"
+      :to="{ name: 'admin' }"
+      aria-label="Кабинет администратора"
+      title="Кабинет администратора"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M12 3l7 4v5c0 4.4-2.8 7.6-7 9-4.2-1.4-7-4.6-7-9V7z" />
+        <path d="M9 12l2 2 4-4" />
+      </svg>
+      Кабинет
+    </RouterLink>
+
+    <RouterLink
       class="btn btn--ghost btn--icon"
       :to="{ name: 'settings' }"
       aria-label="Настройки сайта"

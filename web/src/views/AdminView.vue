@@ -36,6 +36,16 @@ async function load(): Promise<void> {
   }
 }
 
+async function removeFeedback(id: string): Promise<void> {
+  if (!confirm('Удалить обращение?')) return
+  try { await adminApi.deleteFeedback(id); await load() } catch (caught) { error.value = errorMessage(caught) }
+}
+
+async function removeCrash(id: string): Promise<void> {
+  if (!confirm('Удалить отчёт об ошибке?')) return
+  try { await adminApi.deleteCrash(id); await load() } catch (caught) { error.value = errorMessage(caught) }
+}
+
 async function reset(user: AdminUserDto): Promise<void> {
   if (!user.email) return
   try {
@@ -89,20 +99,32 @@ onMounted(load)
 
       <div v-if="section === 'feedback'" class="card stack">
         <h2>Обратная связь <span class="faint">{{ feedback.length }}</span></h2>
-        <p v-if="feedback.length === 0" class="faint">Обращений нет.</p>
-        <div v-for="item in feedback" :key="item.id" class="stack stack--sm">
-          <strong>{{ item.email || 'без почты' }} · {{ new Date(item.createdAt).toLocaleString('ru') }}</strong>
-          <p style="margin: 0; white-space: pre-wrap">{{ item.message }}</p>
+        <div class="admin-table">
+          <div class="admin-table__row admin-table__row--feedback admin-table__head">
+            <span>Дата</span><span>Почта</span><span>Сообщение</span><span></span>
+          </div>
+          <div v-for="item in feedback" :key="item.id" class="admin-table__row admin-table__row--feedback">
+            <span>{{ new Date(item.createdAt).toLocaleString('ru') }}</span>
+            <span>{{ item.email || '—' }}</span>
+            <span class="admin-table__text" :title="item.message">{{ item.message }}</span>
+            <button class="btn btn--danger btn--sm" type="button" @click="removeFeedback(item.id)">Удалить</button>
+          </div>
         </div>
       </div>
 
       <div v-if="section === 'crashes'" class="card stack">
         <h2>Ошибки <span class="faint">{{ crashes.length }}</span></h2>
-        <p v-if="crashes.length === 0" class="faint">Ошибок нет.</p>
-        <details v-for="item in crashes" :key="item.id" class="stack stack--sm">
-          <summary>{{ item.appVersion || '—' }} · {{ item.device || '—' }} · {{ new Date(item.createdAt).toLocaleString('ru') }}</summary>
-          <pre style="white-space: pre-wrap; font-size: .75rem">{{ item.stacktrace }}</pre>
-        </details>
+        <div class="admin-table">
+          <div class="admin-table__row admin-table__row--crashes admin-table__head">
+            <span>Дата</span><span>Версия</span><span>Устройство</span><span></span>
+          </div>
+          <div v-for="item in crashes" :key="item.id" class="admin-table__row admin-table__row--crashes">
+            <span>{{ new Date(item.createdAt).toLocaleString('ru') }}</span>
+            <span>{{ item.appVersion || '—' }}</span>
+            <span>{{ item.device || '—' }}</span>
+            <button class="btn btn--danger btn--sm" type="button" @click="removeCrash(item.id)">Удалить</button>
+          </div>
+        </div>
       </div>
         </template>
       </div>
@@ -112,6 +134,9 @@ onMounted(load)
 
 <style scoped>
 .admin-table { display: flex; flex-direction: column; gap: 4px; overflow-x: auto; }
+.admin-table__row--feedback { grid-template-columns: .9fr .9fr 3fr .5fr; }
+.admin-table__row--crashes { grid-template-columns: 1fr .6fr 1.2fr .5fr; }
+.admin-table__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .admin-table__row { display: grid; grid-template-columns: 1.2fr 1.4fr 1.4fr .8fr 1fr; gap: 8px; align-items: center; min-width: 680px; }
 .admin-table__head { font-weight: 700; color: var(--text-muted); }
 .admin-layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 12px; align-items: start; }
