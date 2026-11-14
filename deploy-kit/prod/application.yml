@@ -13,11 +13,11 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 13
-    latest-version-name: 1.12
+    latest-version-code: 14
+    latest-version-name: 1.13
     min-version-code: 1
     apk-url: https://dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Зум карты пальцами вокруг точки касания"
+    notes: "Поворот карты по EXIF"
     versions: []
   mail:
     enabled: ${MAIL_ENABLED:false}
