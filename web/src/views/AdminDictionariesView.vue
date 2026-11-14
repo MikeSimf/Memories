@@ -138,3 +138,33 @@ watch(() => route.query.kind, (value) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.admin-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.admin-layout__main { min-width: 0; }
+.dict-row {
+  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px 340px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.dict-row--head { font-weight: 700; color: var(--text-muted); }
+.dict-icon { width: 30px; height: 30px; color: var(--text); display: flex; align-items: center; }
+.dict-icon img { width: 28px; height: 28px; object-fit: contain; }
+.dict-icon svg { width: 24px; height: 24px; }
+.dict-icon__mask { display: block; width: 24px; height: 24px; background: currentColor; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
+@media (max-width: 760px) {
+  .admin-layout { grid-template-columns: 1fr; }
+  .dict-row { grid-template-columns: minmax(0, 1fr) 60px; }
+  flex-wrap: nowrap;
+  .dict-row > .row { grid-column: 1 / -1; }
+}
+</style>

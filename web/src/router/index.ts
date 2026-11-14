@@ -183,7 +183,7 @@ const routes: RouteRecordRaw[] = [
         path: 'settings',
         name: 'campaign-settings',
         component: () => import('@/views/CampaignSettingsView.vue'),
-        meta: { title: 'Настройки кампании', narrow: true },
+        meta: { title: 'Настройки кампании' },
       },
       {
         path: 'entities/new',

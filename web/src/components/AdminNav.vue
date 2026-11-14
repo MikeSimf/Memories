@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
 const dictionaryKinds = [
   { key: 'RACE', label: 'Расы' },
   { key: 'CLASS', label: 'Классы' },
@@ -13,17 +15,18 @@ const dictionaryKinds = [
     <RouterLink class="admin-nav__item" :to="{ name: 'admin', query: { section: 'users' } }">Пользователи</RouterLink>
     <RouterLink class="admin-nav__item" :to="{ name: 'admin', query: { section: 'feedback' } }">Обратная связь</RouterLink>
     <RouterLink class="admin-nav__item" :to="{ name: 'admin', query: { section: 'crashes' } }">Ошибки</RouterLink>
-    <details class="admin-nav__group" open>
-      <summary>Справочники</summary>
-      <RouterLink
-        v-for="kind in dictionaryKinds"
-        :key="kind.key"
-        class="admin-nav__item admin-nav__item--child"
-        :to="{ name: 'admin-dictionaries', query: { kind: kind.key } }"
-      >
-        {{ kind.label }}
-      </RouterLink>
-    </details>
+
+    <div class="admin-nav__title">Справочники</div>
+    <RouterLink
+      v-for="kind in dictionaryKinds"
+      :key="kind.key"
+      class="admin-nav__item admin-nav__item--child"
+      :class="{ 'admin-nav__item--active': route.name === 'admin-dictionaries' && route.query.kind === kind.key }"
+      :to="{ name: 'admin-dictionaries', query: { kind: kind.key } }"
+    >
+      {{ kind.label }}
+    </RouterLink>
+
     <RouterLink class="admin-nav__item" :to="{ name: 'admin-cards' }">Карточки</RouterLink>
   </aside>
 </template>
@@ -33,7 +36,8 @@ const dictionaryKinds = [
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 190px;
+  width: 220px;
+  min-width: 220px;
   padding: 8px;
   border-right: 1px solid var(--border);
 }
@@ -43,8 +47,8 @@ const dictionaryKinds = [
   color: inherit;
   text-decoration: none;
 }
-.admin-nav__item:hover, .admin-nav__item.router-link-active { background: var(--bg-elev-2, rgba(127,127,127,.12)); }
-.admin-nav__item--child { padding-left: 26px; font-size: .92rem; }
-.admin-nav__group summary { cursor: pointer; padding: 8px 10px; font-weight: 700; }
-.admin-nav__group { display: flex; flex-direction: column; gap: 2px; }
+.admin-nav__item:hover { background: var(--bg-elev-2, rgba(127,127,127,.12)); }
+.admin-nav__item--active { background: var(--accent); color: #fff; }
+.admin-nav__item--child { padding-left: 22px; font-size: .92rem; }
+.admin-nav__title { margin: 9px 10px 3px; font-size: .75rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); }
 </style>

@@ -238,3 +238,43 @@ async function removeCampaign(): Promise<void> {
     </div>
   </div>
 </template>
+
+<style scoped>
+.settings-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.settings-nav {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.settings-nav__item {
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 9px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+.settings-nav__item:hover { background: rgba(127, 127, 127, .12); }
+.settings-nav__item--active { background: var(--accent); color: #fff; }
+.settings-nav__item--danger { color: #c62828; }
+.settings-nav__item--danger.settings-nav__item--active { background: #c62828; color: #fff; }
+.settings-main { min-width: 0; }
+@media (max-width: 760px) {
+  .settings-layout { grid-template-columns: 1fr; }
+  .settings-nav { position: static; flex-direction: row; overflow-x: auto; }
+  .settings-nav__item { white-space: nowrap; }
+}
+</style>

@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
       vue(),
       VitePWA({
         registerType: 'autoUpdate',
-        injectRegister: 'auto',
+        injectRegister: null,
         includeAssets: ['favicon.svg', 'icons/*.svg'],
         manifest: {
           name: 'DnD Memory',
