@@ -20,6 +20,7 @@ const ty = ref(0)
 const dragging = ref(false)
 const dragStart = ref({ x: 0, y: 0, tx: 0, ty: 0 })
 const adding = ref(false)
+const dragMoved = ref(false)
 const pick = ref<{ x: number; y: number } | null>(null)
 const chosenEntityId = ref('')
 const selectedMarker = ref<MapMarkerDto | null>(null)
@@ -32,6 +33,8 @@ const objectTypes = [
 ]
 
 const canEdit = computed(() => campaign.canCreate('LOCATION'))
+
+const listedMarkers = computed(() => (map.value?.markers ?? []).filter((marker) => filters.value[marker.objectType]))
 
 const markerGroups = computed(() => {
   if (!map.value) return []
@@ -78,14 +81,18 @@ function wheel(event: WheelEvent): void {
 function startDrag(event: PointerEvent): void {
   if ((event.target as HTMLElement).closest('.map-marker')) return
   dragging.value = true
+  dragMoved.value = false
   dragStart.value = { x: event.clientX, y: event.clientY, tx: tx.value, ty: ty.value }
   ;(event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId)
 }
 
 function moveDrag(event: PointerEvent): void {
   if (!dragging.value) return
-  tx.value = dragStart.value.tx + event.clientX - dragStart.value.x
-  ty.value = dragStart.value.ty + event.clientY - dragStart.value.y
+  const dx = event.clientX - dragStart.value.x
+  const dy = event.clientY - dragStart.value.y
+  if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragMoved.value = true
+  tx.value = dragStart.value.tx + dx
+  ty.value = dragStart.value.ty + dy
 }
 
 function endDrag(): void {
@@ -93,8 +100,10 @@ function endDrag(): void {
 }
 
 function mapClick(event: MouseEvent): void {
-  if (!adding.value || !map.value) return
-  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  if (!adding.value || !map.value || dragMoved.value) return
+  const image = (event.currentTarget as HTMLElement).querySelector<HTMLElement>('.map-image img')
+  if (!image) return
+  const rect = image.getBoundingClientRect()
   pick.value = {
     x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
     y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)),
@@ -142,8 +151,8 @@ function markerIcon(marker: MapMarkerDto): string {
   if (marker.objectType === 'HERO' || marker.objectType === 'CHARACTER') {
     return 'M12 4.4a3.4 3.4 0 1 0 0 6.8a3.4 3.4 0 1 0 0-6.8M5 20.4c0-3.4 3.1-6 7-6s7 2.6 7 6'
   }
-  if (marker.objectType === 'LOCATION') return typeIconPath('LOCATION', '')
-  return typeIconPath('ITEM', '')
+  if (marker.objectType === 'LOCATION') return typeIconPath('LOCATION', marker.locationType ?? '')
+  return typeIconPath('ITEM', marker.itemType ?? '')
 }
 
 function markerClass(marker: MapMarkerDto): string {
@@ -184,6 +193,7 @@ onMounted(load)
         </span>
       </div>
 
+      <div class="map-layout">
       <div class="map-stage">
       <div
         class="map-viewport"
@@ -218,6 +228,23 @@ onMounted(load)
           <input v-model.number="scale" type="range" min="1" max="4" step="0.05" aria-label="Масштаб карты" />
         </div>
       </div>
+      <aside class="map-side">
+        <strong>На карте</strong>
+        <button
+          v-for="marker in listedMarkers"
+          :key="marker.id"
+          class="map-side__item"
+          type="button"
+          @click="selectedMarker = marker"
+        >
+          <span class="map-side__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path :d="markerIcon(marker)" /></svg>
+          </span>
+          <span>{{ marker.name }}</span>
+        </button>
+        <p v-if="listedMarkers.length === 0" class="faint">Нет меток выбранных типов.</p>
+      </aside>
+      </div>
 
       <div v-if="selectedMarker" class="map-modal" @click.self="selectedMarker = null">
         <div class="card stack map-modal__card">
@@ -251,8 +278,14 @@ onMounted(load)
 </template>
 
 <style scoped>
-.map-stage { display: flex; align-items: stretch; gap: 10px; }
-.map-viewport { flex: 0 1 auto; width: fit-content; max-width: calc(100% - 44px); min-width: 0; height: clamp(320px, calc(100vh - 330px), 680px); overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: #1b1b1b; cursor: grab; touch-action: none; display: flex; align-items: center; justify-content: center; }
+.map-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 12px; align-items: start; }
+.map-stage { display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 0; }
+.map-side { display: flex; flex-direction: column; gap: 4px; max-height: clamp(320px, calc(100vh - 330px), 680px); overflow: auto; border: 1px solid var(--border); border-radius: 12px; padding: 10px; background: var(--bg-elev); }
+.map-side__item { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: transparent; color: inherit; text-align: left; padding: 6px; border-radius: 8px; cursor: pointer; font: inherit; }
+.map-side__item:hover { background: rgba(127,127,127,.14); }
+.map-side__icon { width: 18px; height: 18px; flex: none; }
+.map-side__icon svg { width: 18px; height: 18px; }
+.map-viewport { flex: 0 1 auto; width: fit-content; max-width: calc(100% - 44px); min-width: 0; height: auto; max-height: clamp(320px, calc(100vh - 330px), 680px); overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: #1b1b1b; cursor: grab; touch-action: none; display: flex; align-items: center; justify-content: center; }
 .map-zoom { display: flex; align-items: center; padding: 4px; }
 .map-zoom input { writing-mode: vertical-lr; direction: rtl; width: 22px; height: 220px; accent-color: var(--accent); }
 .map-controls { flex-wrap: wrap; }

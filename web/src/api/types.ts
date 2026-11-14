@@ -969,6 +969,8 @@ export interface MapMarkerDto {
   name: string
   objectType: ObjectClass
   avatarFileId: string | null
+  locationType?: string | null
+  itemType?: string | null
   x: number
   y: number
 }

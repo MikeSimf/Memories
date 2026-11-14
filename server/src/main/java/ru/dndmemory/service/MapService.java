@@ -34,6 +34,8 @@ public class MapService {
         public String name;
         public String objectType;
         public String avatarFileId;
+        public String locationType;
+        public String itemType;
         public double x;
         public double y;
     }
@@ -89,7 +91,7 @@ public class MapService {
                 }, mapId, campaignId);
         if (dto == null) throw ApiException.notFound("Карта не найдена");
         jdbc.query("select k.*, coalesce(h.name, c.name, l.name, i.name) as entity_name, "
-                        + "coalesce(h.avatar_file_id, c.avatar_file_id, NULL) as avatar, "
+                        + "coalesce(h.avatar_file_id, c.avatar_file_id, NULL) as avatar, l.location_type, i.item_type, "
                         + "case when h.id is not null then 'HERO' when c.id is not null then 'CHARACTER' "
                         + "when l.id is not null then 'LOCATION' else 'ITEM' end as kind "
                         + "from map_markers k "
@@ -105,6 +107,8 @@ public class MapService {
                     marker.name = rs.getString("entity_name");
                     marker.objectType = rs.getString("kind");
                     marker.avatarFileId = rs.getString("avatar");
+                    marker.locationType = rs.getString("location_type");
+                    marker.itemType = rs.getString("item_type");
                     marker.x = rs.getDouble("x");
                     marker.y = rs.getDouble("y");
                     dto.markers.add(marker);
