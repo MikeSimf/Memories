@@ -514,6 +514,7 @@ export const useCampaignStore = defineStore('campaign', () => {
       return {
         ...base,
         race: object.race ?? '',
+        alive: object.alive ?? null,
         klass: object.klass ?? '',
         gender: object.gender ?? 'unknown',
         shortDescription: object.shortDescription ?? '',

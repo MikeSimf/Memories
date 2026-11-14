@@ -134,7 +134,7 @@ async function removeCampaign(): Promise<void> {
         <button class="settings-nav__item" :class="{ 'settings-nav__item--active': section === 'members' }" type="button" @click="section = 'members'">Участники</button>
         <button class="settings-nav__item" :class="{ 'settings-nav__item--active': section === 'dictionaries' }" type="button" @click="section = 'dictionaries'">Справочники</button>
         <button class="settings-nav__item" :class="{ 'settings-nav__item--active': section === 'sync' }" type="button" @click="section = 'sync'">Синхронизация</button>
-        <button class="settings-nav__item settings-nav__item--danger" :class="{ 'settings-nav__item--active': section === 'danger' }" type="button" @click="section = 'danger'">Опасная зона</button>
+        <button class="settings-nav__item" :class="{ 'settings-nav__item--active': section === 'danger' }" type="button" @click="section = 'danger'">Действия</button>
       </aside>
       <div class="settings-main stack">
     <form v-if="section === 'main'" class="card stack" @submit.prevent="save">
@@ -214,7 +214,8 @@ async function removeCampaign(): Promise<void> {
     </div>
 
     <div v-if="section === 'danger' && canManage" class="card stack">
-      <h2>Удаление кампании</h2>
+      <h2>Действия</h2>
+      <p class="muted">Удаление кампании и другие необратимые действия.</p>
       <p class="muted">
         Кампания удаляется на сервере для всех участников. Действие необратимо.
       </p>
@@ -269,8 +270,6 @@ async function removeCampaign(): Promise<void> {
 }
 .settings-nav__item:hover { background: rgba(127, 127, 127, .12); }
 .settings-nav__item--active { background: var(--accent); color: #fff; }
-.settings-nav__item--danger { color: #c62828; }
-.settings-nav__item--danger.settings-nav__item--active { background: #c62828; color: #fff; }
 .settings-main { min-width: 0; }
 @media (max-width: 760px) {
   .settings-layout { grid-template-columns: 1fr; }
