@@ -83,6 +83,19 @@ public class AdminSystemController {
         public String iconFileId;
     }
 
+    public static class RenameRequest {
+        public String kind;
+        public String oldName;
+        public String newName;
+    }
+
+    @PostMapping("/dictionaries/rename")
+    public void renameDictionary(@AuthenticationPrincipal UserPrincipal principal,
+                                 @RequestBody RenameRequest request) {
+        requireAdmin(principal);
+        dictionaries.rename(request.kind, request.oldName, request.newName);
+    }
+
     @PostMapping("/dictionaries/icon")
     public void setDictionaryIcon(@AuthenticationPrincipal UserPrincipal principal,
                                   @RequestBody IconRequest request) {

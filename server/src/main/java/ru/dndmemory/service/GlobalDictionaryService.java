@@ -45,6 +45,33 @@ public class GlobalDictionaryService {
     }
 
     @Transactional
+    public void rename(String kind, String oldName, String newName) {
+        String value = newName == null ? "" : newName.trim();
+        if (value.isEmpty()) throw ApiException.badRequest("Укажите название");
+        if (value.equals(oldName)) return;
+        String table = table(kind);
+        Integer exists = jdbc.queryForObject(
+                "select count(*) from " + table + " where name = ?", Integer.class, value);
+        if (exists != null && exists > 0) throw ApiException.validation("Такое значение уже есть");
+        jdbc.update("update " + table + " set name = ? where name = ?", value, oldName);
+        if (RACE.equals(kind)) {
+            jdbc.update("update heroes set race = ? where race = ?", value, oldName);
+            jdbc.update("update characters set race = ? where race = ?", value, oldName);
+            jdbc.update("update campaign_dictionary_disabled set name = ? where kind = ? and name = ?", value, RACE, oldName);
+        } else if (CLASS.equals(kind)) {
+            jdbc.update("update heroes set klass = ? where klass = ?", value, oldName);
+            jdbc.update("update characters set klass = ? where klass = ?", value, oldName);
+            jdbc.update("update campaign_dictionary_disabled set name = ? where kind = ? and name = ?", value, CLASS, oldName);
+        } else if (ITEM_TYPE.equals(kind)) {
+            jdbc.update("update items set item_type = ? where item_type = ?", value, oldName);
+            jdbc.update("update campaign_dictionary_disabled set name = ? where kind = ? and name = ?", value, ITEM_TYPE, oldName);
+        } else if (LOCATION_TYPE.equals(kind)) {
+            jdbc.update("update locations set location_type = ? where location_type = ?", value, oldName);
+            jdbc.update("update campaign_dictionary_disabled set name = ? where kind = ? and name = ?", value, LOCATION_TYPE, oldName);
+        }
+    }
+
+    @Transactional
     public void setIcon(String kind, String name, String iconFileId) {
         String table = table(kind);
         jdbc.update("update " + table + " set icon_file_id = ? where name = ?",

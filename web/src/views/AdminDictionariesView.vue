@@ -56,9 +56,7 @@ async function rename(item: DictionaryItemDto): Promise<void> {
   const next = prompt('Новое название', item.name)
   if (!next || next.trim() === item.name) return
   try {
-    await adminApi.addDictionary(kind.value, next.trim())
-    await adminApi.setDictionaryIcon(kind.value, next.trim(), item.iconFileId)
-    await adminApi.removeDictionary(kind.value, item.name)
+    await adminApi.renameDictionary(kind.value, item.name, next.trim())
     await load()
   } catch (caught) {
     error.value = errorMessage(caught)

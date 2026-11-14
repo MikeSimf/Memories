@@ -531,6 +531,11 @@ export const adminApi = {
   dictionaries(): Promise<Record<string, DictionaryItemDto[]>> {
     return apiClient.request<Record<string, DictionaryItemDto[]>>({ path: '/api/admin/system/dictionaries' })
   },
+  renameDictionary(kind: string, oldName: string, newName: string): Promise<void> {
+    return apiClient.request<void>({
+      method: 'POST', path: '/api/admin/system/dictionaries/rename', body: { kind, oldName, newName },
+    })
+  },
   setDictionaryIcon(kind: string, name: string, iconFileId: string | null): Promise<void> {
     return apiClient.request<void>({
       method: 'POST', path: '/api/admin/system/dictionaries/icon', body: { kind, name, iconFileId },
