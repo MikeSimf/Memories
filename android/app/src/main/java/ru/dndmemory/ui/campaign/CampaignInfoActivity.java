@@ -2,6 +2,7 @@ package ru.dndmemory.ui.campaign;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.widget.CheckBox;
 import android.widget.EditText;
 
 import androidx.annotation.NonNull;
@@ -9,6 +10,7 @@ import androidx.annotation.Nullable;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import ru.dndmemory.App;
@@ -33,6 +35,8 @@ public class CampaignInfoActivity extends BottomNavActivity {
     private CampaignViewModel viewModel;
     private String campaignId;
     private CampaignRoom campaign;
+    private boolean dictionariesLoaded;
+    private String section = "main";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -59,6 +63,7 @@ public class CampaignInfoActivity extends BottomNavActivity {
                 .get(CampaignViewModel.class);
         viewModel.setCampaignId(campaignId);
 
+        setupSections();
         binding.campaignInfoEdit.setOnClickListener(v -> edit());
         binding.campaignInfoDelete.setOnClickListener(v -> confirmDelete());
         // Room нельзя читать в главном потоке: карточка заполняется после загрузки.
@@ -79,6 +84,120 @@ public class CampaignInfoActivity extends BottomNavActivity {
             }
         });
         loadMembers();
+    }
+
+
+    private void setupSections() {
+        String[][] items = {
+                {"main", getString(R.string.campaign_section_main)},
+                {"members", getString(R.string.tab_members)},
+                {"dictionaries", getString(R.string.campaign_dictionaries_title)},
+                {"sync", getString(R.string.campaign_sync_title)},
+                {"actions", getString(R.string.campaign_actions_title)},
+        };
+        for (String[] item : items) {
+            com.google.android.material.chip.Chip chip = new com.google.android.material.chip.Chip(this);
+            chip.setText(item[1]);
+            chip.setCheckable(true);
+            chip.setTag(item[0]);
+            chip.setOnClickListener(v -> showSection(item[0]));
+            binding.campaignInfoSections.addView(chip);
+            if ("main".equals(item[0])) chip.setChecked(true);
+        }
+        showSection("main");
+    }
+
+    private void showSection(@NonNull String key) {
+        section = key;
+        binding.campaignInfoMainSection.setVisibility("main".equals(key) ? android.view.View.VISIBLE : android.view.View.GONE);
+        binding.campaignInfoMembersSection.setVisibility("members".equals(key) ? android.view.View.VISIBLE : android.view.View.GONE);
+        binding.campaignInfoDictionariesSection.setVisibility("dictionaries".equals(key) ? android.view.View.VISIBLE : android.view.View.GONE);
+        binding.campaignInfoSyncSection.setVisibility("sync".equals(key) ? android.view.View.VISIBLE : android.view.View.GONE);
+        binding.campaignInfoActionsSection.setVisibility("actions".equals(key) ? android.view.View.VISIBLE : android.view.View.GONE);
+        for (int i = 0; i < binding.campaignInfoSections.getChildCount(); i++) {
+            android.view.View child = binding.campaignInfoSections.getChildAt(i);
+            if (child instanceof com.google.android.material.chip.Chip) {
+                ((com.google.android.material.chip.Chip) child).setChecked(key.equals(child.getTag()));
+            }
+        }
+        if ("dictionaries".equals(key) && !dictionariesLoaded) {
+            loadDictionaries();
+        }
+        if ("sync".equals(key) && campaign != null) {
+            binding.campaignInfoSyncText.setText(getString(R.string.campaign_sync_summary,
+                    campaign.latestRevision, campaign.updatedAt == null ? "—" : campaign.updatedAt));
+        }
+    }
+
+    private void loadDictionaries() {
+        dictionariesLoaded = true;
+        App.container(this).apiService().campaignDictionaries(campaignId).enqueue(
+                new retrofit2.Callback<List<ru.dndmemory.data.remote.dto.DictionaryEntryDto>>() {
+                    @Override
+                    public void onResponse(@NonNull retrofit2.Call<List<ru.dndmemory.data.remote.dto.DictionaryEntryDto>> call,
+                                           @NonNull retrofit2.Response<List<ru.dndmemory.data.remote.dto.DictionaryEntryDto>> response) {
+                        runOnUiThread(() -> renderDictionaries(response.body()));
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull retrofit2.Call<List<ru.dndmemory.data.remote.dto.DictionaryEntryDto>> call,
+                                          @NonNull Throwable t) {
+                        dictionariesLoaded = false;
+                        runOnUiThread(() -> ViewUtils.toast(CampaignInfoActivity.this,
+                                R.string.file_download_failed));
+                    }
+                });
+    }
+
+    private void renderDictionaries(@Nullable List<ru.dndmemory.data.remote.dto.DictionaryEntryDto> entries) {
+        binding.campaignInfoDictionaries.removeAllViews();
+        if (entries == null || entries.isEmpty()) {
+            return;
+        }
+        String currentKind = null;
+        for (ru.dndmemory.data.remote.dto.DictionaryEntryDto entry : entries) {
+            if (!entry.kind.equals(currentKind)) {
+                currentKind = entry.kind;
+                android.widget.TextView title = new android.widget.TextView(this);
+                title.setText(dictionaryKindTitle(currentKind));
+                title.setPadding(0, 12, 0, 4);
+                binding.campaignInfoDictionaries.addView(title);
+            }
+            CheckBox box = new CheckBox(this);
+            box.setText(entry.name);
+            box.setChecked(entry.enabled);
+            boolean canManage = campaign != null && Rights.canManageCampaign(campaign);
+            box.setEnabled(canManage && !(entry.used && entry.enabled));
+            box.setOnCheckedChangeListener((button, checked) -> {
+                if (!canManage) return;
+                java.util.Map<String, Object> body = new java.util.HashMap<>();
+                body.put("kind", entry.kind);
+                body.put("name", entry.name);
+                body.put("enabled", checked);
+                App.container(this).apiService().patchDictionary(campaignId, body).enqueue(
+                        new retrofit2.Callback<Void>() {
+                            @Override
+                            public void onResponse(@NonNull retrofit2.Call<Void> call, @NonNull retrofit2.Response<Void> response) {
+                                if (!response.isSuccessful()) {
+                                    runOnUiThread(() -> box.setChecked(!checked));
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(@NonNull retrofit2.Call<Void> call, @NonNull Throwable t) {
+                                runOnUiThread(() -> box.setChecked(!checked));
+                            }
+                        });
+            });
+            binding.campaignInfoDictionaries.addView(box);
+        }
+    }
+
+    @NonNull
+    private String dictionaryKindTitle(@Nullable String kind) {
+        if ("RACE".equals(kind)) return getString(R.string.campaign_dictionary_races);
+        if ("ITEM_TYPE".equals(kind)) return getString(R.string.campaign_dictionary_items);
+        return getString(R.string.campaign_dictionary_locations);
     }
 
     private void render() {

@@ -81,6 +81,16 @@ public interface ApiService {
             @retrofit2.http.Path("campaignId") String campaignId,
             @retrofit2.http.Query("kind") String kind);
 
+    /** Справочники кампании. */
+    @GET("api/campaigns/{campaignId}/dictionaries")
+    Call<java.util.List<ru.dndmemory.data.remote.dto.DictionaryEntryDto>> campaignDictionaries(
+            @retrofit2.http.Path("campaignId") String campaignId);
+
+    @retrofit2.http.PATCH("api/campaigns/{campaignId}/dictionaries")
+    Call<Void> patchDictionary(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @Body java.util.Map<String, Object> body);
+
     /** Обратная связь: сообщение сохраняется на сервере. */
     @POST("api/feedback")
     Call<okhttp3.ResponseBody> sendFeedback(@Body ru.dndmemory.data.remote.dto.FeedbackRequest body);

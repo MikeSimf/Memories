@@ -173,6 +173,16 @@
 
     <!-- Вкладки кампании: три -->
     <string name="tab_characters">Персонажи</string>
+    <string name="campaign_dictionaries_title">Справочники</string>
+    <string name="campaign_dictionaries_hint">Разрешённые значения для этой кампании</string>
+    <string name="campaign_sync_title">Синхронизация</string>
+    <string name="campaign_actions_title">Действия</string>
+    <string name="campaign_actions_hint">Необратимые действия с кампанией</string>
+    <string name="campaign_sync_summary">Ревизия: %1$d\nОбновлено: %2$s</string>
+    <string name="campaign_dictionary_races">Расы</string>
+    <string name="campaign_dictionary_items">Типы предметов</string>
+    <string name="campaign_dictionary_locations">Типы локаций</string>
+    <string name="campaign_section_main">Основное</string>
     <string name="campaign_info_title">Кампания</string>
     <string name="campaign_info_edit">Редактировать кампанию</string>
     <string name="campaign_info_delete">Удалить кампанию</string>
