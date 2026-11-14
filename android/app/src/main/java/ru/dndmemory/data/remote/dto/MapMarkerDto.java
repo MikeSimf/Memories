@@ -7,6 +7,8 @@ public class MapMarkerDto {
     public String name;
     public String objectType;
     public String avatarFileId;
+    public String locationType;
+    public String itemType;
     public double x;
     public double y;
 }

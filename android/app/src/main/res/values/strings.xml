@@ -172,6 +172,7 @@
     <string name="role_viewer">Наблюдатель</string>
 
     <!-- Вкладки кампании: три -->
+    <string name="tab_heroes">Герои</string>
     <string name="tab_characters">Персонажи</string>
     <string name="campaign_dictionaries_title">Справочники</string>
     <string name="campaign_dictionaries_hint">Разрешённые значения для этой кампании</string>

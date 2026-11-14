@@ -43,11 +43,20 @@ public class MapViewActivity extends BaseCampaignActivity {
         root.addView(canvas, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
         setContentView(root);
-        canvas.setListener(marker -> {
-            Toast.makeText(this, marker.name, Toast.LENGTH_SHORT).show();
-            Nav.openEntity(this, campaignId, marker.entityId);
-        });
+        canvas.setListener(marker -> new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle(marker.name)
+                .setMessage(typeLabel(marker.objectType))
+                .setPositiveButton("i", (dialog, which) -> Nav.openEntity(this, campaignId, marker.entityId))
+                .setNegativeButton(R.string.action_close, null)
+                .show());
         load();
+    }
+
+    private String typeLabel(String type) {
+        if ("LOCATION".equalsIgnoreCase(type)) return getString(R.string.tab_locations);
+        if ("ITEM".equalsIgnoreCase(type)) return getString(R.string.tab_items);
+        if ("HERO".equalsIgnoreCase(type)) return getString(R.string.tab_heroes);
+        return getString(R.string.tab_characters);
     }
 
     private void load() {

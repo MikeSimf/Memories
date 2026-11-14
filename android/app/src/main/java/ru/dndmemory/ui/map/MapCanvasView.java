@@ -5,7 +5,9 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
+import androidx.core.graphics.PathParser;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -30,6 +32,7 @@ public class MapCanvasView extends View {
     private final List<MapMarkerDto> markers = new ArrayList<>();
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint text = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint iconPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final ScaleGestureDetector scaleDetector;
     private float scale = 1f;
     private float minScale = 1f;
@@ -46,6 +49,10 @@ public class MapCanvasView extends View {
         text.setTextAlign(Paint.Align.CENTER);
         text.setFakeBoldText(true);
         text.setTextSize(28);
+        iconPaint.setStyle(Paint.Style.STROKE);
+        iconPaint.setStrokeCap(Paint.Cap.ROUND);
+        iconPaint.setStrokeJoin(Paint.Join.ROUND);
+        iconPaint.setColor(Color.WHITE);
         scaleDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
             public boolean onScale(ScaleGestureDetector detector) {
@@ -69,6 +76,34 @@ public class MapCanvasView extends View {
         invalidate();
     }
 
+    private int markerColor(@NonNull MapMarkerDto marker) {
+        if ("LOCATION".equalsIgnoreCase(marker.objectType)) return 0xFF0F9D76;
+        if ("ITEM".equalsIgnoreCase(marker.objectType)) return 0xFFB9770F;
+        return 0xFF2F6BFF;
+    }
+
+    private void drawMarkerIcon(@NonNull Canvas canvas, @NonNull MapMarkerDto marker,
+                                float x, float y, float radius) {
+        String data;
+        if ("LOCATION".equalsIgnoreCase(marker.objectType)) {
+            data = ru.dndmemory.ui.common.TypeIcons.pathFor("LOCATION", marker.locationType);
+        } else if ("ITEM".equalsIgnoreCase(marker.objectType)) {
+            data = ru.dndmemory.ui.common.TypeIcons.pathFor("ITEM", marker.itemType);
+        } else {
+            data = "M12 4.4a3.4 3.4 0 1 0 0 6.8a3.4 3.4 0 1 0 0-6.8M5 20.4c0-3.4 3.1-6 7-6s7 2.6 7 6";
+        }
+        if (data == null) return;
+        Path path = PathParser.createPathFromPathData(data);
+        if (path == null) return;
+        android.graphics.Matrix matrix = new android.graphics.Matrix();
+        float size = radius * 1.15f;
+        matrix.setScale(size / 24f, size / 24f);
+        matrix.postTranslate(x - size / 2f, y - size / 2f);
+        path.transform(matrix);
+        iconPaint.setStrokeWidth(2f * getResources().getDisplayMetrics().density * (size / (24f * 1.8f)));
+        canvas.drawPath(path, iconPaint);
+    }
+
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
@@ -85,18 +120,19 @@ public class MapCanvasView extends View {
         canvas.translate(tx, ty);
         canvas.drawBitmap(bitmap, null, new RectF(0, 0, w, h), null);
         paint.setStyle(Paint.Style.FILL);
+        float density = getResources().getDisplayMetrics().density;
+        float radius = 18 * density;
         for (MapMarkerDto marker : markers) {
             float x = (float) marker.x * w;
             float y = (float) marker.y * h;
-            paint.setColor(0xFFC46A2A);
-            canvas.drawCircle(x, y, 18, paint);
+            paint.setColor(markerColor(marker));
+            canvas.drawCircle(x, y, radius, paint);
             paint.setColor(Color.WHITE);
             paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(3);
-            canvas.drawCircle(x, y, 18, paint);
+            paint.setStrokeWidth(3 * density);
+            canvas.drawCircle(x, y, radius, paint);
             paint.setStyle(Paint.Style.FILL);
-            String label = marker.name == null || marker.name.isEmpty() ? "?" : marker.name.substring(0, 1).toUpperCase();
-            canvas.drawText(label, x, y + 10, text);
+            drawMarkerIcon(canvas, marker, x, y, radius);
         }
         canvas.restore();
     }
