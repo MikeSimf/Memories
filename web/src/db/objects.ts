@@ -149,6 +149,7 @@ export function objectToPayload(object: LocalObject): Record<string, unknown> {
         ...common,
         race: object.race,
         gender: object.gender,
+        alive: object.alive,
         klass: object.klass,
         playerUserId: object.playerUserId,
         items: object.items.map((item) => ({
@@ -163,6 +164,7 @@ export function objectToPayload(object: LocalObject): Record<string, unknown> {
         ...common,
         race: object.race,
         gender: object.gender,
+        alive: object.alive,
         klass: object.klass,
         shortDescription: object.shortDescription,
       }
@@ -171,6 +173,9 @@ export function objectToPayload(object: LocalObject): Record<string, unknown> {
         ...common,
         itemType: object.itemType,
         ownerName: object.ownerName,
+        magic: object.magic,
+        hasSetting: object.hasSetting,
+        configuredHeroId: object.configuredHeroId,
         ownerHeroId: object.ownerHeroId,
         ownerCharacterId: object.ownerCharacterId,
       }
