@@ -22,6 +22,8 @@ const dragStart = ref({ x: 0, y: 0, tx: 0, ty: 0 })
 const adding = ref(false)
 const dragMoved = ref(false)
 const hovered = ref<{ x: number; y: number; text: string } | null>(null)
+const search = ref('')
+const showNames = ref(false)
 const pick = ref<{ x: number; y: number } | null>(null)
 const chosenEntityId = ref('')
 const selectedMarker = ref<MapMarkerDto | null>(null)
@@ -63,7 +65,11 @@ const markerGroups = computed(() => {
 })
 const available = computed(() => {
   const used = new Set((map.value?.markers ?? []).map((marker) => marker.entityId))
-  return campaign.objects.filter((object) => !object.deleted && !used.has(object.id))
+  const query = search.value.trim().toLowerCase()
+  return campaign.objects
+    .filter((object) => !object.deleted && !used.has(object.id))
+    .filter((object) => !query || object.name.toLowerCase().includes(query))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
 })
 
 async function load(): Promise<void> {
@@ -84,7 +90,17 @@ function zoom(delta: number): void {
 
 function wheel(event: WheelEvent): void {
   event.preventDefault()
-  zoom(event.deltaY < 0 ? 0.15 : -0.15)
+  const next = Math.max(1, Math.min(4, scale.value + (event.deltaY < 0 ? 0.15 : -0.15)))
+  if (next === scale.value) return
+  const canvas = document.querySelector<HTMLElement>('.map-canvas')
+  if (!canvas) { scale.value = next; return }
+  const rect = canvas.getBoundingClientRect()
+  const dx = event.clientX - rect.left
+  const dy = event.clientY - rect.top
+  const ratio = next / scale.value
+  tx.value += dx * (1 - ratio)
+  ty.value += dy * (1 - ratio)
+  scale.value = next
 }
 
 function startDrag(event: PointerEvent): void {
@@ -198,6 +214,7 @@ onMounted(load)
           <label v-for="type in objectTypes" :key="type.key">
             <input v-model="filters[type.key]" type="checkbox" /> {{ type.label }}
           </label>
+          <label><input v-model="showNames" type="checkbox" /> Названия</label>
         </span>
       </div>
 
@@ -205,6 +222,7 @@ onMounted(load)
       <div class="map-stage">
       <div
         class="map-viewport"
+        :class="{ 'map-viewport--adding': adding }"
         @wheel="wheel"
         @dragstart.prevent
         @pointerdown="startDrag"
@@ -221,7 +239,7 @@ onMounted(load)
             :key="index"
             class="map-marker"
             :class="[markerClass(group.markers[0]), { 'map-marker--cluster': group.markers.length > 1 }]"
-            :style="{ left: `${group.x * 100}%`, top: `${group.y * 100}%` }"
+            :style="{ left: `${group.x * 100}%`, top: `${group.y * 100}%`, transform: `translate(-50%, -100%) scale(${1 / scale}) rotate(-45deg)` }"
             :title="group.markers.map((item) => item.name).join(', ')"
             type="button"
             @click.stop="openGroup(group)"
@@ -233,6 +251,7 @@ onMounted(load)
               <path :d="markerIcon(group.markers[0])" />
             </svg>
           </button>
+          <div v-if="showNames" v-for="(group, index) in markerGroups" :key="'name-' + index" class="map-name" :style="{ left: `${group.x * 100}%`, top: `${group.y * 100}%`, transform: `translate(-50%, 10px) scale(${1 / scale})` }">{{ group.markers.length > 1 ? group.markers.length + ' объектов' : group.markers[0].name }}</div>
           <div v-if="hovered" class="map-hover" :style="{ left: `${hovered.x * 100}%`, top: `${hovered.y * 100}%` }">{{ hovered.text }}</div>
         </div>
       </div>
@@ -278,10 +297,11 @@ onMounted(load)
       <div v-if="pick" class="map-modal" @click.self="pick = null">
         <div class="card stack map-modal__card">
           <strong>Что находится в этой точке?</strong>
+          <input v-model="search" class="input" placeholder="Поиск по объектам" />
           <select v-model="chosenEntityId" class="select">
             <option value="" disabled>Выберите объект</option>
             <option v-for="object in available" :key="object.id" :value="object.id">
-              {{ objectTypeLabel(object.objectType) }} · {{ object.name }}
+              {{ object.name }} ({{ objectTypeLabel(object.objectType) }})
             </option>
           </select>
           <div class="row">
@@ -303,6 +323,8 @@ onMounted(load)
 .map-side__item:hover { background: rgba(127,127,127,.14); }
 .map-side__icon { width: 18px; height: 18px; flex: none; }
 .map-side__icon svg { width: 18px; height: 18px; }
+.map-viewport--adding { cursor: crosshair; }
+.map-viewport--adding .map-image, .map-viewport--adding .map-image :deep(img) { cursor: crosshair; }
 .map-viewport { user-select: none; -webkit-user-select: none; flex: 0 1 auto; width: fit-content; max-width: calc(100% - 44px); min-width: 0; height: auto; max-height: clamp(320px, calc(100vh - 330px), 680px); overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: #1b1b1b; cursor: grab; touch-action: none; display: flex; align-items: center; justify-content: center; }
 .map-zoom { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px; }
 .map-zoom__button { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elev); color: inherit; font-size: 18px; line-height: 1; cursor: pointer; }
@@ -315,11 +337,13 @@ onMounted(load)
 .map-image { display: block; user-select: none; -webkit-user-select: none; position: relative; max-width: 100%; max-height: 100%; cursor: grab; }
 .map-image :deep(img) { display: block; -webkit-user-drag: none; user-drag: none; max-width: 100%; max-height: calc(100vh - 330px); width: auto; height: auto; cursor: inherit; user-select: none; pointer-events: none; }
 .map-image--empty { display: grid; place-items: center; color: #aaa; min-height: 240px; }
-.map-marker { position: absolute; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 2px solid #fff; border-radius: 50% 50% 50% 0; transform: translate(-50%, -100%) rotate(-45deg); background: #c46a2a; color: #fff; cursor: pointer; box-shadow: 0 2px 8px #0008; }
+.map-marker { transform-origin: 50% 100%; position: absolute; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 2px solid #fff; border-radius: 50% 50% 50% 0; transform: translate(-50%, -100%) rotate(-45deg); background: #c46a2a; color: #fff; cursor: pointer; box-shadow: 0 2px 8px #0008; }
 .map-marker--character, .map-marker--hero { background: #2f6bff; }
 .map-marker--location { background: #0f9d76; }
 .map-marker--item { background: #b9770f; }
 .map-hover { position: absolute; z-index: 5; transform: translate(-50%, -140%); padding: 6px 10px; border-radius: 8px; background: rgba(20,20,20,.92); color: #fff; font-size: .85rem; white-space: nowrap; max-width: 280px; overflow: hidden; text-overflow: ellipsis; pointer-events: none; box-shadow: 0 4px 16px #0006; }
+.map-marker__name { position: absolute; z-index: 4; transform-origin: top center; padding: 3px 6px; border-radius: 6px; background: rgba(20,20,20,.82); color: #fff; font-size: .75rem; white-space: nowrap; pointer-events: none; }
+.map-name { position: absolute; z-index: 4; transform-origin: top center; padding: 2px 5px; border-radius: 5px; background: rgba(20,20,20,.75); color: #fff; font-size: .7rem; white-space: nowrap; pointer-events: none; }
 .map-marker__icon { width: 19px; height: 19px; transform: rotate(45deg); }
 .map-marker__image { width: 100%; height: 100%; object-fit: cover; border-radius: 50% 50% 50% 0; transform: rotate(45deg); }
 .map-marker--cluster { display: grid; place-items: center; background: #c46a2a; color: #fff; font-weight: 700; border-radius: 50%; transform: translate(-50%, -50%); }

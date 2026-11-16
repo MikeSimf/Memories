@@ -42,6 +42,7 @@ public class MapCanvasView extends View {
     private float lastY;
     private boolean dragging;
     private OnMarkerTap listener;
+    private boolean showNames;
 
     public MapCanvasView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
@@ -72,6 +73,8 @@ public class MapCanvasView extends View {
     }
 
     public void setListener(OnMarkerTap listener) { this.listener = listener; }
+
+    public void setShowNames(boolean value) { this.showNames = value; invalidate(); }
 
     public void setBitmap(@Nullable Bitmap bitmap) {
         this.bitmap = bitmap;
@@ -141,6 +144,14 @@ public class MapCanvasView extends View {
             canvas.drawCircle(x, y, radius, paint);
             paint.setStyle(Paint.Style.FILL);
             drawMarkerIcon(canvas, marker, x, y, radius);
+            if (showNames && marker.name != null) {
+                Paint namePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                namePaint.setColor(Color.WHITE);
+                namePaint.setTextSize(11 * density);
+                namePaint.setTextAlign(Paint.Align.CENTER);
+                namePaint.setShadowLayer(4, 0, 1, Color.BLACK);
+                canvas.drawText(marker.name, x, y + radius + 14 * density, namePaint);
+            }
         }
         canvas.restore();
     }
