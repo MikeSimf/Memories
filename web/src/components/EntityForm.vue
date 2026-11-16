@@ -7,6 +7,7 @@ import EntityImage from './EntityImage.vue'
 import TriStateField from './TriStateField.vue'
 import MarkupText from './MarkupText.vue'
 import { useCampaignStore } from '@/stores/campaign'
+import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
 import { emptyHeroItem, type HeroItemFormValue, type ObjectFormValues } from '@/types/forms'
 import { GENDERS } from '@/types/gender'
@@ -156,7 +157,9 @@ const extraFields = [
   { key: 'inspiration' as const, label: 'ВДОХ' },
 ]
 
+const auth = useAuthStore()
 const canEditGmNote = computed(() => {
+  if (auth.user?.admin) return false
   const role = campaign.campaign?.myRole
   if (role === 'EDITOR_MASTER') return true
   if (role === 'OWNER') return !campaign.members.some((member) => member.role === 'EDITOR_MASTER' && member.status !== 'REMOVED')

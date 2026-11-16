@@ -19,6 +19,7 @@ import { typeIconPath } from '@/ui/typeIcons'
 import EntityImage from '@/components/EntityImage.vue'
 import MarkupText from '@/components/MarkupText.vue'
 import { useCampaignStore } from '@/stores/campaign'
+import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
 import { formatDateTime } from '@/utils/datetime'
 
@@ -32,6 +33,14 @@ const entity = computed(() => campaign.objectById(entityId.value))
 const objectClass = computed<ObjectClass>(() => entity.value?.objectType ?? 'CHARACTER')
 const canEdit = computed(() => (entity.value ? campaign.canEdit(entity.value) : false))
 const canDelete = computed(() => (entity.value ? campaign.canDelete(entity.value) : false))
+const auth = useAuthStore()
+const canViewGmNote = computed(() => {
+  if (auth.user?.admin) return false
+  const role = campaign.campaign?.myRole
+  if (role === 'EDITOR_MASTER') return true
+  if (role === 'OWNER') return !campaign.members.some((member) => member.role === 'EDITOR_MASTER' && member.status !== 'REMOVED')
+  return false
+})
 const injuries = ref<InjuryDto[]>([])
 const newInjury = ref('')
 const editingInjury = ref<string | null>(null)
@@ -509,7 +518,7 @@ async function keepLocal(): Promise<void> {
 
       <div v-if="entity.objectType !== 'HERO' && entity.hasGmNote" class="card stack">
         <h2>Пометка мастера</h2>
-        <p v-if="entity.gmNote" style="white-space: pre-wrap">{{ entity.gmNote }}</p>
+        <p v-if="canViewGmNote && entity.gmNote" style="white-space: pre-wrap">{{ entity.gmNote }}</p>
         <p v-else class="faint">Вы не можете видеть пометки мастера.</p>
       </div>
 

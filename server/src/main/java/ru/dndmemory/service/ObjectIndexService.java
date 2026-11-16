@@ -136,7 +136,8 @@ public class ObjectIndexService {
                 org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof ru.dndmemory.security.UserPrincipal) {
             UUID viewer = ((ru.dndmemory.security.UserPrincipal) auth.getPrincipal()).getId();
-            gmVisible = memberRepository.findByCampaignIdAndUserId(campaignId, viewer)
+            boolean superuser = userRepository.findById(viewer).map(u -> u.isSuperuser()).orElse(false);
+            gmVisible = !superuser && memberRepository.findByCampaignIdAndUserId(campaignId, viewer)
                     .map(m -> m.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_MASTER
                             || (m.getRole() == ru.dndmemory.domain.MemberRole.OWNER
                                     && memberRepository.countByCampaignIdAndRole(campaignId,
