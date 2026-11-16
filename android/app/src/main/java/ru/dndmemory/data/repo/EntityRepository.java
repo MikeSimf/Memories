@@ -213,6 +213,10 @@ public class EntityRepository {
             if (local != null && local.dirty) {
                 return local;
             }
+            if (incoming.gmNote == null && local != null && local.gmNote != null) {
+                incoming.gmNote = local.gmNote;
+                incoming.hasGmNote = true;
+            }
             db.entityDao().upsert(incoming);
             return incoming;
         }, callback);

@@ -1,5 +1,7 @@
 package ru.dndmemory.sync;
 
+import androidx.annotation.NonNull;
+
 import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -507,7 +509,18 @@ public class SyncEngine {
             if (incoming.id == null || incoming.id.isEmpty()) {
                 incoming.id = change.objectId;
             }
+            keepLocalGmNote(incoming);
             db.entityDao().upsert(incoming);
+        }
+    }
+
+    /** В журнале нет текста пометки мастера — не затираем уже полученный текст. */
+    private void keepLocalGmNote(@NonNull EntityRoom incoming) {
+        if (incoming.gmNote != null) return;
+        EntityRoom local = db.entityDao().find(incoming.id);
+        if (local != null && local.gmNote != null) {
+            incoming.gmNote = local.gmNote;
+            incoming.hasGmNote = true;
         }
     }
 
