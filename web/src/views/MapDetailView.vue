@@ -323,7 +323,7 @@ onMounted(load)
 .map-side__item:hover { background: rgba(127,127,127,.14); }
 .map-side__icon { width: 18px; height: 18px; flex: none; }
 .map-side__icon svg { width: 18px; height: 18px; }
-.map-viewport--adding { cursor: crosshair; }
+.map-viewport.map-viewport--adding { cursor: crosshair; }
 .map-viewport--adding .map-image, .map-viewport--adding .map-image :deep(img) { cursor: crosshair; }
 .map-viewport { user-select: none; -webkit-user-select: none; flex: 0 1 auto; width: fit-content; max-width: calc(100% - 44px); min-width: 0; height: auto; max-height: clamp(320px, calc(100vh - 330px), 680px); overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: #1b1b1b; cursor: grab; touch-action: none; display: flex; align-items: center; justify-content: center; }
 .map-zoom { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px; }
