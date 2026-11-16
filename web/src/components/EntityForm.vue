@@ -460,7 +460,10 @@ function setOwnerCharacter(value: string): void {
         </select>
         <span class="field__hint">По типу подбирается картинка локации, если своя не загружена.</span>
       </div>
-      <label class="field__check"><input type="checkbox" :checked="modelValue.intact" @change="patch({ intact: ($event.target as HTMLInputElement).checked })" /> Целое (иначе — разрушено)</label>
+      <div class="field">
+        <span class="field__label">Статус:</span>
+        <label class="field__check"><input type="checkbox" :checked="modelValue.intact" @change="patch({ intact: ($event.target as HTMLInputElement).checked })" /> {{ modelValue.intact ? 'целое' : 'разрушено' }}</label>
+      </div>
     </template>
 
     <!-- Предмет: владелец строкой и необязательная ссылка -->
@@ -476,7 +479,10 @@ function setOwnerCharacter(value: string): void {
           <option v-for="item in itemTypes" :key="item" :value="item">{{ item }}</option>
         </select>
       </div>
-      <label class="field__check"><input type="checkbox" :checked="modelValue.intact" @change="patch({ intact: ($event.target as HTMLInputElement).checked })" /> Целое (иначе — разрушено)</label>
+      <div class="field">
+        <span class="field__label">Статус:</span>
+        <label class="field__check"><input type="checkbox" :checked="modelValue.intact" @change="patch({ intact: ($event.target as HTMLInputElement).checked })" /> {{ modelValue.intact ? 'целое' : 'разрушено' }}</label>
+      </div>
       <template v-if="modelValue.itemType === 'Артефакт'">
         <TriStateField
           label="Магический"
