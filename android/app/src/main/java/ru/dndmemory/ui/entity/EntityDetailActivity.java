@@ -355,16 +355,29 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
                     break;
                 case ITEM:
                     addFieldRow(getString(R.string.entity_item_type), entity.itemType);
-                    addFieldRow(getString(R.string.attr_owner), ownerText(entity));
+                    addFieldRow(getString(R.string.attr_status), entity.intact != null && !entity.intact
+                            ? getString(R.string.status_broken) : getString(R.string.status_intact));
+                    addFieldRow(getString(R.string.attr_owner), ownerText(entity),
+                            entity.ownerHeroId != null ? entity.ownerHeroId : entity.ownerCharacterId);
                     break;
                 case LOCATION:
                     addFieldRow(getString(R.string.entity_location_type), entity.locationType);
+                    addFieldRow(getString(R.string.attr_status), entity.intact != null && !entity.intact
+                            ? getString(R.string.status_broken) : getString(R.string.status_intact));
                     break;
                 default:
                     break;
             }
         }
-        bindHeroItems(entity);
+        if (kind == EntityType.HERO) {
+            renderStats(entity);
+        }
+        if (entity.hasGmNote) {
+            addFieldRow(getString(R.string.attr_gm_note),
+                    entity.gmNote == null || entity.gmNote.isEmpty()
+                            ? getString(R.string.gm_note_hidden) : entity.gmNote);
+        }
+        bindBackpack(entity);
         // Заголовок «Поля» больше не показываем: поля говорят сами за себя.
         ViewUtils.show(binding.entityFieldsTitle, false);
     }
@@ -389,21 +402,54 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         return entity.ownerName;
     }
 
-    private void bindHeroItems(@NonNull EntityRoom entity) {
-        binding.entityItems.removeAllViews();
-        List<HeroItem> items = entity.items;
-        if (items == null || items.isEmpty()) {
+    private void bindBackpack(@NonNull EntityRoom entity) {
+        if (!"HERO".equalsIgnoreCase(entity.kind) && !"CHARACTER".equalsIgnoreCase(entity.kind)) {
+            ViewUtils.show(binding.entityItemsTitle, false);
+            return;
+        }
+        List<EntityRoom> items = new java.util.ArrayList<>();
+        for (EntityRoom item : allObjects) {
+            if (!"ITEM".equalsIgnoreCase(item.kind) || item.deleted) continue;
+            if (entity.id.equals(item.ownerHeroId) || entity.id.equals(item.ownerCharacterId)) {
+                items.add(item);
+            }
+        }
+        if (items.isEmpty()) {
             ViewUtils.show(binding.entityItemsTitle, false);
             return;
         }
         ViewUtils.show(binding.entityItemsTitle, true);
-        for (final HeroItem item : items) {
-            CharSequence text = Labels.heroItemText(this, item);
-            if (text == null) {
-                continue;
-            }
-            addFieldRow(getString(R.string.attr_items), text, item.itemId);
+        binding.entityItemsTitle.setText(R.string.attr_backpack);
+        for (EntityRoom item : items) {
+            addFieldRow(getString(R.string.attr_items), item.name, item.id);
         }
+    }
+
+    private void renderStats(@NonNull EntityRoom hero) {
+        int[] values = {hero.strength == null ? 10 : hero.strength, hero.dexterity == null ? 10 : hero.dexterity,
+                hero.constitution == null ? 10 : hero.constitution, hero.intelligence == null ? 10 : hero.intelligence,
+                hero.wisdom == null ? 10 : hero.wisdom, hero.charisma == null ? 10 : hero.charisma};
+        String[] names = {"СИЛ", "ЛОВ", "ТЕЛ", "ИНТ", "МУД", "ХАР"};
+        StringBuilder line = new StringBuilder();
+        for (int i = 0; i < values.length; i++) {
+            if (i > 0) line.append("   ");
+            int mod = Math.floorDiv(values[i] - 10, 2);
+            line.append(names[i]).append(" ").append(values[i]).append(" (").append(mod >= 0 ? "+" : "").append(mod).append(")");
+        }
+        addFieldRow(getString(R.string.attr_stats), line);
+        String extra = formatStat("ВНИМ", hero.passivePerception) + "  " + formatStat("ИНИЦ", hero.initiative)
+                + "  " + formatStat("СКОР", hero.speed) + "  " + formatStat("КД", hero.armorClass)
+                + "  " + formatStat("МАКС", hero.maxHp) + "  " + formatStat("ВДОХ", hero.inspiration);
+        addFieldRow(getString(R.string.attr_stats_extra), extra);
+        for (EntityRoom item : allObjects) {
+            if ("ITEM".equalsIgnoreCase(item.kind) && !item.deleted && hero.id.equals(item.configuredHeroId)) {
+                addFieldRow(getString(R.string.attr_configured_artifacts), item.name, item.id);
+            }
+        }
+    }
+
+    private String formatStat(String label, Integer value) {
+        return label + " " + (value == null ? "—" : value);
     }
 
     private void addFieldRow(@NonNull CharSequence label, @Nullable CharSequence value) {

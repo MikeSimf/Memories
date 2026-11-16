@@ -27,6 +27,22 @@ public class EntityDto {
     public Boolean hasSetting;
     public String configuredHeroId;
     public String cardTemplateId;
+    public Boolean intact;
+    public Integer strength;
+    public Integer dexterity;
+    public Integer constitution;
+    public Integer intelligence;
+    public Integer wisdom;
+    public Integer charisma;
+    public Integer passivePerception;
+    public Integer initiative;
+    public Integer speed;
+    public Integer armorClass;
+    public Integer maxHp;
+    public Integer inspiration;
+    public String gmNote;
+    public boolean hasGmNote;
+
     public java.util.List<ru.dndmemory.data.model.Attachment> files;
 
     public List<EntityLink> links = new ArrayList<>();

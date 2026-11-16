@@ -59,6 +59,22 @@ public class EntityRoom {
     public Boolean magic;
     public boolean hasSetting;
     public String configuredHeroId;
+    public Boolean intact;
+    public Integer strength;
+    public Integer dexterity;
+    public Integer constitution;
+    public Integer intelligence;
+    public Integer wisdom;
+    public Integer charisma;
+    public Integer passivePerception;
+    public Integer initiative;
+    public Integer speed;
+    public Integer armorClass;
+    public Integer maxHp;
+    public Integer inspiration;
+    public String gmNote;
+    public boolean hasGmNote;
+
 
     /** Кто отыгрывает героя — ссылка на пользователя, необязательна. */
     public String playerUserId;

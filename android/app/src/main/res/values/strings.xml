@@ -47,6 +47,15 @@
     <string name="item_magic_unknown">неизвестно</string>
     <string name="item_has_setting">Есть настройка</string>
     <string name="item_configured_hero">Настроен на героя</string>
+    <string name="attr_status">Статус</string>
+    <string name="status_intact">целое</string>
+    <string name="status_broken">разрушено</string>
+    <string name="attr_gm_note">Пометка мастера</string>
+    <string name="gm_note_hidden">Вы не можете видеть пометку мастера</string>
+    <string name="attr_backpack">Рюкзак</string>
+    <string name="attr_stats">Характеристики</string>
+    <string name="attr_stats_extra">Дополнительно</string>
+    <string name="attr_configured_artifacts">Настроен на артефакты</string>
     <string name="attr_life_status">Статус</string>
     <string name="life_alive">Жив</string>
     <string name="life_dead">Мёртв</string>

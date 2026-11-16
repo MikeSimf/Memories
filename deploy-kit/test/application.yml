@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 83
-    latest-version-name: 1.0.82
+    latest-version-code: 84
+    latest-version-name: 1.0.83
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Карта: поиск, названия, фильтры"
+    notes: "Android: статусы, рюкзак, характеристики, пометки"
     versions:
+      - version: "1.0.83"
+        date: "2026-11-16"
+        notes: "Android: новые поля карточек"
       - version: "1.0.82"
         date: "2026-11-16"
         notes: "Карта: поиск и названия"
