@@ -79,11 +79,9 @@ public class QuestDetailActivity extends BaseCampaignActivity {
             author.setText((comment.createdByName == null ? "" : comment.createdByName) + " · " + comment.text);
             row.addView(author);
             LinearLayout actions = new LinearLayout(this);
-            Button edit = new Button(this);
-            edit.setText(R.string.quest_comment_edit);
+            android.widget.ImageButton edit = iconButton(R.drawable.ic_edit, R.string.quest_comment_edit);
             edit.setOnClickListener(v -> editComment(comment));
-            Button delete = new Button(this);
-            delete.setText(R.string.quest_comment_delete);
+            android.widget.ImageButton delete = iconButton(R.drawable.ic_delete, R.string.quest_comment_delete);
             delete.setOnClickListener(v -> deleteComment(comment));
             actions.addView(edit);
             actions.addView(delete);
@@ -94,6 +92,16 @@ public class QuestDetailActivity extends BaseCampaignActivity {
         add.setText(R.string.quest_comment_add);
         add.setOnClickListener(v -> addComment());
         content.addView(add);
+    }
+
+    private android.widget.ImageButton iconButton(int icon, int description) {
+        android.widget.ImageButton button = new android.widget.ImageButton(this);
+        button.setImageResource(icon);
+        button.setContentDescription(getString(description));
+        button.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        int pad = (int) (8 * getResources().getDisplayMetrics().density);
+        button.setPadding(pad, pad, pad, pad);
+        return button;
     }
 
     private void addComment() {

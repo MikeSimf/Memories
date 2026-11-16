@@ -11,6 +11,7 @@ import android.text.style.StyleSpan;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -430,22 +431,53 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
                 hero.constitution == null ? 10 : hero.constitution, hero.intelligence == null ? 10 : hero.intelligence,
                 hero.wisdom == null ? 10 : hero.wisdom, hero.charisma == null ? 10 : hero.charisma};
         String[] names = {"СИЛ", "ЛОВ", "ТЕЛ", "ИНТ", "МУД", "ХАР"};
-        StringBuilder line = new StringBuilder();
-        for (int i = 0; i < values.length; i++) {
-            if (i > 0) line.append("   ");
+        TextView title = new TextView(this);
+        title.setText(R.string.attr_stats);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
+        title.setPadding(0, 12, 0, 6);
+        binding.entityFields.addView(title);
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        for (int i = 0; i < 6; i++) {
             int mod = Math.floorDiv(values[i] - 10, 2);
-            line.append(names[i]).append(" ").append(values[i]).append(" (").append(mod >= 0 ? "+" : "").append(mod).append(")");
+            row.addView(statBox(names[i], (mod >= 0 ? "+" : "") + mod, String.valueOf(values[i])), boxParams());
         }
-        addFieldRow(getString(R.string.attr_stats), line);
-        String extra = formatStat("ВНИМ", hero.passivePerception) + "  " + formatStat("ИНИЦ", hero.initiative)
-                + "  " + formatStat("СКОР", hero.speed) + "  " + formatStat("КД", hero.armorClass)
-                + "  " + formatStat("МАКС", hero.maxHp) + "  " + formatStat("ВДОХ", hero.inspiration);
-        addFieldRow(getString(R.string.attr_stats_extra), extra);
+        binding.entityFields.addView(row);
+        Integer[] extra = {hero.passivePerception, hero.initiative, hero.speed,
+                hero.armorClass, hero.maxHp, hero.inspiration};
+        String[] extraNames = {"ВНИМ", "ИНИЦ", "СКОР", "КД", "МАКС", "ВДОХ"};
+        LinearLayout extraRow = new LinearLayout(this);
+        extraRow.setOrientation(LinearLayout.HORIZONTAL);
+        for (int i = 0; i < 6; i++) {
+            extraRow.addView(statBox(extraNames[i], null, extra[i] == null ? "—" : String.valueOf(extra[i])), boxParams());
+        }
+        binding.entityFields.addView(extraRow);
         for (EntityRoom item : allObjects) {
             if ("ITEM".equalsIgnoreCase(item.kind) && !item.deleted && hero.id.equals(item.configuredHeroId)) {
                 addFieldRow(getString(R.string.attr_configured_artifacts), item.name, item.id);
             }
         }
+    }
+
+    private TextView statBox(String label, String modifier, String value) {
+        TextView box = new TextView(this);
+        box.setText(label + (modifier == null ? "\n" : "\n" + modifier + "\n") + value);
+        box.setGravity(android.view.Gravity.CENTER);
+        box.setTextSize(11);
+        box.setPadding(2, 6, 2, 6);
+        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+        bg.setColor(0x228A8AA3);
+        bg.setStroke(2, 0xFF8A8AA3);
+        bg.setCornerRadius(8 * getResources().getDisplayMetrics().density);
+        box.setBackground(bg);
+        return box;
+    }
+
+    private LinearLayout.LayoutParams boxParams() {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        params.setMargins(2, 0, 2, 6);
+        return params;
     }
 
     private String formatStat(String label, Integer value) {
@@ -748,12 +780,6 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
             EntityRoom owner = findObject(entity.ownerCharacterId);
             if (owner == null) owner = findObject(entity.ownerHeroId);
             if (owner != null && !owner.id.equals(entity.id)) all.put(owner.id, owner);
-        }
-        for (EntityRoom item : allObjects) {
-            if (item == null || !"ITEM".equalsIgnoreCase(item.kind)) continue;
-            if (entity.id.equals(item.ownerCharacterId) || entity.id.equals(item.ownerHeroId)) {
-                all.put(item.id, item);
-            }
         }
 
         java.util.List<EntityRoom> sorted = new java.util.ArrayList<>(all.values());

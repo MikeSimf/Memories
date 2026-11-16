@@ -628,6 +628,10 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         ViewUtils.show(binding.entityEditItemTypeGroup, currentKind == EntityType.ITEM);
         ViewUtils.show(binding.entityEditFieldsTitle, hero || character || item);
         ViewUtils.show(binding.entityEditGmNoteGroup, !hero);
+        ViewUtils.show(binding.entityEditIntactCheck, item || currentKind == EntityType.LOCATION);
+        binding.entityEditIntactCheck.setText(draft != null && draft.intact != null && !draft.intact
+                ? R.string.status_broken : R.string.status_intact);
+        binding.entityEditIntactCheck.setChecked(draft == null || draft.intact == null || draft.intact);
 
         if (draft != null) {
             binding.entityEditRaceInput.setText(draft.race);
@@ -932,6 +936,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         viewModel.setName(text(binding.entityEditNameInput.getText()));
         viewModel.setDescription(text(binding.entityEditDescriptionInput.getText()));
         viewModel.setGmNote(text(binding.entityEditGmNoteInput.getText()));
+        viewModel.setIntact(binding.entityEditIntactCheck.isChecked());
 
         if (currentKind == EntityType.HERO) {
             viewModel.setRace(text(binding.entityEditRaceInput.getText()));

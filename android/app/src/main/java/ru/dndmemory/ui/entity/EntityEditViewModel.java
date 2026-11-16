@@ -133,6 +133,10 @@ public class EntityEditViewModel extends ViewModel {
         }
     }
 
+    public void setIntact(boolean intact) {
+        if (draft != null) draft.intact = intact;
+    }
+
     public void setGmNote(@Nullable String gmNote) {
         if (draft != null) draft.gmNote = nullable(gmNote);
     }
