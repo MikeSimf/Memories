@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 85
-    latest-version-name: 1.0.84
+    latest-version-code: 86
+    latest-version-name: 1.0.85
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Android: квесты, травмы, приватные материалы, пометки"
+    notes: "Android: квесты, травмы, приватные материалы"
     versions:
+      - version: "1.0.85"
+        date: "2026-11-17"
+        notes: "Android: новые разделы"
       - version: "1.0.84"
         date: "2026-11-16"
         notes: "Android: квесты и травмы"
