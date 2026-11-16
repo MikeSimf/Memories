@@ -428,7 +428,14 @@ async function applyChangeLog(
     if (isObjectClass(entry.objectType)) {
       // `payload` — форма DTO своего класса (`sync.md` §1).
       const object = objectFromPayload(campaignId, entry.objectType, payload, entry.op)
-      if (object) objects.push(object)
+      if (object) {
+        const existing = await getObject(object.id)
+        if (existing && (object as any).gmNote == null) {
+          ;(object as any).gmNote = (existing as any).gmNote ?? null
+          ;(object as any).hasGmNote = Boolean((existing as any).hasGmNote)
+        }
+        objects.push(object)
+      }
       continue
     }
     if (entry.objectType === 'RETELLING') {

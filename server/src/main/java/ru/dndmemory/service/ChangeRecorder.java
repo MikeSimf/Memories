@@ -50,12 +50,25 @@ public class ChangeRecorder {
         entry.setObjectType(objectType);
         entry.setObjectId(objectId);
         entry.setOp(op);
-        entry.setPayload(toJson(payload.get()));
+        entry.setPayload(toJsonWithoutSecrets(payload.get()));
         entry.setActorUserId(actorUserId);
         entry.setClientChangeId(clientChangeId);
         entry.setDeviceId(deviceId);
         changeLogRepository.save(entry);
         return revision;
+    }
+
+    /** Пометка мастера не попадает в общий журнал: её читают все участники. */
+    private String toJsonWithoutSecrets(Object value) {
+        com.fasterxml.jackson.databind.JsonNode node = objectMapper.valueToTree(value);
+        if (node.isObject()) {
+            ((com.fasterxml.jackson.databind.node.ObjectNode) node).remove("gmNote");
+        }
+        try {
+            return objectMapper.writeValueAsString(node);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Не удалось сериализовать объект журнала", e);
+        }
     }
 
     public String toJson(Object value) {
