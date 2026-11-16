@@ -99,6 +99,8 @@ function commonPayload(
   createdAt: string
   updatedAt: string
   deleted: boolean
+  gmNote: string | null
+  hasGmNote: boolean
 } {
   return {
     id,
@@ -116,6 +118,8 @@ function commonPayload(
     createdAt: asString(payload.createdAt, timestamp),
     updatedAt: timestamp,
     deleted,
+    gmNote: asOptionalString(payload.gmNote),
+    hasGmNote: asBoolean(payload.hasGmNote),
   }
 }
 

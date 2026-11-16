@@ -261,6 +261,7 @@ public abstract class AbstractObjectService<
     }
 
     private boolean canWriteGmNote(Member member, UUID campaignId) {
+        if (member == null) return false;
         if (member.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_MASTER) return true;
         return member.getRole() == ru.dndmemory.domain.MemberRole.OWNER
                 && memberRepository.countByCampaignIdAndRole(campaignId,

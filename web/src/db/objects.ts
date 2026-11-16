@@ -28,6 +28,8 @@ function commonFromDto(dto: CampaignObjectDto): {
   createdAt: string
   updatedAt: string
   deleted: boolean
+  gmNote: string | null
+  hasGmNote: boolean
 } {
   return {
     id: dto.id,
@@ -45,6 +47,8 @@ function commonFromDto(dto: CampaignObjectDto): {
     createdAt: dto.createdAt ?? nowIso(),
     updatedAt: dto.updatedAt ?? nowIso(),
     deleted: Boolean(dto.deleted),
+    gmNote: dto.gmNote ?? null,
+    hasGmNote: dto.hasGmNote === true,
   }
 }
 
@@ -156,6 +160,7 @@ export function objectToPayload(object: LocalObject): Record<string, unknown> {
     createdAt: object.createdAt,
     updatedAt: object.updatedAt,
     deleted: object.deleted,
+    gmNote: object.gmNote,
   }
   switch (object.objectType) {
     case 'HERO':
