@@ -139,6 +139,23 @@ function applyHint(name: string): void {
   wikiHints.value = []
 }
 
+const statFields = [
+  { key: 'strength' as const, label: 'СИЛ' },
+  { key: 'dexterity' as const, label: 'ЛОВ' },
+  { key: 'constitution' as const, label: 'ТЕЛ' },
+  { key: 'intelligence' as const, label: 'ИНТ' },
+  { key: 'wisdom' as const, label: 'МУД' },
+  { key: 'charisma' as const, label: 'ХАР' },
+]
+const extraFields = [
+  { key: 'passivePerception' as const, label: 'ВНИМ' },
+  { key: 'initiative' as const, label: 'ИНИЦ' },
+  { key: 'speed' as const, label: 'СКОР' },
+  { key: 'armorClass' as const, label: 'КД' },
+  { key: 'maxHp' as const, label: 'МАКС' },
+  { key: 'inspiration' as const, label: 'ВДОХ' },
+]
+
 const isHero = computed(() => props.objectClass === 'HERO')
 const isCharacter = computed(() => props.objectClass === 'CHARACTER')
 const isItem = computed(() => props.objectClass === 'ITEM')
@@ -345,6 +362,16 @@ function setOwnerCharacter(value: string): void {
       </div>
     </template>
 
+    <div v-if="isHero" class="stats-edit">
+      <h3>Характеристики</h3>
+      <div class="stats-edit__row">
+        <label v-for="stat in statFields" :key="stat.key">{{ stat.label }}<input class="input" type="number" min="1" max="30" :value="modelValue[stat.key]" @input="patch({ [stat.key]: Number(($event.target as HTMLInputElement).value) })" /></label>
+      </div>
+      <div class="stats-edit__row">
+        <label v-for="stat in extraFields" :key="stat.key">{{ stat.label }}<input class="input" type="number" :value="modelValue[stat.key] ?? ''" @input="patch({ [stat.key]: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) })" /></label>
+      </div>
+    </div>
+
     <!-- Персонаж (НПС): раса и краткое описание -->
     <template v-if="isCharacter">
       <div class="row" style="align-items: flex-end">
@@ -404,6 +431,11 @@ function setOwnerCharacter(value: string): void {
       <span class="field__hint">По расе и краткому описанию тоже идёт поиск.</span>
     </template>
 
+    <div v-if="!isHero && campaign.campaign?.myRole === 'EDITOR_MASTER'" class="field">
+      <label class="field__label">Пометка мастера</label>
+      <textarea class="input" rows="3" :value="modelValue.gmNote" @input="patch({ gmNote: ($event.target as HTMLTextAreaElement).value })" placeholder="Видна только мастеру" />
+    </div>
+
     <!-- Локация: тип из справочника -->
     <template v-if="isLocation">
       <div class="field">
@@ -418,6 +450,7 @@ function setOwnerCharacter(value: string): void {
         </select>
         <span class="field__hint">По типу подбирается картинка локации, если своя не загружена.</span>
       </div>
+      <label class="field__check"><input type="checkbox" :checked="modelValue.intact" @change="patch({ intact: ($event.target as HTMLInputElement).checked })" /> Целое (иначе — разрушено)</label>
     </template>
 
     <!-- Предмет: владелец строкой и необязательная ссылка -->
@@ -433,6 +466,7 @@ function setOwnerCharacter(value: string): void {
           <option v-for="item in itemTypes" :key="item" :value="item">{{ item }}</option>
         </select>
       </div>
+      <label class="field__check"><input type="checkbox" :checked="modelValue.intact" @change="patch({ intact: ($event.target as HTMLInputElement).checked })" /> Целое (иначе — разрушено)</label>
       <template v-if="modelValue.itemType === 'Артефакт'">
         <TriStateField
           label="Магический"
@@ -461,7 +495,7 @@ function setOwnerCharacter(value: string): void {
             @change="patch({ configuredHeroId: ($event.target as HTMLSelectElement).value || null })"
           >
             <option value="">не выбран</option>
-            <option v-for="hero in campaign.activeObjects.filter((o) => o.objectType === 'HERO')" :key="hero.id" :value="hero.id">
+            <option v-for="hero in campaign.objects.filter((o) => o.objectType === 'HERO' && !o.deleted)" :key="hero.id" :value="hero.id">
               {{ hero.name }}
             </option>
           </select>
@@ -620,4 +654,10 @@ function setOwnerCharacter(value: string): void {
   font-size: 0.75rem;
   text-align: center;
 }
+.stats-edit { border-top: 1px solid var(--border); padding-top: 12px; }
+.stats-edit h3 { margin: 0 0 8px; }
+.stats-edit__row { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-bottom: 8px; }
+.stats-edit__row label { display: flex; flex-direction: column; gap: 4px; font-size: .75rem; font-weight: 700; }
+.stats-edit__row input { padding: 6px; text-align: center; }
+.field__check { display: flex; align-items: center; gap: 8px; }
 </style>

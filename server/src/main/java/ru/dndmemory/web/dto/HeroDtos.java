@@ -44,6 +44,18 @@ public final class HeroDtos {
         private UUID playerUserId;
         private String playerName;
         private List<HeroItemDto> items;
+        private int strength;
+        private int dexterity;
+        private int constitution;
+        private int intelligence;
+        private int wisdom;
+        private int charisma;
+        private Integer passivePerception;
+        private Integer initiative;
+        private Integer speed;
+        private Integer armorClass;
+        private Integer maxHp;
+        private Integer inspiration;
     }
 
     @Getter

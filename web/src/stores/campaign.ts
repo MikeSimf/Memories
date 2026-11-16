@@ -486,6 +486,20 @@ export const useCampaignStore = defineStore('campaign', () => {
       magic: null,
       hasSetting: false,
       configuredHeroId: null,
+      intact: true,
+      strength: 10,
+      dexterity: 10,
+      constitution: 10,
+      intelligence: 10,
+      wisdom: 10,
+      charisma: 10,
+      passivePerception: null,
+      initiative: null,
+      speed: null,
+      armorClass: null,
+      maxHp: null,
+      inspiration: null,
+      gmNote: object.gmNote ?? '',
     }
     if (object.objectType === 'HERO') {
       return {
@@ -495,6 +509,18 @@ export const useCampaignStore = defineStore('campaign', () => {
         klass: object.klass ?? '',
         gender: object.gender ?? 'unknown',
         playerUserId: object.playerUserId,
+        strength: object.strength,
+        dexterity: object.dexterity,
+        constitution: object.constitution,
+        intelligence: object.intelligence,
+        wisdom: object.wisdom,
+        charisma: object.charisma,
+        passivePerception: object.passivePerception,
+        initiative: object.initiative,
+        speed: object.speed,
+        armorClass: object.armorClass,
+        maxHp: object.maxHp,
+        inspiration: object.inspiration,
         items: object.items.map((item) => ({
           id: item.id,
           name: item.name,
@@ -506,9 +532,11 @@ export const useCampaignStore = defineStore('campaign', () => {
     }
     if (object.objectType === 'LOCATION') {
       base.locationType = object.locationType ?? ''
+      base.intact = object.intact !== false
     }
     if (object.objectType === 'ITEM') {
       base.itemType = object.itemType ?? ''
+      base.intact = object.intact !== false
     }
     if (object.objectType === 'CHARACTER') {
       return {
@@ -529,6 +557,7 @@ export const useCampaignStore = defineStore('campaign', () => {
         magic: object.magic ?? null,
         hasSetting: object.hasSetting === true,
         configuredHeroId: object.configuredHeroId ?? null,
+        intact: object.intact !== false,
       }
     }
     return base
@@ -686,6 +715,20 @@ export const useCampaignStore = defineStore('campaign', () => {
         playerUserId: values.playerUserId,
         playerName: playerNameFor(values.playerUserId),
         items: buildHeroItems(values.items),
+        strength: values.strength,
+        dexterity: values.dexterity,
+        constitution: values.constitution,
+        intelligence: values.intelligence,
+        wisdom: values.wisdom,
+        charisma: values.charisma,
+        passivePerception: values.passivePerception,
+        initiative: values.initiative,
+        speed: values.speed,
+        armorClass: values.armorClass,
+        maxHp: values.maxHp,
+        inspiration: values.inspiration,
+        gmNote: values.gmNote.trim() || null,
+        hasGmNote: values.gmNote.trim().length > 0,
       }
       hero.links = linksFor([hero.description])
       return hero
@@ -699,6 +742,8 @@ export const useCampaignStore = defineStore('campaign', () => {
         alive: values.alive,
         klass: optional(values.klass),
         shortDescription: optional(values.shortDescription),
+        gmNote: values.gmNote.trim() || null,
+        hasGmNote: values.gmNote.trim().length > 0,
       }
       character.links = linksFor([character.description, character.shortDescription])
       return character
@@ -721,6 +766,9 @@ export const useCampaignStore = defineStore('campaign', () => {
         magic: values.magic,
         hasSetting: values.hasSetting,
         configuredHeroId: values.configuredHeroId,
+        intact: values.intact,
+        gmNote: values.gmNote.trim() || null,
+        hasGmNote: values.gmNote.trim().length > 0,
       }
       item.links = linksFor([item.description])
       return item
@@ -729,6 +777,9 @@ export const useCampaignStore = defineStore('campaign', () => {
       ...base,
       objectType: 'LOCATION',
       locationType: optional(values.locationType),
+      intact: values.intact,
+      gmNote: values.gmNote.trim() || null,
+      hasGmNote: values.gmNote.trim().length > 0,
     }
     location.links = linksFor([location.description])
     return location

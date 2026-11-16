@@ -41,4 +41,8 @@ public class ObjectDto {
     private Instant createdAt;
     private Instant updatedAt;
     private boolean deleted;
+    /** Текст пометки мастера: только для мастера. */
+    private String gmNote;
+    /** Есть ли пометка мастера (видно всем). */
+    private boolean hasGmNote;
 }

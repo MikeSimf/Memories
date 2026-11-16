@@ -40,6 +40,7 @@ const materialLinks = computed(() =>
     .filter((object) => object !== null),
 )
 const files = ref<AttachmentDto[]>([])
+const privateMaterial = ref(false)
 const loading = ref(false)
 const saving = ref(false)
 const uploading = ref(false)
@@ -70,6 +71,7 @@ function body(): Partial<MaterialDto> {
   return {
     name: name.value.trim(),
     description: description.value,
+    privateMaterial: privateMaterial.value,
     files: files.value.map((file) => ({
       id: file.id,
       name: file.name ?? '',
@@ -90,6 +92,7 @@ async function load(): Promise<void> {
     name.value = material.name ?? ''
     description.value = material.description ?? ''
     files.value = material.files ?? []
+    privateMaterial.value = material.privateMaterial === true
   } catch (caught) {
     error.value = errorMessage(caught)
   } finally {
@@ -228,6 +231,7 @@ async function remove(): Promise<void> {
             <span class="mention-row__name">{{ link.name }}</span>
           </RouterLink>
         </div>
+        <label class="field__check"><input v-model="privateMaterial" type="checkbox" /> Приватный материал — виден только мне, мастеру и владельцу</label>
         <div v-if="description.trim()" class="preview-box">
           <MarkupText :text="description" />
         </div>

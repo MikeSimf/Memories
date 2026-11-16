@@ -129,6 +129,30 @@ const routes: RouteRecordRaw[] = [
         redirect: (to) => ({ name: 'campaign-tab', params: { campaignId: to.params.campaignId, tab: 'characters' } }),
       },
       {
+        path: 'quests',
+        name: 'campaign-quests',
+        component: () => import('@/views/QuestsView.vue'),
+        meta: { title: 'Квесты' },
+      },
+      {
+        path: 'quests/new',
+        name: 'quest-new',
+        component: () => import('@/views/QuestEditView.vue'),
+        meta: { title: 'Новый квест' },
+      },
+      {
+        path: 'quests/:questId',
+        name: 'quest-detail',
+        component: () => import('@/views/QuestDetailView.vue'),
+        meta: { title: 'Квест' },
+      },
+      {
+        path: 'quests/:questId/edit',
+        name: 'quest-edit',
+        component: () => import('@/views/QuestEditView.vue'),
+        meta: { title: 'Правка квеста' },
+      },
+      {
         path: 'maps',
         name: 'campaign-maps',
         component: () => import('@/views/MapsView.vue'),

@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { errorMessage } from '@/api'
+import { errorMessage, injuriesApi, type InjuryDto } from '@/api'
 import {
   OBJECT_CLASS_LABELS,
   OBJECT_CLASSES,
@@ -32,6 +32,39 @@ const entity = computed(() => campaign.objectById(entityId.value))
 const objectClass = computed<ObjectClass>(() => entity.value?.objectType ?? 'CHARACTER')
 const canEdit = computed(() => (entity.value ? campaign.canEdit(entity.value) : false))
 const canDelete = computed(() => (entity.value ? campaign.canDelete(entity.value) : false))
+const injuries = ref<InjuryDto[]>([])
+const newInjury = ref('')
+const editingInjury = ref<string | null>(null)
+const editingText = ref('')
+
+async function loadInjuries(): Promise<void> {
+  const current = entity.value
+  if (!current || current.objectType !== 'HERO') { injuries.value = []; return }
+  try { injuries.value = await injuriesApi.list(campaign.campaignId ?? '', current.id) } catch { injuries.value = [] }
+}
+
+async function addInjury(): Promise<void> {
+  const current = entity.value
+  if (!current || !newInjury.value.trim()) return
+  await injuriesApi.add(campaign.campaignId ?? '', current.id, newInjury.value.trim())
+  newInjury.value = ''
+  await loadInjuries()
+}
+
+async function saveInjury(item: InjuryDto): Promise<void> {
+  const current = entity.value
+  if (!current || !editingText.value.trim()) return
+  await injuriesApi.update(campaign.campaignId ?? '', current.id, item.id, editingText.value.trim())
+  editingInjury.value = null
+  await loadInjuries()
+}
+
+async function removeInjury(item: InjuryDto): Promise<void> {
+  const current = entity.value
+  if (!current || !confirm('Удалить травму?')) return
+  await injuriesApi.remove(campaign.campaignId ?? '', current.id, item.id)
+  await loadInjuries()
+}
 
 /** Поля своего класса (`api.md` §6): у локации своих полей нет. */
 const details = computed<Array<{ label: string; value: string }>>(() => {
@@ -91,6 +124,50 @@ const personRows = computed(() => {
   return rows
 })
 
+const backpack = computed(() => {
+  const current = entity.value
+  if (!current || (current.objectType !== 'HERO' && current.objectType !== 'CHARACTER')) return []
+  return campaign.activeObjects
+    .filter((item) => item.objectType === 'ITEM' && (item.ownerHeroId === current.id || item.ownerCharacterId === current.id))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+})
+
+const configuredArtifacts = computed(() => {
+  const current = entity.value
+  if (!current || current.objectType !== 'HERO') return []
+  return campaign.activeObjects
+    .filter((item) => item.objectType === 'ITEM' && item.configuredHeroId === current.id)
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+})
+
+const baseStats = computed(() => {
+  const current = entity.value
+  if (!current || current.objectType !== 'HERO') return []
+  return [
+    ['СИЛ', current.strength], ['ЛОВ', current.dexterity], ['ТЕЛ', current.constitution],
+    ['ИНТ', current.intelligence], ['МУД', current.wisdom], ['ХАР', current.charisma],
+  ] as Array<[string, number]>
+})
+
+const extraStats = computed(() => {
+  const current = entity.value
+  if (!current || current.objectType !== 'HERO') return []
+  return [
+    ['ВНИМ', current.passivePerception], ['ИНИЦ', current.initiative], ['СКОР', current.speed],
+    ['КД', current.armorClass], ['МАКС', current.maxHp], ['ВДОХ', current.inspiration],
+  ].filter((row) => row[1] != null) as Array<[string, number | null]>
+})
+
+function modifier(value: number): number {
+  return Math.floor((value - 10) / 2)
+}
+
+const statusKind = computed(() => {
+  const current = entity.value
+  if (!current || (current.objectType !== 'ITEM' && current.objectType !== 'LOCATION')) return null
+  return current.intact ? 'alive' : 'dead'
+})
+
 const personGender = computed(() => {
   const item = entity.value
   if (!item || (item.objectType !== 'HERO' && item.objectType !== 'CHARACTER')) return ''
@@ -112,14 +189,6 @@ const linkGroups = computed(() => {
   }
   for (const item of campaign.activeObjects) {
     if (item.links.some((link) => link.targetId === current.id)) add(item)
-  }
-  if (current.objectType === 'ITEM') {
-    add(campaign.objectById(current.ownerCharacterId ?? ''))
-    add(campaign.objectById(current.ownerHeroId ?? ''))
-  }
-  for (const item of campaign.activeObjects) {
-    if (item.objectType !== 'ITEM') continue
-    if (item.ownerCharacterId === current.id || item.ownerHeroId === current.id) add(item)
   }
   return LINK_ORDER.map((type) => ({
     type,
@@ -146,7 +215,8 @@ const busy = ref(false)
 watch(entityId, () => {
   confirmDelete.value = false
   brokenLinkName.value = null
-})
+  void loadInjuries()
+}, { immediate: true })
 
 function onBrokenLink(payload: { name: string }): void {
   brokenLinkName.value = payload.name
@@ -199,11 +269,6 @@ function badgeClass(item: LocalObject): string {
 }
 
 /** Ссылка на предмет кампании из котомки героя. */
-function heroItemTargetId(itemId: string | null): string | null {
-  if (!itemId) return null
-  return campaign.objectById(itemId) ? itemId : null
-}
-
 async function keepServer(): Promise<void> {
   if (!entity.value) return
   busy.value = true
@@ -243,10 +308,9 @@ async function keepLocal(): Promise<void> {
             <div>
           <h1>
             <span
-              v-if="entity.objectType === 'CHARACTER'"
+              v-if="entity.objectType === 'CHARACTER' || entity.objectType === 'ITEM' || entity.objectType === 'LOCATION'"
               class="life-dot"
-              :class="entity.alive === true ? 'life-dot--alive' : entity.alive === false ? 'life-dot--dead' : 'life-dot--unknown'"
-              :title="entity.alive === true ? 'жив' : entity.alive === false ? 'мёртв' : 'неизвестно'"
+              :class="entity.objectType === 'CHARACTER' ? (entity.alive === true ? 'life-dot--alive' : entity.alive === false ? 'life-dot--dead' : 'life-dot--unknown') : (statusKind === 'alive' ? 'life-dot--alive' : 'life-dot--dead')"
             />
             {{ entity.name }}
             <span v-if="entity.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />
@@ -354,6 +418,33 @@ async function keepLocal(): Promise<void> {
         </dl>
       </div>
 
+      <div v-if="entity.objectType === 'HERO'" class="card">
+        <h2>Характеристики</h2>
+        <div class="stats-row">
+          <div v-for="stat in baseStats" :key="stat[0]" class="stat-box">
+            <span class="stat-box__label">{{ stat[0] }}</span>
+            <strong class="stat-box__mod">{{ modifier(stat[1]) >= 0 ? '+' : '' }}{{ modifier(stat[1]) }}</strong>
+            <span class="stat-box__value">{{ stat[1] }}</span>
+          </div>
+        </div>
+        <div v-if="extraStats.length" class="stats-row">
+          <div v-for="stat in extraStats" :key="stat[0]" class="stat-box stat-box--small">
+            <span class="stat-box__label">{{ stat[0] }}</span>
+            <span class="stat-box__value">{{ stat[1] }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="entity.objectType === 'HERO'" class="card">
+        <h2>Настроен на артефакты</h2>
+        <p v-if="configuredArtifacts.length === 0" class="faint">Нет артефактов, настроенных на героя.</p>
+        <div v-else class="list">
+          <RouterLink v-for="item in configuredArtifacts" :key="item.id" class="list-row" :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: item.id } }">
+            <span class="list-row__title">{{ item.name }}</span>
+          </RouterLink>
+        </div>
+      </div>
+
       <div v-else-if="details.length > 0" class="card">
         <dl class="attr-grid" style="margin: 0">
           <div v-for="row in details" :key="row.label">
@@ -363,30 +454,21 @@ async function keepLocal(): Promise<void> {
         </dl>
       </div>
 
-      <!-- Котомка героя: name, quantity, notes и ссылка на предмет кампании -->
-      <div v-if="entity.objectType === 'HERO'" class="card">
-        <h2>Предметы в котомке</h2>
-        <p v-if="entity.items.length === 0" class="faint">Список пуст.</p>
+      <div v-if="entity.objectType === 'ITEM' && entity.configuredHeroId" class="card">
+        <h2>Настроен на героя</h2>
+        <RouterLink :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: entity.configuredHeroId } }">
+          {{ campaign.objectName(entity.configuredHeroId) }}
+        </RouterLink>
+      </div>
+
+      <!-- Рюкзак: предметы, у которых владелец — этот герой или персонаж -->
+      <div v-if="entity.objectType === 'HERO' || (entity.objectType === 'CHARACTER' && backpack.length > 0)" class="card">
+        <h2>Рюкзак</h2>
+        <p v-if="backpack.length === 0" class="faint">Пусто.</p>
         <div v-else class="list">
-          <div v-for="item in entity.items" :key="item.id" class="list-row">
-            <div class="list-row__main">
-              <div class="list-row__title">
-                {{ item.name }}
-                <span v-if="item.quantity && item.quantity > 1" class="badge">×{{ item.quantity }}</span>
-              </div>
-              <div v-if="item.notes" class="faint">{{ item.notes }}</div>
-            </div>
-            <RouterLink
-              v-if="heroItemTargetId(item.itemId)"
-              class="btn btn--sm"
-              :to="{
-                name: 'entity-detail',
-                params: { campaignId: campaign.campaignId, entityId: heroItemTargetId(item.itemId) },
-              }"
-            >
-              Открыть предмет
-            </RouterLink>
-          </div>
+          <RouterLink v-for="item in backpack" :key="item.id" class="list-row" :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: item.id } }">
+            <span class="list-row__title">{{ item.name }}</span>
+          </RouterLink>
         </div>
       </div>
 
@@ -404,6 +486,31 @@ async function keepLocal(): Promise<void> {
         Создал(а) {{ entity.createdByName || campaign.userName(entity.createdBy) }}, изменил(а)
         {{ entity.updatedByName || campaign.userName(entity.updatedBy) }} · ревизия {{ entity.revision }} ·
         {{ formatDateTime(entity.updatedAt) }}
+      </div>
+
+      <div v-if="entity.objectType === 'HERO'" class="card stack">
+        <h2>Травмы и увечья</h2>
+        <p v-if="injuries.length === 0" class="faint">Пока нет записей.</p>
+        <div v-for="item in injuries" :key="item.id" class="injury-row">
+          <template v-if="editingInjury === item.id">
+            <textarea v-model="editingText" class="input" rows="2" />
+            <div class="row"><button class="btn btn--sm btn--primary" type="button" @click="saveInjury(item)">Сохранить</button><button class="btn btn--sm" type="button" @click="editingInjury = null">Отмена</button></div>
+          </template>
+          <template v-else>
+            <span>{{ item.text }}</span>
+            <div v-if="canEdit" class="row"><button class="btn btn--ghost btn--sm" type="button" @click="editingInjury = item.id; editingText = item.text">Изменить</button><button class="btn btn--danger btn--sm" type="button" @click="removeInjury(item)">Удалить</button></div>
+          </template>
+        </div>
+        <div v-if="canEdit" class="row" style="align-items: flex-start">
+          <textarea v-model="newInjury" class="input" rows="2" placeholder="Новая травма или увечье" />
+          <button class="btn btn--primary btn--sm" type="button" @click="addInjury">Добавить</button>
+        </div>
+      </div>
+
+      <div v-if="entity.objectType !== 'HERO' && entity.hasGmNote" class="card stack">
+        <h2>Пометка мастера</h2>
+        <p v-if="entity.gmNote" style="white-space: pre-wrap">{{ entity.gmNote }}</p>
+        <p v-else class="faint">Вы не можете видеть пометки мастера.</p>
       </div>
 
       <div v-if="linkGroups.length > 0" class="card">
@@ -556,4 +663,12 @@ async function keepLocal(): Promise<void> {
 .life-dot--alive { background: #2e7d32; box-shadow: 0 0 0 2px rgba(46,125,50,.22); }
 .life-dot--dead { background: #c62828; box-shadow: 0 0 0 2px rgba(198,40,40,.22); }
 .life-dot--unknown { background: #8a8a8a; box-shadow: 0 0 0 2px rgba(138,138,138,.22); }
+.stats-row { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-bottom: 8px; }
+.stat-box { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 1px solid var(--border); border-radius: 8px; padding: 6px 2px; background: var(--bg-elev); }
+.stat-box__label { font-size: .68rem; font-weight: 700; color: var(--text-muted); }
+.stat-box__mod { font-size: 1.15rem; line-height: 1.1; }
+.stat-box__value { font-size: .85rem; }
+.stat-box--small .stat-box__value { font-size: 1rem; font-weight: 700; }
+@media (max-width: 640px) { .stats-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.injury-row { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 </style>

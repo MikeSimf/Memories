@@ -41,6 +41,7 @@ public class ObjectIndexService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final WikiLinkService wikiLinkService;
+    private final ru.dndmemory.repo.MemberRepository memberRepository;
 
     /** Снимок индексов кампании на время одного запроса. */
     public static class ObjectContext {
@@ -48,13 +49,20 @@ public class ObjectIndexService {
         private final Map<UUID, String> namesById;
         private final Map<UUID, String> userNames;
         private final Map<String, UUID> itemNames;
+        private final boolean gmNoteVisible;
 
         ObjectContext(Map<String, UUID> nameIndex, Map<UUID, String> namesById,
-                      Map<UUID, String> userNames, Map<String, UUID> itemNames) {
+                      Map<UUID, String> userNames, Map<String, UUID> itemNames,
+                      boolean gmNoteVisible) {
+            this.gmNoteVisible = gmNoteVisible;
             this.nameIndex = nameIndex;
             this.namesById = namesById;
             this.userNames = userNames;
             this.itemNames = itemNames;
+        }
+
+        public boolean gmNoteVisible() {
+            return gmNoteVisible;
         }
 
         public Map<String, UUID> nameIndex() {
@@ -123,7 +131,16 @@ public class ObjectIndexService {
                 userNames.put(user.getId(), user.getDisplayName());
             }
         }
-        return new ObjectContext(nameIndex, namesById, userNames, itemNames);
+        boolean gmVisible = false;
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof ru.dndmemory.security.UserPrincipal) {
+            UUID viewer = ((ru.dndmemory.security.UserPrincipal) auth.getPrincipal()).getId();
+            gmVisible = memberRepository.findByCampaignIdAndUserId(campaignId, viewer)
+                    .map(m -> m.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_MASTER)
+                    .orElse(false);
+        }
+        return new ObjectContext(nameIndex, namesById, userNames, itemNames, gmVisible);
     }
 
     /** Разбирает ссылки {@code [[…]]} в текстах по именам всех четырёх классов. */

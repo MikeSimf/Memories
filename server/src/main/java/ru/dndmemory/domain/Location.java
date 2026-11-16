@@ -28,4 +28,7 @@ public class Location extends GameEntitySupport
     /** Тип из справочника location_types: город, лес, перекрёсток. */
     @Column(name = "location_type", length = 48)
     private String locationType;
+
+    @Column(nullable = false)
+    private boolean intact = true;
 }

@@ -21,6 +21,8 @@ public final class LocationDtos {
     public static class LocationDto extends ObjectDto {
         /** Тип из справочника location_types. */
         private String locationType;
+        /** true — целое, false — разрушено. */
+        private boolean intact;
     }
 
     @Getter
@@ -37,6 +39,8 @@ public final class LocationDtos {
         private UUID imageFileId;
         private UUID avatarFileId;
         private String locationType;
+        /** true — целое, false — разрушено. */
+        private boolean intact;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
         private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;
@@ -53,6 +57,8 @@ public final class LocationDtos {
         private UUID imageFileId;
         private UUID avatarFileId;
         private String locationType;
+        /** true — целое, false — разрушено. */
+        private boolean intact;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
         private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;

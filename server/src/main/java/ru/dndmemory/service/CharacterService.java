@@ -99,6 +99,8 @@ public class CharacterService extends AbstractObjectService<Character, Character
                 .revision(character.getRevision())
                 .createdAt(character.getCreatedAt())
                 .updatedAt(character.getUpdatedAt())
+                .hasGmNote(character.getGmNote() != null && !character.getGmNote().isBlank())
+                .gmNote(context.gmNoteVisible() ? character.getGmNote() : null)
                 .deleted(character.isDeleted())
                 .race(character.getRace())
                 .klass(character.getKlass())
@@ -129,6 +131,9 @@ public class CharacterService extends AbstractObjectService<Character, Character
         }
         if (payload.hasNonNull("name")) {
             character.setName(payload.get("name").asText());
+        }
+        if (payload.has("gmNote")) {
+            character.setGmNote(text(payload.get("gmNote")));
         }
         if (payload.has("description")) {
             character.setDescription(text(payload.get("description")));

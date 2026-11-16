@@ -425,6 +425,8 @@ export interface ObjectDto {
   createdAt: string
   updatedAt: string
   deleted: boolean
+  gmNote?: string | null
+  hasGmNote?: boolean
 }
 
 /** Предмет в котомке героя (`hero_items`). */
@@ -445,6 +447,18 @@ export interface HeroDto extends ObjectDto {
   playerUserId: string | null
   playerName: string | null
   items: HeroItemDto[]
+  strength: number
+  dexterity: number
+  constitution: number
+  intelligence: number
+  wisdom: number
+  charisma: number
+  passivePerception: number | null
+  initiative: number | null
+  speed: number | null
+  armorClass: number | null
+  maxHp: number | null
+  inspiration: number | null
 }
 
 /** Персонаж (НПС): раса и краткое описание — по ним тоже идёт поиск. */
@@ -459,6 +473,7 @@ export interface CharacterDto extends ObjectDto {
 /** Локация: тип из справочника location_types. */
 export interface LocationDto extends ObjectDto {
   locationType: string | null
+  intact: boolean
 }
 
 /** Предмет: владелец как написано в мире и ссылка не более чем на одного героя/НПС. */
@@ -470,6 +485,7 @@ export interface ItemDto extends ObjectDto {
   ownerHeroName: string | null
   ownerCharacterId: string | null
   ownerCharacterName: string | null
+  intact: boolean
 }
 
 export type CampaignObjectDto = HeroDto | CharacterDto | LocationDto | ItemDto
@@ -633,6 +649,8 @@ export interface RetellingDto {
   createdAt: string
   updatedAt: string
   deleted: boolean
+  gmNote?: string | null
+  hasGmNote?: boolean
 }
 
 export interface CreateRetellingRequest {
@@ -816,6 +834,9 @@ export interface MaterialDto {
   createdAt: string
   updatedAt: string
   deleted: boolean
+  privateMaterial?: boolean
+  locked?: boolean
+  lockedByName?: string | null
 }
 
 export interface SyncStateDto {
@@ -986,4 +1007,28 @@ export interface InteractiveMapDto {
 
 export interface InteractiveMapDetailDto extends InteractiveMapDto {
   markers: MapMarkerDto[]
+}
+
+/** Травма или увечье героя. */
+export interface InjuryDto {
+  id: string
+  text: string
+}
+
+/** Комментарий к квесту. */
+export interface QuestCommentDto {
+  id: string
+  text: string
+  createdByName: string | null
+  createdAt: string
+}
+
+/** Квест кампании. */
+export interface QuestDto {
+  id: string
+  name: string
+  description: string | null
+  avatarFileId: string | null
+  updatedAt: string
+  comments: QuestCommentDto[]
 }

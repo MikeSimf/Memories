@@ -47,6 +47,10 @@ public abstract class GameEntitySupport
     @Column(columnDefinition = "text")
     private String description;
 
+    /** Пометка мастера: хранится у всех, но отдаётся только мастеру. */
+    @Column(name = "gm_note", columnDefinition = "text")
+    private String gmNote;
+
     @Column(name = "image_file_id")
     private UUID imageFileId;
 

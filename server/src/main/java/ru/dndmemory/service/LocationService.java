@@ -82,6 +82,7 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
                 .imageFileId(location.getImageFileId())
                 .avatarFileId(location.getAvatarFileId())
                 .locationType(location.getLocationType())
+                .intact(location.isIntact())
                 .cardTemplateId(cardTemplate("LOCATION", location))
                 .links(objectIndexService.links(context, location.getDescription()))
                 .createdBy(location.getCreatedBy())
@@ -91,6 +92,8 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
                 .revision(location.getRevision())
                 .createdAt(location.getCreatedAt())
                 .updatedAt(location.getUpdatedAt())
+                .hasGmNote(location.getGmNote() != null && !location.getGmNote().isBlank())
+                .gmNote(context.gmNoteVisible() ? location.getGmNote() : null)
                 .deleted(location.isDeleted())
                 .build();
     }
@@ -113,12 +116,16 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
         if (payload.hasNonNull("name")) {
             location.setName(payload.get("name").asText());
         }
+        if (payload.has("intact")) location.setIntact(payload.get("intact").asBoolean(true));
         if (payload.has("locationType")) {
             location.setLocationType(text(payload.get("locationType")));
             if (location.getLocationType() != null
                     && !dictionaryService.isEnabled(location.getCampaignId(), CampaignDictionaryService.LOCATION_TYPE, location.getLocationType())) {
                 location.setLocationType("Неизвестно");
             }
+        }
+        if (payload.has("gmNote")) {
+            location.setGmNote(text(payload.get("gmNote")));
         }
         if (payload.has("description")) {
             location.setDescription(text(payload.get("description")));

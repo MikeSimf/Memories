@@ -141,6 +141,18 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
                 .playerUserId(hero.getPlayerUserId())
                 .playerName(context.userName(hero.getPlayerUserId()))
                 .items(items)
+                .strength(hero.getStrength())
+                .dexterity(hero.getDexterity())
+                .constitution(hero.getConstitution())
+                .intelligence(hero.getIntelligence())
+                .wisdom(hero.getWisdom())
+                .charisma(hero.getCharisma())
+                .passivePerception(hero.getPassivePerception())
+                .initiative(hero.getInitiative())
+                .speed(hero.getSpeed())
+                .armorClass(hero.getArmorClass())
+                .maxHp(hero.getMaxHp())
+                .inspiration(hero.getInspiration())
                 .build();
     }
 
@@ -154,6 +166,10 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
         fields.put("alive", hero.getAlive());
         ru.dndmemory.domain.CardTemplate template = cardTemplateService.match(type, "LIST", fields);
         return template == null ? null : template.getId();
+    }
+
+    private Integer integerOrNull(com.fasterxml.jackson.databind.JsonNode node) {
+        return node == null || node.isNull() ? null : node.asInt();
     }
 
     @Override
@@ -192,6 +208,18 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
             hero.setAlive("alive".equals(life) ? Boolean.TRUE
                     : ("dead".equals(life) ? Boolean.FALSE : null));
         }
+        if (payload.has("strength")) hero.setStrength(payload.get("strength").asInt(10));
+        if (payload.has("dexterity")) hero.setDexterity(payload.get("dexterity").asInt(10));
+        if (payload.has("constitution")) hero.setConstitution(payload.get("constitution").asInt(10));
+        if (payload.has("intelligence")) hero.setIntelligence(payload.get("intelligence").asInt(10));
+        if (payload.has("wisdom")) hero.setWisdom(payload.get("wisdom").asInt(10));
+        if (payload.has("charisma")) hero.setCharisma(payload.get("charisma").asInt(10));
+        if (payload.has("passivePerception")) hero.setPassivePerception(integerOrNull(payload.get("passivePerception")));
+        if (payload.has("initiative")) hero.setInitiative(integerOrNull(payload.get("initiative")));
+        if (payload.has("speed")) hero.setSpeed(integerOrNull(payload.get("speed")));
+        if (payload.has("armorClass")) hero.setArmorClass(integerOrNull(payload.get("armorClass")));
+        if (payload.has("maxHp")) hero.setMaxHp(integerOrNull(payload.get("maxHp")));
+        if (payload.has("inspiration")) hero.setInspiration(integerOrNull(payload.get("inspiration")));
         if (payload.has("alive")) {
             com.fasterxml.jackson.databind.JsonNode alive = payload.get("alive");
             hero.setAlive(alive == null || alive.isNull() ? null : alive.asBoolean());

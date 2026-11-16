@@ -48,6 +48,9 @@ public class Item extends GameEntitySupport
     @Column(name = "configured_hero_id")
     private UUID configuredHeroId;
 
+    @Column(nullable = false)
+    private boolean intact = true;
+
     @Override
     public String matchKey() {
         return normalizePart(getName());

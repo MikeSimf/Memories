@@ -86,6 +86,18 @@ export function objectFromDto<C extends ObjectClass>(
         playerUserId: hero.playerUserId ?? null,
         playerName: hero.playerName ?? null,
         items: itemsFromDto(hero.items),
+        strength: hero.strength ?? 10,
+        dexterity: hero.dexterity ?? 10,
+        constitution: hero.constitution ?? 10,
+        intelligence: hero.intelligence ?? 10,
+        wisdom: hero.wisdom ?? 10,
+        charisma: hero.charisma ?? 10,
+        passivePerception: hero.passivePerception ?? null,
+        initiative: hero.initiative ?? null,
+        speed: hero.speed ?? null,
+        armorClass: hero.armorClass ?? null,
+        maxHp: hero.maxHp ?? null,
+        inspiration: hero.inspiration ?? null,
       } as LocalObjectOf<C>
     }
     case 'CHARACTER': {
@@ -114,6 +126,7 @@ export function objectFromDto<C extends ObjectClass>(
         magic: item.magic ?? null,
         hasSetting: item.hasSetting === true,
         configuredHeroId: item.configuredHeroId ?? null,
+        intact: item.intact !== false,
       } as LocalObjectOf<C>
     }
     default: {
@@ -122,6 +135,7 @@ export function objectFromDto<C extends ObjectClass>(
         ...local,
         objectType: 'LOCATION',
         locationType: location.locationType ?? null,
+        intact: location.intact !== false,
       } as LocalObjectOf<C>
     }
   }
@@ -150,6 +164,18 @@ export function objectToPayload(object: LocalObject): Record<string, unknown> {
         race: object.race,
         gender: object.gender,
         alive: object.alive,
+        strength: object.strength,
+        dexterity: object.dexterity,
+        constitution: object.constitution,
+        intelligence: object.intelligence,
+        wisdom: object.wisdom,
+        charisma: object.charisma,
+        passivePerception: object.passivePerception,
+        initiative: object.initiative,
+        speed: object.speed,
+        armorClass: object.armorClass,
+        maxHp: object.maxHp,
+        inspiration: object.inspiration,
         klass: object.klass,
         playerUserId: object.playerUserId,
         items: object.items.map((item) => ({
@@ -176,11 +202,12 @@ export function objectToPayload(object: LocalObject): Record<string, unknown> {
         magic: object.magic,
         hasSetting: object.hasSetting,
         configuredHeroId: object.configuredHeroId,
+        intact: object.intact,
         ownerHeroId: object.ownerHeroId,
         ownerCharacterId: object.ownerCharacterId,
       }
     case 'LOCATION':
-      return { ...common, locationType: object.locationType }
+      return { ...common, locationType: object.locationType, intact: object.intact }
     default:
       return common
   }

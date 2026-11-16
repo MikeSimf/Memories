@@ -32,6 +32,8 @@ public final class ItemDtos {
         private Boolean hasSetting;
         private UUID configuredHeroId;
         private String ownerCharacterName;
+        /** true — целое, false — разрушено. */
+        private boolean intact;
     }
 
     @Getter

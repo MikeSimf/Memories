@@ -74,6 +74,20 @@ export interface LocalHero extends LocalObjectBase {
   playerUserId: string | null
   playerName: string | null
   items: HeroItemDto[]
+  strength: number
+  dexterity: number
+  constitution: number
+  intelligence: number
+  wisdom: number
+  charisma: number
+  passivePerception: number | null
+  initiative: number | null
+  speed: number | null
+  armorClass: number | null
+  maxHp: number | null
+  inspiration: number | null
+  gmNote: string | null
+  hasGmNote: boolean
 }
 
 /** Персонаж (НПС): раса и краткое описание. */
@@ -84,12 +98,17 @@ export interface LocalCharacter extends LocalObjectBase {
   alive: boolean | null
   klass: string | null
   shortDescription: string | null
+  gmNote: string | null
+  hasGmNote: boolean
 }
 
 /** Локация: тип из справочника location_types. */
 export interface LocalLocation extends LocalObjectBase {
   objectType: 'LOCATION'
   locationType: string | null
+  intact: boolean
+  gmNote: string | null
+  hasGmNote: boolean
 }
 
 /** Предмет: владелец строкой и необязательная ссылка на героя или персонажа. */
@@ -104,6 +123,9 @@ export interface LocalItem extends LocalObjectBase {
   magic: boolean | null
   hasSetting: boolean
   configuredHeroId: string | null
+  intact: boolean
+  gmNote: string | null
+  hasGmNote: boolean
 }
 
 export type LocalObject = LocalHero | LocalCharacter | LocalLocation | LocalItem

@@ -144,6 +144,18 @@ export function objectFromPayload(
       playerUserId: asOptionalString(payload.playerUserId),
       playerName: asOptionalString(payload.playerName),
       items: deleted ? [] : asHeroItems(payload.items),
+      strength: asNumber(payload.strength, 10),
+      dexterity: asNumber(payload.dexterity, 10),
+      constitution: asNumber(payload.constitution, 10),
+      intelligence: asNumber(payload.intelligence, 10),
+      wisdom: asNumber(payload.wisdom, 10),
+      charisma: asNumber(payload.charisma, 10),
+      passivePerception: asOptionalNumber(payload.passivePerception),
+      initiative: asOptionalNumber(payload.initiative),
+      speed: asOptionalNumber(payload.speed),
+      armorClass: asOptionalNumber(payload.armorClass),
+      maxHp: asOptionalNumber(payload.maxHp),
+      inspiration: asOptionalNumber(payload.inspiration),
     }
     return objectFromDto('HERO', dto)
   }
@@ -166,10 +178,11 @@ export function objectFromPayload(
       ownerHeroName: asOptionalString(payload.ownerHeroName),
       ownerCharacterId: asOptionalString(payload.ownerCharacterId),
       ownerCharacterName: asOptionalString(payload.ownerCharacterName),
+      intact: payload.intact !== false,
     }
     return objectFromDto('ITEM', dto)
   }
-  const dto: LocationDto = { ...common, locationType: asOptionalString(payload.locationType) }
+  const dto: LocationDto = { ...common, locationType: asOptionalString(payload.locationType), intact: payload.intact !== false }
   return objectFromDto('LOCATION', dto)
 }
 

@@ -65,6 +65,10 @@ watch(materialId, load)
     <div v-if="loading" class="loading"><span class="spinner" /> Загружаем…</div>
     <p v-else-if="error" class="notice notice--danger">{{ error }}</p>
     <template v-else-if="material">
+      <div v-if="material.locked" class="card stack">
+        <p class="faint">Материал приватный, заблокировано: {{ material.lockedByName || material.createdByName || 'участник' }}</p>
+      </div>
+      <template v-else>
       <div v-if="imageFiles.length > 0" class="material-gallery">
         <div v-for="file in imageFiles" :key="file.id" class="material-gallery__item">
           <EntityImage :file-id="file.id" :alt="material.name" />
@@ -96,6 +100,7 @@ watch(materialId, load)
         </a>
       </div>
 
+      </template>
       <div class="faint">
         Создан(а) {{ material.createdBy ? campaign.userName(material.createdBy) : '—' }} ·
         изменён(а) {{ material.updatedBy ? campaign.userName(material.updatedBy) : '—' }} ·

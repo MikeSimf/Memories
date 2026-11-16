@@ -284,10 +284,10 @@ const tabProgressLabel = computed(() =>
             <EntityAvatar :object="object" :size="40" />
             <h3 class="card__title">
               <span
-                v-if="object.objectType === 'CHARACTER'"
+                v-if="object.objectType === 'CHARACTER' || object.objectType === 'ITEM' || object.objectType === 'LOCATION'"
                 class="life-dot"
-                :class="object.alive === true ? 'life-dot--alive' : object.alive === false ? 'life-dot--dead' : 'life-dot--unknown'"
-                :title="object.alive === true ? 'жив' : object.alive === false ? 'мёртв' : 'неизвестно'"
+                :class="object.objectType === 'CHARACTER' ? (object.alive === true ? 'life-dot--alive' : object.alive === false ? 'life-dot--dead' : 'life-dot--unknown') : ((object as any).intact === false ? 'life-dot--dead' : 'life-dot--alive')"
+                :title="object.objectType === 'CHARACTER' ? (object.alive === true ? 'жив' : object.alive === false ? 'мёртв' : 'неизвестно') : ((object as any).intact === false ? 'разрушено' : 'целое')"
               />
               {{ object.name }}
               <span v-if="object.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />

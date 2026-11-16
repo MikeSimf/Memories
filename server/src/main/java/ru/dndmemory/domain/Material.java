@@ -8,6 +8,7 @@ import ru.dndmemory.domain.extender.ImageExtender;
 import ru.dndmemory.domain.extender.NamedExtender;
 import ru.dndmemory.domain.extender.SyncExtended;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
@@ -23,6 +24,9 @@ import javax.persistence.Table;
 @NoArgsConstructor
 public class Material extends GameEntitySupport
         implements GameEntityExtender, NamedExtender, SyncExtended, ImageExtender {
+
+    @Column(name = "private_flag", nullable = false)
+    private boolean privateMaterial;
 
     @Override
     public String matchKey() {

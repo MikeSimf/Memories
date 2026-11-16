@@ -40,6 +40,10 @@ public final class MaterialDtos {
         private Instant createdAt;
         private Instant updatedAt;
         private boolean deleted;
+        /** Приватный материал: содержимое скрыто от остальных. */
+        private boolean privateMaterial;
+        private boolean locked;
+        private String lockedByName;
     }
 
     @Data

@@ -27,5 +27,7 @@ export {
   locationTypesApi,
   itemTypesApi,
   mapsApi,
+  questsApi,
+  injuriesApi,
 } from './endpoints'
 export type { RaceDto } from './endpoints'

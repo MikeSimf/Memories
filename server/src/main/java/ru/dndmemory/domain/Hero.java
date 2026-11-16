@@ -45,6 +45,20 @@ public class Hero extends GameEntitySupport
     @Column(name = "player_user_id")
     private UUID playerUserId;
 
+    private int strength = 10;
+    private int dexterity = 10;
+    private int constitution = 10;
+    private int intelligence = 10;
+    private int wisdom = 10;
+    private int charisma = 10;
+
+    private Integer passivePerception;
+    private Integer initiative;
+    private Integer speed;
+    private Integer armorClass;
+    private Integer maxHp;
+    private Integer inspiration;
+
     @Override
     public String matchKey() {
         return normalizePart(getName());

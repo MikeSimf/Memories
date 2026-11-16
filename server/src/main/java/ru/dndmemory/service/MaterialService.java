@@ -24,6 +24,7 @@ import java.util.UUID;
 public class MaterialService extends AbstractObjectService<Material, MaterialDtos.MaterialDto> {
 
     private final MaterialRepository materialRepository;
+    private final MemberRepository memberRepository;
 
     public MaterialService(MaterialRepository materialRepository,
                            CampaignRepository campaignRepository,
@@ -36,6 +37,7 @@ public class MaterialService extends AbstractObjectService<Material, MaterialDto
         super(campaignRepository, memberRepository, permissionService, changeRecorder,
                 objectIndexService, conflictRecorder, objectMapper);
         this.materialRepository = materialRepository;
+        this.memberRepository = memberRepository;
     }
 
     @Override
@@ -73,6 +75,27 @@ public class MaterialService extends AbstractObjectService<Material, MaterialDto
 
     @Override
     protected MaterialDtos.MaterialDto toDto(Material material, ObjectIndexService.ObjectContext context) {
+        UUID viewer = currentUserId();
+        boolean privileged = viewer != null && (viewer.equals(material.getCreatedBy())
+                || memberRepository.findByCampaignIdAndUserId(material.getCampaignId(), viewer)
+                        .map(m -> m.getRole() == ru.dndmemory.domain.MemberRole.OWNER
+                                || m.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_MASTER)
+                        .orElse(false));
+        if (material.isPrivateMaterial() && !privileged) {
+            return MaterialDtos.MaterialDto.builder()
+                    .id(material.getId())
+                    .campaignId(material.getCampaignId())
+                    .name(material.getName())
+                    .privateMaterial(true)
+                    .locked(true)
+                    .lockedByName(context.userName(material.getCreatedBy()))
+                    .createdBy(material.getCreatedBy())
+                    .createdByName(context.userName(material.getCreatedBy()))
+                    .revision(material.getRevision())
+                    .createdAt(material.getCreatedAt())
+                    .updatedAt(material.getUpdatedAt())
+                    .build();
+        }
         return MaterialDtos.MaterialDto.builder()
                 .id(material.getId())
                 .campaignId(material.getCampaignId())
@@ -90,7 +113,15 @@ public class MaterialService extends AbstractObjectService<Material, MaterialDto
                 .createdAt(material.getCreatedAt())
                 .updatedAt(material.getUpdatedAt())
                 .deleted(material.isDeleted())
+                .privateMaterial(material.isPrivateMaterial())
                 .build();
+    }
+
+    private UUID currentUserId() {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof ru.dndmemory.security.UserPrincipal)) return null;
+        return ((ru.dndmemory.security.UserPrincipal) auth.getPrincipal()).getId();
     }
 
     @Override
@@ -110,6 +141,9 @@ public class MaterialService extends AbstractObjectService<Material, MaterialDto
         }
         if (payload.has("avatarFileId")) {
             material.setAvatarFileId(uuidOrNull(payload.get("avatarFileId")));
+        }
+        if (payload.has("privateMaterial")) {
+            material.setPrivateMaterial(payload.get("privateMaterial").asBoolean(false));
         }
     }
 }

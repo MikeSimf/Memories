@@ -91,6 +91,7 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
                 .imageFileId(item.getImageFileId())
                 .avatarFileId(item.getAvatarFileId())
                 .itemType(item.getItemType())
+                .intact(item.isIntact())
                 .links(objectIndexService.links(context, item.getDescription()))
                 .createdBy(item.getCreatedBy())
                 .createdByName(context.userName(item.getCreatedBy()))
@@ -99,6 +100,8 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
                 .revision(item.getRevision())
                 .createdAt(item.getCreatedAt())
                 .updatedAt(item.getUpdatedAt())
+                .hasGmNote(item.getGmNote() != null && !item.getGmNote().isBlank())
+                .gmNote(context.gmNoteVisible() ? item.getGmNote() : null)
                 .deleted(item.isDeleted())
                 .ownerName(item.getOwnerName())
                 .ownerHeroId(item.getOwnerHeroId())
@@ -132,12 +135,16 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
         if (payload.hasNonNull("name")) {
             item.setName(payload.get("name").asText());
         }
+        if (payload.has("intact")) item.setIntact(payload.get("intact").asBoolean(true));
         if (payload.has("itemType")) {
             item.setItemType(text(payload.get("itemType")));
             if (item.getItemType() != null
                     && !dictionaryService.isEnabled(item.getCampaignId(), CampaignDictionaryService.ITEM_TYPE, item.getItemType())) {
                 item.setItemType("Неизвестно");
             }
+        }
+        if (payload.has("gmNote")) {
+            item.setGmNote(text(payload.get("gmNote")));
         }
         if (payload.has("description")) {
             item.setDescription(text(payload.get("description")));

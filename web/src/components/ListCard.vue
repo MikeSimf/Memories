@@ -95,9 +95,9 @@ const blocks = computed(() => props.template.blocks ?? [])
       </template>
       <template v-else>
         <span
-          v-if="block.field === 'name' && object.objectType === 'CHARACTER'"
+          v-if="block.field === 'name' && (object.objectType === 'CHARACTER' || object.objectType === 'ITEM' || object.objectType === 'LOCATION')"
           class="life-dot"
-          :class="object.alive === true ? 'life-dot--alive' : object.alive === false ? 'life-dot--dead' : 'life-dot--unknown'"
+          :class="object.objectType === 'CHARACTER' ? (object.alive === true ? 'life-dot--alive' : object.alive === false ? 'life-dot--dead' : 'life-dot--unknown') : ((object as any).intact === false ? 'life-dot--dead' : 'life-dot--alive')"
         />
         {{ value(block.field) }}
       </template>

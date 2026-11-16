@@ -690,3 +690,45 @@ export const mapsApi = {
     return apiClient.request({ path: `/api/campaigns/${campaignId}/maps/${mapId}/markers/${markerId}`, method: 'DELETE' })
   },
 }
+
+export const injuriesApi = {
+  list(campaignId: string, heroId: string): Promise<import('./types').InjuryDto[]> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/heroes/${heroId}/injuries` })
+  },
+  add(campaignId: string, heroId: string, text: string): Promise<import('./types').InjuryDto> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/heroes/${heroId}/injuries`, method: 'POST', body: { text } })
+  },
+  update(campaignId: string, heroId: string, injuryId: string, text: string): Promise<void> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/heroes/${heroId}/injuries/${injuryId}`, method: 'PATCH', body: { text } })
+  },
+  remove(campaignId: string, heroId: string, injuryId: string): Promise<void> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/heroes/${heroId}/injuries/${injuryId}`, method: 'DELETE' })
+  },
+}
+
+export const questsApi = {
+  list(campaignId: string): Promise<import('./types').QuestDto[]> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/quests` })
+  },
+  get(campaignId: string, questId: string): Promise<import('./types').QuestDto> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/quests/${questId}` })
+  },
+  create(campaignId: string, body: Record<string, unknown>): Promise<import('./types').QuestDto> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/quests`, method: 'POST', body })
+  },
+  update(campaignId: string, questId: string, body: Record<string, unknown>): Promise<import('./types').QuestDto> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/quests/${questId}`, method: 'PATCH', body })
+  },
+  remove(campaignId: string, questId: string): Promise<void> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/quests/${questId}`, method: 'DELETE' })
+  },
+  addComment(campaignId: string, questId: string, text: string): Promise<import('./types').QuestCommentDto> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/quests/${questId}/comments`, method: 'POST', body: { text } })
+  },
+  updateComment(campaignId: string, questId: string, commentId: string, text: string): Promise<void> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/quests/${questId}/comments/${commentId}`, method: 'PATCH', body: { text } })
+  },
+  removeComment(campaignId: string, questId: string, commentId: string): Promise<void> {
+    return apiClient.request({ path: `/api/campaigns/${campaignId}/quests/${questId}/comments/${commentId}`, method: 'DELETE' })
+  },
+}

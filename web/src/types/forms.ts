@@ -42,6 +42,20 @@ export interface ObjectFormValues {
   magic: boolean | null
   hasSetting: boolean
   configuredHeroId: string | null
+  intact: boolean
+  strength: number
+  dexterity: number
+  constitution: number
+  intelligence: number
+  wisdom: number
+  charisma: number
+  passivePerception: number | null
+  initiative: number | null
+  speed: number | null
+  armorClass: number | null
+  maxHp: number | null
+  inspiration: number | null
+  gmNote: string
 }
 
 /** Значения формы пересказа. */
@@ -79,6 +93,20 @@ export function emptyObjectForm(name = ''): ObjectFormValues {
     magic: null,
     hasSetting: false,
     configuredHeroId: null,
+    intact: true,
+    strength: 10,
+    dexterity: 10,
+    constitution: 10,
+    intelligence: 10,
+    wisdom: 10,
+    charisma: 10,
+    passivePerception: null,
+    initiative: null,
+    speed: null,
+    armorClass: null,
+    maxHp: null,
+    inspiration: null,
+    gmNote: '',
   }
 }
 
