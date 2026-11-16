@@ -124,7 +124,7 @@ public class LocationService extends AbstractObjectService<Location, LocationDto
                 location.setLocationType("Неизвестно");
             }
         }
-        if (payload.has("gmNote")) {
+        if (payload.has("gmNote") && payload.get("gmNote").isTextual()) {
             location.setGmNote(text(payload.get("gmNote")));
         }
         if (payload.has("description")) {

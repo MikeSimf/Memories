@@ -141,6 +141,12 @@ const backpack = computed(() => {
     .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
 })
 
+const itemOwner = computed(() => {
+  const current = entity.value
+  if (!current || current.objectType !== 'ITEM') return null
+  return campaign.objectById(current.ownerHeroId ?? '') ?? campaign.objectById(current.ownerCharacterId ?? '') ?? null
+})
+
 const configuredArtifacts = computed(() => {
   const current = entity.value
   if (!current || current.objectType !== 'HERO') return []
@@ -461,6 +467,11 @@ async function keepLocal(): Promise<void> {
             <dd style="margin: 0">{{ row.value }}</dd>
           </div>
         </dl>
+      </div>
+
+      <div v-if="itemOwner" class="card">
+        <h2>Владелец</h2>
+        <RouterLink :to="{ name: 'entity-detail', params: { campaignId: campaign.campaignId, entityId: itemOwner.id } }">{{ itemOwner.name }}</RouterLink>
       </div>
 
       <div v-if="entity.objectType === 'ITEM' && entity.configuredHeroId" class="card">

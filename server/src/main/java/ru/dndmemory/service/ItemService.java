@@ -143,7 +143,7 @@ public class ItemService extends AbstractObjectService<Item, ItemDtos.ItemDto> {
                 item.setItemType("Неизвестно");
             }
         }
-        if (payload.has("gmNote")) {
+        if (payload.has("gmNote") && payload.get("gmNote").isTextual()) {
             item.setGmNote(text(payload.get("gmNote")));
         }
         if (payload.has("description")) {

@@ -160,7 +160,7 @@ export function objectToPayload(object: LocalObject): Record<string, unknown> {
     createdAt: object.createdAt,
     updatedAt: object.updatedAt,
     deleted: object.deleted,
-    gmNote: object.gmNote,
+    ...(object.gmNote != null && object.gmNote !== '' ? { gmNote: object.gmNote } : {}),
   }
   switch (object.objectType) {
     case 'HERO':

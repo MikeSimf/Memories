@@ -132,7 +132,7 @@ public class CharacterService extends AbstractObjectService<Character, Character
         if (payload.hasNonNull("name")) {
             character.setName(payload.get("name").asText());
         }
-        if (payload.has("gmNote")) {
+        if (payload.has("gmNote") && payload.get("gmNote").isTextual()) {
             character.setGmNote(text(payload.get("gmNote")));
         }
         if (payload.has("description")) {
