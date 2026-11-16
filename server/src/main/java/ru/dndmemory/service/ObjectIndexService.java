@@ -137,7 +137,10 @@ public class ObjectIndexService {
         if (auth != null && auth.getPrincipal() instanceof ru.dndmemory.security.UserPrincipal) {
             UUID viewer = ((ru.dndmemory.security.UserPrincipal) auth.getPrincipal()).getId();
             gmVisible = memberRepository.findByCampaignIdAndUserId(campaignId, viewer)
-                    .map(m -> m.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_MASTER)
+                    .map(m -> m.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_MASTER
+                            || (m.getRole() == ru.dndmemory.domain.MemberRole.OWNER
+                                    && memberRepository.countByCampaignIdAndRole(campaignId,
+                                            ru.dndmemory.domain.MemberRole.EDITOR_MASTER) == 0))
                     .orElse(false);
         }
         return new ObjectContext(nameIndex, namesById, userNames, itemNames, gmVisible);

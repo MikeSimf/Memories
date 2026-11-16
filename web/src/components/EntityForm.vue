@@ -156,6 +156,13 @@ const extraFields = [
   { key: 'inspiration' as const, label: 'ВДОХ' },
 ]
 
+const canEditGmNote = computed(() => {
+  const role = campaign.campaign?.myRole
+  if (role === 'EDITOR_MASTER') return true
+  if (role === 'OWNER') return !campaign.members.some((member) => member.role === 'EDITOR_MASTER' && member.status !== 'REMOVED')
+  return false
+})
+
 const isHero = computed(() => props.objectClass === 'HERO')
 const isCharacter = computed(() => props.objectClass === 'CHARACTER')
 const isItem = computed(() => props.objectClass === 'ITEM')
@@ -431,7 +438,7 @@ function setOwnerCharacter(value: string): void {
       <span class="field__hint">По расе и краткому описанию тоже идёт поиск.</span>
     </template>
 
-    <div v-if="!isHero && campaign.campaign?.myRole === 'EDITOR_MASTER'" class="field">
+    <div v-if="!isHero && canEditGmNote" class="field">
       <label class="field__label">Пометка мастера</label>
       <textarea class="input" rows="3" :value="modelValue.gmNote" @input="patch({ gmNote: ($event.target as HTMLTextAreaElement).value })" placeholder="Видна только мастеру" />
     </div>

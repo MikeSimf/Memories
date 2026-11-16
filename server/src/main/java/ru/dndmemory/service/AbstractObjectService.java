@@ -260,6 +260,13 @@ public abstract class AbstractObjectService<
                 .orElseThrow(() -> ApiException.notFound(entityLabel()));
     }
 
+    private boolean canWriteGmNote(Member member, UUID campaignId) {
+        if (member.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_MASTER) return true;
+        return member.getRole() == ru.dndmemory.domain.MemberRole.OWNER
+                && memberRepository.countByCampaignIdAndRole(campaignId,
+                        ru.dndmemory.domain.MemberRole.EDITOR_MASTER) == 0;
+    }
+
     // --------------------------------------------------------- синхронизация
 
     @Override
@@ -341,6 +348,12 @@ public abstract class AbstractObjectService<
             }
         }
 
+        if (payload.has("gmNote") && !canWriteGmNote(member, campaign.getId())) {
+            com.fasterxml.jackson.databind.node.ObjectNode copy =
+                    ((com.fasterxml.jackson.databind.node.ObjectNode) payload).deepCopy();
+            copy.remove("gmNote");
+            payload = copy;
+        }
         applyPayload(server, payload);
         if (server.getName() == null || server.getName().trim().isEmpty()) {
             return rejected(campaign, userId, change, "validation_failed", null);
