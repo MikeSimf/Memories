@@ -80,6 +80,15 @@ public class MaterialDetailActivity extends BottomNavActivity {
             return;
         }
         binding.materialDetailName.setText(material.name);
+        if (material.locked) {
+            binding.materialDetailDescription.setText(getString(R.string.material_locked,
+                    material.lockedByName == null ? "—" : material.lockedByName));
+            ViewUtils.show(binding.materialDetailPager, false);
+            ViewUtils.show(binding.materialDetailLinksTitle, false);
+            binding.materialDetailLinks.removeAllViews();
+            ViewUtils.show(binding.materialDetailEdit, false);
+            return;
+        }
         imagesAdapter.submit(ru.dndmemory.data.Mappers.files(material.filesJson));
         binding.materialDetailPager.setAdapter(imagesAdapter);
         ViewUtils.show(binding.materialDetailPager, imagesAdapter.count() > 0);

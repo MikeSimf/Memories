@@ -627,6 +627,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         ViewUtils.show(binding.entityEditLocationTypeGroup, currentKind == EntityType.LOCATION);
         ViewUtils.show(binding.entityEditItemTypeGroup, currentKind == EntityType.ITEM);
         ViewUtils.show(binding.entityEditFieldsTitle, hero || character || item);
+        ViewUtils.show(binding.entityEditGmNoteGroup, !hero);
 
         if (draft != null) {
             binding.entityEditRaceInput.setText(draft.race);
@@ -662,6 +663,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
             binding.entityEditShortInput.setText(draft.shortDescription);
             binding.entityEditNameInput.setText(draft.name);
             binding.entityEditDescriptionInput.setText(draft.description);
+            binding.entityEditGmNoteInput.setText(draft.gmNote);
         }
         applyReferenceDefaults();
 
@@ -929,6 +931,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         viewModel.setKind(currentKind);
         viewModel.setName(text(binding.entityEditNameInput.getText()));
         viewModel.setDescription(text(binding.entityEditDescriptionInput.getText()));
+        viewModel.setGmNote(text(binding.entityEditGmNoteInput.getText()));
 
         if (currentKind == EntityType.HERO) {
             viewModel.setRace(text(binding.entityEditRaceInput.getText()));

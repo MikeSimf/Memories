@@ -121,6 +121,18 @@
             android:exported="false" />
 
         <activity
+            android:name=".ui.quest.QuestsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.quest.QuestDetailActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.hero.InjuriesActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.map.MapsActivity"
             android:exported="false" />
 

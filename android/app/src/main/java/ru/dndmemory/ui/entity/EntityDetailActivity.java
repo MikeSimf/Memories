@@ -849,6 +849,9 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_entity_detail, menu);
+        MenuItem injuries = menu.findItem(R.id.action_injuries);
+        if (injuries != null) injuries.setVisible(current != null
+                && EntityType.HERO.name().equalsIgnoreCase(current.kind));
         return true;
     }
 
@@ -869,6 +872,10 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
                 return true;
             }
             Nav.editEntity(this, campaignId, current.id);
+            return true;
+        }
+        if (id == R.id.action_injuries) {
+            if (current != null) Nav.openInjuries(this, campaignId, current.id);
             return true;
         }
         if (id == R.id.action_delete) {

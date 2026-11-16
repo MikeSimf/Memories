@@ -133,6 +133,10 @@ public class EntityEditViewModel extends ViewModel {
         }
     }
 
+    public void setGmNote(@Nullable String gmNote) {
+        if (draft != null) draft.gmNote = nullable(gmNote);
+    }
+
     public void setDescription(@Nullable String description) {
         if (draft != null) {
             draft.description = description == null ? "" : description;

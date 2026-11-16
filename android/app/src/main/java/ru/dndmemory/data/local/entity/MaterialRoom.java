@@ -41,6 +41,9 @@ public class MaterialRoom {
     public String createdAt;
     public String updatedAt;
     public boolean deleted;
+    public boolean privateMaterial;
+    public boolean locked;
+    public String lockedByName;
 
     /** Есть неотправленная правка — показываем пометку в списке. */
     public boolean dirty;

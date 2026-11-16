@@ -94,6 +94,26 @@ public final class Nav {
         context.startActivity(intent);
     }
 
+    public static void openQuests(@NonNull Context context, @NonNull String campaignId) {
+        android.content.Intent intent = new android.content.Intent(context, ru.dndmemory.ui.quest.QuestsActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        context.startActivity(intent);
+    }
+
+    public static void openQuest(@NonNull Context context, @NonNull String campaignId, @NonNull String questId) {
+        android.content.Intent intent = new android.content.Intent(context, ru.dndmemory.ui.quest.QuestDetailActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        intent.putExtra("questId", questId);
+        context.startActivity(intent);
+    }
+
+    public static void openInjuries(@NonNull Context context, @NonNull String campaignId, @NonNull String heroId) {
+        android.content.Intent intent = new android.content.Intent(context, ru.dndmemory.ui.hero.InjuriesActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        intent.putExtra("heroId", heroId);
+        context.startActivity(intent);
+    }
+
     public static void openMaps(@NonNull Context context, @NonNull String campaignId) {
         android.content.Intent intent = new android.content.Intent(context, ru.dndmemory.ui.map.MapsActivity.class);
         intent.putExtra(Extras.CAMPAIGN_ID, campaignId);

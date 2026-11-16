@@ -100,6 +100,73 @@ public interface ApiService {
             @retrofit2.http.Path("campaignId") String campaignId,
             @retrofit2.http.Path("mapId") String mapId);
 
+    @GET("api/campaigns/{campaignId}/quests")
+    Call<java.util.List<ru.dndmemory.data.remote.dto.QuestDto>> quests(
+            @retrofit2.http.Path("campaignId") String campaignId);
+
+    @GET("api/campaigns/{campaignId}/quests/{questId}")
+    Call<ru.dndmemory.data.remote.dto.QuestDto> quest(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @retrofit2.http.Path("questId") String questId);
+
+    @retrofit2.http.POST("api/campaigns/{campaignId}/quests")
+    Call<ru.dndmemory.data.remote.dto.QuestDto> createQuest(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @Body java.util.Map<String, Object> body);
+
+    @retrofit2.http.PATCH("api/campaigns/{campaignId}/quests/{questId}")
+    Call<ru.dndmemory.data.remote.dto.QuestDto> updateQuest(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @retrofit2.http.Path("questId") String questId,
+            @Body java.util.Map<String, Object> body);
+
+    @retrofit2.http.DELETE("api/campaigns/{campaignId}/quests/{questId}")
+    Call<Void> deleteQuest(@retrofit2.http.Path("campaignId") String campaignId,
+                           @retrofit2.http.Path("questId") String questId);
+
+    @retrofit2.http.POST("api/campaigns/{campaignId}/quests/{questId}/comments")
+    Call<ru.dndmemory.data.remote.dto.QuestDto.Comment> addQuestComment(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @retrofit2.http.Path("questId") String questId,
+            @Body java.util.Map<String, Object> body);
+
+    @retrofit2.http.PATCH("api/campaigns/{campaignId}/quests/{questId}/comments/{commentId}")
+    Call<Void> updateQuestComment(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @retrofit2.http.Path("questId") String questId,
+            @retrofit2.http.Path("commentId") String commentId,
+            @Body java.util.Map<String, Object> body);
+
+    @retrofit2.http.DELETE("api/campaigns/{campaignId}/quests/{questId}/comments/{commentId}")
+    Call<Void> deleteQuestComment(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @retrofit2.http.Path("questId") String questId,
+            @retrofit2.http.Path("commentId") String commentId);
+
+    @GET("api/campaigns/{campaignId}/heroes/{heroId}/injuries")
+    Call<java.util.List<ru.dndmemory.data.remote.dto.InjuryDto>> injuries(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @retrofit2.http.Path("heroId") String heroId);
+
+    @retrofit2.http.POST("api/campaigns/{campaignId}/heroes/{heroId}/injuries")
+    Call<ru.dndmemory.data.remote.dto.InjuryDto> addInjury(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @retrofit2.http.Path("heroId") String heroId,
+            @Body java.util.Map<String, Object> body);
+
+    @retrofit2.http.PATCH("api/campaigns/{campaignId}/heroes/{heroId}/injuries/{injuryId}")
+    Call<Void> updateInjury(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @retrofit2.http.Path("heroId") String heroId,
+            @retrofit2.http.Path("injuryId") String injuryId,
+            @Body java.util.Map<String, Object> body);
+
+    @retrofit2.http.DELETE("api/campaigns/{campaignId}/heroes/{heroId}/injuries/{injuryId}")
+    Call<Void> deleteInjury(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @retrofit2.http.Path("heroId") String heroId,
+            @retrofit2.http.Path("injuryId") String injuryId);
+
     /** Обратная связь: сообщение сохраняется на сервере. */
     @POST("api/feedback")
     Call<okhttp3.ResponseBody> sendFeedback(@Body ru.dndmemory.data.remote.dto.FeedbackRequest body);

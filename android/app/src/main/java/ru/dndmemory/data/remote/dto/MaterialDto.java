@@ -24,4 +24,7 @@ public class MaterialDto {
     public String createdAt;
     public String updatedAt;
     public boolean deleted;
+    public boolean privateMaterial;
+    public boolean locked;
+    public String lockedByName;
 }
