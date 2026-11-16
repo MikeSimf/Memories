@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { errorMessage, mapsApi, type InteractiveMapDetailDto, type MapMarkerDto } from '@/api'
@@ -24,6 +24,9 @@ const dragMoved = ref(false)
 const hovered = ref<{ x: number; y: number; text: string } | null>(null)
 const search = ref('')
 const showNames = ref(false)
+const canvasEl = ref<HTMLElement | null>(null)
+const imageW = ref(0)
+const imageH = ref(0)
 const pick = ref<{ x: number; y: number } | null>(null)
 const chosenEntityId = ref('')
 const selectedMarker = ref<MapMarkerDto | null>(null)
@@ -82,6 +85,30 @@ async function load(): Promise<void> {
   } finally {
     loading.value = false
   }
+}
+
+function refreshSize(): void {
+  const img = canvasEl.value?.querySelector<HTMLImageElement>('.map-image img')
+  if (img) {
+    imageW.value = img.clientWidth
+    imageH.value = img.clientHeight
+  }
+}
+
+function screenX(x: number): number {
+  return tx.value + x * imageW.value * scale.value
+}
+
+function screenY(y: number): number {
+  return ty.value + y * imageH.value * scale.value
+}
+
+function markerStyle(group: { x: number; y: number }): Record<string, string> {
+  return { left: `${screenX(group.x)}px`, top: `${screenY(group.y)}px` }
+}
+
+function nameStyle(group: { x: number; y: number }): Record<string, string> {
+  return { left: `${screenX(group.x)}px`, top: `${screenY(group.y)}px` }
 }
 
 function zoom(delta: number): void {
@@ -189,7 +216,23 @@ function objectTypeLabel(type: string): string {
   return { HERO: 'Герой', CHARACTER: 'Персонаж', LOCATION: 'Локация', ITEM: 'Предмет' }[type] ?? type
 }
 
-onMounted(load)
+let observer: ResizeObserver | null = null
+
+onMounted(async () => {
+  await load()
+  await nextTick()
+  refreshSize()
+  if (canvasEl.value && typeof ResizeObserver !== 'undefined') {
+    observer = new ResizeObserver(refreshSize)
+    observer.observe(canvasEl.value)
+  }
+})
+
+onBeforeUnmount(() => observer?.disconnect())
+watch(() => map.value?.imageFileId, async () => {
+  await nextTick()
+  refreshSize()
+})
 </script>
 
 <template>
@@ -231,15 +274,15 @@ onMounted(load)
         @pointercancel="endDrag"
         @click="mapClick"
       >
-        <div class="map-canvas" :style="{ transform: `translate(${tx}px, ${ty}px) scale(${scale})` }">
-          <div v-if="map.imageFileId" class="map-image"><EntityImage :file-id="map.imageFileId" alt="" :interactive="false" :max-height="0" /></div>
+        <div ref="canvasEl" class="map-canvas">
+          <div v-if="map.imageFileId" class="map-image" :style="{ transform: `translate(${tx}px, ${ty}px) scale(${scale})` }"><EntityImage :file-id="map.imageFileId" alt="" :interactive="false" :max-height="0" /></div>
           <div v-else class="map-image map-image--empty">Фон не загружен</div>
           <button
             v-for="(group, index) in markerGroups"
             :key="index"
             class="map-marker"
             :class="[markerClass(group.markers[0]), { 'map-marker--cluster': group.markers.length > 1 }]"
-            :style="{ left: `${group.x * 100}%`, top: `${group.y * 100}%`, transform: `translate(-50%, -100%) scale(${1 / scale}) rotate(-45deg)` }"
+            :style="markerStyle(group)"
             :title="group.markers.map((item) => item.name).join(', ')"
             type="button"
             @click.stop="openGroup(group)"
@@ -251,8 +294,8 @@ onMounted(load)
               <path :d="markerIcon(group.markers[0])" />
             </svg>
           </button>
-          <div v-if="showNames" v-for="(group, index) in markerGroups" :key="'name-' + index" class="map-name" :style="{ left: `${group.x * 100}%`, top: `${group.y * 100}%`, transform: `translate(-50%, 10px) scale(${1 / scale})` }">{{ group.markers.length > 1 ? group.markers.length + ' объектов' : group.markers[0].name }}</div>
-          <div v-if="hovered" class="map-hover" :style="{ left: `${hovered.x * 100}%`, top: `${hovered.y * 100}%` }">{{ hovered.text }}</div>
+          <div v-if="showNames" v-for="(group, index) in markerGroups" :key="'name-' + index" class="map-name" :style="nameStyle(group)">{{ group.markers.length > 1 ? group.markers.length + ' объектов' : group.markers[0].name }}</div>
+          <div v-if="hovered" class="map-hover" :style="{ left: `${screenX(hovered.x)}px`, top: `${screenY(hovered.y)}px` }">{{ hovered.text }}</div>
         </div>
       </div>
         <div class="map-zoom">
@@ -333,8 +376,8 @@ onMounted(load)
 .map-controls { flex-wrap: wrap; }
 .map-filters { display: flex; flex-wrap: wrap; gap: 8px; font-size: .85rem; }
 .map-filters label { display: inline-flex; gap: 4px; align-items: center; }
-.map-canvas { position: relative; flex: 0 0 auto; max-width: 100%; max-height: 100%; will-change: transform; transform-origin: 0 0; }
-.map-image { display: block; user-select: none; -webkit-user-select: none; position: relative; max-width: 100%; max-height: 100%; cursor: grab; }
+.map-canvas { position: relative; flex: 0 0 auto; max-width: 100%; max-height: 100%; }
+.map-image { display: block; user-select: none; -webkit-user-select: none; position: relative; max-width: 100%; max-height: 100%; cursor: grab; transform-origin: 0 0; will-change: transform; }
 .map-image :deep(img) { display: block; -webkit-user-drag: none; user-drag: none; max-width: 100%; max-height: calc(100vh - 330px); width: auto; height: auto; cursor: inherit; user-select: none; pointer-events: none; }
 .map-image--empty { display: grid; place-items: center; color: #aaa; min-height: 240px; }
 .map-marker { transform-origin: 50% 100%; position: absolute; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 2px solid #fff; border-radius: 50% 50% 50% 0; transform: translate(-50%, -100%) rotate(-45deg); background: #c46a2a; color: #fff; cursor: pointer; box-shadow: 0 2px 8px #0008; }
