@@ -768,12 +768,25 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         binding.entityEditOwnerLink.setText(owner == null ? "" : displayName(owner), false);
     }
 
+    private void collectStats(@NonNull android.view.ViewGroup group) {
+        for (int i = 0; i < group.getChildCount(); i++) {
+            android.view.View child = group.getChildAt(i);
+            if (child instanceof android.widget.EditText) {
+                android.widget.EditText input = (android.widget.EditText) child;
+                String value = input.getText().toString().trim();
+                viewModel.setStat(String.valueOf(input.getTag()), value.isEmpty() ? null : Integer.parseInt(value));
+            } else if (child instanceof android.view.ViewGroup) {
+                collectStats((android.view.ViewGroup) child);
+            }
+        }
+    }
+
     private void renderStatsForm(boolean hero, @Nullable EntityRoom draft) {
         ViewUtils.show(binding.entityEditStatsGroup, hero);
         binding.entityEditStatsGroup.removeAllViews();
         if (!hero || draft == null) return;
         String[][] base = {{"strength","СИЛ"},{"dexterity","ЛОВ"},{"constitution","ТЕЛ"},{"intelligence","ИНТ"},{"wisdom","МУД"},{"charisma","ХАР"}};
-        String[][] extra = {{"passivePerception","ВНИМ"},{"initiative","ИНИЦ"},{"speed","СКОР"},{"armorClass","КД"},{"maxHp","МАКС"},{"inspiration","ВДОХ"}};
+        String[][] extra = {{"passivePerception","ВНИМ"},{"initiative","ИНИЦ"},{"speed","СКОР"},{"armorClass","КД"},{"maxHp","МАКС ХП"},{"inspiration","ВДОХ"}};
         binding.entityEditStatsGroup.addView(statRow(base, draft, true));
         binding.entityEditStatsGroup.addView(statRow(extra, draft, false));
     }
@@ -1010,18 +1023,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         viewModel.setDescription(text(binding.entityEditDescriptionInput.getText()));
         viewModel.setGmNote(text(binding.entityEditGmNoteInput.getText()));
         viewModel.setIntact(binding.entityEditIntactCheck.isChecked());
-        for (int i = 0; i < binding.entityEditStatsGroup.getChildCount(); i++) {
-            android.view.View row = binding.entityEditStatsGroup.getChildAt(i);
-            if (!(row instanceof android.widget.LinearLayout)) continue;
-            android.widget.LinearLayout line = (android.widget.LinearLayout) row;
-            for (int j = 0; j < line.getChildCount(); j++) {
-                android.view.View cell = line.getChildAt(j);
-                if (!(cell instanceof android.widget.EditText)) continue;
-                String key = String.valueOf(cell.getTag());
-                String value = ((android.widget.EditText) cell).getText().toString().trim();
-                viewModel.setStat(key, value.isEmpty() ? null : Integer.parseInt(value));
-            }
-        }
+        collectStats(binding.entityEditStatsGroup);
 
         if (currentKind == EntityType.HERO) {
             viewModel.setRace(text(binding.entityEditRaceInput.getText()));
