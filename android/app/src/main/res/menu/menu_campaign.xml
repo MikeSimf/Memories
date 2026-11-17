@@ -8,22 +8,10 @@
         android:title="@string/action_search"
         app:showAsAction="ifRoom" />
 
-    <!-- Разделы кампании: иконками в шапке, как на сайте -->
-
     <item
         android:id="@+id/action_campaign_info"
         android:icon="@drawable/ic_info"
         android:title="@string/campaign_info_title"
-        app:showAsAction="never" />
-
-    <item
-        android:id="@+id/action_quests"
-        android:title="@string/quests_title"
-        app:showAsAction="never" />
-
-    <item
-        android:id="@+id/action_maps"
-        android:title="@string/maps_title"
         app:showAsAction="never" />
 
     <item

@@ -119,8 +119,16 @@ public class MapViewActivity extends BaseCampaignActivity {
                     applyFilters();
                     canvas.setShowNames(showNames);
                     if (map.imageFileId != null) {
-                        ImageLoader.loadFull(App.container(MapViewActivity.this).okHttpClient(),
-                                map.imageFileId, bitmap -> runOnUiThread(() -> canvas.setBitmap(bitmap)));
+                        android.graphics.Bitmap cached = MapImageCache.load(MapViewActivity.this, map.imageFileId);
+                        if (cached != null) {
+                            canvas.setBitmap(cached);
+                        } else {
+                            ImageLoader.loadFull(App.container(MapViewActivity.this).okHttpClient(),
+                                    map.imageFileId, bitmap -> {
+                                        MapImageCache.save(MapViewActivity.this, map.imageFileId, bitmap);
+                                        runOnUiThread(() -> canvas.setBitmap(bitmap));
+                                    });
+                        }
                     }
                 });
             }

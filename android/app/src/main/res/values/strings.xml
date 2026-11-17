@@ -214,6 +214,7 @@
     <string name="campaign_section_main">Основное</string>
     <string name="campaign_dictionary_count">выбрано %1$d из %2$d</string>
     <string name="maps_show_names">Названия</string>
+    <string name="nav_maps">Карты</string>
     <string name="maps_title">Интерактивные карты</string>
     <string name="maps_empty">Карт пока нет</string>
     <string name="maps_markers_count">Меток: %1$d</string>

@@ -60,7 +60,7 @@ public class BottomNavView extends HorizontalScrollView {
         add("heroes", R.string.heroes_title, R.drawable.ic_heroes);
         add("retellings", R.string.tab_retellings, R.drawable.ic_retelling);
         add("quests", R.string.quests_title, R.drawable.ic_quest);
-        add("maps", R.string.maps_title, R.drawable.ic_map);
+        add("maps", R.string.nav_maps, R.drawable.ic_map);
         add("materials", R.string.materials_title, R.drawable.ic_materials);
         add("home", R.string.nav_home, R.drawable.ic_home);
     }
