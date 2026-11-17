@@ -41,6 +41,7 @@ const materialLinks = computed(() =>
 )
 const files = ref<AttachmentDto[]>([])
 const privateMaterial = ref(false)
+const maxUploadMb = 70
 const loading = ref(false)
 const saving = ref(false)
 const uploading = ref(false)
@@ -118,6 +119,10 @@ async function onPicked(event: Event): Promise<void> {
   const file = input.files?.[0]
   input.value = ''
   if (!file) return
+  if (file.size > maxUploadMb * 1024 * 1024) {
+    error.value = `Файл больше ${maxUploadMb} МБ`
+    return
+  }
   uploading.value = true
   error.value = null
   try {

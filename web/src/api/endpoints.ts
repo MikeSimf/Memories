@@ -559,11 +559,11 @@ export const adminApi = {
   users(): Promise<AdminUserDto[]> {
     return apiClient.request<AdminUserDto[]>({ path: '/api/admin/system/users' })
   },
-  createResetLink(email: string): Promise<{ url: string }> {
+  createResetLink(userId: string): Promise<{ url: string }> {
     return apiClient.request<{ url: string }>({
       method: 'POST',
       path: '/api/admin/system/password-resets',
-      body: { email },
+      body: { userId },
     })
   },
 }

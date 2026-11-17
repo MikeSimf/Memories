@@ -31,11 +31,16 @@ public class FileStorageService {
 
     @Transactional
     public StoredFile store(UUID ownerUserId, MultipartFile file) {
+        return store(ownerUserId, file, MAX_SIZE);
+    }
+
+    @Transactional
+    public StoredFile store(UUID ownerUserId, MultipartFile file, long maxSize) {
         if (file == null || file.isEmpty()) {
             throw ApiException.validation("Файл не передан");
         }
-        if (file.getSize() > MAX_SIZE) {
-            throw ApiException.validation("Файл больше 10 МБ");
+        if (file.getSize() > maxSize) {
+            throw ApiException.validation("Файл больше " + (maxSize / (1024 * 1024)) + " МБ");
         }
         UUID id = UUID.randomUUID();
         Path directory = Paths.get(properties.getFilesDir()).toAbsolutePath().normalize();

@@ -128,6 +128,9 @@ public class AdminSystemController {
     public Map<String, String> create(@AuthenticationPrincipal UserPrincipal principal,
                                      @Valid @RequestBody CreateLink request) {
         requireAdmin(principal);
+        if (request.userId != null) {
+            return Map.of("url", passwordResetService.createLinkByUserId(request.userId));
+        }
         return Map.of("url", passwordResetService.createLink(request.email));
     }
 
@@ -147,8 +150,7 @@ public class AdminSystemController {
     }
 
     public static class CreateLink {
-        @NotBlank
-        @Email
         public String email;
+        public java.util.UUID userId;
     }
 }

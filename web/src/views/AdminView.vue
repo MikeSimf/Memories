@@ -52,9 +52,8 @@ async function removeCrash(id: string): Promise<void> {
 }
 
 async function reset(user: AdminUserDto): Promise<void> {
-  if (!user.email) return
   try {
-    link.value = (await adminApi.createResetLink(user.email)).url
+    link.value = (await adminApi.createResetLink(user.id)).url
   } catch (caught) {
     error.value = errorMessage(caught)
   }
@@ -95,7 +94,7 @@ onMounted(load)
             <span>{{ user.displayName }} <span v-if="user.superuser" class="badge">system</span></span>
             <span>{{ user.email || '—' }}</span>
             <span>{{ new Date(user.updatedAt).toLocaleDateString('ru') }}</span>
-            <button class="btn btn--sm" type="button" :disabled="!user.email" @click="reset(user)">
+            <button class="btn btn--sm" type="button" @click="reset(user)">
               Ссылка сброса
             </button>
           </div>

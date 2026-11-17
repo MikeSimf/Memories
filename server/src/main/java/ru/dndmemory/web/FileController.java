@@ -27,12 +27,22 @@ import java.util.UUID;
 public class FileController {
 
     private final FileStorageService fileStorageService;
+    private final ru.dndmemory.repo.MemberRepository memberRepository;
+    private final ru.dndmemory.repo.UserRepository userRepository;
 
     @PostMapping("/api/files")
     @ResponseStatus(HttpStatus.CREATED)
     public FileDtos.FileDto upload(@AuthenticationPrincipal UserPrincipal principal,
                                    @RequestParam("file") MultipartFile file) {
-        StoredFile stored = fileStorageService.store(principal.getId(), file);
+        boolean privileged = userRepository.findById(principal.getId())
+                .map(u -> u.isSuperuser()).orElse(false);
+        if (!privileged) {
+            privileged = memberRepository.findAllByUserId(principal.getId()).stream()
+                    .anyMatch(m -> m.getRole() == ru.dndmemory.domain.MemberRole.OWNER
+                            || m.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_MASTER);
+        }
+        long limit = privileged ? 70L * 1024 * 1024 : 10L * 1024 * 1024;
+        StoredFile stored = fileStorageService.store(principal.getId(), file, limit);
         return FileDtos.FileDto.builder()
                 .id(stored.getId())
                 .url("/api/files/" + stored.getId())

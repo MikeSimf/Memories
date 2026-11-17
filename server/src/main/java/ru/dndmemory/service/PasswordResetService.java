@@ -77,12 +77,22 @@ public class PasswordResetService {
 
     /** Ссылка сброса для админа: создаёт запрос и сразу возвращает URL. */
     @Transactional
+    public String createLinkByUserId(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> ApiException.notFound("Пользователь не найден"));
+        return createLinkFor(user);
+    }
+
     public String createLink(String email) {
         if (email == null || email.trim().isEmpty()) {
             throw ApiException.badRequest("Укажите почту");
         }
         User user = userRepository.findByEmailIgnoreCase(email.trim().toLowerCase(Locale.ROOT))
                 .orElseThrow(() -> ApiException.notFound("Пользователь с такой почтой не найден"));
+        return createLinkFor(user);
+    }
+
+    private String createLinkFor(User user) {
         Instant requestedAt = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         String token = TokenUtils.passwordResetToken(properties.getJwt().getSecret(),
                 user.getId(), requestedAt);

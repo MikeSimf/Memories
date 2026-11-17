@@ -10,6 +10,7 @@ import ru.dndmemory.repo.CampaignRepository;
 import ru.dndmemory.repo.GameEntityRepository;
 import ru.dndmemory.repo.MaterialRepository;
 import ru.dndmemory.repo.MemberRepository;
+import ru.dndmemory.repo.UserRepository;
 import ru.dndmemory.security.PermissionService;
 import ru.dndmemory.web.dto.MaterialDtos;
 
@@ -25,10 +26,12 @@ public class MaterialService extends AbstractObjectService<Material, MaterialDto
 
     private final MaterialRepository materialRepository;
     private final MemberRepository memberRepository;
+    private final UserRepository userRepository;
 
     public MaterialService(MaterialRepository materialRepository,
                            CampaignRepository campaignRepository,
                            MemberRepository memberRepository,
+                           UserRepository userRepository,
                            PermissionService permissionService,
                            ChangeRecorder changeRecorder,
                            ObjectIndexService objectIndexService,
@@ -38,6 +41,7 @@ public class MaterialService extends AbstractObjectService<Material, MaterialDto
                 objectIndexService, conflictRecorder, objectMapper);
         this.materialRepository = materialRepository;
         this.memberRepository = memberRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -76,7 +80,9 @@ public class MaterialService extends AbstractObjectService<Material, MaterialDto
     @Override
     protected MaterialDtos.MaterialDto toDto(Material material, ObjectIndexService.ObjectContext context) {
         UUID viewer = currentUserId();
-        boolean privileged = viewer != null && (viewer.equals(material.getCreatedBy())
+        boolean superuser = viewer != null && userRepository.findById(viewer)
+                .map(user -> user.isSuperuser()).orElse(false);
+        boolean privileged = viewer != null && (superuser || viewer.equals(material.getCreatedBy())
                 || memberRepository.findByCampaignIdAndUserId(material.getCampaignId(), viewer)
                         .map(m -> m.getRole() == ru.dndmemory.domain.MemberRole.OWNER
                                 || m.getRole() == ru.dndmemory.domain.MemberRole.EDITOR_MASTER)
