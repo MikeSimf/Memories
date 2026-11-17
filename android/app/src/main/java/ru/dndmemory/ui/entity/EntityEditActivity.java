@@ -602,7 +602,11 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         if (campaign == null || rightsBlocked) {
             return;
         }
-        if (!Rights.canWrite(campaign, currentKind)) {
+        EntityRoom draft = currentDraft();
+        if (draft == null) {
+            return;
+        }
+        if (!Rights.canWriteEntity(campaign, draft, campaignViewModel.currentUserId())) {
             rightsBlocked = true;
             android.util.Log.w("DndRights", "редактор закрыт: роль=" + campaign.myRole
                     + " права=" + campaign.myPermissions + " класс=" + currentKind);

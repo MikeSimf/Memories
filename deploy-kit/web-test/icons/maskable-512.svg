@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="DnD Memory">
+  <defs>
+    <linearGradient id="bgm" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2b2f45"/>
+      <stop offset="1" stop-color="#12141a"/>
+    </linearGradient>
+    <linearGradient id="gemm" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6c667"/>
+      <stop offset="1" stop-color="#c8763a"/>
+    </linearGradient>
+  </defs>
+  <!-- maskable: фон на всю площадь, знак в безопасной зоне 80% -->
+  <rect width="512" height="512" fill="url(#bgm)"/>
+  <g transform="translate(256 256) scale(0.72) translate(-256 -256)" fill="none" stroke="url(#gemm)" stroke-width="18" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M256 84 L424 196 L360 400 L152 400 L88 196 Z"/>
+    <path d="M256 84 L256 400"/>
+    <path d="M88 196 L360 400"/>
+    <path d="M424 196 L152 400"/>
+    <path d="M88 196 L424 196"/>
+  </g>
+  <circle cx="256" cy="256" r="26" fill="url(#gemm)"/>
+</svg>
