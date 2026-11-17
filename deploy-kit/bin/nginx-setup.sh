@@ -80,7 +80,7 @@ server {
     ssl_certificate     $CERT;
     ssl_certificate_key $KEY;
 
-    client_max_body_size 12m;
+    client_max_body_size 80m;
 
     location / {
         proxy_pass http://127.0.0.1:$PROD_PORT;
@@ -100,7 +100,7 @@ server {
     ssl_certificate     $CERT;
     ssl_certificate_key $KEY;
 
-    client_max_body_size 12m;
+    client_max_body_size 80m;
 
     location / {
         proxy_pass http://127.0.0.1:$TEST_PORT;
