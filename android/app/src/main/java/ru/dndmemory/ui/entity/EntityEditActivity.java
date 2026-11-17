@@ -778,16 +778,24 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         android.widget.LinearLayout row = new android.widget.LinearLayout(this);
         row.setOrientation(android.widget.LinearLayout.HORIZONTAL);
         for (String[] field : fields) {
+            android.widget.LinearLayout cell = new android.widget.LinearLayout(this);
+            cell.setOrientation(android.widget.LinearLayout.VERTICAL);
+            android.widget.TextView label = new android.widget.TextView(this);
+            label.setText(field[1]);
+            label.setTextSize(10);
+            label.setGravity(android.view.Gravity.CENTER);
+            cell.addView(label);
             android.widget.EditText input = new android.widget.EditText(this);
-            input.setHint(field[1]);
             input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_SIGNED);
             input.setTag(field[0]);
+            input.setTextSize(14);
+            input.setGravity(android.view.Gravity.CENTER);
             int value = statValue(draft, field[0], 10);
             if (!base && statValue(draft, field[0], Integer.MIN_VALUE) == Integer.MIN_VALUE) input.setText("");
             else input.setText(String.valueOf(value));
-            android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(0,
-                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-            row.addView(input, params);
+            cell.addView(input);
+            row.addView(cell, new android.widget.LinearLayout.LayoutParams(0,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         }
         return row;
     }

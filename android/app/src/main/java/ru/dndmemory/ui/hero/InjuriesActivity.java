@@ -69,17 +69,18 @@ public class InjuriesActivity extends BaseCampaignActivity {
         }
         for (InjuryDto injury : injuries) {
             LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.VERTICAL);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(android.view.Gravity.CENTER_VERTICAL);
             TextView text = new TextView(this);
             text.setText(injury.text);
-            row.addView(text);
+            text.setPadding(0, 8, 8, 8);
+            row.addView(text, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
             LinearLayout actions = new LinearLayout(this);
-            Button edit = new Button(this);
-            edit.setText(R.string.quest_comment_edit);
+            actions.setOrientation(LinearLayout.VERTICAL);
+            android.widget.ImageButton edit = iconButton(R.drawable.ic_edit, R.string.quest_comment_edit);
             edit.setOnClickListener(v -> edit(injury));
-            Button delete = new Button(this);
-            delete.setText(R.string.quest_comment_delete);
-            delete.setOnClickListener(v -> delete(injury));
+            android.widget.ImageButton delete = iconButton(R.drawable.ic_delete, R.string.quest_comment_delete);
+            delete.setOnClickListener(v -> confirmDelete(injury));
             actions.addView(edit);
             actions.addView(delete);
             row.addView(actions);
@@ -102,6 +103,24 @@ public class InjuriesActivity extends BaseCampaignActivity {
                         App.container(this).apiService().updateInjury(campaignId, heroId, injury.id, body).enqueue(reload());
                     }
                 })
+                .setNegativeButton(R.string.action_cancel, null)
+                .show();
+    }
+
+    private android.widget.ImageButton iconButton(int icon, int description) {
+        android.widget.ImageButton button = new android.widget.ImageButton(this);
+        button.setImageResource(icon);
+        button.setContentDescription(getString(description));
+        button.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        int pad = (int) (8 * getResources().getDisplayMetrics().density);
+        button.setPadding(pad, pad, pad, pad);
+        return button;
+    }
+
+    private void confirmDelete(InjuryDto injury) {
+        new AlertDialog.Builder(this)
+                .setMessage(R.string.injury_delete_confirm)
+                .setPositiveButton(R.string.quest_comment_delete, (d, w) -> delete(injury))
                 .setNegativeButton(R.string.action_cancel, null)
                 .show();
     }

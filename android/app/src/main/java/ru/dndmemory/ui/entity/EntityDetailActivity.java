@@ -451,8 +451,16 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
                             }
                         }
                         final String player = name;
-                        runOnUiThread(() -> addFieldRow(getString(R.string.attr_player_name),
-                                player == null ? getString(R.string.attr_not_set) : player));
+                        runOnUiThread(() -> {
+                            android.view.View old = binding.entityFields.findViewWithTag("player_row");
+                            if (old != null) binding.entityFields.removeView(old);
+                            TextView row = new TextView(EntityDetailActivity.this);
+                            row.setTag("player_row");
+                            row.setText(getString(R.string.attr_player_name) + ": "
+                                    + (player == null ? getString(R.string.attr_not_set) : player));
+                            row.setPadding(0, 4, 0, 4);
+                            binding.entityFields.addView(row);
+                        });
                     }
                     @Override public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) { }
                 });
@@ -530,7 +538,7 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         binding.entityFields.addView(row);
         Integer[] extra = {hero.passivePerception, hero.initiative, hero.speed,
                 hero.armorClass, hero.maxHp, hero.inspiration};
-        String[] extraNames = {"ВНИМ", "ИНИЦ", "СКОР", "КД", "МАКС", "ВДОХ"};
+        String[] extraNames = {"ВНИМ", "ИНИЦ", "СКОР", "КД", "МАКС ХП", "ВДОХ"};
         LinearLayout extraRow = new LinearLayout(this);
         extraRow.setOrientation(LinearLayout.HORIZONTAL);
         for (int i = 0; i < 6; i++) {

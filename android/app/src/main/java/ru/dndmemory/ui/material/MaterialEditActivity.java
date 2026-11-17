@@ -104,7 +104,6 @@ public class MaterialEditActivity extends ru.dndmemory.ui.common.BottomNavActivi
             draft.imageFileId = null;
             showPhoto(null);
         });
-        binding.materialPrivate.setChecked(draft.privateMaterial);
         binding.materialSave.setOnClickListener(v -> save());
         binding.materialDelete.setOnClickListener(v -> confirmDelete());
 
@@ -278,6 +277,7 @@ public class MaterialEditActivity extends ru.dndmemory.ui.common.BottomNavActivi
         }
         binding.materialNameInput.setText(draft.name);
         binding.materialDescriptionInput.setText(draft.description);
+        binding.materialPrivate.setChecked(draft.privateMaterial);
         showPhoto(draft.imageFileId);
         renderFiles();
         ViewUtils.show(binding.materialDelete, !creating);
