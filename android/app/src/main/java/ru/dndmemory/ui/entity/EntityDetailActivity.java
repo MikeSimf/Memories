@@ -373,12 +373,9 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         if (kind == EntityType.HERO) {
             renderStats(entity);
         }
-        if (entity.hasGmNote) {
-            addFieldRow(getString(R.string.attr_gm_note),
-                    entity.gmNote == null || entity.gmNote.isEmpty()
-                            ? getString(R.string.gm_note_hidden) : entity.gmNote);
-        }
+        renderGmNote(entity);
         bindBackpack(entity);
+        if (kind == EntityType.HERO) renderArtifacts(entity);
         // Заголовок «Поля» больше не показываем: поля говорят сами за себя.
         ViewUtils.show(binding.entityFieldsTitle, false);
     }
@@ -403,6 +400,25 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         return entity.ownerName;
     }
 
+    private void renderGmNote(@NonNull EntityRoom entity) {
+        boolean show = entity.hasGmNote;
+        ViewUtils.show(binding.entityGmNoteTitle, show);
+        ViewUtils.show(binding.entityGmNote, show);
+        if (show) {
+            binding.entityGmNote.setText(entity.gmNote == null || entity.gmNote.isEmpty()
+                    ? getString(R.string.gm_note_hidden) : entity.gmNote);
+        }
+    }
+
+    private void sectionTitle(int textRes) {
+        TextView title = new TextView(this);
+        title.setText(textRes);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
+        title.setTextSize(18);
+        title.setPadding(0, 14, 0, 4);
+        binding.entityFields.addView(title);
+    }
+
     private void bindBackpack(@NonNull EntityRoom entity) {
         if (!"HERO".equalsIgnoreCase(entity.kind) && !"CHARACTER".equalsIgnoreCase(entity.kind)) {
             ViewUtils.show(binding.entityItemsTitle, false);
@@ -415,12 +431,18 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
                 items.add(item);
             }
         }
-        if (items.isEmpty()) {
+        if (items.isEmpty() && !"HERO".equalsIgnoreCase(entity.kind)) {
             ViewUtils.show(binding.entityItemsTitle, false);
             return;
         }
-        ViewUtils.show(binding.entityItemsTitle, true);
-        binding.entityItemsTitle.setText(R.string.attr_backpack);
+        ViewUtils.show(binding.entityItemsTitle, false);
+        sectionTitle(R.string.attr_backpack);
+        if (items.isEmpty()) {
+            TextView empty = new TextView(this);
+            empty.setText(R.string.attr_not_set);
+            binding.entityFields.addView(empty);
+            return;
+        }
         for (EntityRoom item : items) {
             TextView link = new TextView(this);
             link.setText(item.name);
@@ -457,19 +479,31 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
             extraRow.addView(statBox(extraNames[i], null, extra[i] == null ? "—" : String.valueOf(extra[i])), boxParams());
         }
         binding.entityFields.addView(extraRow);
-        for (EntityRoom item : allObjects) {
-            if ("ITEM".equalsIgnoreCase(item.kind) && !item.deleted && hero.id.equals(item.configuredHeroId)) {
-                addFieldRow(getString(R.string.attr_configured_artifacts), item.name, item.id);
-            }
-        }
     }
 
-    private TextView statBox(String label, String modifier, String value) {
-        TextView box = new TextView(this);
-        box.setText(label + (modifier == null ? "\n" : "\n" + modifier + "\n") + value);
+    private android.widget.LinearLayout statBox(String label, String modifier, String value) {
+        android.widget.LinearLayout box = new android.widget.LinearLayout(this);
+        box.setOrientation(android.widget.LinearLayout.VERTICAL);
         box.setGravity(android.view.Gravity.CENTER);
-        box.setTextSize(11);
         box.setPadding(2, 6, 2, 6);
+        TextView name = new TextView(this);
+        name.setText(label);
+        name.setTextSize(9);
+        name.setGravity(android.view.Gravity.CENTER);
+        box.addView(name);
+        TextView center = new TextView(this);
+        center.setText(modifier == null ? value : modifier);
+        center.setTextSize(modifier == null ? 14 : 18);
+        center.setTypeface(Typeface.DEFAULT_BOLD);
+        center.setGravity(android.view.Gravity.CENTER);
+        box.addView(center);
+        if (modifier != null) {
+            TextView bottom = new TextView(this);
+            bottom.setText(value);
+            bottom.setTextSize(11);
+            bottom.setGravity(android.view.Gravity.CENTER);
+            box.addView(bottom);
+        }
         android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
         bg.setColor(0x228A8AA3);
         bg.setStroke(2, 0xFF8A8AA3);
@@ -487,6 +521,30 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
 
     private String formatStat(String label, Integer value) {
         return label + " " + (value == null ? "—" : value);
+    }
+
+    private void renderArtifacts(@NonNull EntityRoom hero) {
+        List<EntityRoom> artifacts = new java.util.ArrayList<>();
+        for (EntityRoom item : allObjects) {
+            if ("ITEM".equalsIgnoreCase(item.kind) && !item.deleted && hero.id.equals(item.configuredHeroId)) {
+                artifacts.add(item);
+            }
+        }
+        sectionTitle(R.string.attr_configured_artifacts);
+        if (artifacts.isEmpty()) {
+            TextView empty = new TextView(this);
+            empty.setText(R.string.attr_not_set);
+            binding.entityFields.addView(empty);
+            return;
+        }
+        for (EntityRoom item : artifacts) {
+            TextView link = new TextView(this);
+            link.setText(item.name);
+            link.setPadding(0, 4, 0, 4);
+            link.setTextColor(getResources().getColor(R.color.wiki_link, getTheme()));
+            link.setOnClickListener(v -> Nav.openEntity(this, campaignId, item.id));
+            binding.entityFields.addView(link);
+        }
     }
 
     private void addFieldRow(@NonNull CharSequence label, @Nullable CharSequence value) {
