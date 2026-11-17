@@ -71,6 +71,7 @@
     <string name="injury_edit">Изменить травму</string>
     <string name="injuries_empty">Записей пока нет</string>
     <string name="material_locked">Материал приватный, заблокировано: %1$s</string>
+    <string name="item_configured_none">— не выбран —</string>
     <string name="attr_life_status">Статус</string>
     <string name="life_alive">Жив</string>
     <string name="life_dead">Мёртв</string>

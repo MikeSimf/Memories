@@ -13,12 +13,15 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 88
-    latest-version-name: 1.0.87
+    latest-version-code: 89
+    latest-version-name: 1.0.88
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Квесты в нижней панели, рюкзак и квадраты характеристик"
+    notes: "Рюкзак, магический артефакт и выбор героя"
     versions:
+      - version: "1.0.88"
+        date: "2026-11-17"
+        notes: "Рюкзак и настройка артефакта"
       - version: "1.0.87"
         date: "2026-11-17"
         notes: "Android: квесты, рюкзак, характеристики"

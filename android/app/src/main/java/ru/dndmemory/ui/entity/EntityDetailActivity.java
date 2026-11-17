@@ -422,7 +422,12 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
         ViewUtils.show(binding.entityItemsTitle, true);
         binding.entityItemsTitle.setText(R.string.attr_backpack);
         for (EntityRoom item : items) {
-            addFieldRow(getString(R.string.attr_items), item.name, item.id);
+            TextView link = new TextView(this);
+            link.setText(item.name);
+            link.setPadding(0, 4, 0, 4);
+            link.setTextColor(getResources().getColor(R.color.wiki_link, getTheme()));
+            link.setOnClickListener(v -> Nav.openEntity(this, campaignId, item.id));
+            binding.entityFields.addView(link);
         }
     }
 

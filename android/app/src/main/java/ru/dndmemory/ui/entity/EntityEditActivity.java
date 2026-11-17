@@ -132,6 +132,11 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
                 container.raceRepository()::cachedLocationTypes);
         ru.dndmemory.ui.common.SuggestField.attach(binding.entityEditItemType,
                 container.raceRepository()::cachedItemTypes);
+        binding.entityEditItemType.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
+            @Override public void afterTextChanged(android.text.Editable s) { renderArtifactFields(); }
+        });
         // Владелец: подсказки только после трёх введённых символов.
         ru.dndmemory.ui.common.SuggestField.attach(binding.entityEditOwnerLink,
                 this::ownerLabels, 3);
@@ -653,15 +658,24 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
                 hasSetting = checked;
                 renderArtifactFields();
             });
+            java.util.List<EntityRoom> heroes = ownerCandidates(EntityType.HERO);
             java.util.List<String> heroNames = new java.util.ArrayList<>();
-            for (EntityRoom heroEntity : ownerCandidates(EntityType.HERO)) heroNames.add(displayName(heroEntity));
-            ru.dndmemory.ui.common.Dropdowns.bind(binding.entityEditConfiguredHero, heroNames);
-            EntityRoom configured = ownerById(configuredHeroId);
-            binding.entityEditConfiguredHero.setText(configured == null ? "" : displayName(configured), false);
-            binding.entityEditConfiguredHero.setOnItemClickListener((parent, view, position, id) -> {
-                Object chosen = parent.getItemAtPosition(position);
-                EntityRoom chosenHero = ownerByName(chosen == null ? null : chosen.toString());
-                configuredHeroId = chosenHero == null ? null : chosenHero.id;
+            heroNames.add(getString(R.string.item_configured_none));
+            int selected = 0;
+            for (int i = 0; i < heroes.size(); i++) {
+                heroNames.add(displayName(heroes.get(i)));
+                if (heroes.get(i).id.equals(configuredHeroId)) selected = i + 1;
+            }
+            android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(this,
+                    android.R.layout.simple_spinner_item, heroNames);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            binding.entityEditConfiguredSpinner.setAdapter(adapter);
+            binding.entityEditConfiguredSpinner.setSelection(selected);
+            binding.entityEditConfiguredSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+                @Override public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
+                    configuredHeroId = position <= 0 ? null : heroes.get(position - 1).id;
+                }
+                @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
             });
             renderArtifactFields();
             binding.entityEditShortInput.setText(draft.shortDescription);
