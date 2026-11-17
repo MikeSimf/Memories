@@ -144,10 +144,13 @@ public class EntityAdapter extends ListAdapter<EntityRoom, EntityAdapter.EntityH
                     Labels.entitySubtitle(context, entity));
             // Пол — в конце строки: символ, а не отдельное слово.
             boolean person = "CHARACTER".equalsIgnoreCase(entity.kind);
-            ViewUtils.show(binding.itemEntityLifeDot, person);
-            if (person) {
-                int color = "alive".equalsIgnoreCase(entity.lifeStatus) ? R.color.life_alive_color
-                        : ("dead".equalsIgnoreCase(entity.lifeStatus) ? R.color.badge_conflict : R.color.text_muted);
+            boolean thing = "ITEM".equalsIgnoreCase(entity.kind) || "LOCATION".equalsIgnoreCase(entity.kind);
+            ViewUtils.show(binding.itemEntityLifeDot, person || thing);
+            if (person || thing) {
+                int color = thing
+                        ? (entity.intact != null && !entity.intact ? R.color.badge_conflict : R.color.life_alive_color)
+                        : ("alive".equalsIgnoreCase(entity.lifeStatus) ? R.color.life_alive_color
+                        : ("dead".equalsIgnoreCase(entity.lifeStatus) ? R.color.badge_conflict : R.color.text_muted));
                 binding.itemEntityLifeDot.setBackgroundTintList(
                         android.content.res.ColorStateList.valueOf(
                                 androidx.core.content.ContextCompat.getColor(context, color)));

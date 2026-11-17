@@ -207,6 +207,9 @@ public final class Mappers {
         room.createdAt = dto.createdAt;
         room.updatedAt = dto.updatedAt;
         room.deleted = dto.deleted;
+        room.privateMaterial = dto.privateMaterial;
+        room.locked = dto.locked;
+        room.lockedByName = dto.lockedByName;
         room.dirty = false;
         room.conflictJson = null;
         return room;
@@ -230,6 +233,9 @@ public final class Mappers {
         dto.createdAt = room.createdAt;
         dto.updatedAt = room.updatedAt;
         dto.deleted = room.deleted;
+        dto.privateMaterial = room.privateMaterial;
+        dto.locked = room.locked;
+        dto.lockedByName = room.lockedByName;
         return dto;
     }
 

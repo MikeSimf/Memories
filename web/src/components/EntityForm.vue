@@ -171,13 +171,6 @@ const isCharacter = computed(() => props.objectClass === 'CHARACTER')
 const isItem = computed(() => props.objectClass === 'ITEM')
 const isLocation = computed(() => props.objectClass === 'LOCATION')
 
-/** Игрок героя — участник кампании (`playerUserId`). */
-const playerOptions = computed(() =>
-  campaign.members
-    .filter((member) => member.status !== 'REMOVED')
-    .map((member) => ({ id: member.userId, name: member.displayName })),
-)
-
 function patch(changes: Partial<ObjectFormValues>): void {
   emit('update:modelValue', { ...props.modelValue, ...changes })
 }
@@ -286,20 +279,6 @@ function setOwnerCharacter(value: string): void {
             @change="patch({ klass: ($event.target as HTMLSelectElement).value })"
           >
             <option v-for="item in classes" :key="item" :value="item">{{ item }}</option>
-          </select>
-        </div>
-        <div class="field" style="flex: 1; min-width: 200px">
-          <label class="field__label" for="hero-player">Игрок</label>
-          <select
-            id="hero-player"
-            class="select"
-            :value="modelValue.playerUserId ?? ''"
-            @change="patch({ playerUserId: ($event.target as HTMLSelectElement).value || null })"
-          >
-            <option value="">не указан</option>
-            <option v-for="player in playerOptions" :key="player.id" :value="player.id">
-              {{ player.name }}
-            </option>
           </select>
         </div>
       </div>

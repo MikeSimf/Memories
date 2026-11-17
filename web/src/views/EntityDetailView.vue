@@ -84,7 +84,8 @@ const details = computed<Array<{ label: string; value: string }>>(() => {
     rows.push({ label: 'Пол', value: genderLabel(item.gender) })
     if (item.race) rows.push({ label: 'Раса', value: item.race })
     if (item.klass) rows.push({ label: 'Класс', value: item.klass })
-    rows.push({ label: 'Игрок', value: item.playerName ?? 'не указан' })
+    const member = campaign.members.find((m) => m.linkedHeroId === item.id && m.status !== 'REMOVED')
+    rows.push({ label: 'Игрок', value: member?.displayName ?? item.playerName ?? 'не указан' })
     return rows
   }
   if (item.objectType === 'CHARACTER') {

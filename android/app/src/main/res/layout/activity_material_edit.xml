@@ -97,6 +97,12 @@
                     android:minLines="4" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <CheckBox
+                android:id="@+id/material_private"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/material_private_label" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/material_delete"
                 style="@style/Widget.MaterialComponents.Button.TextButton"

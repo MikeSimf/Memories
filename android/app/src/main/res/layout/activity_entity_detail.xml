@@ -168,6 +168,31 @@
                 android:textAppearance="?attr/textAppearanceBodyLarge" />
 
             <TextView
+                android:id="@+id/entity_injuries_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/injuries_title"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/entity_injuries"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/entity_injuries_manage"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/injuries_title"
+                android:visibility="gone" />
+
+            <TextView
                 android:id="@+id/entity_gm_note_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

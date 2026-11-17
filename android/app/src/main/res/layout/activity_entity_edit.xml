@@ -401,6 +401,13 @@
                     android:minLines="6" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <LinearLayout
+                android:id="@+id/entity_edit_stats_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
             <CheckBox
                 android:id="@+id/entity_edit_intact_check"
                 android:layout_width="match_parent"

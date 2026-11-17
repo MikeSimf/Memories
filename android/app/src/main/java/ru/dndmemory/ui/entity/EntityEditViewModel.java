@@ -137,6 +137,24 @@ public class EntityEditViewModel extends ViewModel {
         if (draft != null) draft.intact = intact;
     }
 
+    public void setStat(@NonNull String key, @Nullable Integer value) {
+        if (draft == null) return;
+        switch (key) {
+            case "strength": draft.strength = value; break;
+            case "dexterity": draft.dexterity = value; break;
+            case "constitution": draft.constitution = value; break;
+            case "intelligence": draft.intelligence = value; break;
+            case "wisdom": draft.wisdom = value; break;
+            case "charisma": draft.charisma = value; break;
+            case "passivePerception": draft.passivePerception = value; break;
+            case "initiative": draft.initiative = value; break;
+            case "speed": draft.speed = value; break;
+            case "armorClass": draft.armorClass = value; break;
+            case "maxHp": draft.maxHp = value; break;
+            case "inspiration": draft.inspiration = value; break;
+        }
+    }
+
     public void setGmNote(@Nullable String gmNote) {
         if (draft != null) draft.gmNote = nullable(gmNote);
     }

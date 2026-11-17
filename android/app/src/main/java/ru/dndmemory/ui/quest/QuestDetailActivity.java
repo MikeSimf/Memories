@@ -74,11 +74,14 @@ public class QuestDetailActivity extends BaseCampaignActivity {
         content.addView(header);
         for (QuestDto.Comment comment : quest.comments) {
             LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.VERTICAL);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(android.view.Gravity.CENTER_VERTICAL);
             TextView author = new TextView(this);
             author.setText((comment.createdByName == null ? "" : comment.createdByName) + " · " + comment.text);
-            row.addView(author);
+            author.setPadding(0, 8, 8, 8);
+            row.addView(author, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
             LinearLayout actions = new LinearLayout(this);
+            actions.setOrientation(LinearLayout.VERTICAL);
             android.widget.ImageButton edit = iconButton(R.drawable.ic_edit, R.string.quest_comment_edit);
             edit.setOnClickListener(v -> editComment(comment));
             android.widget.ImageButton delete = iconButton(R.drawable.ic_delete, R.string.quest_comment_delete);
@@ -106,6 +109,8 @@ public class QuestDetailActivity extends BaseCampaignActivity {
 
     private void addComment() {
         EditText text = new EditText(this);
+        text.setMinLines(3);
+        text.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         new AlertDialog.Builder(this)
                 .setTitle(R.string.quest_comment_add)
                 .setView(text)
@@ -125,6 +130,8 @@ public class QuestDetailActivity extends BaseCampaignActivity {
     private void editComment(QuestDto.Comment comment) {
         EditText text = new EditText(this);
         text.setText(comment.text);
+        text.setMinLines(3);
+        text.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         new AlertDialog.Builder(this)
                 .setTitle(R.string.quest_comment_edit)
                 .setView(text)
@@ -142,6 +149,14 @@ public class QuestDetailActivity extends BaseCampaignActivity {
     }
 
     private void deleteComment(QuestDto.Comment comment) {
+        new AlertDialog.Builder(this)
+                .setMessage(R.string.quest_comment_delete_confirm)
+                .setPositiveButton(R.string.quest_comment_delete, (d, w) -> doDeleteComment(comment))
+                .setNegativeButton(R.string.action_cancel, null)
+                .show();
+    }
+
+    private void doDeleteComment(QuestDto.Comment comment) {
         App.container(this).apiService().deleteQuestComment(campaignId, questId, comment.id)
                 .enqueue(new Callback<Void>() {
                     @Override public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) { runOnUiThread(QuestDetailActivity.this::load); }

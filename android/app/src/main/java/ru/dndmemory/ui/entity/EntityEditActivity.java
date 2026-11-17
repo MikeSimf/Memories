@@ -625,7 +625,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         ViewUtils.show(binding.entityEditLifeCheck, hero || character);
         ViewUtils.show(binding.entityEditLifeLabel, hero || character);
         ViewUtils.show(binding.entityEditKlassGroup, hero || character);
-        ViewUtils.show(binding.entityEditPlayerGroup, hero);
+        ViewUtils.show(binding.entityEditPlayerGroup, false);
         ViewUtils.show(binding.entityEditShortGroup, character);
         ViewUtils.show(binding.entityEditOwnerLinkGroup, item);
         ViewUtils.show(binding.entityEditItemsGroup, hero);
@@ -633,6 +633,7 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         ViewUtils.show(binding.entityEditItemTypeGroup, currentKind == EntityType.ITEM);
         ViewUtils.show(binding.entityEditFieldsTitle, hero || character || item);
         ViewUtils.show(binding.entityEditGmNoteGroup, !hero);
+        renderStatsForm(hero, draft);
         ViewUtils.show(binding.entityEditIntactCheck, item || currentKind == EntityType.LOCATION);
         binding.entityEditIntactCheck.setText(draft != null && draft.intact != null && !draft.intact
                 ? R.string.status_broken : R.string.status_intact);
@@ -761,6 +762,52 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         EntityRoom owner = ownerById(currentId);
         selectedOwnerId = owner == null ? null : owner.id;
         binding.entityEditOwnerLink.setText(owner == null ? "" : displayName(owner), false);
+    }
+
+    private void renderStatsForm(boolean hero, @Nullable EntityRoom draft) {
+        ViewUtils.show(binding.entityEditStatsGroup, hero);
+        binding.entityEditStatsGroup.removeAllViews();
+        if (!hero || draft == null) return;
+        String[][] base = {{"strength","СИЛ"},{"dexterity","ЛОВ"},{"constitution","ТЕЛ"},{"intelligence","ИНТ"},{"wisdom","МУД"},{"charisma","ХАР"}};
+        String[][] extra = {{"passivePerception","ВНИМ"},{"initiative","ИНИЦ"},{"speed","СКОР"},{"armorClass","КД"},{"maxHp","МАКС"},{"inspiration","ВДОХ"}};
+        binding.entityEditStatsGroup.addView(statRow(base, draft, true));
+        binding.entityEditStatsGroup.addView(statRow(extra, draft, false));
+    }
+
+    private android.widget.LinearLayout statRow(String[][] fields, EntityRoom draft, boolean base) {
+        android.widget.LinearLayout row = new android.widget.LinearLayout(this);
+        row.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+        for (String[] field : fields) {
+            android.widget.EditText input = new android.widget.EditText(this);
+            input.setHint(field[1]);
+            input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_SIGNED);
+            input.setTag(field[0]);
+            int value = statValue(draft, field[0], 10);
+            if (!base && statValue(draft, field[0], Integer.MIN_VALUE) == Integer.MIN_VALUE) input.setText("");
+            else input.setText(String.valueOf(value));
+            android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(0,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+            row.addView(input, params);
+        }
+        return row;
+    }
+
+    private int statValue(EntityRoom room, String key, int fallback) {
+        switch (key) {
+            case "strength": return room.strength == null ? fallback : room.strength;
+            case "dexterity": return room.dexterity == null ? fallback : room.dexterity;
+            case "constitution": return room.constitution == null ? fallback : room.constitution;
+            case "intelligence": return room.intelligence == null ? fallback : room.intelligence;
+            case "wisdom": return room.wisdom == null ? fallback : room.wisdom;
+            case "charisma": return room.charisma == null ? fallback : room.charisma;
+            case "passivePerception": return room.passivePerception == null ? Integer.MIN_VALUE : room.passivePerception;
+            case "initiative": return room.initiative == null ? Integer.MIN_VALUE : room.initiative;
+            case "speed": return room.speed == null ? Integer.MIN_VALUE : room.speed;
+            case "armorClass": return room.armorClass == null ? Integer.MIN_VALUE : room.armorClass;
+            case "maxHp": return room.maxHp == null ? Integer.MIN_VALUE : room.maxHp;
+            case "inspiration": return room.inspiration == null ? Integer.MIN_VALUE : room.inspiration;
+            default: return fallback;
+        }
     }
 
     private void renderArtifactFields() {
@@ -951,6 +998,18 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
         viewModel.setDescription(text(binding.entityEditDescriptionInput.getText()));
         viewModel.setGmNote(text(binding.entityEditGmNoteInput.getText()));
         viewModel.setIntact(binding.entityEditIntactCheck.isChecked());
+        for (int i = 0; i < binding.entityEditStatsGroup.getChildCount(); i++) {
+            android.view.View row = binding.entityEditStatsGroup.getChildAt(i);
+            if (!(row instanceof android.widget.LinearLayout)) continue;
+            android.widget.LinearLayout line = (android.widget.LinearLayout) row;
+            for (int j = 0; j < line.getChildCount(); j++) {
+                android.view.View cell = line.getChildAt(j);
+                if (!(cell instanceof android.widget.EditText)) continue;
+                String key = String.valueOf(cell.getTag());
+                String value = ((android.widget.EditText) cell).getText().toString().trim();
+                viewModel.setStat(key, value.isEmpty() ? null : Integer.parseInt(value));
+            }
+        }
 
         if (currentKind == EntityType.HERO) {
             viewModel.setRace(text(binding.entityEditRaceInput.getText()));

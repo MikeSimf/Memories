@@ -351,7 +351,7 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
                         addPersonRow(getString(R.string.attr_short_description),
                                 entity.shortDescription, null, null);
                     } else {
-                        addFieldRow(getString(R.string.attr_player_name), entity.playerName);
+                        renderPlayer(entity);
                     }
                     break;
                 case ITEM:
@@ -374,6 +374,7 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
             renderStats(entity);
         }
         renderGmNote(entity);
+        loadInjuries(entity);
         bindBackpack(entity);
         if (kind == EntityType.HERO) renderArtifacts(entity);
         // Заголовок «Поля» больше не показываем: поля говорят сами за себя.
@@ -398,6 +399,63 @@ public class EntityDetailActivity extends ru.dndmemory.ui.common.BottomNavActivi
             return entity.ownerCharacterName;
         }
         return entity.ownerName;
+    }
+
+    private void loadInjuries(@NonNull EntityRoom entity) {
+        boolean hero = EntityType.fromOrCharacter(entity.kind) == EntityType.HERO;
+        ViewUtils.show(binding.entityInjuriesTitle, hero);
+        ViewUtils.show(binding.entityInjuriesManage, hero);
+        binding.entityInjuriesManage.setOnClickListener(v -> Nav.openInjuries(this, campaignId, entity.id));
+        if (!hero) {
+            ViewUtils.show(binding.entityInjuries, false);
+            return;
+        }
+        App.container(this).apiService().injuries(campaignId, entity.id).enqueue(
+                new retrofit2.Callback<java.util.List<ru.dndmemory.data.remote.dto.InjuryDto>>() {
+                    @Override public void onResponse(@NonNull retrofit2.Call<java.util.List<ru.dndmemory.data.remote.dto.InjuryDto>> call,
+                                                     @NonNull retrofit2.Response<java.util.List<ru.dndmemory.data.remote.dto.InjuryDto>> response) {
+                        runOnUiThread(() -> {
+                            binding.entityInjuries.removeAllViews();
+                            ViewUtils.show(binding.entityInjuries, true);
+                            if (response.body() == null || response.body().isEmpty()) {
+                                TextView empty = new TextView(EntityDetailActivity.this);
+                                empty.setText(R.string.injuries_empty);
+                                binding.entityInjuries.addView(empty);
+                            } else {
+                                for (ru.dndmemory.data.remote.dto.InjuryDto injury : response.body()) {
+                                    TextView row = new TextView(EntityDetailActivity.this);
+                                    row.setText(injury.text);
+                                    row.setPadding(0, 4, 0, 4);
+                                    binding.entityInjuries.addView(row);
+                                }
+                            }
+                        });
+                    }
+                    @Override public void onFailure(@NonNull retrofit2.Call<java.util.List<ru.dndmemory.data.remote.dto.InjuryDto>> call, @NonNull Throwable t) {
+                        runOnUiThread(() -> ViewUtils.show(binding.entityInjuries, false));
+                    }
+                });
+    }
+
+    private void renderPlayer(@NonNull EntityRoom hero) {
+        ru.dndmemory.util.AppExecutors.get().io(() -> App.container(this).database().memberDao().findAllNow(campaignId),
+                new ru.dndmemory.util.RepoCallback<java.util.List<ru.dndmemory.data.local.entity.MemberRoom>>() {
+                    @Override public void onSuccess(@Nullable java.util.List<ru.dndmemory.data.local.entity.MemberRoom> members) {
+                        String name = null;
+                        if (members != null) {
+                            for (ru.dndmemory.data.local.entity.MemberRoom member : members) {
+                                if (hero.id.equals(member.linkedHeroId) && !"REMOVED".equalsIgnoreCase(member.status)) {
+                                    name = member.displayName;
+                                    break;
+                                }
+                            }
+                        }
+                        final String player = name;
+                        runOnUiThread(() -> addFieldRow(getString(R.string.attr_player_name),
+                                player == null ? getString(R.string.attr_not_set) : player));
+                    }
+                    @Override public void onError(@NonNull ru.dndmemory.data.remote.ApiException error) { }
+                });
     }
 
     private void renderGmNote(@NonNull EntityRoom entity) {
