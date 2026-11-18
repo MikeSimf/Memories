@@ -785,26 +785,19 @@ export const useCampaignStore = defineStore('campaign', () => {
     return location
   }
 
-  /** Новый объект: сразу локально + в очередь синхронизации (`sync.md` §5). */
+  /** Новый объект: сразу на сервер, затем в локальный кэш для чтения. */
   async function createObject(
     objectClass: ObjectClass,
     values: ObjectFormValues,
   ): Promise<LocalObject> {
     const cid = requireCampaignId()
-    const now = nowIso()
-    const object = buildLocalObject(objectClass, createUuid(), values, null, now)
-    await putObject(object)
-    await enqueueChange({
-      campaignId: cid,
-      objectType: object.objectType,
-      objectId: object.id,
-      op: 'UPSERT',
-      baseRevision: null,
-      payload: objectToPayload(object),
-    })
+    const object = buildLocalObject(objectClass, createUuid(), values, null, nowIso())
+    const dto = await objectsApi.create(cid, objectClass, objectToPayload(object) as never)
+    const saved = localFromDto(objectClass, dto as CampaignObjectDto)
+    await putObject(saved)
     await reload()
     notifyLocalChange(cid)
-    return object
+    return saved
   }
 
   async function updateObject(id: string, values: ObjectFormValues): Promise<LocalObject | null> {
@@ -812,44 +805,26 @@ export const useCampaignStore = defineStore('campaign', () => {
     const existing = await getObject(id)
     if (!existing) return null
     const updated = buildLocalObject(existing.objectType, id, values, existing, nowIso())
-    await putObject(updated)
-    await enqueueChange({
-      campaignId: cid,
-      objectType: updated.objectType,
-      objectId: updated.id,
-      op: 'UPSERT',
-      baseRevision: existing.revision > 0 ? existing.revision : null,
-      payload: objectToPayload(updated),
-    })
+    const dto = await objectsApi.patch(
+      cid,
+      existing.objectType,
+      id,
+      objectToPayload(updated) as never,
+      existing.revision > 0 ? existing.revision : undefined,
+    )
+    const saved = localFromDto(existing.objectType, dto as CampaignObjectDto)
+    await putObject(saved)
     await reload()
     notifyLocalChange(cid)
-    return updated
+    return saved
   }
 
   async function deleteObject(id: string): Promise<void> {
     const cid = requireCampaignId()
     const existing = await getObject(id)
     if (!existing) return
-    const removed: LocalObject = {
-      ...existing,
-      deleted: true,
-      updatedBy: userId.value ?? '',
-      updatedAt: nowIso(),
-      dirty: 1,
-    }
-    await putObject(removed)
-    const result = await enqueueChange({
-      campaignId: cid,
-      objectType: existing.objectType,
-      objectId: id,
-      op: 'DELETE',
-      baseRevision: existing.revision > 0 ? existing.revision : null,
-      payload: objectTombstone(removed),
-    })
-    if (result.dropped) {
-      // Объект существовал только на устройстве.
-      await deleteObjectRecord(id)
-    }
+    await objectsApi.remove(cid, existing.objectType, id)
+    await deleteObjectRecord(id)
     await reload()
     notifyLocalChange(cid)
   }
