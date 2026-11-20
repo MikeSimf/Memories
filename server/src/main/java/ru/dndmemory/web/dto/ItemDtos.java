@@ -60,6 +60,11 @@ public final class ItemDtos {
         private UUID ownerHeroId;
 
         private UUID ownerCharacterId;
+        private Boolean magic;
+        private Boolean hasSetting;
+        private UUID configuredHeroId;
+        private Boolean intact;
+        private String gmNote;
     }
 
     @Getter
@@ -83,5 +88,10 @@ public final class ItemDtos {
         private UUID ownerHeroId;
 
         private UUID ownerCharacterId;
+        private Boolean magic;
+        private Boolean hasSetting;
+        private UUID configuredHeroId;
+        private Boolean intact;
+        private String gmNote;
     }
 }

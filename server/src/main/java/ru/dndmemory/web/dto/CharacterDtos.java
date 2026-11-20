@@ -27,6 +27,7 @@ public final class CharacterDtos {
         private String gender;
         private Boolean alive;
         private String shortDescription;
+        private String gmNote;
     }
 
     @Getter

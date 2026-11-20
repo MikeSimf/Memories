@@ -105,6 +105,19 @@ public final class HeroDtos {
         private UUID playerUserId;
 
         private List<HeroItemRequest> items;
+        private Integer strength;
+        private Integer dexterity;
+        private Integer constitution;
+        private Integer intelligence;
+        private Integer wisdom;
+        private Integer charisma;
+        private Integer passivePerception;
+        private Integer initiative;
+        private Integer speed;
+        private Integer armorClass;
+        private Integer maxHp;
+        private Integer inspiration;
+        private String gmNote;
     }
 
     @Getter

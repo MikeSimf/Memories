@@ -23,6 +23,7 @@ public final class LocationDtos {
         private String locationType;
         /** true — целое, false — разрушено. */
         private boolean intact;
+        private String gmNote;
     }
 
     @Getter
@@ -41,6 +42,7 @@ public final class LocationDtos {
         private String locationType;
         /** true — целое, false — разрушено. */
         private boolean intact;
+        private String gmNote;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
         private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;
@@ -59,6 +61,7 @@ public final class LocationDtos {
         private String locationType;
         /** true — целое, false — разрушено. */
         private boolean intact;
+        private String gmNote;
 
         /** Файлы: фото и документы. Форма совпадает с ответом. */
         private java.util.List<ru.dndmemory.web.dto.AttachmentDto> files;
