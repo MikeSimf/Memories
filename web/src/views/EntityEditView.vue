@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { errorMessage } from '@/api'
@@ -53,6 +53,16 @@ const TITLES: Record<ObjectClass, { create: string; edit: string }> = {
 const pageTitle = computed(() =>
   isEdit.value ? TITLES[objectClass.value].edit : TITLES[objectClass.value].create,
 )
+
+onMounted(async () => {
+  if (isEdit.value) {
+    try {
+      await campaign.loadFreshObject(entityId.value)
+    } catch (caught) {
+      ui.pushToast('warning', errorMessage(caught))
+    }
+  }
+})
 
 watch(
   existing,
@@ -123,7 +133,7 @@ async function submit(): Promise<void> {
     if (isEdit.value && existing.value) {
       const updated = await campaign.updateObject(existing.value.id, form.value)
       if (updated) {
-        ui.pushToast('success', 'Изменения сохранены на устройстве')
+        ui.pushToast('success', 'Изменения сохранены на сервере')
         await router.push({
           name: 'entity-detail',
           params: { campaignId: campaign.campaignId, entityId: updated.id },
@@ -131,7 +141,7 @@ async function submit(): Promise<void> {
       }
     } else {
       const created = await campaign.createObject(objectClass.value, form.value)
-      ui.pushToast('success', 'Объект создан и уйдёт на сервер при синхронизации')
+      ui.pushToast('success', 'Объект создан на сервере')
       await router.push({
         name: 'entity-detail',
         params: { campaignId: campaign.campaignId, entityId: created.id },
@@ -151,7 +161,7 @@ async function submit(): Promise<void> {
       <div class="page-header__titles">
         <h1>{{ pageTitle }}</h1>
         <div class="page-header__subtitle">
-          Правки сохраняются в локальную базу и отправляются на сервер при синхронизации.
+          Изменения сразу сохраняются на сервере.
         </div>
       </div>
     </div>

@@ -160,6 +160,8 @@ export function objectFromPayload(
       armorClass: asOptionalNumber(payload.armorClass),
       maxHp: asOptionalNumber(payload.maxHp),
       inspiration: asOptionalNumber(payload.inspiration),
+      gmNote: asOptionalString(payload.gmNote),
+      hasGmNote: asBoolean(payload.hasGmNote),
     }
     return objectFromDto('HERO', dto)
   }
@@ -170,6 +172,8 @@ export function objectFromPayload(
       klass: asOptionalString(payload.klass),
       gender: asOptionalString(payload.gender),
       shortDescription: asOptionalString(payload.shortDescription),
+      gmNote: asOptionalString(payload.gmNote),
+      hasGmNote: asBoolean(payload.hasGmNote),
     }
     return objectFromDto('CHARACTER', dto)
   }
@@ -182,11 +186,16 @@ export function objectFromPayload(
       ownerHeroName: asOptionalString(payload.ownerHeroName),
       ownerCharacterId: asOptionalString(payload.ownerCharacterId),
       ownerCharacterName: asOptionalString(payload.ownerCharacterName),
+      magic: payload.magic === null || payload.magic === undefined ? null : asBoolean(payload.magic),
+      hasSetting: asBoolean(payload.hasSetting),
+      configuredHeroId: asOptionalString(payload.configuredHeroId),
+      gmNote: asOptionalString(payload.gmNote),
+      hasGmNote: asBoolean(payload.hasGmNote),
       intact: payload.intact !== false,
     }
     return objectFromDto('ITEM', dto)
   }
-  const dto: LocationDto = { ...common, locationType: asOptionalString(payload.locationType), intact: payload.intact !== false }
+  const dto: LocationDto = { ...common, locationType: asOptionalString(payload.locationType), intact: payload.intact !== false, gmNote: asOptionalString(payload.gmNote), hasGmNote: asBoolean(payload.hasGmNote) }
   return objectFromDto('LOCATION', dto)
 }
 

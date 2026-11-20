@@ -819,6 +819,18 @@ export const useCampaignStore = defineStore('campaign', () => {
     return saved
   }
 
+  /** Перед редактированием забираем карточку с сервера, а не из локального кэша. */
+  async function loadFreshObject(id: string): Promise<LocalObject | null> {
+    const cid = requireCampaignId()
+    const existing = await getObject(id)
+    if (!existing) return null
+    const dto = await objectsApi.get(cid, existing.objectType, id)
+    const fresh = localFromDto(existing.objectType, dto as CampaignObjectDto)
+    await putObject(fresh)
+    await reload()
+    return fresh
+  }
+
   async function deleteObject(id: string): Promise<void> {
     const cid = requireCampaignId()
     const existing = await getObject(id)
@@ -1195,6 +1207,7 @@ export const useCampaignStore = defineStore('campaign', () => {
     canDeleteRetellingItem,
     createObject,
     updateObject,
+    loadFreshObject,
     deleteObject,
     saveDraft,
     publishDraft,
