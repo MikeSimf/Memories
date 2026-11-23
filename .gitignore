@@ -36,3 +36,4 @@ deploy-kit/*/*.bak
 # «Обновление веб-версии»). В репозитории он остаётся только как рабочий мусор.
 web/web-dist.tar.gz
 deploy-kit/web-prod/
+deploy-kit/web-test/
