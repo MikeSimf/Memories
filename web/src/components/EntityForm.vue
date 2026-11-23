@@ -462,14 +462,14 @@ function setOwnerCharacter(value: string): void {
         <span class="field__label">Статус:</span>
         <label class="field__check"><input type="checkbox" :checked="modelValue.intact" @change="patch({ intact: ($event.target as HTMLInputElement).checked })" /> {{ modelValue.intact ? 'целое' : 'разрушено' }}</label>
       </div>
-      <template v-if="modelValue.itemType === 'Артефакт'">
-        <TriStateField
+      <TriStateField
           label="Магический"
           :model-value="modelValue.magic"
           true-label="да"
           false-label="нет"
-          @update:model-value="patch({ magic: $event })"
-        />
+        @update:model-value="patch({ magic: $event })"
+      />
+      <template v-if="modelValue.magic === true">
         <div class="field">
           <label class="field__label" for="item-has-setting">
             <input

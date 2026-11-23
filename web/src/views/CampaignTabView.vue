@@ -48,6 +48,12 @@ const route = useRoute()
 const campaign = useCampaignStore()
 
 const query = ref('')
+type SortField = 'name' | 'createdAt' | 'updatedAt'
+const sortField = ref<SortField>('name')
+const sortAsc = ref(true)
+const aliveFilter = ref<'all' | 'alive' | 'dead' | 'unknown'>('all')
+const intactFilter = ref<'all' | 'intact' | 'broken'>('all')
+const typeFilter = ref('all')
 const cardTemplates = ref<CardTemplateDto[]>([])
 const matchedCards = ref<Record<string, string>>({})
 const cardsReady = ref(false)
@@ -79,6 +85,11 @@ watch(
   tab,
   async () => {
     query.value = ''
+    sortField.value = 'name'
+    sortAsc.value = true
+    aliveFilter.value = 'all'
+    intactFilter.value = 'all'
+    typeFilter.value = 'all'
     if (objectClasses.value) await campaign.loadTabObjects(objectClasses.value)
   },
   { immediate: true },
@@ -88,13 +99,69 @@ watch(
 const objects = computed(() => campaign.tabObjects)
 
 /** Живой фильтр: имя и описание, у персонажа ещё раса и краткое описание. */
+const typeOptions = computed(() => {
+  const values = new Set<string>()
+  for (const object of objects.value) {
+    const value = object.objectType === 'ITEM' ? object.itemType : object.objectType === 'LOCATION' ? object.locationType : ''
+    if (value) values.add(value)
+  }
+  return [...values].sort((a, b) => a.localeCompare(b, 'ru'))
+})
+
 const filteredObjects = computed(() =>
-  objects.value.filter((object) => objectMatchesQuery(object, query.value)),
+  objects.value.filter((object) => {
+    if (!objectMatchesQuery(object, query.value)) return false
+    if (tab.value === 'characters' || tab.value === 'heroes') {
+      if (aliveFilter.value !== 'all') {
+        const alive = object.alive === true ? 'alive' : object.alive === false ? 'dead' : 'unknown'
+        if (alive !== aliveFilter.value) return false
+      }
+    }
+    if (tab.value === 'locations' || tab.value === 'items') {
+      if (intactFilter.value !== 'all') {
+        const intact = object.intact !== false ? 'intact' : 'broken'
+        if (intact !== intactFilter.value) return false
+      }
+      if (typeFilter.value !== 'all') {
+        const value = tab.value === 'items' ? object.itemType : object.locationType
+        if ((value ?? '') !== typeFilter.value) return false
+      }
+    }
+    return true
+  }),
 )
+
+const visibleObjects = computed(() => {
+  const list = [...filteredObjects.value]
+  const direction = sortAsc.value ? 1 : -1
+  list.sort((a, b) => {
+    if (sortField.value === 'name') return a.name.localeCompare(b.name, 'ru') * direction
+    const left = sortField.value === 'createdAt' ? a.createdAt : a.updatedAt
+    const right = sortField.value === 'createdAt' ? b.createdAt : b.updatedAt
+    return left.localeCompare(right) * direction
+  })
+  return list
+})
+
+function toggleSortDirection(): void {
+  sortAsc.value = !sortAsc.value
+}
 
 const filteredRetellings = computed(() =>
   campaign.retellingItems.filter((item) => matchesText([item.title, item.body], query.value)),
 )
+
+const visibleRetellings = computed(() => {
+  const list = [...filteredRetellings.value]
+  const direction = sortAsc.value ? 1 : -1
+  list.sort((a, b) => {
+    if (sortField.value === 'name') return a.title.localeCompare(b.title, 'ru') * direction
+    const left = sortField.value === 'createdAt' ? (a.createdAt ?? '') : (a.updatedAt ?? '')
+    const right = sortField.value === 'createdAt' ? (b.createdAt ?? '') : (b.updatedAt ?? '')
+    return left.localeCompare(right) * direction
+  })
+  return list
+})
 
 const sectionTitle = computed(() => {
   if (tab.value === 'retellings') return 'Истории'
@@ -233,6 +300,34 @@ const tabProgressLabel = computed(() =>
 
     <!-- Объекты вкладки: персонажи (герои + НПС), локации, предметы -->
     <template v-if="objectClasses">
+      <div class="tab-layout">
+        <aside v-if="tab === 'characters' || tab === 'locations' || tab === 'items'" class="filters-panel">
+          <h3>Фильтр</h3>
+          <template v-if="tab === 'characters'">
+            <label class="field__label" for="filter-alive">Статус</label>
+            <select id="filter-alive" v-model="aliveFilter" class="select">
+              <option value="all">все</option>
+              <option value="alive">живые</option>
+              <option value="dead">мёртвые</option>
+              <option value="unknown">неизвестно</option>
+            </select>
+          </template>
+          <template v-if="tab === 'locations' || tab === 'items'">
+            <label class="field__label" for="filter-intact">Состояние</label>
+            <select id="filter-intact" v-model="intactFilter" class="select">
+              <option value="all">все</option>
+              <option value="intact">целые</option>
+              <option value="broken">разрушенные</option>
+            </select>
+            <label class="field__label" for="filter-type">Тип</label>
+            <select id="filter-type" v-model="typeFilter" class="select">
+              <option value="all">все типы</option>
+              <option v-for="type in typeOptions" :key="type" :value="type">{{ type }}</option>
+            </select>
+          </template>
+          <button class="btn btn--ghost btn--sm" type="button" @click="aliveFilter = 'all'; intactFilter = 'all'; typeFilter = 'all'">Сбросить</button>
+        </aside>
+        <div class="tab-main">
       <div class="row row--between search-summary">
         <div class="row">
           <span class="faint">Найдено: {{ filteredObjects.length }}</span>
@@ -242,14 +337,17 @@ const tabProgressLabel = computed(() =>
             {{ tabProgressLabel }}
           </span>
         </div>
-        <button
-          v-if="query !== ''"
-          class="btn btn--ghost btn--sm"
-          type="button"
-          @click="query = ''"
-        >
-          Очистить
-        </button>
+        <div class="row">
+          <select v-model="sortField" class="select" aria-label="Сортировка">
+            <option value="name">по названию</option>
+            <option value="createdAt">по дате добавления</option>
+            <option value="updatedAt">по дате изменения</option>
+          </select>
+          <button class="btn btn--sm" type="button" :title="sortAsc ? 'по возрастанию' : 'по убыванию'" @click="toggleSortDirection">
+            {{ sortAsc ? '↑' : '↓' }}
+          </button>
+          <button v-if="query !== ''" class="btn btn--ghost btn--sm" type="button" @click="query = ''">Очистить</button>
+        </div>
       </div>
 
       <div v-if="!cardsReady" class="loading"><span class="spinner" /> Готовим карточки…</div>
@@ -269,7 +367,7 @@ const tabProgressLabel = computed(() =>
       />
       <div v-else class="grid">
         <RouterLink
-          v-for="object in filteredObjects"
+          v-for="object in visibleObjects"
           :key="object.id"
           class="card card--link"
           :class="typeCardClass(object)"
@@ -284,10 +382,10 @@ const tabProgressLabel = computed(() =>
             <EntityAvatar :object="object" :size="40" />
             <h3 class="card__title">
               <span
-                v-if="object.objectType === 'CHARACTER' || object.objectType === 'ITEM' || object.objectType === 'LOCATION'"
+                v-if="object.objectType === 'HERO' || object.objectType === 'CHARACTER' || object.objectType === 'ITEM' || object.objectType === 'LOCATION'"
                 class="life-dot"
-                :class="object.objectType === 'CHARACTER' ? (object.alive === true ? 'life-dot--alive' : object.alive === false ? 'life-dot--dead' : 'life-dot--unknown') : ((object as any).intact === false ? 'life-dot--dead' : 'life-dot--alive')"
-                :title="object.objectType === 'CHARACTER' ? (object.alive === true ? 'жив' : object.alive === false ? 'мёртв' : 'неизвестно') : ((object as any).intact === false ? 'разрушено' : 'целое')"
+                :class="object.objectType === 'CHARACTER' || object.objectType === 'HERO' ? (object.alive === true ? 'life-dot--alive' : object.alive === false ? 'life-dot--dead' : 'life-dot--unknown') : ((object as any).intact === false ? 'life-dot--dead' : 'life-dot--alive')"
+                :title="object.objectType === 'CHARACTER' || object.objectType === 'HERO' ? (object.alive === true ? 'жив' : object.alive === false ? 'мёртв' : 'неизвестно') : ((object as any).intact === false ? 'разрушено' : 'целое')"
               />
               {{ object.name }}
               <span v-if="object.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />
@@ -304,15 +402,23 @@ const tabProgressLabel = computed(() =>
           </template>
         </RouterLink>
       </div>
+        </div>
+      </div>
     </template>
 
     <!-- Истории: черновики и публикации -->
     <template v-else-if="tab === 'retellings'">
       <div class="row row--between search-summary">
         <span class="faint">Найдено: {{ filteredRetellings.length }}</span>
-        <button v-if="query !== ''" class="btn btn--ghost btn--sm" type="button" @click="query = ''">
-          Очистить
-        </button>
+        <div class="row">
+          <select v-model="sortField" class="select" aria-label="Сортировка">
+            <option value="name">по названию</option>
+            <option value="createdAt">по дате добавления</option>
+            <option value="updatedAt">по дате изменения</option>
+          </select>
+          <button class="btn btn--sm" type="button" :title="sortAsc ? 'по возрастанию' : 'по убыванию'" @click="toggleSortDirection">{{ sortAsc ? '↑' : '↓' }}</button>
+          <button v-if="query !== ''" class="btn btn--ghost btn--sm" type="button" @click="query = ''">Очистить</button>
+        </div>
       </div>
 
       <EmptyState
@@ -323,7 +429,7 @@ const tabProgressLabel = computed(() =>
       <EmptyState v-else-if="filteredRetellings.length === 0" title="Ничего не найдено" />
       <div v-else class="list">
         <RouterLink
-          v-for="item in filteredRetellings"
+          v-for="item in visibleRetellings"
           :key="item.id"
           class="list-row"
           :to="{ name: 'retelling-detail', params: { campaignId: campaign.campaignId, retellingId: item.id } }"
@@ -373,6 +479,11 @@ const tabProgressLabel = computed(() =>
 .card__head .card__title {
   margin: 0;
 }
+.tab-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.filters-panel { position: sticky; top: 1rem; display: grid; gap: .45rem; padding: 1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.filters-panel h3 { margin: 0 0 .35rem; font-size: 1rem; }
+.tab-main { min-width: 0; }
+@media (max-width: 900px) { .tab-layout { grid-template-columns: 1fr; } .filters-panel { position: static; } }
 .search-summary {
   min-height: 28px;
 }

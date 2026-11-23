@@ -836,17 +836,17 @@ public class EntityEditActivity extends ru.dndmemory.ui.common.BottomNavActivity
     }
 
     private void renderArtifactFields() {
-        boolean artifact = "Артефакт".equalsIgnoreCase(text(binding.entityEditItemType.getText()));
-        ViewUtils.show(binding.entityEditMagicLabel, artifact);
-        ViewUtils.show(binding.entityEditMagicCheck, artifact);
-        ViewUtils.show(binding.entityEditHasSettingCheck, artifact);
-        ViewUtils.show(binding.entityEditConfiguredGroup, artifact && hasSetting);
-        if (!artifact) {
+        boolean item = currentKind == EntityType.ITEM;
+        ViewUtils.show(binding.entityEditMagicLabel, item);
+        ViewUtils.show(binding.entityEditMagicCheck, item);
+        ViewUtils.show(binding.entityEditHasSettingCheck, item && itemMagic != null && itemMagic);
+        ViewUtils.show(binding.entityEditConfiguredGroup, item && itemMagic != null && itemMagic && hasSetting);
+        if (!item) {
             itemMagic = null;
             hasSetting = false;
             configuredHeroId = null;
         }
-        if (artifact) {
+        if (item) {
             int label;
             int icon;
             boolean checked;

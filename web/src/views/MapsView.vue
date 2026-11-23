@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { errorMessage, mapsApi, type InteractiveMapDto } from '@/api'
 import EntityImage from '@/components/EntityImage.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import ListSort from '@/components/ListSort.vue'
 import { useCampaignStore } from '@/stores/campaign'
 
 const route = useRoute()
@@ -14,6 +15,24 @@ const maps = ref<InteractiveMapDto[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const campaignId = String(route.params.campaignId ?? '')
+const sortField = ref<'name' | 'createdAt' | 'updatedAt'>('name')
+const sortAsc = ref(true)
+const sortOptions = [
+  { value: 'name', label: 'по названию' },
+  { value: 'createdAt', label: 'по дате добавления' },
+  { value: 'updatedAt', label: 'по дате изменения' },
+]
+const sortedMaps = computed(() => {
+  const list = [...maps.value]
+  const direction = sortAsc.value ? 1 : -1
+  list.sort((a, b) => {
+    if (sortField.value === 'name') return a.name.localeCompare(b.name, 'ru') * direction
+    const left = sortField.value === 'createdAt' ? (a.createdAt ?? '') : (a.updatedAt ?? '')
+    const right = sortField.value === 'createdAt' ? (b.createdAt ?? '') : (b.updatedAt ?? '')
+    return left.localeCompare(right) * direction
+  })
+  return list
+})
 
 async function load(): Promise<void> {
   loading.value = true
@@ -47,6 +66,7 @@ onMounted(load)
   <div class="stack">
     <div class="row row--between">
       <h2>Интерактивные карты</h2>
+      <ListSort v-model="sortField" v-model:ascending="sortAsc" :options="sortOptions" />
       <button v-if="campaign.canCreate('LOCATION')" class="btn btn--primary" type="button" @click="openCreate">
         + Карта
       </button>
@@ -59,7 +79,7 @@ onMounted(load)
       hint="Создайте карту, загрузите фон и расставьте метки персонажей, локаций и предметов."
     />
     <div v-else class="maps-grid">
-      <article v-for="map in maps" :key="map.id" class="map-card">
+      <article v-for="map in sortedMaps" :key="map.id" class="map-card">
         <RouterLink :to="{ name: 'map-detail', params: { campaignId, mapId: map.id } }" class="map-card__image">
           <EntityImage v-if="map.imageFileId" :file-id="map.imageFileId" alt="" />
           <span v-else class="map-card__placeholder">Карта</span>

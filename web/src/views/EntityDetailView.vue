@@ -81,6 +81,7 @@ const details = computed<Array<{ label: string; value: string }>>(() => {
   if (!item) return []
   if (item.objectType === 'HERO') {
     const rows: Array<{ label: string; value: string }> = []
+    rows.push({ label: 'Статус', value: item.alive === true ? 'жив' : item.alive === false ? 'мёртв' : 'неизвестно' })
     rows.push({ label: 'Пол', value: genderLabel(item.gender) })
     if (item.race) rows.push({ label: 'Раса', value: item.race })
     if (item.klass) rows.push({ label: 'Класс', value: item.klass })
@@ -90,6 +91,7 @@ const details = computed<Array<{ label: string; value: string }>>(() => {
   }
   if (item.objectType === 'CHARACTER') {
     const rows: Array<{ label: string; value: string }> = []
+    rows.push({ label: 'Статус', value: item.alive === true ? 'жив' : item.alive === false ? 'мёртв' : 'неизвестно' })
     rows.push({ label: 'Пол', value: genderLabel(item.gender) })
     if (item.race) rows.push({ label: 'Раса', value: item.race })
     if (item.shortDescription) rows.push({ label: 'Краткое описание', value: item.shortDescription })

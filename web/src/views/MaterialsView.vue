@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 
 import { errorMessage, materialsApi, type MaterialDto } from '@/api'
 import EmptyState from '@/components/EmptyState.vue'
+import ListSort from '@/components/ListSort.vue'
 import EntityImage from '@/components/EntityImage.vue'
 import { useCampaignStore } from '@/stores/campaign'
 
@@ -20,6 +21,24 @@ const campaignId = computed(() => String(route.params.campaignId ?? ''))
 const materials = ref<MaterialDto[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const sortField = ref<'name' | 'createdAt' | 'updatedAt'>('name')
+const sortAsc = ref(true)
+const sortOptions = [
+  { value: 'name', label: 'по названию' },
+  { value: 'createdAt', label: 'по дате добавления' },
+  { value: 'updatedAt', label: 'по дате изменения' },
+]
+const sortedMaterials = computed(() => {
+  const list = [...materials.value]
+  const direction = sortAsc.value ? 1 : -1
+  list.sort((a, b) => {
+    if (sortField.value === 'name') return a.name.localeCompare(b.name, 'ru') * direction
+    const left = sortField.value === 'createdAt' ? (a.createdAt ?? '') : (a.updatedAt ?? '')
+    const right = sortField.value === 'createdAt' ? (b.createdAt ?? '') : (b.updatedAt ?? '')
+    return left.localeCompare(right) * direction
+  })
+  return list
+})
 
 async function load(): Promise<void> {
   loading.value = true
@@ -56,6 +75,7 @@ function excerpt(material: MaterialDto): string {
   <section class="stack">
     <div class="row row--between">
       <h2>Материалы</h2>
+      <ListSort v-model="sortField" v-model:ascending="sortAsc" :options="sortOptions" />
       <div class="row">
         <button class="btn btn--ghost" type="button" :disabled="loading" @click="load">
           Обновить
@@ -85,7 +105,7 @@ function excerpt(material: MaterialDto): string {
 
     <div v-else-if="materials.length > 0" class="grid">
       <RouterLink
-        v-for="material in materials"
+        v-for="material in sortedMaterials"
         :key="material.id"
         class="card card--link card--type-item"
         :to="{ name: 'material-detail', params: { campaignId, materialId: material.id } }"
