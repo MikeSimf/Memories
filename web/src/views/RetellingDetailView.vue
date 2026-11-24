@@ -7,6 +7,7 @@ import { OBJECT_CLASS_LABELS, RETELLING_STATUS_LABELS } from '@/api/types'
 import ConflictNotice from '@/components/ConflictNotice.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import ArticleBody from '@/components/ArticleBody.vue'
 import MarkupText from '@/components/MarkupText.vue'
 import { useCampaignStore } from '@/stores/campaign'
 import { useUiStore } from '@/stores/ui'
@@ -182,8 +183,9 @@ async function keepLocal(): Promise<void> {
       </div>
 
       <div class="card">
+        <ArticleBody v-if="item.body.trim() && /<(p|div|h[1-6]|figure|img|blockquote|ul|ol)\b/i.test(item.body)" :html="item.body" />
         <MarkupText
-          v-if="item.body.trim()"
+          v-else-if="item.body.trim()"
           :text="item.body"
           @broken-link="brokenLink = $event.name"
         />

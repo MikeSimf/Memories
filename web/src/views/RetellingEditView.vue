@@ -6,7 +6,8 @@ import { errorMessage } from '@/api'
 import type { ObjectClass } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import EntityPicker from '@/components/EntityPicker.vue'
-import MarkupText from '@/components/MarkupText.vue'
+import ArticleBody from '@/components/ArticleBody.vue'
+import ArticleEditor from '@/components/ArticleEditor.vue'
 import { useCampaignStore } from '@/stores/campaign'
 import { useUiStore } from '@/stores/ui'
 import { todayIso } from '@/utils/datetime'
@@ -207,19 +208,12 @@ async function savePublished(): Promise<void> {
         <div class="row row--between">
           <label class="field__label" for="retelling-body">Текст</label>
           <button class="btn btn--ghost btn--sm" type="button" @click="showPreview = !showPreview">
-            {{ showPreview ? 'Скрыть предпросмотр' : 'Предпросмотр разметки' }}
+            {{ showPreview ? 'Скрыть предпросмотр' : 'Предпросмотр' }}
           </button>
         </div>
-        <textarea
-          id="retelling-body"
-          v-model="form.body"
-          class="textarea textarea--tall"
-        />
-        <span class="field__hint">
-          Markdown и ссылки <code>[[Имя]]</code>, <code>[[Имя|подпись]]</code>, <code>[[#uuid|подпись]]</code>.
-        </span>
+        <ArticleEditor v-model="form.body" />
         <div v-if="showPreview" class="preview-box">
-          <MarkupText v-if="form.body.trim()" :text="form.body" />
+          <ArticleBody v-if="form.body.trim()" :html="form.body" />
           <span v-else class="faint">Пусто</span>
         </div>
       </div>
