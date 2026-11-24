@@ -13,6 +13,7 @@ import EmptyState from '@/components/EmptyState.vue'
 import EntityAvatar from '@/components/EntityAvatar.vue'
 import ListCard from '@/components/ListCard.vue'
 import ListSort from '@/components/ListSort.vue'
+import TriStateField from '@/components/TriStateField.vue'
 import MembersPanel from '@/components/MembersPanel.vue'
 import SearchBox from '@/components/SearchBox.vue'
 import { genderSymbol } from '@/types/gender'
@@ -53,10 +54,10 @@ type SortField = 'name' | 'createdAt' | 'updatedAt'
 const sortField = ref<SortField>('name')
 const sortAsc = ref(true)
 const sortOptions = [{ value: 'name', label: 'по названию' }, { value: 'createdAt', label: 'по дате добавления' }, { value: 'updatedAt', label: 'по дате изменения' }]
-const aliveKinds = ref<string[]>([])
-const intactKinds = ref<string[]>([])
-const magicKinds = ref<string[]>([])
-const settingKinds = ref<string[]>([])
+const aliveFilter = ref<boolean | null>(null)
+const intactFilter = ref<boolean | null>(null)
+const magicFilter = ref<boolean | null>(null)
+const settingFilter = ref<boolean | null>(null)
 const raceFilter = ref('all')
 const classFilter = ref('all')
 const typeFilter = ref('all')
@@ -95,10 +96,10 @@ watch(
     query.value = ''
     sortField.value = 'name'
     sortAsc.value = true
-    aliveKinds.value = []
-    intactKinds.value = []
-    magicKinds.value = []
-    settingKinds.value = []
+    aliveFilter.value = null
+    intactFilter.value = null
+    magicFilter.value = null
+    settingFilter.value = null
     raceFilter.value = 'all'
     classFilter.value = 'all'
     typeFilter.value = 'all'
@@ -147,31 +148,19 @@ const filteredObjects = computed(() =>
       return false
     }
     if (tab.value === 'characters') {
-      if (aliveKinds.value.length > 0) {
-        const alive = object.alive === true ? 'alive' : object.alive === false ? 'dead' : 'unknown'
-        if (!aliveKinds.value.includes(alive)) return false
-      }
+      if (aliveFilter.value !== null && object.alive !== aliveFilter.value) return false
       if (raceFilter.value !== 'all' && (object.race ?? '') !== raceFilter.value) return false
       if (classFilter.value !== 'all' && (object.klass ?? '') !== classFilter.value) return false
     }
     if (tab.value === 'locations' || tab.value === 'items') {
-      if (intactKinds.value.length > 0) {
-        const intact = object.intact !== false ? 'intact' : 'broken'
-        if (!intactKinds.value.includes(intact)) return false
-      }
+      if (intactFilter.value !== null && (object.intact !== false) !== intactFilter.value) return false
       if (typeFilter.value !== 'all') {
         const value = tab.value === 'items' ? object.itemType : object.locationType
         if ((value ?? '') !== typeFilter.value) return false
       }
       if (tab.value === 'items') {
-        if (magicKinds.value.length > 0) {
-          const magic = object.magic === true ? 'magic' : 'plain'
-          if (!magicKinds.value.includes(magic)) return false
-        }
-        if (settingKinds.value.length > 0) {
-          const setting = object.hasSetting === true ? 'configured' : 'not-configured'
-          if (!settingKinds.value.includes(setting)) return false
-        }
+        if (magicFilter.value !== null && (object.magic === true) !== magicFilter.value) return false
+        if (settingFilter.value !== null && (object.hasSetting === true) !== settingFilter.value) return false
         if (ownerFilter.value !== 'all' && (object.ownerHeroId ?? '') !== ownerFilter.value) return false
       }
     }
@@ -192,10 +181,10 @@ const visibleObjects = computed(() => {
 })
 
 function resetFilters(): void {
-  aliveKinds.value = []
-  intactKinds.value = []
-  magicKinds.value = []
-  settingKinds.value = []
+  aliveFilter.value = null
+  intactFilter.value = null
+  magicFilter.value = null
+  settingFilter.value = null
   raceFilter.value = 'all'
   classFilter.value = 'all'
   typeFilter.value = 'all'
@@ -370,10 +359,14 @@ const tabProgressLabel = computed(() =>
           <label class="field__label" for="filter-name">Имя</label>
           <input id="filter-name" v-model="nameFilter" class="input" type="search" placeholder="часть имени" />
           <template v-if="tab === 'characters'">
-            <span class="field__label">Статус</span>
-            <label class="field__check"><input v-model="aliveKinds" type="checkbox" value="alive" /> жив</label>
-            <label class="field__check"><input v-model="aliveKinds" type="checkbox" value="dead" /> мёртв</label>
-            <label class="field__check"><input v-model="aliveKinds" type="checkbox" value="unknown" /> неизвестно</label>
+            <TriStateField
+              label="Статус"
+              :model-value="aliveFilter"
+              true-label="жив"
+              false-label="мёртв"
+              null-label="всё"
+              @update:model-value="aliveFilter = $event"
+            />
             <label class="field__label" for="filter-race">Раса</label>
             <select id="filter-race" v-model="raceFilter" class="select">
               <option value="all">все расы</option>
@@ -386,9 +379,14 @@ const tabProgressLabel = computed(() =>
             </select>
           </template>
           <template v-if="tab === 'locations' || tab === 'items'">
-            <span class="field__label">Состояние</span>
-            <label class="field__check"><input v-model="intactKinds" type="checkbox" value="intact" /> целое</label>
-            <label class="field__check"><input v-model="intactKinds" type="checkbox" value="broken" /> разрушено</label>
+            <TriStateField
+              label="Состояние"
+              :model-value="intactFilter"
+              true-label="целое"
+              false-label="разрушено"
+              null-label="всё"
+              @update:model-value="intactFilter = $event"
+            />
             <label class="field__label" for="filter-type">Тип</label>
             <select id="filter-type" v-model="typeFilter" class="select">
               <option value="all">все типы</option>
@@ -396,12 +394,22 @@ const tabProgressLabel = computed(() =>
             </select>
           </template>
           <template v-if="tab === 'items'">
-            <span class="field__label">Магический</span>
-            <label class="field__check"><input v-model="magicKinds" type="checkbox" value="magic" /> магический</label>
-            <label class="field__check"><input v-model="magicKinds" type="checkbox" value="plain" /> немагический</label>
-            <span class="field__label">Настройка</span>
-            <label class="field__check"><input v-model="settingKinds" type="checkbox" value="configured" /> настроен</label>
-            <label class="field__check"><input v-model="settingKinds" type="checkbox" value="not-configured" /> не настроен</label>
+            <TriStateField
+              label="Магический"
+              :model-value="magicFilter"
+              true-label="магический"
+              false-label="не магический"
+              null-label="всё"
+              @update:model-value="magicFilter = $event"
+            />
+            <TriStateField
+              label="Настройка"
+              :model-value="settingFilter"
+              true-label="настроен"
+              false-label="не настроен"
+              null-label="всё"
+              @update:model-value="settingFilter = $event"
+            />
             <label class="field__label" for="filter-owner">Владелец</label>
             <select id="filter-owner" v-model="ownerFilter" class="select">
               <option value="all">все владельцы</option>
