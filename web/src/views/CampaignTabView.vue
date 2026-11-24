@@ -353,7 +353,7 @@ const tabProgressLabel = computed(() =>
 
     <!-- Объекты вкладки: персонажи (герои + НПС), локации, предметы -->
     <template v-if="objectClasses">
-      <div class="tab-layout">
+      <div class="tab-layout" :class="{ 'tab-layout--full': tab === 'heroes' }">
         <aside v-if="tab === 'characters' || tab === 'locations' || tab === 'items'" class="filters-panel">
           <h3>Фильтр</h3>
           <label class="field__label" for="filter-name">Имя</label>
@@ -560,6 +560,7 @@ const tabProgressLabel = computed(() =>
 .filters-panel { position: sticky; top: 1rem; display: grid; gap: .45rem; padding: 1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
 .filters-panel h3 { margin: 0 0 .35rem; font-size: 1rem; }
 .tab-main { min-width: 0; }
+.tab-layout--full { grid-template-columns: minmax(0, 1fr); }
 @media (max-width: 900px) { .tab-layout { grid-template-columns: 1fr; } .filters-panel { position: static; } }
 .search-summary {
   min-height: 28px;
