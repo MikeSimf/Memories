@@ -12,6 +12,7 @@ import type { LocalObject } from '@/db/schema'
 import EmptyState from '@/components/EmptyState.vue'
 import EntityAvatar from '@/components/EntityAvatar.vue'
 import ListCard from '@/components/ListCard.vue'
+import ListSort from '@/components/ListSort.vue'
 import MembersPanel from '@/components/MembersPanel.vue'
 import SearchBox from '@/components/SearchBox.vue'
 import { genderSymbol } from '@/types/gender'
@@ -51,9 +52,16 @@ const query = ref('')
 type SortField = 'name' | 'createdAt' | 'updatedAt'
 const sortField = ref<SortField>('name')
 const sortAsc = ref(true)
-const aliveFilter = ref<'all' | 'alive' | 'dead' | 'unknown'>('all')
-const intactFilter = ref<'all' | 'intact' | 'broken'>('all')
+const sortOptions = [{ value: 'name', label: 'по названию' }, { value: 'createdAt', label: 'по дате добавления' }, { value: 'updatedAt', label: 'по дате изменения' }]
+const aliveKinds = ref<string[]>([])
+const intactKinds = ref<string[]>([])
+const magicKinds = ref<string[]>([])
+const settingKinds = ref<string[]>([])
+const raceFilter = ref('all')
+const classFilter = ref('all')
 const typeFilter = ref('all')
+const ownerFilter = ref('all')
+const nameFilter = ref('')
 const cardTemplates = ref<CardTemplateDto[]>([])
 const matchedCards = ref<Record<string, string>>({})
 const cardsReady = ref(false)
@@ -87,9 +95,15 @@ watch(
     query.value = ''
     sortField.value = 'name'
     sortAsc.value = true
-    aliveFilter.value = 'all'
-    intactFilter.value = 'all'
+    aliveKinds.value = []
+    intactKinds.value = []
+    magicKinds.value = []
+    settingKinds.value = []
+    raceFilter.value = 'all'
+    classFilter.value = 'all'
     typeFilter.value = 'all'
+    ownerFilter.value = 'all'
+    nameFilter.value = ''
     if (objectClasses.value) await campaign.loadTabObjects(objectClasses.value)
   },
   { immediate: true },
@@ -108,23 +122,57 @@ const typeOptions = computed(() => {
   return [...values].sort((a, b) => a.localeCompare(b, 'ru'))
 })
 
+const raceOptions = computed(() => {
+  const values = new Set<string>()
+  for (const object of objects.value) if (object.objectType === 'CHARACTER' && object.race) values.add(object.race)
+  return [...values].sort((a, b) => a.localeCompare(b, 'ru'))
+})
+
+const classOptions = computed(() => {
+  const values = new Set<string>()
+  for (const object of objects.value) if (object.objectType === 'CHARACTER' && object.klass) values.add(object.klass)
+  return [...values].sort((a, b) => a.localeCompare(b, 'ru'))
+})
+
+const heroOptions = computed(() =>
+  campaign.objects
+    .filter((object) => object.objectType === 'HERO' && !object.deleted)
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru')),
+)
+
 const filteredObjects = computed(() =>
   objects.value.filter((object) => {
     if (!objectMatchesQuery(object, query.value)) return false
-    if (tab.value === 'characters' || tab.value === 'heroes') {
-      if (aliveFilter.value !== 'all') {
+    if (nameFilter.value.trim() !== '' && !object.name.toLowerCase().includes(nameFilter.value.trim().toLowerCase())) {
+      return false
+    }
+    if (tab.value === 'characters') {
+      if (aliveKinds.value.length > 0) {
         const alive = object.alive === true ? 'alive' : object.alive === false ? 'dead' : 'unknown'
-        if (alive !== aliveFilter.value) return false
+        if (!aliveKinds.value.includes(alive)) return false
       }
+      if (raceFilter.value !== 'all' && (object.race ?? '') !== raceFilter.value) return false
+      if (classFilter.value !== 'all' && (object.klass ?? '') !== classFilter.value) return false
     }
     if (tab.value === 'locations' || tab.value === 'items') {
-      if (intactFilter.value !== 'all') {
+      if (intactKinds.value.length > 0) {
         const intact = object.intact !== false ? 'intact' : 'broken'
-        if (intact !== intactFilter.value) return false
+        if (!intactKinds.value.includes(intact)) return false
       }
       if (typeFilter.value !== 'all') {
         const value = tab.value === 'items' ? object.itemType : object.locationType
         if ((value ?? '') !== typeFilter.value) return false
+      }
+      if (tab.value === 'items') {
+        if (magicKinds.value.length > 0) {
+          const magic = object.magic === true ? 'magic' : 'plain'
+          if (!magicKinds.value.includes(magic)) return false
+        }
+        if (settingKinds.value.length > 0) {
+          const setting = object.hasSetting === true ? 'configured' : 'not-configured'
+          if (!settingKinds.value.includes(setting)) return false
+        }
+        if (ownerFilter.value !== 'all' && (object.ownerHeroId ?? '') !== ownerFilter.value) return false
       }
     }
     return true
@@ -142,6 +190,18 @@ const visibleObjects = computed(() => {
   })
   return list
 })
+
+function resetFilters(): void {
+  aliveKinds.value = []
+  intactKinds.value = []
+  magicKinds.value = []
+  settingKinds.value = []
+  raceFilter.value = 'all'
+  classFilter.value = 'all'
+  typeFilter.value = 'all'
+  ownerFilter.value = 'all'
+  nameFilter.value = ''
+}
 
 function toggleSortDirection(): void {
   sortAsc.value = !sortAsc.value
@@ -298,34 +358,57 @@ const tabProgressLabel = computed(() =>
       </div>
     </div>
 
+    <div v-if="tab !== 'members'" class="row" style="justify-content: flex-end">
+      <ListSort v-model="sortField" v-model:ascending="sortAsc" :options="sortOptions" />
+    </div>
+
     <!-- Объекты вкладки: персонажи (герои + НПС), локации, предметы -->
     <template v-if="objectClasses">
       <div class="tab-layout">
         <aside v-if="tab === 'characters' || tab === 'locations' || tab === 'items'" class="filters-panel">
           <h3>Фильтр</h3>
+          <label class="field__label" for="filter-name">Имя</label>
+          <input id="filter-name" v-model="nameFilter" class="input" type="search" placeholder="часть имени" />
           <template v-if="tab === 'characters'">
-            <label class="field__label" for="filter-alive">Статус</label>
-            <select id="filter-alive" v-model="aliveFilter" class="select">
-              <option value="all">все</option>
-              <option value="alive">живые</option>
-              <option value="dead">мёртвые</option>
-              <option value="unknown">неизвестно</option>
+            <span class="field__label">Статус</span>
+            <label class="field__check"><input v-model="aliveKinds" type="checkbox" value="alive" /> жив</label>
+            <label class="field__check"><input v-model="aliveKinds" type="checkbox" value="dead" /> мёртв</label>
+            <label class="field__check"><input v-model="aliveKinds" type="checkbox" value="unknown" /> неизвестно</label>
+            <label class="field__label" for="filter-race">Раса</label>
+            <select id="filter-race" v-model="raceFilter" class="select">
+              <option value="all">все расы</option>
+              <option v-for="race in raceOptions" :key="race" :value="race">{{ race }}</option>
+            </select>
+            <label class="field__label" for="filter-class">Класс</label>
+            <select id="filter-class" v-model="classFilter" class="select">
+              <option value="all">все классы</option>
+              <option v-for="klass in classOptions" :key="klass" :value="klass">{{ klass }}</option>
             </select>
           </template>
           <template v-if="tab === 'locations' || tab === 'items'">
-            <label class="field__label" for="filter-intact">Состояние</label>
-            <select id="filter-intact" v-model="intactFilter" class="select">
-              <option value="all">все</option>
-              <option value="intact">целые</option>
-              <option value="broken">разрушенные</option>
-            </select>
+            <span class="field__label">Состояние</span>
+            <label class="field__check"><input v-model="intactKinds" type="checkbox" value="intact" /> целое</label>
+            <label class="field__check"><input v-model="intactKinds" type="checkbox" value="broken" /> разрушено</label>
             <label class="field__label" for="filter-type">Тип</label>
             <select id="filter-type" v-model="typeFilter" class="select">
               <option value="all">все типы</option>
               <option v-for="type in typeOptions" :key="type" :value="type">{{ type }}</option>
             </select>
           </template>
-          <button class="btn btn--ghost btn--sm" type="button" @click="aliveFilter = 'all'; intactFilter = 'all'; typeFilter = 'all'">Сбросить</button>
+          <template v-if="tab === 'items'">
+            <span class="field__label">Магический</span>
+            <label class="field__check"><input v-model="magicKinds" type="checkbox" value="magic" /> магический</label>
+            <label class="field__check"><input v-model="magicKinds" type="checkbox" value="plain" /> немагический</label>
+            <span class="field__label">Настройка</span>
+            <label class="field__check"><input v-model="settingKinds" type="checkbox" value="configured" /> настроен</label>
+            <label class="field__check"><input v-model="settingKinds" type="checkbox" value="not-configured" /> не настроен</label>
+            <label class="field__label" for="filter-owner">Владелец</label>
+            <select id="filter-owner" v-model="ownerFilter" class="select">
+              <option value="all">все владельцы</option>
+              <option v-for="hero in heroOptions" :key="hero.id" :value="hero.id">{{ hero.name }}</option>
+            </select>
+          </template>
+          <button class="btn btn--ghost btn--sm" type="button" @click="resetFilters">Сбросить</button>
         </aside>
         <div class="tab-main">
       <div class="row row--between search-summary">
@@ -338,14 +421,6 @@ const tabProgressLabel = computed(() =>
           </span>
         </div>
         <div class="row">
-          <select v-model="sortField" class="select" aria-label="Сортировка">
-            <option value="name">по названию</option>
-            <option value="createdAt">по дате добавления</option>
-            <option value="updatedAt">по дате изменения</option>
-          </select>
-          <button class="btn btn--sm" type="button" :title="sortAsc ? 'по возрастанию' : 'по убыванию'" @click="toggleSortDirection">
-            {{ sortAsc ? '↑' : '↓' }}
-          </button>
           <button v-if="query !== ''" class="btn btn--ghost btn--sm" type="button" @click="query = ''">Очистить</button>
         </div>
       </div>
@@ -411,12 +486,6 @@ const tabProgressLabel = computed(() =>
       <div class="row row--between search-summary">
         <span class="faint">Найдено: {{ filteredRetellings.length }}</span>
         <div class="row">
-          <select v-model="sortField" class="select" aria-label="Сортировка">
-            <option value="name">по названию</option>
-            <option value="createdAt">по дате добавления</option>
-            <option value="updatedAt">по дате изменения</option>
-          </select>
-          <button class="btn btn--sm" type="button" :title="sortAsc ? 'по возрастанию' : 'по убыванию'" @click="toggleSortDirection">{{ sortAsc ? '↑' : '↓' }}</button>
           <button v-if="query !== ''" class="btn btn--ghost btn--sm" type="button" @click="query = ''">Очистить</button>
         </div>
       </div>
