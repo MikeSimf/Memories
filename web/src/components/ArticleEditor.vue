@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from 'vue'
 
-import { errorMessage, uploadFile } from '@/api'
+import { errorMessage, fetchFileBlob, uploadFile } from '@/api'
 
 /** Редактор статьи: абзацы, шрифт, красная строка и картинки между абзацами. */
 const props = defineProps<{ modelValue: string }>()
@@ -39,7 +39,24 @@ function toHtml(value: string): string {
 }
 
 function sync(): void {
-  if (editor.value) emit('update:modelValue', editor.value.innerHTML)
+  if (!editor.value) return
+  const clone = editor.value.cloneNode(true) as HTMLElement
+  for (const image of [...clone.querySelectorAll('img[data-file-id]')]) image.removeAttribute('src')
+  emit('update:modelValue', clone.innerHTML)
+}
+
+async function resolveImages(): Promise<void> {
+  if (!editor.value) return
+  for (const image of [...editor.value.querySelectorAll('img[data-file-id]')]) {
+    if (image.dataset.loaded === '1') continue
+    try {
+      const blob = await fetchFileBlob(image.dataset.fileId ?? '')
+      image.src = URL.createObjectURL(blob)
+      image.dataset.loaded = '1'
+    } catch {
+      image.remove()
+    }
+  }
 }
 
 function rememberSelection(): void {
@@ -90,13 +107,13 @@ async function onImageChosen(event: Event): Promise<void> {
   error.value = null
   try {
     const uploaded = await uploadFile(file)
-    const src = `/api/files/${uploaded.id}`
     restoreSelection()
     document.execCommand(
       'insertHTML',
       false,
-      `<figure contenteditable="false"><img src="${src}" alt=""><figcaption>Подпись к картинке</figcaption></figure><p><br></p>`,
+      `<figure contenteditable="false"><img data-file-id="${uploaded.id}" alt=""><figcaption>Подпись к картинке</figcaption></figure><p><br></p>`,
     )
+    await resolveImages()
     sync()
   } catch (caught) {
     error.value = errorMessage(caught)
@@ -108,13 +125,17 @@ async function onImageChosen(event: Event): Promise<void> {
 
 onMounted(() => {
   if (editor.value) editor.value.innerHTML = toHtml(props.modelValue)
+  void resolveImages()
 })
 
 watch(
   () => props.modelValue,
   (value) => {
     if (!editor.value || document.activeElement === editor.value) return
-    if (editor.value.innerHTML !== value) editor.value.innerHTML = toHtml(value)
+    if (editor.value.innerHTML !== value) {
+      editor.value.innerHTML = toHtml(value)
+      void resolveImages()
+    }
   },
 )
 </script>
@@ -132,7 +153,7 @@ watch(
       <button class="article-editor__button" type="button" title="Курсив" aria-label="Курсив" @mousedown.prevent="command('italic')"><i>К</i></button>
       <button class="article-editor__button" type="button" title="Красная строка" aria-label="Красная строка" @mousedown.prevent="applyStyle('textIndent', '2em')">¶</button>
       <button class="article-editor__button" type="button" title="Заголовок" aria-label="Заголовок" @mousedown.prevent="document.execCommand('formatBlock', false, 'h2'); sync()">H2</button>
-      <button class="article-editor__button" type="button" title="Цитата" aria-label="Цитата" @mousedown.prevent="document.execCommand('formatBlock', false, 'blockquote'); sync()">❞</button>
+      <button class="article-editor__button" type="button" title="Цитата" aria-label="Цитата" @mousedown.prevent="document.execCommand('formatBlock', false, 'blockquote'); sync()">«»</button>
       <button class="article-editor__button" type="button" :disabled="uploading" title="Вставить картинку" aria-label="Вставить картинку" @mousedown.prevent="openImageDialog">🖼</button>
       <input ref="fileInput" class="visually-hidden" type="file" accept="image/*" @change="onImageChosen" />
       <span v-if="uploading" class="faint">Загружаем…</span>
@@ -165,6 +186,7 @@ watch(
 .article-editor__body :deep(p) { margin: 0 0 .85rem; }
 .article-editor__body :deep(figure) { margin: 1rem 0; }
 .article-editor__body :deep(img) { max-width: 100%; height: auto; border-radius: 10px; }
+.article-editor__body :deep(img:not([src])) { display: none; }
 .article-editor__body :deep(figcaption) { color: var(--text-muted); font-size: .85rem; padding-top: .35rem; }
 .article-editor__body :deep(blockquote) { margin: 1rem 0; padding: .5rem 1rem; border-left: 3px solid var(--accent); color: var(--text-muted); }
 </style>
