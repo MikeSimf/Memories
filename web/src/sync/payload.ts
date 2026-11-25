@@ -147,6 +147,7 @@ export function objectFromPayload(
       gender: asOptionalString(payload.gender),
       playerUserId: asOptionalString(payload.playerUserId),
       playerName: asOptionalString(payload.playerName),
+      titles: Array.isArray(payload.titles) ? payload.titles.filter((title): title is string => typeof title === 'string') : [],
       items: deleted ? [] : asHeroItems(payload.items),
       strength: asNumber(payload.strength, 10),
       dexterity: asNumber(payload.dexterity, 10),

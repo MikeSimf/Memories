@@ -85,6 +85,7 @@ const details = computed<Array<{ label: string; value: string }>>(() => {
     rows.push({ label: 'Пол', value: genderLabel(item.gender) })
     if (item.race) rows.push({ label: 'Раса', value: item.race })
     if (item.klass) rows.push({ label: 'Класс', value: item.klass })
+    if (import.meta.env.VITE_HERO_TITLES === '1' && (item.titles ?? []).length > 0) rows.push({ label: 'Звания', value: (item.titles ?? []).join(', ') })
     const member = campaign.members.find((m) => m.linkedHeroId === item.id && m.status !== 'REMOVED')
     rows.push({ label: 'Игрок', value: member?.displayName ?? item.playerName ?? 'не указан' })
     return rows
@@ -463,7 +464,7 @@ async function keepLocal(): Promise<void> {
         </div>
       </div>
 
-      <div v-else-if="details.length > 0" class="card">
+      <div v-if="details.length > 0" class="card">
         <dl class="attr-grid" style="margin: 0">
           <div v-for="row in details" :key="row.label">
             <dt class="field__label">{{ row.label }}</dt>

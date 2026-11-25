@@ -56,6 +56,7 @@ public final class HeroDtos {
         private Integer armorClass;
         private Integer maxHp;
         private Integer inspiration;
+        private List<String> titles;
     }
 
     @Getter
@@ -118,6 +119,7 @@ public final class HeroDtos {
         private Integer maxHp;
         private Integer inspiration;
         private String gmNote;
+        private List<String> titles;
     }
 
     @Getter
@@ -147,5 +149,7 @@ public final class HeroDtos {
 
         /** Если передан — список предметов заменяется целиком. */
         private List<HeroItemRequest> items;
+        private String gmNote;
+        private List<String> titles;
     }
 }

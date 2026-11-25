@@ -8,9 +8,16 @@ import ru.dndmemory.domain.extender.GameEntityExtender;
 import ru.dndmemory.domain.extender.ImageExtender;
 import ru.dndmemory.domain.extender.NamedExtender;
 import ru.dndmemory.domain.extender.SyncExtended;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.OrderColumn;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -58,6 +65,13 @@ public class Hero extends GameEntitySupport
     private Integer armorClass;
     private Integer maxHp;
     private Integer inspiration;
+
+    /** Звания героя: «убийца волков», «вождь грунгов» и т. п. */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "hero_titles", joinColumns = @JoinColumn(name = "hero_id"))
+    @OrderColumn(name = "position")
+    @Column(name = "title", length = 200)
+    private List<String> titles = new ArrayList<>();
 
     @Override
     public String matchKey() {

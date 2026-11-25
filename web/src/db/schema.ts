@@ -73,6 +73,7 @@ export interface LocalHero extends LocalObjectBase {
   klass: string | null
   playerUserId: string | null
   playerName: string | null
+  titles: string[]
   items: HeroItemDto[]
   strength: number
   dexterity: number

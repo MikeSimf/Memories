@@ -153,6 +153,7 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
                 .armorClass(hero.getArmorClass())
                 .maxHp(hero.getMaxHp())
                 .inspiration(hero.getInspiration())
+                .titles(new java.util.ArrayList<>(hero.getTitles()))
                 .build();
     }
 
@@ -223,6 +224,13 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
         if (payload.has("alive")) {
             com.fasterxml.jackson.databind.JsonNode alive = payload.get("alive");
             hero.setAlive(alive == null || alive.isNull() ? null : alive.asBoolean());
+        }
+        if (payload.has("titles") && payload.get("titles").isArray()) {
+            hero.getTitles().clear();
+            for (com.fasterxml.jackson.databind.JsonNode title : payload.get("titles")) {
+                String value = text(title);
+                if (value != null && !value.isBlank()) hero.getTitles().add(value.trim());
+            }
         }
         if (payload.has("playerUserId")) {
             hero.setPlayerUserId(uuidOrNull(payload.get("playerUserId")));

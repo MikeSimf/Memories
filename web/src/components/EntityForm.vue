@@ -166,6 +166,7 @@ const canEditGmNote = computed(() => {
   return false
 })
 
+const heroTitlesEnabled = import.meta.env.VITE_HERO_TITLES === '1'
 const isHero = computed(() => props.objectClass === 'HERO')
 const isCharacter = computed(() => props.objectClass === 'CHARACTER')
 const isItem = computed(() => props.objectClass === 'ITEM')
@@ -173,6 +174,20 @@ const isLocation = computed(() => props.objectClass === 'LOCATION')
 
 function patch(changes: Partial<ObjectFormValues>): void {
   emit('update:modelValue', { ...props.modelValue, ...changes })
+}
+
+function addTitle(): void {
+  patch({ titles: [...props.modelValue.titles, ''] })
+}
+
+function updateTitle(index: number, value: string): void {
+  const titles = [...props.modelValue.titles]
+  titles[index] = value
+  patch({ titles })
+}
+
+function removeTitle(index: number): void {
+  patch({ titles: props.modelValue.titles.filter((_, i) => i !== index) })
 }
 
 function submit(): void {
@@ -348,6 +363,21 @@ function setOwnerCharacter(value: string): void {
             <button class="btn btn--ghost btn--sm" type="button" @click="removeItem(index)">Убрать</button>
           </div>
         </div>
+      </div>
+
+      <div v-if="heroTitlesEnabled" class="field">
+        <span class="field__label">Звания</span>
+        <div v-for="(title, index) in modelValue.titles" :key="index" class="row" style="align-items: center; gap: .4rem; margin-bottom: .35rem">
+          <input
+            class="input"
+            type="text"
+            :value="title"
+            placeholder="например, убийца волков"
+            @input="updateTitle(index, ($event.target as HTMLInputElement).value)"
+          />
+          <button class="btn btn--ghost btn--sm" type="button" title="Удалить звание" @click="removeTitle(index)">×</button>
+        </div>
+        <button class="btn btn--sm" type="button" @click="addTitle">+ Звание</button>
       </div>
     </template>
 
