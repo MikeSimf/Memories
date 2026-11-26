@@ -33,6 +33,8 @@ import ru.dndmemory.ui.common.ViewUtils;
 import ru.dndmemory.util.DateFormats;
 import ru.dndmemory.util.WikiMarkdown;
 
+import androidx.core.text.HtmlCompat;
+
 /** Чтение пересказа с живыми ссылками [[Имя]]. */
 public class RetellingDetailActivity extends ru.dndmemory.ui.common.BottomNavActivity {
 
@@ -142,8 +144,12 @@ public class RetellingDetailActivity extends ru.dndmemory.ui.common.BottomNavAct
         }
         binding.retellingMeta.setText(meta.toString());
 
-        binding.retellingBody.setText(WikiMarkdown.render(this, retelling.body,
-                name -> nameIndex.idFor(name), this::onWikiLinkClick));
+        if (retelling.body != null && retelling.body.matches("(?s).*<(p|div|h[1-6]|figure|img|blockquote|strong|em|ul|ol)\\b.*")) {
+            binding.retellingBody.setText(HtmlCompat.fromHtml(retelling.body, HtmlCompat.FROM_HTML_MODE_COMPACT));
+        } else {
+            binding.retellingBody.setText(WikiMarkdown.render(this, retelling.body,
+                    name -> nameIndex.idFor(name), this::onWikiLinkClick));
+        }
         binding.retellingBody.setMovementMethod(LinkMovementMethod.getInstance());
         binding.retellingBody.setHighlightColor(Color.TRANSPARENT);
 

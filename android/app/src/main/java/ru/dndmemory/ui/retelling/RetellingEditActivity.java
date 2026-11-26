@@ -97,6 +97,11 @@ public class RetellingEditActivity extends ru.dndmemory.ui.common.BottomNavActiv
             viewModel.publish();
         });
         binding.retellingEditPreviewToggle.setOnClickListener(v -> togglePreview());
+        binding.retellingFormatBold.setOnClickListener(v -> wrapSelection("<b>", "</b>"));
+        binding.retellingFormatItalic.setOnClickListener(v -> wrapSelection("<i>", "</i>"));
+        binding.retellingFormatIndent.setOnClickListener(v -> wrapSelection("<p style=\"text-indent:2em\">", "</p>"));
+        binding.retellingFormatQuote.setOnClickListener(v -> wrapSelection("<blockquote>", "</blockquote>"));
+        binding.retellingFormatHeading.setOnClickListener(v -> wrapSelection("<h2>", "</h2>"));
 
         observe();
     }
@@ -182,6 +187,16 @@ public class RetellingEditActivity extends ru.dndmemory.ui.common.BottomNavActiv
                 calendar.get(Calendar.DAY_OF_MONTH)).show();
     }
 
+    private void wrapSelection(String prefix, String suffix) {
+        int start = Math.max(0, binding.retellingEditBodyInput.getSelectionStart());
+        int end = Math.max(start, binding.retellingEditBodyInput.getSelectionEnd());
+        String value = text(binding.retellingEditBodyInput.getText());
+        String selected = value.substring(start, end);
+        String replacement = prefix + selected + suffix;
+        binding.retellingEditBodyInput.setText(value.substring(0, start) + replacement + value.substring(end));
+        binding.retellingEditBodyInput.setSelection(start + prefix.length(), start + prefix.length() + selected.length());
+    }
+
     private void togglePreview() {
         previewShown = !previewShown;
         View bodyContainer = (View) binding.retellingEditBodyInput.getParent();
@@ -191,12 +206,16 @@ public class RetellingEditActivity extends ru.dndmemory.ui.common.BottomNavActiv
                 ? R.string.action_edit_body : R.string.action_preview);
         if (previewShown) {
             String source = text(binding.retellingEditBodyInput.getText());
-            binding.retellingEditPreview.setText(WikiMarkdown.render(this, source,
-                    name -> nameIndex.idFor(name), (targetId, name, resolved) -> {
-                        if (resolved && targetId != null) {
-                            Nav.openEntity(this, campaignId, targetId);
-                        }
-                    }));
+            if (source.matches("(?s).*<(p|div|h[1-6]|figure|img|blockquote|strong|em|ul|ol)\\b.*")) {
+                binding.retellingEditPreview.setText(androidx.core.text.HtmlCompat.fromHtml(source, androidx.core.text.HtmlCompat.FROM_HTML_MODE_COMPACT));
+            } else {
+                binding.retellingEditPreview.setText(WikiMarkdown.render(this, source,
+                        name -> nameIndex.idFor(name), (targetId, name, resolved) -> {
+                            if (resolved && targetId != null) {
+                                Nav.openEntity(this, campaignId, targetId);
+                            }
+                        }));
+            }
             binding.retellingEditPreview.setMovementMethod(LinkMovementMethod.getInstance());
             binding.retellingEditPreview.setHighlightColor(Color.TRANSPARENT);
         }

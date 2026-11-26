@@ -63,6 +63,24 @@
                     android:inputType="none" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button android:id="@+id/retelling_format_bold" style="?attr/materialButtonOutlinedStyle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="48dp" android:text="Ж" android:textStyle="bold" />
+                    <Button android:id="@+id/retelling_format_italic" style="?attr/materialButtonOutlinedStyle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="48dp" android:text="К" android:textStyle="italic" />
+                    <Button android:id="@+id/retelling_format_indent" style="?attr/materialButtonOutlinedStyle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="48dp" android:text="¶" />
+                    <Button android:id="@+id/retelling_format_quote" style="?attr/materialButtonOutlinedStyle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="48dp" android:text="«»" />
+                    <Button android:id="@+id/retelling_format_heading" style="?attr/materialButtonOutlinedStyle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="48dp" android:text="H2" />
+                </LinearLayout>
+            </HorizontalScrollView>
+
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
