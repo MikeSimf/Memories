@@ -94,9 +94,11 @@ const heroPoints = computed(() =>
   mapPoints.value.filter((point) => !point.wholeTeam && point.heroId && selectedHeroIds.value.includes(point.heroId)),
 )
 const visiblePoints = computed(() => {
-  if (showTeam.value) return teamPoints.value
-  if (selectedHeroIds.value.length === 0) return []
-  return mapPoints.value.filter((point) => point.wholeTeam || (point.heroId && selectedHeroIds.value.includes(point.heroId)))
+  if (!showTeam.value && selectedHeroIds.value.length === 0) return []
+  return mapPoints.value.filter((point) =>
+    (point.wholeTeam && showTeam.value)
+    || (!point.wholeTeam && point.heroId && selectedHeroIds.value.includes(point.heroId)),
+  )
 })
 const teamColor = computed(() => campaign.campaign?.teamColor || '#8a4b2a')
 
@@ -110,16 +112,14 @@ function segments(points: ChroniclePointDto[]): Array<{ x1: number; y1: number; 
 }
 
 const teamSegments = computed(() => (showTeam.value ? segments(teamPoints.value) : []))
-const heroRoutes = computed(() => showTeam.value
-  ? []
-  : heroes.value
-      .filter((hero) => selectedHeroIds.value.includes(hero.id))
-      .map((hero) => ({
-        hero,
-        points: mapPoints.value.filter((point) => point.wholeTeam || point.heroId === hero.id),
-        color: (hero as unknown as { color?: string | null }).color || '#2e7d32',
-      }))
-      .map((route) => ({ ...route, segments: segments(route.points) })))
+const heroRoutes = computed(() => heroes.value
+  .filter((hero) => selectedHeroIds.value.includes(hero.id))
+  .map((hero) => ({
+    hero,
+    points: mapPoints.value.filter((point) => point.wholeTeam || point.heroId === hero.id),
+    color: (hero as unknown as { color?: string | null }).color || '#2e7d32',
+  }))
+  .map((route) => ({ ...route, segments: segments(route.points) })))
 
 function segmentVisible(a: ChroniclePointDto, b: ChroniclePointDto): boolean {
   return !b.teleport

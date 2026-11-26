@@ -406,7 +406,7 @@ async function keepLocal(): Promise<void> {
           <div v-for="row in personRows" :key="row.label" class="person-row">
             <dt class="field__label">{{ row.label }}</dt>
             <dd class="person-row__value">
-              <span v-if="row.label === 'Цвет' && row.value.startsWith('#')" class="hero-color-dot" :style="{ background: row.value }" />
+              <span v-if="row.label === 'Цвет' && row.value.startsWith('#')" class="hero-color-square" :style="{ background: row.value }" />
               <span>{{ row.value }}</span>
               <svg
                 v-if="row.icon === 'race'"
@@ -666,7 +666,7 @@ async function keepLocal(): Promise<void> {
   gap: 0.5rem;
   margin: 0;
 }
-.hero-color-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: middle; border: 1px solid var(--border); }
+.hero-color-square { display: inline-block; width: 16px; height: 16px; border-radius: 4px; margin-right: 6px; vertical-align: middle; border: 1px solid var(--border); }
 .person-row__icon {
   width: 20px;
   height: 20px;

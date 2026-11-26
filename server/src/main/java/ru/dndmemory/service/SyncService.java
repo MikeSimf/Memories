@@ -209,6 +209,9 @@ public class SyncService {
             if (payload.has("sessionDate")) {
                 server.setSessionDate(parseDate(payload.get("sessionDate")));
             }
+            if (payload.has("chronicleId")) {
+                server.setChronicleId(uuidOrNull(payload.get("chronicleId")));
+            }
         }
         server.setStatus(RetellingStatus.PUBLISHED);
         server.setUpdatedBy(userId);
