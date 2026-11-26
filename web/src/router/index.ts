@@ -129,6 +129,12 @@ const routes: RouteRecordRaw[] = [
         redirect: (to) => ({ name: 'campaign-tab', params: { campaignId: to.params.campaignId, tab: 'characters' } }),
       },
       {
+        path: 'chronicles/:chronicleId',
+        name: 'campaign-chronicle',
+        component: () => import('@/views/ChronicleDetailView.vue'),
+        meta: { title: 'Хроника' },
+      },
+      {
         path: 'chronicles',
         name: 'campaign-chronicles',
         component: () => import('@/views/ChroniclesView.vue'),

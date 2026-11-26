@@ -80,15 +80,7 @@ const details = computed<Array<{ label: string; value: string }>>(() => {
   const item = entity.value
   if (!item) return []
   if (item.objectType === 'HERO') {
-    const rows: Array<{ label: string; value: string }> = []
-    rows.push({ label: 'Статус', value: item.alive === true ? 'жив' : item.alive === false ? 'мёртв' : 'неизвестно' })
-    rows.push({ label: 'Пол', value: genderLabel(item.gender) })
-    if (item.race) rows.push({ label: 'Раса', value: item.race })
-    if (item.klass) rows.push({ label: 'Класс', value: item.klass })
-    if (import.meta.env.VITE_HERO_TITLES === '1' && (item.titles ?? []).length > 0) rows.push({ label: 'Звания', value: (item.titles ?? []).join(', ') })
-    const member = campaign.members.find((m) => m.linkedHeroId === item.id && m.status !== 'REMOVED')
-    rows.push({ label: 'Игрок', value: member?.displayName ?? item.playerName ?? 'не указан' })
-    return rows
+    return []
   }
   if (item.objectType === 'CHARACTER') {
     const rows: Array<{ label: string; value: string }> = []
@@ -131,6 +123,14 @@ const personRows = computed(() => {
     { label: 'Пол', value: genderLabel(item.gender), icon: 'gender' },
     { label: 'Статус', value: item.alive === true ? 'жив' : item.alive === false ? 'мёртв' : 'неизвестно', icon: null },
   ]
+  if (item.objectType === 'HERO') {
+    const member = campaign.members.find((m) => m.linkedHeroId === item.id && m.status !== 'REMOVED')
+    rows.push({ label: 'Игрок', value: member?.displayName ?? item.playerName ?? 'не указан', icon: null })
+    rows.push({ label: 'Цвет', value: item.color || 'не задан', icon: null })
+    if (import.meta.env.VITE_HERO_TITLES === '1' && (item.titles ?? []).length > 0) {
+      rows.push({ label: 'Звания', value: (item.titles ?? []).join(', '), icon: null })
+    }
+  }
   if (item.objectType === 'CHARACTER') {
     rows.push({ label: 'Кратко', value: item.shortDescription || 'Не заполнено', icon: null })
   }
@@ -406,6 +406,7 @@ async function keepLocal(): Promise<void> {
           <div v-for="row in personRows" :key="row.label" class="person-row">
             <dt class="field__label">{{ row.label }}</dt>
             <dd class="person-row__value">
+              <span v-if="row.label === 'Цвет' && row.value.startsWith('#')" class="hero-color-dot" :style="{ background: row.value }" />
               <span>{{ row.value }}</span>
               <svg
                 v-if="row.icon === 'race'"
@@ -665,6 +666,7 @@ async function keepLocal(): Promise<void> {
   gap: 0.5rem;
   margin: 0;
 }
+.hero-color-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: middle; border: 1px solid var(--border); }
 .person-row__icon {
   width: 20px;
   height: 20px;

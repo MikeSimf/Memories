@@ -93,6 +93,11 @@ const teamPoints = computed(() => mapPoints.value.filter((point) => point.wholeT
 const heroPoints = computed(() =>
   mapPoints.value.filter((point) => !point.wholeTeam && point.heroId && selectedHeroIds.value.includes(point.heroId)),
 )
+const visiblePoints = computed(() => {
+  if (showTeam.value) return teamPoints.value
+  if (selectedHeroIds.value.length === 0) return []
+  return mapPoints.value.filter((point) => point.wholeTeam || (point.heroId && selectedHeroIds.value.includes(point.heroId)))
+})
 const teamColor = computed(() => campaign.campaign?.teamColor || '#8a4b2a')
 
 function segments(points: ChroniclePointDto[]): Array<{ x1: number; y1: number; x2: number; y2: number }> {
@@ -104,23 +109,32 @@ function segments(points: ChroniclePointDto[]): Array<{ x1: number; y1: number; 
   return result
 }
 
-const teamSegments = computed(() => segments(teamPoints.value))
-const heroRoutes = computed(() => heroes.value
-  .filter((hero) => selectedHeroIds.value.includes(hero.id))
-  .map((hero) => ({
-    hero,
-    points: mapPoints.value.filter((point) => point.wholeTeam || point.heroId === hero.id),
-    color: (hero as unknown as { color?: string | null }).color || '#2e7d32',
-  }))
-  .map((route) => ({ ...route, segments: segments(route.points) })))
+const teamSegments = computed(() => (showTeam.value ? segments(teamPoints.value) : []))
+const heroRoutes = computed(() => showTeam.value
+  ? []
+  : heroes.value
+      .filter((hero) => selectedHeroIds.value.includes(hero.id))
+      .map((hero) => ({
+        hero,
+        points: mapPoints.value.filter((point) => point.wholeTeam || point.heroId === hero.id),
+        color: (hero as unknown as { color?: string | null }).color || '#2e7d32',
+      }))
+      .map((route) => ({ ...route, segments: segments(route.points) })))
 
 function segmentVisible(a: ChroniclePointDto, b: ChroniclePointDto): boolean {
   return !b.teleport
 }
 
 function pointStyle(point: ChroniclePointDto): Record<string, string> {
-  return { left: `${screenX(point.x)}px`, top: `${screenY(point.y)}px` }
+  return {
+    left: `${screenX(point.x)}px`,
+    top: `${screenY(point.y)}px`,
+    background: point.wholeTeam ? teamColor.value : (point.heroColor || '#2e7d32'),
+  }
 }
+
+watch(rangeStart, (value) => { if (value > rangeEnd.value) rangeEnd.value = value })
+watch(rangeEnd, (value) => { if (value < rangeStart.value) rangeStart.value = value })
 
 const available = computed(() => {
   const used = new Set((map.value?.markers ?? []).map((marker) => marker.entityId))
@@ -401,7 +415,7 @@ watch(() => map.value?.imageFileId, async () => {
               <line v-for="(line, index) in route.segments" :key="route.hero.id + '-' + index" :x1="line.x1" :y1="line.y1" :x2="line.x2" :y2="line.y2" :stroke="route.color" stroke-width="2.5" stroke-linecap="round" opacity=".85" />
             </template>
           </svg>
-          <span v-for="point in mapPoints" :key="'point-' + point.id" class="map-chronicle-point" :style="pointStyle(point)" :class="{ 'map-chronicle-point--hero': !point.wholeTeam }" />
+          <span v-for="point in visiblePoints" :key="'point-' + point.id" class="map-chronicle-point" :style="pointStyle(point)" :class="{ 'map-chronicle-point--hero': !point.wholeTeam }" />
           <div v-if="hovered" class="map-hover" :style="{ left: `${screenX(hovered.x)}px`, top: `${screenY(hovered.y)}px` }">{{ hovered.text }}</div>
         </div>
       </div>
@@ -449,9 +463,11 @@ watch(() => map.value?.imageFileId, async () => {
           <strong>Хроники</strong>
           <span class="faint">{{ selectedChronicles.map((item) => item.name).join(' → ') }}</span>
         </div>
-        <div class="chronicle-strip__ranges">
-          <label>начало <input v-model.number="rangeStart" type="range" min="0" :max="Math.max(0, chronicles.length - 1)" step="1" /></label>
-          <label>конец <input v-model.number="rangeEnd" type="range" min="0" :max="Math.max(0, chronicles.length - 1)" step="1" /></label>
+        <div class="range-track">
+          <div class="range-track__rail" />
+          <div class="range-track__fill" :style="{ left: chronicles.length > 1 ? (rangeStart / (chronicles.length - 1) * 100) + '%' : '0%', right: chronicles.length > 1 ? (100 - rangeEnd / (chronicles.length - 1) * 100) + '%' : '0%' }" />
+          <input v-model.number="rangeStart" type="range" min="0" :max="Math.max(0, chronicles.length - 1)" step="1" aria-label="Начало диапазона" />
+          <input v-model.number="rangeEnd" type="range" min="0" :max="Math.max(0, chronicles.length - 1)" step="1" aria-label="Конец диапазона" />
         </div>
         <div class="row chronicle-strip__checks">
           <label><input v-model="showTeam" type="checkbox" /> вся команда</label>
@@ -547,9 +563,12 @@ watch(() => map.value?.imageFileId, async () => {
 .map-modal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 20px; background: rgba(0,0,0,.45); }
 .map-modal__card { width: min(420px, 100%); }
 .chronicle-strip { margin-top: 12px; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; background: var(--bg-elev); }
-.chronicle-strip__ranges { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.chronicle-strip__ranges label { display: flex; align-items: center; gap: 8px; font-size: .85rem; }
-.chronicle-strip__ranges input { flex: 1; }
+.range-track { position: relative; height: 34px; margin: 10px 2px 4px; }
+.range-track__rail { position: absolute; left: 0; right: 0; top: 15px; height: 4px; border-radius: 4px; background: var(--border); }
+.range-track__fill { position: absolute; top: 15px; height: 4px; border-radius: 4px; background: var(--accent); }
+.range-track input[type="range"] { position: absolute; left: 0; width: 100%; top: 0; height: 34px; margin: 0; background: transparent; pointer-events: none; -webkit-appearance: none; appearance: none; }
+.range-track input[type="range"]::-webkit-slider-thumb { pointer-events: auto; -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); cursor: pointer; }
+.range-track input[type="range"]::-moz-range-thumb { pointer-events: auto; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); cursor: pointer; }
 .chronicle-strip__checks { flex-wrap: wrap; gap: 10px; margin-top: 8px; font-size: .85rem; }
 .map-routes { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
 .map-chronicle-point { position: absolute; z-index: 4; width: 10px; height: 10px; border-radius: 50%; transform: translate(-50%, -50%); background: #8a4b2a; border: 2px solid #fff; box-shadow: 0 1px 4px #0007; pointer-events: none; }

@@ -29,6 +29,12 @@ async function load(): Promise<void> {
   }
 }
 
+function chronicleDate(value: string | null): string {
+  if (!value) return 'без даты'
+  const [year, month, day] = value.slice(0, 10).split('-')
+  return `${day}.${month}.${year}`
+}
+
 function startCreate(): void {
   editing.value = { id: '', name: '', date: todayIso(), retellings: [], points: [] }
   name.value = ''
@@ -81,30 +87,15 @@ onMounted(load)
     <EmptyState v-else-if="chronicles.length === 0" title="Хроник пока нет" hint="Создайте хронику сессии, привяжите к ней пересказы и точки на картах." />
 
     <div v-else class="stack">
-      <article v-for="item in chronicles" :key="item.id" class="card stack">
-        <div class="row row--between">
-          <h3 style="margin: 0">{{ item.name }}</h3>
-          <span class="faint">{{ item.date || 'без даты' }}</span>
+      <article v-for="item in chronicles" :key="item.id" class="card row row--between chronicle-row">
+        <div class="stack" style="gap: .2rem">
+          <strong>{{ item.name }}</strong>
+          <span class="faint">{{ chronicleDate(item.date) }}</span>
         </div>
-        <div v-if="item.retellings.length > 0">
-          <span class="field__label">Пересказы</span>
-          <ul>
-            <li v-for="retelling in item.retellings" :key="retelling.id">
-              <RouterLink :to="{ name: 'retelling-detail', params: { campaignId, retellingId: retelling.id } }">{{ retelling.title || 'Без названия' }}</RouterLink>
-            </li>
-          </ul>
-        </div>
-        <p v-else class="faint">Пересказов с этой хроникой нет.</p>
-        <div v-if="item.points.length > 0">
-          <span class="field__label">Координаты</span>
-          <ul>
-            <li v-for="point in item.points" :key="point.id">
-              {{ point.mapName }} · {{ point.wholeTeam ? 'вся команда' : point.heroName }} · порядок {{ point.order }}<span v-if="point.teleport"> · телепорт</span>
-            </li>
-          </ul>
-        </div>
-        <p v-else class="faint">Точек на картах нет.</p>
-        <div class="row">
+        <div class="row chronicle-row__marks">
+          <span :title="item.retellings.length > 0 ? 'есть истории' : 'нет историй'">📖 {{ item.retellings.length }}</span>
+          <span :title="item.points.length > 0 ? 'есть координаты' : 'нет координат'">📍 {{ item.points.length }}</span>
+          <RouterLink class="btn btn--sm" :to="{ name: 'campaign-chronicle', params: { campaignId, chronicleId: item.id } }">Открыть</RouterLink>
           <button class="btn btn--sm" type="button" @click="startEdit(item)">Изменить</button>
           <button class="btn btn--danger btn--sm" type="button" @click="remove(item)">Удалить</button>
         </div>

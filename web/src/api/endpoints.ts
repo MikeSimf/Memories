@@ -621,6 +621,9 @@ export const chroniclesApi = {
   list(campaignId: string): Promise<import('./types').ChronicleDto[]> {
     return apiClient.request({ path: `/api/campaigns/${encodeURIComponent(campaignId)}/chronicles` })
   },
+  get(campaignId: string, id: string): Promise<import('./types').ChronicleDto> {
+    return apiClient.request({ path: `/api/campaigns/${encodeURIComponent(campaignId)}/chronicles/${encodeURIComponent(id)}` })
+  },
   create(campaignId: string, body: { name: string; date: string | null }): Promise<import('./types').ChronicleDto> {
     return apiClient.request({ method: 'POST', path: `/api/campaigns/${encodeURIComponent(campaignId)}/chronicles`, body })
   },

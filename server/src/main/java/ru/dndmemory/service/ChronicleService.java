@@ -68,7 +68,7 @@ public class ChronicleService {
     public List<ChronicleDto> list(UUID campaignId, UUID userId) {
         permissions.requireMember(campaignId, userId);
         List<ChronicleDto> result = new ArrayList<>();
-        jdbc.query("select * from chronicles where campaign_id = ? and deleted = false order by session_date nulls last, lower(name)",
+        jdbc.query("select * from chronicles where campaign_id = ? and deleted = false order by session_date desc nulls last, lower(name)",
                 rs -> {
                     ChronicleDto dto = new ChronicleDto();
                     dto.id = rs.getString("id");

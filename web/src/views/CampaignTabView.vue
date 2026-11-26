@@ -470,6 +470,7 @@ const tabProgressLabel = computed(() =>
                 :class="object.objectType === 'CHARACTER' || object.objectType === 'HERO' ? (object.alive === true ? 'life-dot--alive' : object.alive === false ? 'life-dot--dead' : 'life-dot--unknown') : ((object as any).intact === false ? 'life-dot--dead' : 'life-dot--alive')"
                 :title="object.objectType === 'CHARACTER' || object.objectType === 'HERO' ? (object.alive === true ? 'жив' : object.alive === false ? 'мёртв' : 'неизвестно') : ((object as any).intact === false ? 'разрушено' : 'целое')"
               />
+              <span v-if="object.objectType === 'HERO' && object.color" class="hero-color-dot" :style="{ background: object.color }" :title="'Цвет героя: ' + object.color" />
               {{ object.name }}
               <span v-if="object.dirty === 1" class="dirty-dot" title="Есть неотправленная правка" />
             </h3>
@@ -556,6 +557,7 @@ const tabProgressLabel = computed(() =>
 .card__head .card__title {
   margin: 0;
 }
+.hero-color-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; border: 1px solid var(--border); }
 .tab-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 1.25rem; align-items: start; }
 .filters-panel { position: sticky; top: 1rem; display: grid; gap: .45rem; padding: 1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
 .filters-panel h3 { margin: 0 0 .35rem; font-size: 1rem; }
