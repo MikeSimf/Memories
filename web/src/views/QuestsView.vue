@@ -58,6 +58,10 @@ onMounted(load)
       <article v-for="quest in sortedQuests" :key="quest.id" class="card stack">
         <RouterLink :to="{ name: 'quest-detail', params: { campaignId, questId: quest.id } }"><strong>{{ quest.name }}</strong></RouterLink>
         <p class="faint">{{ quest.description || 'Без описания' }}</p>
+        <p class="faint">
+          Автор: {{ quest.createdByName || 'неизвестно' }}
+          <template v-if="quest.updatedByName && quest.updatedByName !== quest.createdByName"> · изменил(а): {{ quest.updatedByName }}</template>
+        </p>
         <div class="row">
           <RouterLink class="btn btn--sm" :to="{ name: 'quest-detail', params: { campaignId, questId: quest.id } }">Открыть</RouterLink>
           <RouterLink v-if="campaign.canCreate('LOCATION')" class="btn btn--sm" :to="{ name: 'quest-edit', params: { campaignId, questId: quest.id } }">Изменить</RouterLink>

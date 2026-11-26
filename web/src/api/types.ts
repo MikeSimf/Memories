@@ -1022,6 +1022,8 @@ export interface QuestCommentDto {
   text: string
   createdByName: string | null
   createdAt: string
+  updatedByName: string | null
+  updatedAt: string
 }
 
 /** Квест кампании. */
@@ -1030,6 +1032,9 @@ export interface QuestDto {
   name: string
   description: string | null
   avatarFileId: string | null
+  createdByName: string | null
+  updatedByName: string | null
+  createdAt: string
   updatedAt: string
   comments: QuestCommentDto[]
 }

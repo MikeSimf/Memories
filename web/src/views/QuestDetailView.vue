@@ -55,11 +55,19 @@ onMounted(load)
     <template v-if="quest">
       <div v-if="quest.avatarFileId" style="max-width: 180px"><EntityImage :file-id="quest.avatarFileId" alt="" /></div>
       <div class="card"><MarkupText :text="quest.description || 'Описание не заполнено.'" /></div>
+      <p class="faint">
+        Автор: {{ quest.createdByName || 'неизвестно' }} · создан {{ quest.createdAt }}
+        <template v-if="quest.updatedByName && quest.updatedByName !== quest.createdByName"> · изменил(а): {{ quest.updatedByName }}, {{ quest.updatedAt }}</template>
+      </p>
       <div class="card stack">
         <h2>Комментарии</h2>
         <p v-if="quest.comments.length === 0" class="faint">Комментариев пока нет.</p>
         <div v-for="comment in quest.comments" :key="comment.id" class="comment-row">
-          <div class="row row--between"><strong>{{ comment.createdByName || 'Участник' }}</strong><span class="faint">{{ comment.createdAt }}</span></div>
+          <div class="row row--between">
+            <strong>{{ comment.updatedByName || comment.createdByName || 'Участник' }}</strong>
+            <span class="faint">{{ comment.updatedAt || comment.createdAt }}</span>
+          </div>
+          <div v-if="comment.updatedByName" class="faint">изменён</div>
           <template v-if="editingId === comment.id">
             <textarea v-model="editingText" class="input" rows="3" />
             <div class="row"><button class="btn btn--sm btn--primary" type="button" @click="saveComment(comment.id)">Сохранить</button><button class="btn btn--sm" type="button" @click="editingId = null">Отмена</button></div>

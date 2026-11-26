@@ -372,7 +372,6 @@ function setOwnerCharacter(value: string): void {
             class="input"
             type="text"
             :value="title"
-            placeholder="например, убийца волков"
             @input="updateTitle(index, ($event.target as HTMLInputElement).value)"
           />
           <button class="btn btn--ghost btn--sm" type="button" title="Удалить звание" @click="removeTitle(index)">×</button>

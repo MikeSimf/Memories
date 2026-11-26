@@ -28,6 +28,8 @@ public class QuestService {
         public String text;
         public String createdByName;
         public String createdAt;
+        public String updatedByName;
+        public String updatedAt;
     }
 
     public static class QuestDto {
@@ -35,6 +37,9 @@ public class QuestService {
         public String name;
         public String description;
         public String avatarFileId;
+        public String createdByName;
+        public String updatedByName;
+        public String createdAt;
         public String updatedAt;
         public List<CommentDto> comments = new ArrayList<>();
     }
@@ -53,13 +58,18 @@ public class QuestService {
     public List<QuestDto> list(UUID campaignId, UUID userId) {
         requireMember(campaignId, userId);
         List<QuestDto> result = new ArrayList<>();
-        jdbc.query("select * from quests where campaign_id = ? and deleted = false order by lower(name)",
+        jdbc.query("select q.*, cu.display_name as created_by_name, uu.display_name as updated_by_name from quests q "
+                        + "left join users cu on cu.id = q.created_by left join users uu on uu.id = q.updated_by "
+                        + "where q.campaign_id = ? and q.deleted = false order by lower(q.name)",
                 rs -> {
                     QuestDto dto = new QuestDto();
                     dto.id = rs.getString("id");
                     dto.name = rs.getString("name");
                     dto.description = rs.getString("description");
                     dto.avatarFileId = rs.getString("avatar_file_id");
+                    dto.createdByName = rs.getString("created_by_name");
+                    dto.updatedByName = rs.getString("updated_by_name");
+                    dto.createdAt = rs.getString("created_at");
                     dto.updatedAt = rs.getString("updated_at");
                     result.add(dto);
                 }, campaignId);
@@ -69,7 +79,9 @@ public class QuestService {
     @Transactional(readOnly = true)
     public QuestDto get(UUID campaignId, UUID questId, UUID userId) {
         requireMember(campaignId, userId);
-        QuestDto dto = jdbc.query("select * from quests where id = ? and campaign_id = ? and deleted = false",
+        QuestDto dto = jdbc.query("select q.*, cu.display_name as created_by_name, uu.display_name as updated_by_name "
+                        + "from quests q left join users cu on cu.id = q.created_by left join users uu on uu.id = q.updated_by "
+                        + "where q.id = ? and q.campaign_id = ? and q.deleted = false",
                 rs -> {
                     if (!rs.next()) return null;
                     QuestDto x = new QuestDto();
@@ -77,18 +89,25 @@ public class QuestService {
                     x.name = rs.getString("name");
                     x.description = rs.getString("description");
                     x.avatarFileId = rs.getString("avatar_file_id");
+                    x.createdByName = rs.getString("created_by_name");
+                    x.updatedByName = rs.getString("updated_by_name");
+                    x.createdAt = rs.getString("created_at");
                     x.updatedAt = rs.getString("updated_at");
                     return x;
                 }, questId, campaignId);
         if (dto == null) throw ApiException.notFound("Квест не найден");
-        jdbc.query("select c.*, u.display_name from quest_comments c left join users u on u.id = c.created_by "
+        jdbc.query("select c.*, cu.display_name as created_by_name, uu.display_name as updated_by_name "
+                        + "from quest_comments c left join users cu on cu.id = c.created_by "
+                        + "left join users uu on uu.id = c.updated_by "
                         + "where c.quest_id = ? and c.deleted = false order by c.created_at",
                 rs -> {
                     CommentDto comment = new CommentDto();
                     comment.id = rs.getString("id");
                     comment.text = rs.getString("text");
-                    comment.createdByName = rs.getString("display_name");
+                    comment.createdByName = rs.getString("created_by_name");
                     comment.createdAt = rs.getString("created_at");
+                    comment.updatedByName = rs.getString("updated_by_name");
+                    comment.updatedAt = rs.getString("updated_at");
                     dto.comments.add(comment);
                 }, questId);
         return dto;
@@ -139,8 +158,8 @@ public class QuestService {
     @Transactional
     public void updateComment(UUID campaignId, UUID questId, UUID commentId, UUID userId, CommentRequest request) {
         requireWriter(campaignId, userId);
-        jdbc.update("update quest_comments set text = ?, updated_at = now() where id = ? and quest_id = ?",
-                request.text == null ? "" : request.text.trim(), commentId, questId);
+        jdbc.update("update quest_comments set text = ?, updated_by = ?, updated_at = now() where id = ? and quest_id = ?",
+                request.text == null ? "" : request.text.trim(), userId, commentId, questId);
     }
 
     @Transactional
