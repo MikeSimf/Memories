@@ -8,6 +8,10 @@ import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.SeekBar;
+
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.slider.RangeSlider;
 import android.widget.Toast;
 
 import ru.dndmemory.data.remote.dto.ChronicleDto;
@@ -42,10 +46,9 @@ public class MapViewActivity extends BaseCampaignActivity {
     private boolean showNames;
     private final List<ChronicleDto> chronicles = new ArrayList<>();
     private LinearLayout chroniclePanel;
-    private LinearLayout chronicleChecks;
+    private ChipGroup chronicleChecks;
     private TextView chronicleLabel;
-    private SeekBar rangeStartBar;
-    private SeekBar rangeEndBar;
+    private RangeSlider rangeSlider;
     private int rangeStart;
     private int rangeEnd;
     private boolean showTeam = true;
@@ -121,35 +124,27 @@ public class MapViewActivity extends BaseCampaignActivity {
         chronicleLabel = new TextView(this);
         chronicleLabel.setTextSize(13);
         panel.addView(chronicleLabel);
-        rangeStartBar = new SeekBar(this);
-        rangeEndBar = new SeekBar(this);
-        rangeStartBar.setOnSeekBarChangeListener(new SimpleSeekListener() {
-            @Override public void onProgressChanged(SeekBar seekBar, int value, boolean fromUser) {
-                rangeStart = value;
-                if (rangeStart > rangeEnd) { rangeEnd = rangeStart; rangeEndBar.setProgress(rangeEnd); }
-                updateChronicleLabel();
-                rebuildRoutes();
-            }
+        rangeSlider = new RangeSlider(this);
+        rangeSlider.setValueFrom(0f);
+        rangeSlider.setValueTo(1f);
+        rangeSlider.setValues(0f, 1f);
+        rangeSlider.addOnChangeListener((slider, value, fromUser) -> {
+            java.util.List<Float> values = slider.getValues();
+            if (values.size() < 2) return;
+            rangeStart = Math.round(values.get(0));
+            rangeEnd = Math.round(values.get(1));
+            updateChronicleLabel();
+            rebuildRoutes();
         });
-        rangeEndBar.setOnSeekBarChangeListener(new SimpleSeekListener() {
-            @Override public void onProgressChanged(SeekBar seekBar, int value, boolean fromUser) {
-                rangeEnd = value;
-                if (rangeEnd < rangeStart) { rangeStart = rangeEnd; rangeStartBar.setProgress(rangeStart); }
-                updateChronicleLabel();
-                rebuildRoutes();
-            }
-        });
-        panel.addView(rangeStartBar);
-        panel.addView(rangeEndBar);
-        chronicleChecks = new LinearLayout(this);
-        chronicleChecks.setOrientation(LinearLayout.HORIZONTAL);
-        panel.addView(new HorizontalScrollView(this) {{ addView(chronicleChecks); }});
+        panel.addView(rangeSlider, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        chronicleChecks = new ChipGroup(this);
+        chronicleChecks.setSingleLine(false);
+        chronicleChecks.setChipSpacingHorizontal((int) (6 * getResources().getDisplayMetrics().density));
+        chronicleChecks.setChipSpacingVertical((int) (4 * getResources().getDisplayMetrics().density));
+        panel.addView(chronicleChecks, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         return panel;
-    }
-
-    private abstract static class SimpleSeekListener implements SeekBar.OnSeekBarChangeListener {
-        @Override public void onStartTrackingTouch(SeekBar seekBar) { }
-        @Override public void onStopTrackingTouch(SeekBar seekBar) { }
     }
 
     private void applyChronicles(@NonNull List<ChronicleDto> items) {
@@ -170,23 +165,25 @@ public class MapViewActivity extends BaseCampaignActivity {
         if (!hasPoints) { canvas.setRoutes(new ArrayList<>()); return; }
         rangeStart = 0;
         rangeEnd = Math.max(0, chronicles.size() - 1);
-        rangeStartBar.setMax(Math.max(0, chronicles.size() - 1));
-        rangeEndBar.setMax(Math.max(0, chronicles.size() - 1));
-        rangeStartBar.setProgress(rangeStart);
-        rangeEndBar.setProgress(rangeEnd);
-        CheckBox team = new CheckBox(this);
+        rangeSlider.setValueFrom(0f);
+        rangeSlider.setValueTo(Math.max(1, chronicles.size() - 1));
+        if (chronicles.size() > 1) rangeSlider.setValues((float) rangeStart, (float) rangeEnd);
+        else rangeSlider.setValues(0f, 1f);
+        Chip team = new Chip(this);
         team.setText(R.string.chronicle_team);
+        team.setCheckable(true);
         team.setChecked(true);
         team.setOnCheckedChangeListener((button, checked) -> { showTeam = checked; rebuildRoutes(); });
         chronicleChecks.addView(team);
         for (java.util.Map.Entry<String, String[]> entry : heroes.entrySet()) {
-            CheckBox box = new CheckBox(this);
-            box.setText(entry.getValue()[0] == null ? "герой" : entry.getValue()[0]);
-            box.setOnCheckedChangeListener((button, checked) -> {
+            Chip chip = new Chip(this);
+            chip.setText(entry.getValue()[0] == null ? "герой" : entry.getValue()[0]);
+            chip.setCheckable(true);
+            chip.setOnCheckedChangeListener((button, checked) -> {
                 if (checked) selectedHeroes.add(entry.getKey()); else selectedHeroes.remove(entry.getKey());
                 rebuildRoutes();
             });
-            chronicleChecks.addView(box);
+            chronicleChecks.addView(chip);
         }
         updateChronicleLabel();
         rebuildRoutes();
