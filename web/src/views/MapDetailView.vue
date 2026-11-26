@@ -81,10 +81,12 @@ const markerGroups = computed(() => {
 const selectedChronicles = computed(() => chronicles.value.slice(rangeStart.value, rangeEnd.value + 1))
 const heroes = computed(() => campaign.objects.filter((o) => o.objectType === 'HERO' && !o.deleted))
 const mapPoints = computed<ChroniclePointDto[]>(() =>
-  selectedChronicles.value
-    .flatMap((chronicle) => chronicle.points)
-    .filter((point) => point.mapId === mapId)
-    .sort((a, b) => a.order - b.order),
+  selectedChronicles.value.flatMap((chronicle) =>
+    chronicle.points
+      .filter((point) => point.mapId === mapId)
+      .slice()
+      .sort((a, b) => a.order - b.order),
+  ),
 )
 const hasMapPoints = computed(() => chronicles.value.some((chronicle) => chronicle.points.some((point) => point.mapId === mapId)))
 const teamPoints = computed(() => mapPoints.value.filter((point) => point.wholeTeam))
