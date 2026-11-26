@@ -94,6 +94,19 @@ public final class Nav {
         context.startActivity(intent);
     }
 
+    public static void openChronicles(@NonNull Context context, @NonNull String campaignId) {
+        android.content.Intent intent = new android.content.Intent(context, ru.dndmemory.ui.chronicle.ChroniclesActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        context.startActivity(intent);
+    }
+
+    public static void openChronicle(@NonNull Context context, @NonNull String campaignId, @NonNull String chronicleId) {
+        android.content.Intent intent = new android.content.Intent(context, ru.dndmemory.ui.chronicle.ChronicleDetailActivity.class);
+        intent.putExtra(Extras.CAMPAIGN_ID, campaignId);
+        intent.putExtra("chronicleId", chronicleId);
+        context.startActivity(intent);
+    }
+
     public static void openQuests(@NonNull Context context, @NonNull String campaignId) {
         android.content.Intent intent = new android.content.Intent(context, ru.dndmemory.ui.quest.QuestsActivity.class);
         intent.putExtra(Extras.CAMPAIGN_ID, campaignId);

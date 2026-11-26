@@ -121,6 +121,14 @@
             android:exported="false" />
 
         <activity
+            android:name=".ui.chronicle.ChroniclesActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.chronicle.ChronicleDetailActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.quest.QuestsActivity"
             android:exported="false" />
 

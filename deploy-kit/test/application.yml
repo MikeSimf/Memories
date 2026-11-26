@@ -13,11 +13,11 @@ spring:
 dnd:
   # Проверка обновлений приложения: эти данные отдаёт GET /api/app/latest
   app:
-    latest-version-code: 98
-    latest-version-name: 1.0.97
+    latest-version-code: 99
+    latest-version-name: 1.0.98
     min-version-code: 4
     apk-url: https://test-dnd-memory.imikea.ru/dnd-memory.apk
-    notes: "Магия для всех предметов, статус героев"
+    notes: "Хроника и маршруты на карте"
     versions:
       - version: "1.0.93"
         date: "2026-11-17"

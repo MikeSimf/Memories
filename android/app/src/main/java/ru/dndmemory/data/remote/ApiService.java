@@ -167,6 +167,15 @@ public interface ApiService {
             @retrofit2.http.Path("heroId") String heroId,
             @retrofit2.http.Path("injuryId") String injuryId);
 
+    @GET("api/campaigns/{campaignId}/chronicles")
+    Call<java.util.List<ru.dndmemory.data.remote.dto.ChronicleDto>> chronicles(
+            @retrofit2.http.Path("campaignId") String campaignId);
+
+    @GET("api/campaigns/{campaignId}/chronicles/{chronicleId}")
+    Call<ru.dndmemory.data.remote.dto.ChronicleDto> chronicle(
+            @retrofit2.http.Path("campaignId") String campaignId,
+            @retrofit2.http.Path("chronicleId") String chronicleId);
+
     /** Обратная связь: сообщение сохраняется на сервере. */
     @POST("api/feedback")
     Call<okhttp3.ResponseBody> sendFeedback(@Body ru.dndmemory.data.remote.dto.FeedbackRequest body);

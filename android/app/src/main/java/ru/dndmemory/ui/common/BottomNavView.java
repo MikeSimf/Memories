@@ -59,6 +59,7 @@ public class BottomNavView extends HorizontalScrollView {
         add("items", R.string.tab_items, R.drawable.ic_item);
         add("heroes", R.string.heroes_title, R.drawable.ic_heroes);
         add("retellings", R.string.tab_retellings, R.drawable.ic_retelling);
+        add("chronicles", R.string.chronicles_title, R.drawable.ic_chronicle);
         add("quests", R.string.quests_title, R.drawable.ic_quest);
         add("maps", R.string.nav_maps, R.drawable.ic_map);
         add("materials", R.string.materials_title, R.drawable.ic_materials);
@@ -132,6 +133,9 @@ public class BottomNavView extends HorizontalScrollView {
                 return;
             case "retellings":
                 Nav.openRetellings(context, campaignId);
+                return;
+            case "chronicles":
+                Nav.openChronicles(context, campaignId);
                 return;
             case "quests":
                 Nav.openQuests(context, campaignId);

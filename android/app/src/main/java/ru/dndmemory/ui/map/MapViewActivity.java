@@ -6,7 +6,11 @@ import android.widget.LinearLayout;
 import android.widget.CheckBox;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.SeekBar;
 import android.widget.Toast;
+
+import ru.dndmemory.data.remote.dto.ChronicleDto;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,6 +40,16 @@ public class MapViewActivity extends BaseCampaignActivity {
     private List<MapMarkerDto> allMarkers = new ArrayList<>();
     private final java.util.Set<String> visibleTypes = new java.util.HashSet<>(java.util.Arrays.asList("CHARACTER", "HERO", "LOCATION", "ITEM"));
     private boolean showNames;
+    private final List<ChronicleDto> chronicles = new ArrayList<>();
+    private LinearLayout chroniclePanel;
+    private LinearLayout chronicleChecks;
+    private TextView chronicleLabel;
+    private SeekBar rangeStartBar;
+    private SeekBar rangeEndBar;
+    private int rangeStart;
+    private int rangeEnd;
+    private boolean showTeam = true;
+    private final java.util.Set<String> selectedHeroes = new java.util.HashSet<>();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -53,6 +67,9 @@ public class MapViewActivity extends BaseCampaignActivity {
         canvas = new MapCanvasView(this, null);
         root.addView(canvas, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+        chroniclePanel = buildChroniclePanel();
+        root.addView(chroniclePanel, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
         setContentView(root);
         canvas.setListener(marker -> com.google.android.material.snackbar.Snackbar
                 .make(canvas, marker.name + " · " + typeLabel(marker.objectType),
@@ -96,12 +113,144 @@ public class MapViewActivity extends BaseCampaignActivity {
         return scroll;
     }
 
+    private LinearLayout buildChroniclePanel() {
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(16, 6, 16, 8);
+        panel.setVisibility(android.view.View.GONE);
+        chronicleLabel = new TextView(this);
+        chronicleLabel.setTextSize(13);
+        panel.addView(chronicleLabel);
+        rangeStartBar = new SeekBar(this);
+        rangeEndBar = new SeekBar(this);
+        rangeStartBar.setOnSeekBarChangeListener(new SimpleSeekListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int value, boolean fromUser) {
+                rangeStart = value;
+                if (rangeStart > rangeEnd) { rangeEnd = rangeStart; rangeEndBar.setProgress(rangeEnd); }
+                updateChronicleLabel();
+                rebuildRoutes();
+            }
+        });
+        rangeEndBar.setOnSeekBarChangeListener(new SimpleSeekListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int value, boolean fromUser) {
+                rangeEnd = value;
+                if (rangeEnd < rangeStart) { rangeStart = rangeEnd; rangeStartBar.setProgress(rangeStart); }
+                updateChronicleLabel();
+                rebuildRoutes();
+            }
+        });
+        panel.addView(rangeStartBar);
+        panel.addView(rangeEndBar);
+        chronicleChecks = new LinearLayout(this);
+        chronicleChecks.setOrientation(LinearLayout.HORIZONTAL);
+        panel.addView(new HorizontalScrollView(this) {{ addView(chronicleChecks); }});
+        return panel;
+    }
+
+    private abstract static class SimpleSeekListener implements SeekBar.OnSeekBarChangeListener {
+        @Override public void onStartTrackingTouch(SeekBar seekBar) { }
+        @Override public void onStopTrackingTouch(SeekBar seekBar) { }
+    }
+
+    private void applyChronicles(@NonNull List<ChronicleDto> items) {
+        chronicles.clear();
+        chronicles.addAll(items);
+        chronicleChecks.removeAllViews();
+        selectedHeroes.clear();
+        boolean hasPoints = false;
+        java.util.Map<String, String[]> heroes = new java.util.LinkedHashMap<>();
+        for (ChronicleDto chronicle : chronicles) {
+            for (ChronicleDto.Point point : chronicle.points) {
+                if (!mapId.equals(point.mapId)) continue;
+                hasPoints = true;
+                if (!point.wholeTeam && point.heroId != null) heroes.put(point.heroId, new String[]{point.heroName, point.heroColor});
+            }
+        }
+        chroniclePanel.setVisibility(hasPoints ? android.view.View.VISIBLE : android.view.View.GONE);
+        if (!hasPoints) { canvas.setRoutes(new ArrayList<>()); return; }
+        rangeStart = 0;
+        rangeEnd = Math.max(0, chronicles.size() - 1);
+        rangeStartBar.setMax(Math.max(0, chronicles.size() - 1));
+        rangeEndBar.setMax(Math.max(0, chronicles.size() - 1));
+        rangeStartBar.setProgress(rangeStart);
+        rangeEndBar.setProgress(rangeEnd);
+        CheckBox team = new CheckBox(this);
+        team.setText(R.string.chronicle_team);
+        team.setChecked(true);
+        team.setOnCheckedChangeListener((button, checked) -> { showTeam = checked; rebuildRoutes(); });
+        chronicleChecks.addView(team);
+        for (java.util.Map.Entry<String, String[]> entry : heroes.entrySet()) {
+            CheckBox box = new CheckBox(this);
+            box.setText(entry.getValue()[0] == null ? "герой" : entry.getValue()[0]);
+            box.setOnCheckedChangeListener((button, checked) -> {
+                if (checked) selectedHeroes.add(entry.getKey()); else selectedHeroes.remove(entry.getKey());
+                rebuildRoutes();
+            });
+            chronicleChecks.addView(box);
+        }
+        updateChronicleLabel();
+        rebuildRoutes();
+    }
+
+    private void updateChronicleLabel() {
+        if (chronicles.isEmpty()) { chronicleLabel.setText(""); return; }
+        String first = chronicles.get(Math.max(0, Math.min(rangeStart, chronicles.size() - 1))).name;
+        String last = chronicles.get(Math.max(0, Math.min(rangeEnd, chronicles.size() - 1))).name;
+        chronicleLabel.setText(first.equals(last) ? first : first + " → " + last);
+    }
+
+    private void rebuildRoutes() {
+        List<MapCanvasView.Route> routes = new ArrayList<>();
+        for (int index = rangeStart; index <= rangeEnd && index < chronicles.size(); index++) {
+            ChronicleDto chronicle = chronicles.get(index);
+            List<ChronicleDto.Point> points = new ArrayList<>();
+            for (ChronicleDto.Point point : chronicle.points) if (mapId.equals(point.mapId)) points.add(point);
+            points.sort((a, b) -> Integer.compare(a.order, b.order));
+            if (showTeam) {
+                List<float[]> line = new ArrayList<>();
+                for (ChronicleDto.Point point : points) if (point.wholeTeam && !point.teleport) line.add(new float[]{(float) point.x, (float) point.y});
+                if (line.size() > 1) routes.add(new MapCanvasView.Route(line, teamColor(), 8));
+            }
+            for (String heroId : selectedHeroes) {
+                List<float[]> line = new ArrayList<>();
+                String color = null;
+                for (ChronicleDto.Point point : points) {
+                    if (point.wholeTeam || heroId.equals(point.heroId)) {
+                        if (!point.teleport) line.add(new float[]{(float) point.x, (float) point.y});
+                        if (heroId.equals(point.heroId)) color = point.heroColor;
+                    }
+                }
+                if (line.size() > 1) routes.add(new MapCanvasView.Route(line, parseColor(color, 0xFF2E7D32), 4));
+            }
+        }
+        canvas.setRoutes(routes);
+    }
+
+    private int teamColor() {
+        for (ChronicleDto chronicle : chronicles) for (ChronicleDto.Point point : chronicle.points) if (!point.wholeTeam && point.heroColor != null) return parseColor(point.heroColor, 0xFF8A4B2A);
+        return 0xFF8A4B2A;
+    }
+
+    private int parseColor(String value, int fallback) {
+        try { return value == null ? fallback : android.graphics.Color.parseColor(value); } catch (Exception ignored) { return fallback; }
+    }
+
     private void applyFilters() {
         List<MapMarkerDto> filtered = new ArrayList<>();
         for (MapMarkerDto marker : allMarkers) {
             if (marker.objectType != null && visibleTypes.contains(marker.objectType)) filtered.add(marker);
         }
         canvas.setMarkers(filtered);
+    }
+
+    private void loadChronicles() {
+        App.container(this).apiService().chronicles(campaignId).enqueue(new Callback<List<ChronicleDto>>() {
+            @Override public void onResponse(@NonNull Call<List<ChronicleDto>> call, @NonNull Response<List<ChronicleDto>> response) {
+                List<ChronicleDto> body = response.body();
+                if (body != null) runOnUiThread(() -> applyChronicles(body));
+            }
+            @Override public void onFailure(@NonNull Call<List<ChronicleDto>> call, @NonNull Throwable t) { }
+        });
     }
 
     private void load() {
@@ -118,6 +267,7 @@ public class MapViewActivity extends BaseCampaignActivity {
                     allMarkers = map.markers == null ? new ArrayList<>() : map.markers;
                     applyFilters();
                     canvas.setShowNames(showNames);
+                    loadChronicles();
                     if (map.imageFileId != null) {
                         android.graphics.Bitmap cached = MapImageCache.load(MapViewActivity.this, map.imageFileId);
                         if (cached != null) {

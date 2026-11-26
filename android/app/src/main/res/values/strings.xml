@@ -75,6 +75,16 @@
     <string name="quest_comment_delete_confirm">Удалить комментарий?</string>
     <string name="material_private_label">Приватный материал</string>
     <string name="injury_delete_confirm">Удалить запись?</string>
+    <string name="chronicles_title">Хроника</string>
+    <string name="chronicles_empty">Хроник пока нет</string>
+    <string name="chronicle_open">Открыть</string>
+    <string name="chronicle_stories">Истории</string>
+    <string name="chronicle_no_stories">Нет связанных историй</string>
+    <string name="chronicle_points">Координаты</string>
+    <string name="chronicle_no_points">Нет координат</string>
+    <string name="chronicles_no_date">без даты</string>
+    <string name="chronicle_team">вся команда</string>
+    <string name="chronicle_teleport">телепорт</string>
     <string name="attr_life_status">Статус</string>
     <string name="life_alive">Жив</string>
     <string name="life_dead">Мёртв</string>

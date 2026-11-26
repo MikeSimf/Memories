@@ -41,6 +41,19 @@ public class MapCanvasView extends View {
     private float lastX;
     private float lastY;
     private boolean dragging;
+    /** Линия маршрута хроники в нормализованных координатах. */
+    public static class Route {
+        public final List<float[]> points;
+        public final int color;
+        public final float width;
+        public Route(List<float[]> points, int color, float width) {
+            this.points = points;
+            this.color = color;
+            this.width = width;
+        }
+    }
+
+    private final List<Route> routes = new ArrayList<>();
     private OnMarkerTap listener;
     private boolean showNames;
 
@@ -78,6 +91,12 @@ public class MapCanvasView extends View {
 
     public void setBitmap(@Nullable Bitmap bitmap) {
         this.bitmap = bitmap;
+        invalidate();
+    }
+
+    public void setRoutes(@Nullable List<Route> items) {
+        routes.clear();
+        if (items != null) routes.addAll(items);
         invalidate();
     }
 
@@ -130,6 +149,22 @@ public class MapCanvasView extends View {
         canvas.save();
         canvas.translate(tx, ty);
         canvas.drawBitmap(bitmap, null, new RectF(0, 0, w, h), null);
+        for (Route route : routes) {
+            if (route.points.size() < 2) continue;
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setStrokeJoin(Paint.Join.ROUND);
+            paint.setColor(route.color);
+            paint.setStrokeWidth(route.width);
+            for (int i = 1; i < route.points.size(); i++) {
+                float[] a = route.points.get(i - 1);
+                float[] b = route.points.get(i);
+                canvas.drawLine(a[0] * w, a[1] * h, b[0] * w, b[1] * h, paint);
+            }
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(route.color);
+            for (float[] point : route.points) canvas.drawCircle(point[0] * w, point[1] * h, route.width / 2f + 2, paint);
+        }
         paint.setStyle(Paint.Style.FILL);
         float density = getResources().getDisplayMetrics().density;
         float radius = 18 * density;
