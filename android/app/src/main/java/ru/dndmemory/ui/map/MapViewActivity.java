@@ -227,7 +227,7 @@ public class MapViewActivity extends BaseCampaignActivity {
     }
 
     private int teamColor() {
-        for (ChronicleDto chronicle : chronicles) for (ChronicleDto.Point point : chronicle.points) if (!point.wholeTeam && point.heroColor != null) return parseColor(point.heroColor, 0xFF8A4B2A);
+        // Цвет команды задаётся в настройках кампании; на Android пока используем базовый.
         return 0xFF8A4B2A;
     }
 
