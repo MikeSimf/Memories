@@ -31,6 +31,7 @@ public final class RetellingDtos {
         private UUID authorEntityId;
         private String authorEntityName;
         private LocalDate sessionDate;
+        private UUID chronicleId;
         private RetellingStatus status;
         private List<LinkDto> links;
         private UUID createdBy;
@@ -59,6 +60,8 @@ public final class RetellingDtos {
 
         private LocalDate sessionDate;
 
+        private UUID chronicleId;
+
         /** Разрешён только PUBLISHED (docs/api.md, раздел 7). */
         private RetellingStatus status;
     }
@@ -73,6 +76,8 @@ public final class RetellingDtos {
         private UUID authorEntityId;
 
         private LocalDate sessionDate;
+
+        private UUID chronicleId;
 
         private RetellingStatus status;
     }

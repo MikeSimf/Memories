@@ -90,6 +90,7 @@ export function objectFromDto<C extends ObjectClass>(
         playerUserId: hero.playerUserId ?? null,
         playerName: hero.playerName ?? null,
         titles: hero.titles ?? [],
+        color: hero.color ?? null,
         items: itemsFromDto(hero.items),
         strength: hero.strength ?? 10,
         dexterity: hero.dexterity ?? 10,
@@ -185,6 +186,7 @@ export function objectToPayload(object: LocalObject): Record<string, unknown> {
         klass: object.klass,
         playerUserId: object.playerUserId,
         titles: object.titles ?? [],
+        color: object.color,
         items: object.items.map((item) => ({
           name: item.name,
           itemId: item.itemId,

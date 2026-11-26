@@ -29,6 +29,8 @@ export interface ObjectFormValues {
   playerUserId: string | null
   /** Герой: произвольные звания. */
   titles: string[]
+  /** Герой: цвет на карте хроники. */
+  color: string
   items: HeroItemFormValue[]
   /** Персонаж (НПС). */
   shortDescription: string
@@ -87,6 +89,7 @@ export function emptyObjectForm(name = ''): ObjectFormValues {
     itemType: '',
     playerUserId: null,
     titles: [],
+    color: '',
     items: [],
     shortDescription: '',
     ownerName: '',

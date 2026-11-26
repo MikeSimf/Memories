@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { errorMessage, mapsApi, type InteractiveMapDetailDto, type MapMarkerDto } from '@/api'
+import { chroniclesApi, errorMessage, mapsApi, type ChronicleDto, type ChroniclePointDto, type InteractiveMapDetailDto, type MapMarkerDto } from '@/api'
 import EntityImage from '@/components/EntityImage.vue'
 import { useCampaignStore } from '@/stores/campaign'
 import { typeIconPath } from '@/ui/typeIcons'
@@ -30,6 +30,18 @@ const imageH = ref(0)
 const pick = ref<{ x: number; y: number } | null>(null)
 const chosenEntityId = ref('')
 const selectedMarker = ref<MapMarkerDto | null>(null)
+const chronicles = ref<ChronicleDto[]>([])
+const rangeStart = ref(0)
+const rangeEnd = ref(0)
+const showTeam = ref(true)
+const selectedHeroIds = ref<string[]>([])
+const addingPoint = ref(false)
+const pointPick = ref<{ x: number; y: number } | null>(null)
+const pointChronicleId = ref('')
+const pointWholeTeam = ref(true)
+const pointHeroId = ref('')
+const pointOrder = ref(0)
+const pointTeleport = ref(false)
 const filters = ref<Record<string, boolean>>({ HERO: true, CHARACTER: true, LOCATION: true, ITEM: true })
 const objectTypes = [
   { key: 'CHARACTER', label: 'Персонажи' },
@@ -66,6 +78,47 @@ const markerGroups = computed(() => {
     markers,
   }))
 })
+const selectedChronicles = computed(() => chronicles.value.slice(rangeStart.value, rangeEnd.value + 1))
+const heroes = computed(() => campaign.objects.filter((o) => o.objectType === 'HERO' && !o.deleted))
+const mapPoints = computed<ChroniclePointDto[]>(() =>
+  selectedChronicles.value
+    .flatMap((chronicle) => chronicle.points)
+    .filter((point) => point.mapId === mapId)
+    .sort((a, b) => a.order - b.order),
+)
+const teamPoints = computed(() => mapPoints.value.filter((point) => point.wholeTeam))
+const heroPoints = computed(() =>
+  mapPoints.value.filter((point) => !point.wholeTeam && point.heroId && selectedHeroIds.value.includes(point.heroId)),
+)
+const teamColor = computed(() => '#8a4b2a')
+
+function segments(points: ChroniclePointDto[]): Array<{ x1: number; y1: number; x2: number; y2: number }> {
+  const result: Array<{ x1: number; y1: number; x2: number; y2: number }> = []
+  for (let i = 1; i < points.length; i++) {
+    if (!segmentVisible(points[i - 1], points[i])) continue
+    result.push({ x1: screenX(points[i - 1].x), y1: screenY(points[i - 1].y), x2: screenX(points[i].x), y2: screenY(points[i].y) })
+  }
+  return result
+}
+
+const teamSegments = computed(() => segments(teamPoints.value))
+const heroRoutes = computed(() => heroes.value
+  .filter((hero) => selectedHeroIds.value.includes(hero.id))
+  .map((hero) => ({
+    hero,
+    points: mapPoints.value.filter((point) => point.wholeTeam || point.heroId === hero.id),
+    color: (hero as unknown as { color?: string | null }).color || '#2e7d32',
+  }))
+  .map((route) => ({ ...route, segments: segments(route.points) })))
+
+function segmentVisible(a: ChroniclePointDto, b: ChroniclePointDto): boolean {
+  return !b.teleport
+}
+
+function pointStyle(point: ChroniclePointDto): Record<string, string> {
+  return { left: `${screenX(point.x)}px`, top: `${screenY(point.y)}px` }
+}
+
 const available = computed(() => {
   const used = new Set((map.value?.markers ?? []).map((marker) => marker.entityId))
   const query = search.value.trim().toLowerCase()
@@ -79,6 +132,9 @@ async function load(): Promise<void> {
   loading.value = true
   try {
     map.value = await mapsApi.get(campaignId, mapId)
+    chronicles.value = await chroniclesApi.list(campaignId)
+    rangeStart.value = 0
+    rangeEnd.value = Math.max(0, chronicles.value.length - 1)
     await campaign.loadTabObjects(['HERO', 'CHARACTER', 'LOCATION', 'ITEM'])
   } catch (caught) {
     error.value = errorMessage(caught)
@@ -153,7 +209,23 @@ function endDrag(): void {
 }
 
 function mapClick(event: MouseEvent): void {
-  if (!adding.value || !map.value || dragMoved.value) return
+  if (!map.value || dragMoved.value) return
+  if (addingPoint.value) {
+    const image = (event.currentTarget as HTMLElement).querySelector<HTMLElement>('.map-image img')
+    if (!image) return
+    const rect = image.getBoundingClientRect()
+    pointPick.value = {
+      x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
+      y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
+    }
+    pointChronicleId.value = selectedChronicles.value[0]?.id ?? chronicles.value[0]?.id ?? ''
+    pointWholeTeam.value = true
+    pointHeroId.value = ''
+    pointOrder.value = mapPoints.value.length + 1
+    pointTeleport.value = false
+    return
+  }
+  if (!adding.value) return
   const image = (event.currentTarget as HTMLElement).querySelector<HTMLElement>('.map-image img')
   if (!image) return
   const rect = image.getBoundingClientRect()
@@ -172,6 +244,28 @@ async function addMarker(): Promise<void> {
     if (map.value) map.value.markerCount = map.value.markers.length
     pick.value = null
     adding.value = false
+  } catch (caught) {
+    error.value = errorMessage(caught)
+  }
+}
+
+async function savePoint(): Promise<void> {
+  if (!pointPick.value || !pointChronicleId.value) return
+  try {
+    await chroniclesApi.addPoint(campaignId, pointChronicleId.value, {
+      mapId,
+      chronicleId: pointChronicleId.value,
+      heroId: pointWholeTeam.value ? null : pointHeroId.value || null,
+      wholeTeam: pointWholeTeam.value,
+      x: pointPick.value.x,
+      y: pointPick.value.y,
+      order: pointOrder.value,
+      teleport: pointTeleport.value,
+    })
+    pointPick.value = null
+    addingPoint.value = false
+    chronicles.value = await chroniclesApi.list(campaignId)
+    rangeEnd.value = Math.min(rangeEnd.value, Math.max(0, chronicles.value.length - 1))
   } catch (caught) {
     error.value = errorMessage(caught)
   }
@@ -250,8 +344,11 @@ watch(() => map.value?.imageFileId, async () => {
     <template v-else-if="map">
       <div class="row map-controls">
         <button class="btn btn--sm" type="button" @click="scale = 1; tx = 0; ty = 0">Сбросить</button>
-        <button v-if="canEdit" class="btn btn--sm" :class="{ 'btn--primary': adding }" type="button" @click="adding = !adding">
+        <button v-if="canEdit" class="btn btn--sm" :class="{ 'btn--primary': adding }" type="button" @click="adding = !adding; addingPoint = false">
           {{ adding ? 'Выберите точку на карте' : 'Добавить метку' }}
+        </button>
+        <button v-if="canEdit" class="btn btn--sm" :class="{ 'btn--primary': addingPoint }" type="button" @click="addingPoint = !addingPoint; adding = false">
+          {{ addingPoint ? 'Кликните точку на карте' : 'Добавить координату' }}
         </button>
         <span class="map-filters">
           <label v-for="type in objectTypes" :key="type.key">
@@ -265,7 +362,7 @@ watch(() => map.value?.imageFileId, async () => {
       <div class="map-stage">
       <div
         class="map-viewport"
-        :class="{ 'map-viewport--adding': adding }"
+        :class="{ 'map-viewport--adding': adding || addingPoint }"
         @wheel="wheel"
         @dragstart.prevent
         @pointerdown="startDrag"
@@ -295,6 +392,13 @@ watch(() => map.value?.imageFileId, async () => {
             </svg>
           </button>
           <div v-if="showNames" v-for="(group, index) in markerGroups" :key="'name-' + index" class="map-name" :style="nameStyle(group)">{{ group.markers.length > 1 ? group.markers.length + ' объектов' : group.markers[0].name }}</div>
+          <svg class="map-routes" aria-hidden="true">
+            <line v-for="(line, index) in teamSegments" :key="'team-' + index" :x1="line.x1" :y1="line.y1" :x2="line.x2" :y2="line.y2" :stroke="teamColor" stroke-width="5" stroke-linecap="round" opacity=".8" />
+            <template v-for="route in heroRoutes" :key="route.hero.id">
+              <line v-for="(line, index) in route.segments" :key="route.hero.id + '-' + index" :x1="line.x1" :y1="line.y1" :x2="line.x2" :y2="line.y2" :stroke="route.color" stroke-width="2.5" stroke-linecap="round" opacity=".85" />
+            </template>
+          </svg>
+          <span v-for="point in mapPoints" :key="'point-' + point.id" class="map-chronicle-point" :style="pointStyle(point)" :class="{ 'map-chronicle-point--hero': !point.wholeTeam }" />
           <div v-if="hovered" class="map-hover" :style="{ left: `${screenX(hovered.x)}px`, top: `${screenY(hovered.y)}px` }">{{ hovered.text }}</div>
         </div>
       </div>
@@ -333,6 +437,52 @@ watch(() => map.value?.imageFileId, async () => {
             <RouterLink class="btn btn--sm" :to="{ name: 'entity-detail', params: { campaignId, entityId: selectedMarker.entityId } }">Открыть</RouterLink>
             <button v-if="canEdit" class="btn btn--danger btn--sm" type="button" @click="deleteMarker">Удалить метку</button>
             <button class="btn btn--sm" type="button" @click="selectedMarker = null">Закрыть</button>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="chronicles.length" class="chronicle-strip">
+        <div class="row row--between">
+          <strong>Хроники</strong>
+          <span class="faint">{{ selectedChronicles.map((item) => item.name).join(' → ') }}</span>
+        </div>
+        <div class="chronicle-strip__ranges">
+          <label>начало <input v-model.number="rangeStart" type="range" min="0" :max="Math.max(0, chronicles.length - 1)" step="1" /></label>
+          <label>конец <input v-model.number="rangeEnd" type="range" min="0" :max="Math.max(0, chronicles.length - 1)" step="1" /></label>
+        </div>
+        <div class="row chronicle-strip__checks">
+          <label><input v-model="showTeam" type="checkbox" /> вся команда</label>
+          <label v-for="hero in heroes" :key="hero.id">
+            <input v-model="selectedHeroIds" type="checkbox" :value="hero.id" /> {{ hero.name }}
+          </label>
+        </div>
+      </div>
+
+      <div v-if="pointPick" class="map-modal" @click.self="pointPick = null">
+        <div class="card stack map-modal__card">
+          <strong>Новая координата</strong>
+          <div class="field">
+            <label class="field__label" for="point-chronicle">Хроника</label>
+            <select id="point-chronicle" v-model="pointChronicleId" class="select">
+              <option v-for="item in chronicles" :key="item.id" :value="item.id">{{ item.name }}</option>
+            </select>
+          </div>
+          <label class="field__check"><input v-model="pointWholeTeam" type="checkbox" /> вся команда</label>
+          <div v-if="!pointWholeTeam" class="field">
+            <label class="field__label" for="point-hero">Герой</label>
+            <select id="point-hero" v-model="pointHeroId" class="select">
+              <option value="">выберите героя</option>
+              <option v-for="hero in heroes" :key="hero.id" :value="hero.id">{{ hero.name }}</option>
+            </select>
+          </div>
+          <div class="row">
+            <div class="field" style="flex: 1"><label class="field__label" for="point-order">Порядок</label><input id="point-order" v-model.number="pointOrder" class="input" type="number" min="1" /></div>
+            <label class="field__check"><input v-model="pointTeleport" type="checkbox" /> телепорт</label>
+          </div>
+          <p class="faint">Карта: {{ map.name }} · точка {{ Math.round(pointPick.x * 100) }}% / {{ Math.round(pointPick.y * 100) }}%</p>
+          <div class="row">
+            <button class="btn btn--primary" :disabled="!pointChronicleId || (!pointWholeTeam && !pointHeroId)" type="button" @click="savePoint">Сохранить</button>
+            <button class="btn" type="button" @click="pointPick = null">Отмена</button>
           </div>
         </div>
       </div>
@@ -393,4 +543,12 @@ watch(() => map.value?.imageFileId, async () => {
 .map-marker__dot { display: block; width: 100%; height: 100%; border-radius: 50% 50% 50% 0; }
 .map-modal { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 20px; background: rgba(0,0,0,.45); }
 .map-modal__card { width: min(420px, 100%); }
+.chronicle-strip { margin-top: 12px; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; background: var(--bg-elev); }
+.chronicle-strip__ranges { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.chronicle-strip__ranges label { display: flex; align-items: center; gap: 8px; font-size: .85rem; }
+.chronicle-strip__ranges input { flex: 1; }
+.chronicle-strip__checks { flex-wrap: wrap; gap: 10px; margin-top: 8px; font-size: .85rem; }
+.map-routes { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+.map-chronicle-point { position: absolute; z-index: 4; width: 10px; height: 10px; border-radius: 50%; transform: translate(-50%, -50%); background: #8a4b2a; border: 2px solid #fff; box-shadow: 0 1px 4px #0007; pointer-events: none; }
+.map-chronicle-point--hero { width: 7px; height: 7px; background: #2e7d32; }
 </style>

@@ -447,6 +447,7 @@ export interface HeroDto extends ObjectDto {
   playerUserId: string | null
   playerName: string | null
   titles: string[]
+  color: string | null
   items: HeroItemDto[]
   strength: number
   dexterity: number
@@ -1008,6 +1009,30 @@ export interface InteractiveMapDto {
 
 export interface InteractiveMapDetailDto extends InteractiveMapDto {
   markers: MapMarkerDto[]
+}
+
+/** Хроника: сессия и точки перемещения. */
+export interface ChroniclePointDto {
+  id: string
+  chronicleId: string
+  mapId: string
+  mapName: string
+  heroId: string | null
+  heroName: string | null
+  heroColor: string | null
+  wholeTeam: boolean
+  x: number
+  y: number
+  order: number
+  teleport: boolean
+}
+
+export interface ChronicleDto {
+  id: string
+  name: string
+  date: string | null
+  retellings: Array<{ id: string; title: string }>
+  points: ChroniclePointDto[]
 }
 
 /** Травма или увечье героя. */

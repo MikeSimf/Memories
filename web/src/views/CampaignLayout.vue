@@ -17,6 +17,7 @@ const tabs = [
   { key: 'items', label: 'Предметы', route: 'campaign-tab' },
   { key: 'heroes', label: 'Герои', route: 'campaign-heroes' },
   { key: 'retellings', label: 'Истории', route: 'campaign-retellings' },
+  { key: 'chronicles', label: 'Хроника', route: 'campaign-chronicles' },
   { key: 'quests', label: 'Квесты', route: 'campaign-quests' },
   { key: 'maps', label: 'Карты', route: 'campaign-maps' },
   { key: 'materials', label: 'Материалы', route: 'campaign-materials' },
@@ -30,6 +31,7 @@ const activeTab = computed(() => {
   const name = route.name
   if (name === 'campaign-heroes') return 'heroes'
   if (name === 'campaign-retellings') return 'retellings'
+  if (name === 'campaign-chronicles') return 'chronicles'
   if (name === 'campaign-quests' || name === 'quest-new' || name === 'quest-detail' || name === 'quest-edit') return 'quests'
   if (name === 'campaign-maps' || name === 'map-new' || name === 'map-detail' || name === 'map-edit') return 'maps'
   if (name === 'campaign-materials' || name === 'material-new' || name === 'material-edit') return 'materials'

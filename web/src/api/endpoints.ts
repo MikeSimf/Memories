@@ -616,6 +616,28 @@ export const itemTypesApi = {
   },
 }
 
+/** Хроники кампании. */
+export const chroniclesApi = {
+  list(campaignId: string): Promise<import('./types').ChronicleDto[]> {
+    return apiClient.request({ path: `/api/campaigns/${encodeURIComponent(campaignId)}/chronicles` })
+  },
+  create(campaignId: string, body: { name: string; date: string | null }): Promise<import('./types').ChronicleDto> {
+    return apiClient.request({ method: 'POST', path: `/api/campaigns/${encodeURIComponent(campaignId)}/chronicles`, body })
+  },
+  update(campaignId: string, id: string, body: { name: string; date: string | null }): Promise<import('./types').ChronicleDto> {
+    return apiClient.request({ method: 'PATCH', path: `/api/campaigns/${encodeURIComponent(campaignId)}/chronicles/${encodeURIComponent(id)}`, body })
+  },
+  remove(campaignId: string, id: string): Promise<void> {
+    return apiClient.request({ method: 'DELETE', path: `/api/campaigns/${encodeURIComponent(campaignId)}/chronicles/${encodeURIComponent(id)}` })
+  },
+  addPoint(campaignId: string, chronicleId: string, body: Record<string, unknown>): Promise<import('./types').ChroniclePointDto> {
+    return apiClient.request({ method: 'POST', path: `/api/campaigns/${encodeURIComponent(campaignId)}/chronicles/${encodeURIComponent(chronicleId)}/points`, body })
+  },
+  removePoint(campaignId: string, chronicleId: string, pointId: string): Promise<void> {
+    return apiClient.request({ method: 'DELETE', path: `/api/campaigns/${encodeURIComponent(campaignId)}/chronicles/${encodeURIComponent(chronicleId)}/points/${encodeURIComponent(pointId)}` })
+  },
+}
+
 /** Фото-материалы кампании: карты, портреты, письма и документы. */
 export const materialsApi = {
   list(campaignId: string, query = ""): Promise<{ items: MaterialDto[]; total: number }> {

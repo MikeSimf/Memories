@@ -365,6 +365,10 @@ function setOwnerCharacter(value: string): void {
         </div>
       </div>
 
+      <div class="field">
+        <label class="field__label" for="hero-color">Цвет на карте</label>
+        <input id="hero-color" class="input" type="color" :value="modelValue.color || '#2e7d32'" @input="patch({ color: ($event.target as HTMLInputElement).value })" />
+      </div>
       <div v-if="heroTitlesEnabled" class="field">
         <span class="field__label">Звания</span>
         <div v-for="(title, index) in modelValue.titles" :key="index" class="row" style="align-items: center; gap: .4rem; margin-bottom: .35rem">

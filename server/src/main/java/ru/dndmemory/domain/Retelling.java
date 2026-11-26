@@ -45,6 +45,9 @@ public class Retelling {
     @Column(name = "session_date")
     private LocalDate sessionDate;
 
+    @Column(name = "chronicle_id")
+    private UUID chronicleId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private RetellingStatus status = RetellingStatus.PUBLISHED;

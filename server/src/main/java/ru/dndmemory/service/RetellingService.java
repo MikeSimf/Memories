@@ -96,6 +96,7 @@ public class RetellingService {
         retelling.setBody(request.getBody());
         retelling.setAuthorEntityId(request.getAuthorEntityId());
         retelling.setSessionDate(request.getSessionDate());
+        retelling.setChronicleId(request.getChronicleId());
         retelling.setStatus(RetellingStatus.PUBLISHED);
         retelling.setUpdatedBy(userId);
         retelling.setUpdatedAt(Instant.now());
@@ -131,6 +132,9 @@ public class RetellingService {
         }
         if (request.getSessionDate() != null) {
             retelling.setSessionDate(request.getSessionDate());
+        }
+        if (request.getChronicleId() != null) {
+            retelling.setChronicleId(request.getChronicleId());
         }
         retelling.setUpdatedBy(userId);
         retelling.setUpdatedAt(Instant.now());

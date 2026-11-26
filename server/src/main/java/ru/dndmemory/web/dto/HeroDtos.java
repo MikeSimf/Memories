@@ -57,6 +57,7 @@ public final class HeroDtos {
         private Integer maxHp;
         private Integer inspiration;
         private List<String> titles;
+        private String color;
     }
 
     @Getter
@@ -120,6 +121,7 @@ public final class HeroDtos {
         private Integer inspiration;
         private String gmNote;
         private List<String> titles;
+        private String color;
     }
 
     @Getter
@@ -151,5 +153,6 @@ public final class HeroDtos {
         private List<HeroItemRequest> items;
         private String gmNote;
         private List<String> titles;
+        private String color;
     }
 }

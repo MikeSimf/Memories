@@ -154,6 +154,7 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
                 .maxHp(hero.getMaxHp())
                 .inspiration(hero.getInspiration())
                 .titles(new java.util.ArrayList<>(hero.getTitles()))
+                .color(hero.getColor())
                 .build();
     }
 
@@ -225,6 +226,7 @@ public class HeroService extends AbstractObjectService<Hero, HeroDtos.HeroDto> {
             com.fasterxml.jackson.databind.JsonNode alive = payload.get("alive");
             hero.setAlive(alive == null || alive.isNull() ? null : alive.asBoolean());
         }
+        if (payload.has("color")) hero.setColor(text(payload.get("color")));
         if (payload.has("titles") && payload.get("titles").isArray()) {
             hero.getTitles().clear();
             for (com.fasterxml.jackson.databind.JsonNode title : payload.get("titles")) {

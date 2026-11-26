@@ -48,6 +48,10 @@ public class Hero extends GameEntitySupport
     @Column(length = 16, nullable = false)
     private String gender = "unknown";
 
+    /** Цвет героя на карте хроники. */
+    @Column(length = 16)
+    private String color;
+
     /** Кто отыгрывает героя; ссылка на пользователя необязательна. */
     @Column(name = "player_user_id")
     private UUID playerUserId;

@@ -61,6 +61,7 @@ public class DtoMapper {
                 .authorEntityId(retelling.getAuthorEntityId())
                 .authorEntityName(authorName)
                 .sessionDate(retelling.getSessionDate())
+                .chronicleId(retelling.getChronicleId())
                 .status(retelling.getStatus())
                 .links(links)
                 .createdBy(retelling.getCreatedBy())
