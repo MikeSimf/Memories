@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-import { errorMessage } from '@/api'
+import { chroniclesApi, errorMessage, type ChronicleDto } from '@/api'
 import type { ObjectClass } from '@/api/types'
 import EmptyState from '@/components/EmptyState.vue'
 import EntityPicker from '@/components/EntityPicker.vue'
@@ -35,6 +35,7 @@ const mode = computed<'new' | 'draft' | 'published'>(() => {
 const form = ref<RetellingFormValues>(emptyRetellingForm())
 const saving = ref(false)
 const showPreview = ref(false)
+const chronicles = ref<ChronicleDto[]>([])
 
 function fillForm(): void {
   if (mode.value === 'new') {
@@ -51,6 +52,10 @@ function fillForm(): void {
 }
 
 watch([mode, retellingId], fillForm, { immediate: true })
+
+onMounted(async () => {
+  try { chronicles.value = await chroniclesApi.list(campaign.campaignId ?? '') } catch { chronicles.value = [] }
+})
 
 const canWrite = computed(() => campaign.canWriteRetellings)
 /** Автор выбирается свободно: историю может отправить любой игрок. */
@@ -185,6 +190,13 @@ async function savePublished(): Promise<void> {
         <div class="field" style="flex: 0 0 200px">
           <label class="field__label" for="retelling-date">Дата сессии</label>
           <input id="retelling-date" v-model="form.sessionDate" class="input" type="date" />
+        </div>
+        <div class="field" style="flex: 0 0 220px">
+          <label class="field__label" for="retelling-chronicle">Хроника</label>
+          <select id="retelling-chronicle" v-model="form.chronicleId" class="select">
+            <option :value="null">— не выбрана —</option>
+            <option v-for="chronicle in chronicles" :key="chronicle.id" :value="chronicle.id">{{ chronicle.name }}</option>
+          </select>
         </div>
         <div class="field" style="flex: 1; min-width: 220px">
           <label class="field__label" for="retelling-author">От лица кого</label>

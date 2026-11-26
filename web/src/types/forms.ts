@@ -70,6 +70,8 @@ export interface RetellingFormValues {
   authorEntityId: string | null
   /** Дата сессии, `YYYY-MM-DD`. */
   sessionDate: string | null
+  /** Хроника, к которой относится пересказ. */
+  chronicleId: string | null
 }
 
 export function emptyHeroItem(): HeroItemFormValue {
@@ -117,5 +119,5 @@ export function emptyObjectForm(name = ''): ObjectFormValues {
 }
 
 export function emptyRetellingForm(): RetellingFormValues {
-  return { title: '', body: '', authorEntityId: null, sessionDate: null }
+  return { title: '', body: '', authorEntityId: null, sessionDate: null, chronicleId: null }
 }

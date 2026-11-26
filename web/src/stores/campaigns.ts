@@ -158,8 +158,8 @@ export const useCampaignsStore = defineStore('campaigns', () => {
     return record
   }
 
-  async function update(campaignId: string, title: string, description: string): Promise<void> {
-    const dto = await campaignsApi.patch(campaignId, { title, description })
+  async function update(campaignId: string, title: string, description: string, teamColor?: string | null): Promise<void> {
+    const dto = await campaignsApi.patch(campaignId, { title, description, teamColor })
     const previous = await getCampaignRecord(campaignId)
     const record = campaignRecordFromDto(dto, {
       permissions: dto.myPermissions ?? previous?.myPermissions ?? [],

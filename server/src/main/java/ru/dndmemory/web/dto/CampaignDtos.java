@@ -35,6 +35,7 @@ public final class CampaignDtos {
         private String title;
 
         private String description;
+        private String teamColor;
     }
 
     @Data
@@ -64,6 +65,7 @@ public final class CampaignDtos {
         private UUID id;
         private String title;
         private String description;
+        private String teamColor;
         private UUID ownerUserId;
         private MemberRole myRole;
         /** Герой, привязанный к текущему участнику. */

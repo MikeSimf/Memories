@@ -143,6 +143,9 @@ public class CampaignService {
         if (request.getDescription() != null) {
             campaign.setDescription(request.getDescription());
         }
+        if (request.getTeamColor() != null) {
+            campaign.setTeamColor(request.getTeamColor());
+        }
         campaign.setUpdatedAt(Instant.now());
         changeRecorder.record(campaign, ObjectType.CAMPAIGN, campaign.getId(), ChangeOp.UPSERT,
                 () -> campaignPayload(campaign), userId, null, null);
@@ -184,6 +187,7 @@ public class CampaignService {
         payload.put("id", campaign.getId());
         payload.put("title", campaign.getTitle());
         payload.put("description", campaign.getDescription());
+        payload.put("teamColor", campaign.getTeamColor());
         payload.put("deleted", campaign.isDeleted());
         payload.put("revision", campaign.getRevision());
         payload.put("updatedAt", campaign.getUpdatedAt());

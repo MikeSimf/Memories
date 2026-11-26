@@ -160,6 +160,7 @@ export interface LocalRetelling {
   authorEntityId: string | null
   authorEntityName: string | null
   sessionDate: string | null
+  chronicleId: string | null
   status: RetellingStatus
   links: EntityLinkDto[]
   revision: number
@@ -182,6 +183,7 @@ export interface LocalRetellingDraft {
   body: string
   authorEntityId: string | null
   sessionDate: string | null
+  chronicleId: string | null
   createdAt: string
   updatedAt: string
   /** Всегда `DRAFT`; поле хранится, чтобы записи были однотипными в UI. */

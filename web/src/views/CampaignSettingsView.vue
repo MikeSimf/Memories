@@ -20,6 +20,7 @@ const ui = useUiStore()
 
 const title = ref('')
 const description = ref('')
+const teamColor = ref('#8a4b2a')
 const saving = ref(false)
 const confirmDelete = ref(false)
 const busy = ref(false)
@@ -37,6 +38,7 @@ watch(
     if (record) {
       title.value = record.title
       description.value = record.description
+      teamColor.value = record.teamColor ?? '#8a4b2a'
     }
   },
   { immediate: true },
@@ -69,7 +71,7 @@ async function toggleDictionary(kind: string, entry: DictionaryEntryDto): Promis
 async function save(): Promise<void> {
   saving.value = true
   try {
-    await campaigns.update(campaignId.value, title.value.trim(), description.value.trim())
+    await campaigns.update(campaignId.value, title.value.trim(), description.value.trim(), teamColor.value)
     await campaign.reload()
     ui.pushToast('success', 'Кампания обновлена')
   } catch (caught) {
@@ -160,6 +162,10 @@ async function removeCampaign(): Promise<void> {
           <span v-if="saving" class="spinner" aria-hidden="true" />
           Сохранить
         </button>
+      </div>
+      <div class="field">
+        <label class="field__label" for="settings-team-color">Цвет команды на карте</label>
+        <input id="settings-team-color" v-model="teamColor" class="input" type="color" />
       </div>
     </form>
 

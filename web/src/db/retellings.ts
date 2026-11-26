@@ -14,6 +14,7 @@ export function retellingFromDto(
     authorEntityId: dto.authorEntityId ?? null,
     authorEntityName: dto.authorEntityName ?? null,
     sessionDate: dto.sessionDate ?? null,
+    chronicleId: dto.chronicleId ?? null,
     status: dto.status ?? 'PUBLISHED',
     links: dto.links ?? [],
     revision: typeof dto.revision === 'number' ? dto.revision : 0,
@@ -38,6 +39,7 @@ export function retellingToPayload(retelling: LocalRetelling): Record<string, un
     body: retelling.body,
     authorEntityId: retelling.authorEntityId,
     sessionDate: retelling.sessionDate,
+    chronicleId: retelling.chronicleId,
     // На сервер уходит только PUBLISHED: DRAFT не покидает устройство (`api.md` §7).
     status: 'PUBLISHED',
     createdAt: retelling.createdAt,
@@ -154,6 +156,7 @@ export function draftToRetelling(
     authorEntityId: draft.authorEntityId,
     authorEntityName: null,
     sessionDate: draft.sessionDate,
+    chronicleId: draft.chronicleId,
     status: 'PUBLISHED',
     links: [],
     revision: 0,

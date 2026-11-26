@@ -286,6 +286,7 @@ export interface CampaignDto {
   id: string
   title: string
   description: string
+  teamColor: string | null
   ownerUserId: string | null
   myRole: MemberRole
   myPermissions: Permission[]
@@ -304,6 +305,7 @@ export interface CampaignDto {
 export interface CreateCampaignRequest {
   title: string
   description?: string
+  teamColor?: string | null
 }
 
 export interface PatchCampaignRequest {
@@ -641,6 +643,7 @@ export interface RetellingDto {
   authorEntityName: string | null
   /** Дата сессии в формате `YYYY-MM-DD`. */
   sessionDate: string | null
+  chronicleId: string | null
   status: RetellingStatus
   links: EntityLinkDto[]
   revision: number

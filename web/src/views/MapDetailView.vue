@@ -86,11 +86,12 @@ const mapPoints = computed<ChroniclePointDto[]>(() =>
     .filter((point) => point.mapId === mapId)
     .sort((a, b) => a.order - b.order),
 )
+const hasMapPoints = computed(() => chronicles.value.some((chronicle) => chronicle.points.some((point) => point.mapId === mapId)))
 const teamPoints = computed(() => mapPoints.value.filter((point) => point.wholeTeam))
 const heroPoints = computed(() =>
   mapPoints.value.filter((point) => !point.wholeTeam && point.heroId && selectedHeroIds.value.includes(point.heroId)),
 )
-const teamColor = computed(() => '#8a4b2a')
+const teamColor = computed(() => campaign.campaign?.teamColor || '#8a4b2a')
 
 function segments(points: ChroniclePointDto[]): Array<{ x1: number; y1: number; x2: number; y2: number }> {
   const result: Array<{ x1: number; y1: number; x2: number; y2: number }> = []
@@ -441,7 +442,7 @@ watch(() => map.value?.imageFileId, async () => {
         </div>
       </div>
 
-      <div v-if="chronicles.length" class="chronicle-strip">
+      <div v-if="hasMapPoints" class="chronicle-strip">
         <div class="row row--between">
           <strong>Хроники</strong>
           <span class="faint">{{ selectedChronicles.map((item) => item.name).join(' → ') }}</span>

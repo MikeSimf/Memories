@@ -29,6 +29,9 @@ public class Campaign {
     @Column(columnDefinition = "text")
     private String description;
 
+    @Column(name = "team_color", length = 16)
+    private String teamColor;
+
     @Column(name = "owner_user_id", nullable = false)
     private UUID ownerUserId;
 

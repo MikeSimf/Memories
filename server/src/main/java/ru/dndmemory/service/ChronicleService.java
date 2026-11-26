@@ -173,10 +173,10 @@ public class ChronicleService {
     }
 
     private PointDto point(UUID chronicleId, UUID id) {
-        return jdbc.query("select p.*, m.name as map_name, h.name as hero_name, h.color as hero_color "
+        return jdbc.queryForObject("select p.*, m.name as map_name, h.name as hero_name, h.color as hero_color "
                         + "from chronicle_points p join interactive_maps m on m.id = p.map_id left join heroes h on h.id = p.hero_id "
                         + "where p.id = ? and p.chronicle_id = ?",
-                rs -> {
+                (rs, rowNum) -> {
                     PointDto point = new PointDto();
                     point.id = rs.getString("id");
                     point.chronicleId = rs.getString("chronicle_id");

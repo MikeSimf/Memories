@@ -83,6 +83,7 @@ public class DtoMapper {
                 .id(campaign.getId())
                 .title(campaign.getTitle())
                 .description(campaign.getDescription())
+                .teamColor(campaign.getTeamColor())
                 .ownerUserId(campaign.getOwnerUserId())
                 .myRole(member == null ? null : member.getRole())
                 .myLinkedHeroId(member == null ? null : member.getLinkedHeroId())

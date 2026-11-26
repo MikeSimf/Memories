@@ -574,6 +574,7 @@ export const useCampaignStore = defineStore('campaign', () => {
       body: source.body,
       authorEntityId: source.authorEntityId,
       sessionDate: source.sessionDate,
+      chronicleId: source.chronicleId ?? null,
     }
   }
 
@@ -868,6 +869,7 @@ export const useCampaignStore = defineStore('campaign', () => {
         body: values.body,
         authorEntityId: values.authorEntityId,
         sessionDate: values.sessionDate,
+        chronicleId: values.chronicleId,
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
         status: 'DRAFT',
@@ -884,6 +886,7 @@ export const useCampaignStore = defineStore('campaign', () => {
       body: values.body,
       authorEntityId: values.authorEntityId,
       sessionDate: values.sessionDate,
+      chronicleId: values.chronicleId,
       createdAt: now,
       updatedAt: now,
       status: 'DRAFT',
@@ -947,6 +950,7 @@ export const useCampaignStore = defineStore('campaign', () => {
       authorEntityId: values.authorEntityId,
       authorEntityName: authorEntityName(values.authorEntityId, null),
       sessionDate: values.sessionDate,
+      chronicleId: values.chronicleId,
       status: 'PUBLISHED',
       links: [],
       revision: 0,
@@ -989,6 +993,7 @@ export const useCampaignStore = defineStore('campaign', () => {
       authorEntityId: values.authorEntityId,
       authorEntityName: authorEntityName(values.authorEntityId, existing.authorEntityName),
       sessionDate: values.sessionDate,
+      chronicleId: values.chronicleId,
       status: 'PUBLISHED',
       updatedBy: userId.value ?? '',
       updatedByName: auth.user?.displayName ?? '',
